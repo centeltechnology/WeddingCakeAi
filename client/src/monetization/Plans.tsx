@@ -208,7 +208,7 @@ export default function Plans() {
       </div>
 
       {/* FAQ or Additional Info */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-0 shadow-lg">
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-0 shadow-lg">
         <CardContent className="p-8">
           <h3 className="text-xl font-semibold text-foreground mb-4 text-center">
             Questions about our plans?
