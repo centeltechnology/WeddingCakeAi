@@ -2,13 +2,12 @@ import { useState } from "react";
 import { Sparkles, Download, FileText, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiRequest } from "@/lib/queryClient";
 
-// Stub function for image generation - to be replaced with real API
+// Real AI image generation using Replicate API
 async function generateCakeImage(prompt: string): Promise<string> {
-  // TODO: Replace with real API call (OpenAI, fal.ai, etc.)
-  // For now return a placeholder image URL
-  await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate API delay
-  return "https://placehold.co/600x600?text=DreamCake+Preview";
+  const response = await apiRequest('POST', '/api/generate-cake-image', { prompt }) as { imageUrl: string };
+  return response.imageUrl;
 }
 
 interface CakeConfiguration {
@@ -47,7 +46,7 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
     const complexityLevel = config.tiers >= 3 ? "elaborate multi-tiered" : 
                            config.tiers === 2 ? "elegant two-tiered" : "single-tier";
 
-    return `A beautiful ${complexityLevel} ${config.shape} wedding cake with ${config.cakeFlavor} flavor and ${config.filling} filling. ${decorations.length > 0 ? `Decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Additional details: ${config.specialRequests}.` : ''} Professional cake photography, studio lighting, white background, high resolution, elegant presentation.`;
+    return `A stunning professional wedding cake photograph featuring a ${complexityLevel} ${config.shape} cake with ${config.cakeFlavor.replace('-', ' ')} cake and ${config.filling.replace('-', ' ')} filling. ${decorations.length > 0 ? `Beautifully decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Special features: ${config.specialRequests}.` : ''} Shot in a professional photography studio with perfect lighting, white backdrop, photorealistic, high resolution 4K, award-winning food photography, elegant and luxurious presentation, masterpiece quality.`;
   };
 
   const handleGenerateImage = async () => {
@@ -69,9 +68,13 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
 
   const handleDownloadImage = () => {
     if (generatedImageUrl) {
-      // TODO: Implement actual download functionality
-      console.log("Downloading image:", generatedImageUrl);
-      alert("Download functionality will be implemented with real image generation API");
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = generatedImageUrl;
+      link.download = `dreamcake-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 

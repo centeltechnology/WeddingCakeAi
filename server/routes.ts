@@ -8,12 +8,17 @@ import {
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
 import Stripe from "stripe";
+import Replicate from "replicate";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-08-27.basil",
+});
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -523,6 +528,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(baker);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // AI Image Generation Route
+  app.post("/api/generate-cake-image", async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      // Use SDXL model for high-quality image generation
+      const output = await replicate.run(
+        "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+        {
+          input: {
+            prompt: prompt,
+            width: 768,
+            height: 768,
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            scheduler: "DPMSolverMultistep",
+            negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy, watermark, text, signature"
+          }
+        }
+      );
+
+      // The output is an array of image URLs
+      const imageUrl = Array.isArray(output) ? output[0] : output;
+      
+      res.json({ imageUrl });
+    } catch (error: any) {
+      console.error('Replicate API error:', error);
+      res.status(500).json({ 
+        message: "Failed to generate image", 
+        error: error.message 
+      });
     }
   });
 
