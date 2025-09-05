@@ -534,12 +534,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Image Generation Route
   app.post("/api/generate-cake-image", async (req, res) => {
     try {
+      console.log('Image generation request received:', req.body);
       const { prompt } = req.body;
       
       if (!prompt) {
+        console.log('No prompt provided');
         return res.status(400).json({ message: "Prompt is required" });
       }
 
+      if (!process.env.REPLICATE_API_TOKEN) {
+        console.log('No Replicate API token found');
+        return res.status(500).json({ message: "Replicate API token not configured" });
+      }
+
+      console.log('Calling Replicate API with prompt:', prompt);
+      
       // Use SDXL model for high-quality image generation
       const output = await replicate.run(
         "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
@@ -556,12 +565,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
+      console.log('Replicate API response:', output);
+      
       // The output is an array of image URLs
       const imageUrl = Array.isArray(output) ? output[0] : output;
       
+      if (!imageUrl) {
+        console.log('No image URL in response');
+        return res.status(500).json({ message: "No image generated" });
+      }
+      
+      console.log('Sending image URL:', imageUrl);
       res.json({ imageUrl });
     } catch (error: any) {
       console.error('Replicate API error:', error);
+      
+      // Handle specific Replicate API errors
+      if (error.message && error.message.includes('Insufficient credit')) {
+        return res.status(402).json({ 
+          message: "Replicate account needs credits", 
+          error: "Please add credits to your Replicate account at https://replicate.com/account/billing#billing"
+        });
+      }
+      
       res.status(500).json({ 
         message: "Failed to generate image", 
         error: error.message 
