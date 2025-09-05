@@ -1,4 +1,10 @@
-import { type User, type InsertUser, type Profile, type InsertProfile, type Estimate, type InsertEstimate, type Baker, type InsertBaker, type Lead, type InsertLead, type Message, type InsertMessage } from "@shared/schema";
+import { 
+  type User, type InsertUser, type Profile, type InsertProfile, type Estimate, type InsertEstimate, 
+  type Baker, type InsertBaker, type Lead, type InsertLead, type Message, type InsertMessage,
+  type Review, type InsertReview, type Transaction, type InsertTransaction, 
+  type Availability, type InsertAvailability, type Analytics, type InsertAnalytics, 
+  type BakerProfile, type InsertBakerProfile 
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -30,6 +36,36 @@ export interface IStorage {
   
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByLead(leadId: string): Promise<Message[]>;
+  updateMessage(id: string, content: string): Promise<Message | undefined>;
+  deleteMessage(id: string): Promise<boolean>;
+
+  // Review methods
+  createReview(review: InsertReview): Promise<Review>;
+  getReviewsByBakerId(bakerId: string): Promise<Review[]>;
+  getReviewById(id: string): Promise<Review | undefined>;
+  updateReviewVerification(id: string, isVerified: boolean): Promise<Review | undefined>;
+
+  // Transaction methods
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getTransactionsByBakerId(bakerId: string): Promise<Transaction[]>;
+  updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined>;
+  getTransactionById(id: string): Promise<Transaction | undefined>;
+
+  // Availability methods
+  createAvailability(availability: InsertAvailability): Promise<Availability>;
+  getAvailabilityByBakerId(bakerId: string): Promise<Availability[]>;
+  updateAvailability(id: string, updates: Partial<InsertAvailability>): Promise<Availability | undefined>;
+  deleteAvailability(id: string): Promise<boolean>;
+
+  // Analytics methods
+  trackAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
+  getAnalyticsByBakerId(bakerId: string, metric?: string): Promise<Analytics[]>;
+  getAnalyticsSummary(bakerId: string, startDate: string, endDate: string): Promise<{ [key: string]: number }>;
+
+  // Baker profile methods
+  createBakerProfile(profile: InsertBakerProfile): Promise<BakerProfile>;
+  getBakerProfileByBakerId(bakerId: string): Promise<BakerProfile | undefined>;
+  updateBakerProfile(id: string, updates: Partial<InsertBakerProfile>): Promise<BakerProfile | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,6 +75,11 @@ export class MemStorage implements IStorage {
   private bakers: Map<string, Baker>;
   private leads: Map<string, Lead>;
   private messages: Map<string, Message>;
+  private reviews: Map<string, Review>;
+  private transactions: Map<string, Transaction>;
+  private availability: Map<string, Availability>;
+  private analytics: Map<string, Analytics>;
+  private bakerProfiles: Map<string, BakerProfile>;
 
   constructor() {
     this.users = new Map();
@@ -47,6 +88,11 @@ export class MemStorage implements IStorage {
     this.bakers = new Map();
     this.leads = new Map();
     this.messages = new Map();
+    this.reviews = new Map();
+    this.transactions = new Map();
+    this.availability = new Map();
+    this.analytics = new Map();
+    this.bakerProfiles = new Map();
     
     // Initialize with sample baker data
     this.initializeBakers();
@@ -326,6 +372,218 @@ export class MemStorage implements IStorage {
     return Array.from(this.messages.values())
       .filter(message => message.leadId === leadId)
       .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
+  }
+
+  async updateMessage(id: string, content: string): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (!message) return undefined;
+    
+    const updated = { ...message, content };
+    this.messages.set(id, updated);
+    return updated;
+  }
+
+  async deleteMessage(id: string): Promise<boolean> {
+    return this.messages.delete(id);
+  }
+
+  // Review methods
+  async createReview(insertReview: InsertReview): Promise<Review> {
+    const id = randomUUID();
+    const review: Review = {
+      ...insertReview,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customerId: insertReview.customerId || null,
+      reviewText: insertReview.reviewText || null,
+      weddingDate: insertReview.weddingDate || null,
+      cakeStyle: insertReview.cakeStyle || null,
+      isVerified: insertReview.isVerified || false,
+    };
+    this.reviews.set(id, review);
+    return review;
+  }
+
+  async getReviewsByBakerId(bakerId: string): Promise<Review[]> {
+    return Array.from(this.reviews.values())
+      .filter(review => review.bakerId === bakerId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async getReviewById(id: string): Promise<Review | undefined> {
+    return this.reviews.get(id);
+  }
+
+  async updateReviewVerification(id: string, isVerified: boolean): Promise<Review | undefined> {
+    const review = this.reviews.get(id);
+    if (!review) return undefined;
+    
+    const updated = { ...review, isVerified, updatedAt: new Date() };
+    this.reviews.set(id, updated);
+    return updated;
+  }
+
+  // Transaction methods
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const id = randomUUID();
+    const transaction: Transaction = {
+      ...insertTransaction,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customerId: insertTransaction.customerId || null,
+      leadId: insertTransaction.leadId || null,
+      currency: insertTransaction.currency || "usd",
+      stripePaymentIntentId: insertTransaction.stripePaymentIntentId || null,
+      description: insertTransaction.description || null,
+    };
+    this.transactions.set(id, transaction);
+    return transaction;
+  }
+
+  async getTransactionsByBakerId(bakerId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values())
+      .filter(transaction => transaction.bakerId === bakerId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined> {
+    const transaction = this.transactions.get(id);
+    if (!transaction) return undefined;
+    
+    const updated = { ...transaction, status, updatedAt: new Date() };
+    this.transactions.set(id, updated);
+    return updated;
+  }
+
+  async getTransactionById(id: string): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+
+  // Availability methods
+  async createAvailability(insertAvailability: InsertAvailability): Promise<Availability> {
+    const id = randomUUID();
+    const availability: Availability = {
+      ...insertAvailability,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isBlocked: insertAvailability.isBlocked || false,
+      blockReason: insertAvailability.blockReason || null,
+    };
+    this.availability.set(id, availability);
+    return availability;
+  }
+
+  async getAvailabilityByBakerId(bakerId: string): Promise<Availability[]> {
+    return Array.from(this.availability.values())
+      .filter(avail => avail.bakerId === bakerId)
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateA - dateB;
+      });
+  }
+
+  async updateAvailability(id: string, updates: Partial<InsertAvailability>): Promise<Availability | undefined> {
+    const availability = this.availability.get(id);
+    if (!availability) return undefined;
+    
+    const updated = { ...availability, ...updates, updatedAt: new Date() };
+    this.availability.set(id, updated);
+    return updated;
+  }
+
+  async deleteAvailability(id: string): Promise<boolean> {
+    return this.availability.delete(id);
+  }
+
+  // Analytics methods
+  async trackAnalytics(insertAnalytics: InsertAnalytics): Promise<Analytics> {
+    const id = randomUUID();
+    const analytics: Analytics = {
+      ...insertAnalytics,
+      id,
+      createdAt: new Date(),
+      value: insertAnalytics.value || 1,
+      metadata: insertAnalytics.metadata || null,
+    };
+    this.analytics.set(id, analytics);
+    return analytics;
+  }
+
+  async getAnalyticsByBakerId(bakerId: string, metric?: string): Promise<Analytics[]> {
+    let results = Array.from(this.analytics.values())
+      .filter(analytic => analytic.bakerId === bakerId);
+    
+    if (metric) {
+      results = results.filter(analytic => analytic.metric === metric);
+    }
+    
+    return results.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  async getAnalyticsSummary(bakerId: string, startDate: string, endDate: string): Promise<{ [key: string]: number }> {
+    const analytics = Array.from(this.analytics.values())
+      .filter(analytic => {
+        if (analytic.bakerId !== bakerId || !analytic.date) return false;
+        const analyticsDate = new Date(analytic.date);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        return analyticsDate >= start && analyticsDate <= end;
+      });
+
+    const summary: { [key: string]: number } = {};
+    
+    analytics.forEach(analytic => {
+      if (!summary[analytic.metric]) {
+        summary[analytic.metric] = 0;
+      }
+      summary[analytic.metric] += analytic.value || 1;
+    });
+    
+    return summary;
+  }
+
+  // Baker profile methods
+  async createBakerProfile(insertProfile: InsertBakerProfile): Promise<BakerProfile> {
+    const id = randomUUID();
+    const profile: BakerProfile = {
+      ...insertProfile,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      businessHours: insertProfile.businessHours || null,
+      socialMedia: insertProfile.socialMedia || null,
+      certifications: insertProfile.certifications || null,
+      yearsExperience: insertProfile.yearsExperience || null,
+      teamSize: insertProfile.teamSize || null,
+      leadTime: insertProfile.leadTime || null,
+      consultationFee: insertProfile.consultationFee || null,
+      minimumOrder: insertProfile.minimumOrder || null,
+      deliveryRadius: insertProfile.deliveryRadius || null,
+      dietaryOptions: insertProfile.dietaryOptions || null,
+    };
+    this.bakerProfiles.set(id, profile);
+    return profile;
+  }
+
+  async getBakerProfileByBakerId(bakerId: string): Promise<BakerProfile | undefined> {
+    return Array.from(this.bakerProfiles.values()).find(profile => profile.bakerId === bakerId);
+  }
+
+  async updateBakerProfile(id: string, updates: Partial<InsertBakerProfile>): Promise<BakerProfile | undefined> {
+    const profile = this.bakerProfiles.get(id);
+    if (!profile) return undefined;
+    
+    const updated = { ...profile, ...updates, updatedAt: new Date() };
+    this.bakerProfiles.set(id, updated);
+    return updated;
   }
 }
 

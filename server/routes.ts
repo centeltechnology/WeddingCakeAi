@@ -1,8 +1,20 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProfileSchema, insertEstimateSchema, insertLeadSchema } from "@shared/schema";
+import { 
+  insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
+  insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema 
+} from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
+import { sendEmail, emailTemplates } from "./emailService";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-08-27.basil",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes
@@ -95,12 +107,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Baker routes
   app.get("/api/bakers", async (req, res) => {
     try {
-      const { location, radius, specialty } = req.query;
-      const bakers = await storage.searchBakers(
+      const { location, radius, specialty, priceRange, rating, dietary } = req.query;
+      let bakers = await storage.searchBakers(
         location as string,
         radius ? parseInt(radius as string) : undefined,
         specialty as string
       );
+      
+      // Advanced filtering
+      if (priceRange && priceRange !== 'all') {
+        bakers = bakers.filter(b => b.priceRange?.includes(priceRange as string));
+      }
+      
+      if (rating) {
+        const minRating = parseFloat(rating as string);
+        bakers = bakers.filter(b => b.rating && parseFloat(b.rating) >= minRating);
+      }
+      
+      if (dietary && dietary !== 'all') {
+        bakers = bakers.filter(b => 
+          b.specialties?.some(s => s.toLowerCase().includes((dietary as string).toLowerCase()))
+        );
+      }
+      
       res.json(bakers);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -203,6 +232,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const leadData = insertLeadSchema.parse(req.body);
       const lead = await storage.createLead(leadData);
+      
+      // Send notification emails
+      if (leadData.bakerId) {
+        const baker = await storage.getBaker(leadData.bakerId);
+        if (baker) {
+          // Track analytics
+          await storage.trackAnalytics({
+            bakerId: leadData.bakerId,
+            metric: 'contact_attempt',
+            date: new Date().toISOString().split('T')[0]
+          });
+          
+          // Email baker about new lead
+          const template = emailTemplates.newLeadNotification(
+            baker.name,
+            leadData.customerName,
+            leadData.customerEmail,
+            leadData.message || 'No message provided',
+            leadData.weddingDate || undefined
+          );
+          
+          await sendEmail({
+            to: baker.email,
+            from: 'noreply@weddingcakecalculator.com',
+            fromName: 'Wedding Cake Calculator',
+            ...template
+          });
+          
+          // Email confirmation to customer
+          const confirmTemplate = emailTemplates.leadConfirmation(
+            leadData.customerName,
+            baker.name
+          );
+          
+          await sendEmail({
+            to: leadData.customerEmail,
+            from: 'noreply@weddingcakecalculator.com',
+            fromName: 'Wedding Cake Calculator',
+            ...confirmTemplate
+          });
+        }
+      }
+      
       res.json(lead);
     } catch (error: any) {
       console.error("Error creating lead:", error);
@@ -228,6 +300,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating lead:", error);
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Review routes
+  app.post("/api/reviews", async (req, res) => {
+    try {
+      const reviewData = insertReviewSchema.parse(req.body);
+      const review = await storage.createReview(reviewData);
+      res.json(review);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/reviews", async (req, res) => {
+    try {
+      const reviews = await storage.getReviewsByBakerId(req.params.bakerId);
+      res.json(reviews);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/reviews/:id/verify", async (req, res) => {
+    try {
+      const { isVerified } = req.body;
+      const review = await storage.updateReviewVerification(req.params.id, isVerified);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+      res.json(review);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Payment routes
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { amount, bakerId, customerId, type } = req.body;
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          bakerId,
+          customerId,
+          type
+        }
+      });
+
+      // Track transaction
+      await storage.createTransaction({
+        bakerId,
+        customerId,
+        type,
+        amount: amount.toString(),
+        status: 'pending',
+        stripePaymentIntentId: paymentIntent.id,
+        description: `${type} payment`
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error('Payment intent creation error:', error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  app.post("/api/webhooks/stripe", async (req, res) => {
+    try {
+      // Handle Stripe webhooks for payment status updates
+      const event = req.body;
+      
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        
+        // Update transaction status
+        const transactions = await storage.getTransactionsByBakerId(paymentIntent.metadata.bakerId);
+        const transaction = transactions.find(t => t.stripePaymentIntentId === paymentIntent.id);
+        
+        if (transaction) {
+          await storage.updateTransactionStatus(transaction.id, 'completed');
+        }
+      }
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsByBakerId(req.params.bakerId);
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Availability routes
+  app.post("/api/availability", async (req, res) => {
+    try {
+      const availabilityData = insertAvailabilitySchema.parse(req.body);
+      const availability = await storage.createAvailability(availabilityData);
+      res.json(availability);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/availability", async (req, res) => {
+    try {
+      const availability = await storage.getAvailabilityByBakerId(req.params.bakerId);
+      res.json(availability);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/availability/:id", async (req, res) => {
+    try {
+      const updates = insertAvailabilitySchema.partial().parse(req.body);
+      const availability = await storage.updateAvailability(req.params.id, updates);
+      if (!availability) {
+        return res.status(404).json({ message: "Availability not found" });
+      }
+      res.json(availability);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/bakers/:bakerId/analytics", async (req, res) => {
+    try {
+      const { startDate, endDate, metric } = req.query;
+      
+      if (startDate && endDate) {
+        const summary = await storage.getAnalyticsSummary(
+          req.params.bakerId,
+          startDate as string,
+          endDate as string
+        );
+        res.json(summary);
+      } else {
+        const analytics = await storage.getAnalyticsByBakerId(
+          req.params.bakerId,
+          metric as string
+        );
+        res.json(analytics);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/analytics/track", async (req, res) => {
+    try {
+      const analyticsData = insertAnalyticsSchema.parse(req.body);
+      const analytics = await storage.trackAnalytics(analyticsData);
+      res.json(analytics);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Baker profile routes
+  app.post("/api/baker-profiles", async (req, res) => {
+    try {
+      const profileData = insertBakerProfileSchema.parse(req.body);
+      const profile = await storage.createBakerProfile(profileData);
+      res.json(profile);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/profile", async (req, res) => {
+    try {
+      const profile = await storage.getBakerProfileByBakerId(req.params.bakerId);
+      if (!profile) {
+        return res.status(404).json({ message: "Baker profile not found" });
+      }
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/baker-profiles/:id", async (req, res) => {
+    try {
+      const updates = insertBakerProfileSchema.partial().parse(req.body);
+      const profile = await storage.updateBakerProfile(req.params.id, updates);
+      if (!profile) {
+        return res.status(404).json({ message: "Baker profile not found" });
+      }
+      res.json(profile);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Track baker profile views
+  app.get("/api/bakers/:id", async (req, res) => {
+    try {
+      const baker = await storage.getBaker(req.params.id);
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      
+      // Track profile view
+      await storage.trackAnalytics({
+        bakerId: req.params.id,
+        metric: 'profile_view',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      res.json(baker);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 

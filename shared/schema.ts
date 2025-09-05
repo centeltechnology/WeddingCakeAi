@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -119,3 +119,93 @@ export type Estimate = typeof estimates.$inferSelect;
 export type Baker = typeof bakers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+
+// Reviews and ratings system
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  customerId: varchar("customer_id"),
+  customerName: varchar("customer_name").notNull(),
+  customerEmail: varchar("customer_email").notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  reviewText: text("review_text"),
+  weddingDate: date("wedding_date"),
+  cakeStyle: varchar("cake_style"),
+  isVerified: boolean("is_verified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment transactions
+export const transactions = pgTable("transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  customerId: varchar("customer_id"),
+  leadId: varchar("lead_id"),
+  type: varchar("type").notNull(), // 'consultation', 'deposit', 'final_payment', 'subscription'
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("usd"),
+  status: varchar("status").notNull(), // 'pending', 'completed', 'failed', 'refunded'
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Baker availability calendar
+export const availability = pgTable("availability", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  date: date("date").notNull(),
+  timeSlots: json("time_slots").notNull(), // [{ start: '09:00', end: '17:00', available: true }]
+  isBlocked: boolean("is_blocked").default(false),
+  blockReason: varchar("block_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Baker analytics tracking
+export const analytics = pgTable("analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  metric: varchar("metric").notNull(), // 'profile_view', 'portfolio_view', 'contact_attempt', 'lead_converted'
+  value: integer("value").default(1),
+  metadata: json("metadata"), // Additional context data
+  date: date("date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced baker profiles with additional fields
+export const bakerProfiles = pgTable("baker_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  businessHours: json("business_hours"), // { mon: { start: '09:00', end: '17:00' } }
+  socialMedia: json("social_media"), // { instagram: '@bakery', facebook: 'BakeryPage' }
+  certifications: text("certifications").array(),
+  yearsExperience: integer("years_experience"),
+  teamSize: integer("team_size"),
+  leadTime: varchar("lead_time"), // '2-4 weeks', '1-2 months'
+  consultationFee: decimal("consultation_fee", { precision: 8, scale: 2 }),
+  minimumOrder: decimal("minimum_order", { precision: 10, scale: 2 }),
+  deliveryRadius: integer("delivery_radius"), // miles
+  dietaryOptions: text("dietary_options").array(), // ['gluten-free', 'vegan', 'keto']
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAvailabilitySchema = createInsertSchema(availability).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
+export const insertBakerProfileSchema = createInsertSchema(bakerProfiles).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Availability = typeof availability.$inferSelect;
+export type InsertAvailability = z.infer<typeof insertAvailabilitySchema>;
+export type Analytics = typeof analytics.$inferSelect;
+export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
+export type BakerProfile = typeof bakerProfiles.$inferSelect;
+export type InsertBakerProfile = z.infer<typeof insertBakerProfileSchema>;
