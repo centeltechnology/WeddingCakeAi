@@ -87,12 +87,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'contacted': return 'bg-yellow-100 text-yellow-800';
-      case 'quoted': return 'bg-purple-100 text-purple-800';
-      case 'booked': return 'bg-green-100 text-green-800';
-      case 'declined': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new': return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+      case 'contacted': return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+      case 'quoted': return 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200';
+      case 'booked': return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+      case 'declined': return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
@@ -139,7 +139,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           <h1 className="text-4xl font-serif font-bold text-foreground">Baker Dashboard</h1>
           <p className="text-xl text-muted-foreground">Welcome back, {baker.name}!</p>
         </div>
-        <Badge className={`${subscriptionPlan === 'free' ? 'bg-gray-100 text-gray-800' : subscriptionPlan === 'pro' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'} text-sm font-semibold px-4 py-2`}>
+        <Badge className={`${subscriptionPlan === 'free' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' : subscriptionPlan === 'pro' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200'} text-sm font-semibold px-4 py-2`}>
           {subscriptionPlan.toUpperCase()} Plan
         </Badge>
       </div>
@@ -218,7 +218,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsList>
 
         <TabsContent value="leads">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
             <CardHeader className="border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-serif font-bold text-foreground">Your Leads</h3>
@@ -326,7 +326,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                         </div>
 
                         {lead.message && (
-                          <div className="bg-gray-50 rounded-xl p-4 mt-4">
+                          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mt-4">
                             <p className="text-sm text-foreground">{lead.message}</p>
                           </div>
                         )}
@@ -354,7 +354,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
             <CardContent className="p-8">
               <div className="text-center py-12">
                 <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />

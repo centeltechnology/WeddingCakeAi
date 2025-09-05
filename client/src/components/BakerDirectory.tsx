@@ -114,7 +114,7 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
   return (
     <div className="space-y-8">
       {/* Search & Filters */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95 backdrop-blur-sm">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95 backdrop-blur-sm">
         <CardContent className="p-8">
           <div className="flex items-center space-x-3 mb-8">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -236,11 +236,11 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
       ) : bakers && bakers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {bakers.map((baker) => (
-            <Card key={baker.id} className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 border-0 bg-gradient-to-br from-white to-white/90 backdrop-blur-sm" data-testid={`card-baker-${baker.id}`}>
+            <Card key={baker.id} className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/90 dark:from-card dark:to-card/90 backdrop-blur-sm" data-testid={`card-baker-${baker.id}`}>
               <div className="aspect-video bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-t-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10 flex items-center justify-center">
                   <div className="text-center transform group-hover:scale-110 transition-transform duration-300">
-                    <div className="w-20 h-20 bg-white/95 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-3 mx-auto shadow-lg">
+                    <div className="w-20 h-20 bg-card/95 dark:bg-card/95 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-3 mx-auto shadow-lg">
                       <span className="text-3xl">🎂</span>
                     </div>
                     <p className="text-sm text-foreground font-semibold">Professional Bakery</p>

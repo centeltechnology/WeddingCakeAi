@@ -118,7 +118,7 @@ export default function Plans() {
           Join thousands of bakers connecting with couples planning their perfect wedding
         </p>
         {DEMO_MODE && (
-          <Badge className="mt-4 bg-blue-100 text-blue-800 hover:bg-blue-200">
+          <Badge className="mt-4 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800">
             Demo Mode - Plans saved locally
           </Badge>
         )}
@@ -131,8 +131,8 @@ export default function Plans() {
             key={plan.id}
             className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 ${
               plan.highlighted 
-                ? 'border-2 border-primary shadow-lg bg-gradient-to-br from-white to-primary/5' 
-                : 'border-0 shadow-md bg-gradient-to-br from-white to-white/90'
+                ? 'border-2 border-primary shadow-lg bg-gradient-to-br from-card to-primary/5 dark:from-card dark:to-primary/5' 
+                : 'border-0 shadow-md bg-gradient-to-br from-card to-card/90 dark:from-card dark:to-card/90'
             } ${activePlan === plan.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
             data-testid={`card-plan-${plan.id}`}
           >
@@ -143,7 +143,7 @@ export default function Plans() {
             )}
             
             <CardHeader className={`text-center ${plan.highlighted ? 'pt-10' : 'pt-6'}`}>
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-md">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-md">
                 {plan.icon}
               </div>
               <h3 className="text-2xl font-bold text-foreground">{plan.name}</h3>
@@ -158,7 +158,7 @@ export default function Plans() {
               <Button
                 className={`w-full mb-6 h-12 font-semibold transition-all duration-300 ${
                   plan.id === 'free'
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                     : plan.highlighted
                     ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl'
                     : 'bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white shadow-md hover:shadow-lg'
@@ -187,8 +187,8 @@ export default function Plans() {
                   >
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
                       feature.included 
-                        ? 'bg-green-100 text-green-600' 
-                        : 'bg-gray-100 text-gray-400'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                     }`}>
                       <CheckCircle className="w-3 h-3" />
                     </div>

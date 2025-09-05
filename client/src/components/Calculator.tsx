@@ -134,7 +134,7 @@ export default function Calculator() {
     <div className="calculator-grid">
       {/* Calculator Form Section */}
       <div className="space-y-8">
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95 backdrop-blur-sm">
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
@@ -281,7 +281,7 @@ export default function Calculator() {
                 <h3 className="text-xl font-serif font-semibold text-foreground">Decorations & Add-ons</h3>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="fondant"
@@ -293,7 +293,7 @@ export default function Calculator() {
                   </div>
                   <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$150</span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="flowers"
@@ -305,7 +305,7 @@ export default function Calculator() {
                   </div>
                   <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$75</span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="goldAccents"
@@ -317,7 +317,7 @@ export default function Calculator() {
                   </div>
                   <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$100</span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="customTopper"
