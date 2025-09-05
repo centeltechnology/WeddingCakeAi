@@ -434,7 +434,7 @@ export default function Calculator() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" data-testid="text-total">
+                  <span className="text-4xl font-bold text-foreground drop-shadow-sm" data-testid="text-total">
                     ${pricing.total.toFixed(2)}
                   </span>
                   <div className="text-sm text-muted-foreground font-medium">
