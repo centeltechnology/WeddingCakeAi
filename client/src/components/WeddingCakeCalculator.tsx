@@ -6,6 +6,7 @@ import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";
 import Profile from "@/components/Profile";
 import Plans from "@/monetization/Plans";
+import logoImage from "@assets/Elegant Wedding Cake Logo Design_1757100721153.png";
 
 const tabs = [
   { id: 'calculator', label: 'Calculator', icon: Cake },
@@ -25,12 +26,15 @@ export default function WeddingCakeCalculator() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Cake className="text-primary w-10 h-10" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full animate-pulse"></div>
+                <img 
+                  src={logoImage} 
+                  alt="Wedding CakeAI Logo" 
+                  className="w-12 h-12 object-contain" 
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-serif font-bold text-foreground">
-                  Wedding Cake Calculator
+                  Wedding CakeAI
                 </h1>
                 <p className="text-xs text-muted-foreground font-medium">
                   Professional Pricing & Planning
