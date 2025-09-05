@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Cake, Share, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";
 import Profile from "@/components/Profile";
@@ -41,6 +42,7 @@ export default function WeddingCakeCalculator() {
                 <div className="text-sm font-medium text-foreground">Free to Use</div>
                 <div className="text-xs text-muted-foreground">No signup required</div>
               </div>
+              <ThemeToggle />
               <Button 
                 variant="default" 
                 size="sm" 
@@ -58,13 +60,13 @@ export default function WeddingCakeCalculator() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
         <div className="mb-12">
-          <div className="flex space-x-2 bg-white/60 backdrop-blur-sm p-2 rounded-2xl w-fit shadow-lg border border-white/20">
+          <div className="flex space-x-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-2 rounded-2xl w-fit shadow-lg border border-white/20 dark:border-gray-700/20">
             <button
               onClick={() => setActiveTab('calculator')}
               className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
                 activeTab === 'calculator' 
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
               data-testid="tab-calculator"
             >
@@ -76,7 +78,7 @@ export default function WeddingCakeCalculator() {
               className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
                 activeTab === 'bakers' 
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
               data-testid="tab-bakers"
             >
@@ -88,7 +90,7 @@ export default function WeddingCakeCalculator() {
               className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
                 activeTab === 'bakersPortal' 
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
               data-testid="tab-bakers-portal"
             >
@@ -100,7 +102,7 @@ export default function WeddingCakeCalculator() {
               className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
                 activeTab === 'profile' 
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
               data-testid="tab-profile"
             >
