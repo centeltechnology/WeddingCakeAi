@@ -6,12 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Printer, Save, Cake } from "lucide-react";
+import { FileText, Printer, Save, Cake, Sparkles } from "lucide-react";
 import { calculateTotal } from "@/lib/calculator";
 import { generatePDF } from "@/lib/pdf-generator";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { DreamCakeDesigner } from "@/components/DreamCakeDesigner";
 
 interface CakeConfiguration {
   eventDate: string;
@@ -59,6 +60,8 @@ export default function Calculator() {
     total: 0,
     lineItems: [] as Array<{ description: string; price: number }>
   });
+
+  const [isDreamCakeDesignerOpen, setIsDreamCakeDesignerOpen] = useState(false);
 
   const saveEstimateMutation = useMutation({
     mutationFn: async (estimate: any) => {
@@ -470,6 +473,21 @@ export default function Calculator() {
               </Button>
             </div>
 
+            {/* DreamCake Designer Section */}
+            <div className="pt-6 border-t border-border">
+              <Button
+                onClick={() => setIsDreamCakeDesignerOpen(true)}
+                className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                data-testid="button-visualize-cake"
+              >
+                <Sparkles className="w-5 h-5 mr-3" />
+                Visualize My Cake with DreamCake Designer
+              </Button>
+              <p className="text-xs text-slate-500 mt-2 text-center">
+                ✨ Premium Feature: Unlimited cake visualizations available in Bride Plus Pack.
+              </p>
+            </div>
+
             {/* Disclaimer */}
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6">
               <div className="flex items-start space-x-3">
@@ -502,6 +520,13 @@ export default function Calculator() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* DreamCake Designer Modal */}
+      <DreamCakeDesigner
+        config={config}
+        isOpen={isDreamCakeDesignerOpen}
+        onClose={() => setIsDreamCakeDesignerOpen(false)}
+      />
     </div>
   );
 }
