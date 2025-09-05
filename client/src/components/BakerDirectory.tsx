@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Search, Navigation, Star, Phone, Share, Image, ArrowRight, Store } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import PortfolioGallery from "./PortfolioGallery";
+import ContactBakerModal from "./ContactBakerModal";
 import type { Baker } from "@shared/schema";
 
 interface BakerDirectoryProps {
@@ -19,6 +21,9 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
   const [searchLocation, setSearchLocation] = useState("");
   const [searchRadius, setSearchRadius] = useState("25");
   const [specialty, setSpecialty] = useState("all");
+  const [selectedBaker, setSelectedBaker] = useState<Baker | null>(null);
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const { data: bakers, isLoading, refetch } = useQuery<Baker[]>({
     queryKey: ['/api/bakers', searchLocation, searchRadius, specialty],
@@ -67,9 +72,8 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
   };
 
   const handleContactBaker = (baker: Baker) => {
-    if (baker.phone) {
-      window.location.href = `tel:${baker.phone}`;
-    }
+    setSelectedBaker(baker);
+    setShowContactModal(true);
   };
 
   const handleShareEstimate = (bakerId: string) => {
@@ -80,10 +84,11 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
   };
 
   const handleViewPortfolio = (bakerId: string) => {
-    toast({
-      title: "Portfolio viewer",
-      description: "Portfolio viewer will be implemented soon.",
-    });
+    const baker = bakers?.find(b => b.id === bakerId);
+    if (baker) {
+      setSelectedBaker(baker);
+      setShowPortfolio(true);
+    }
   };
 
   const renderStars = (rating: string) => {
@@ -338,6 +343,27 @@ export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirector
             Load More Bakers
           </Button>
         </div>
+      )}
+
+      {/* Modals */}
+      {selectedBaker && showPortfolio && (
+        <PortfolioGallery
+          baker={selectedBaker}
+          onClose={() => {
+            setShowPortfolio(false);
+            setSelectedBaker(null);
+          }}
+        />
+      )}
+
+      {selectedBaker && showContactModal && (
+        <ContactBakerModal
+          baker={selectedBaker}
+          onClose={() => {
+            setShowContactModal(false);
+            setSelectedBaker(null);
+          }}
+        />
       )}
     </div>
   );

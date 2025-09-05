@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Profile, type InsertProfile, type Estimate, type InsertEstimate, type Baker, type InsertBaker } from "@shared/schema";
+import { type User, type InsertUser, type Profile, type InsertProfile, type Estimate, type InsertEstimate, type Baker, type InsertBaker, type Lead, type InsertLead, type Message, type InsertMessage } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -20,7 +20,16 @@ export interface IStorage {
   getBakers(): Promise<Baker[]>;
   getBaker(id: string): Promise<Baker | undefined>;
   createBaker(baker: InsertBaker): Promise<Baker>;
+  updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string): Promise<Baker[]>;
+  
+  createLead(lead: InsertLead): Promise<Lead>;
+  getLead(id: string): Promise<Lead | undefined>;
+  getLeadsByBaker(bakerId: string): Promise<Lead[]>;
+  updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead>;
+  
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesByLead(leadId: string): Promise<Message[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -28,12 +37,16 @@ export class MemStorage implements IStorage {
   private profiles: Map<string, Profile>;
   private estimates: Map<string, Estimate>;
   private bakers: Map<string, Baker>;
+  private leads: Map<string, Lead>;
+  private messages: Map<string, Message>;
 
   constructor() {
     this.users = new Map();
     this.profiles = new Map();
     this.estimates = new Map();
     this.bakers = new Map();
+    this.leads = new Map();
+    this.messages = new Map();
     
     // Initialize with sample baker data
     this.initializeBakers();
@@ -231,6 +244,17 @@ export class MemStorage implements IStorage {
     return baker;
   }
 
+  async updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker> {
+    const baker = this.bakers.get(id);
+    if (!baker) {
+      throw new Error(`Baker with id ${id} not found`);
+    }
+    
+    const updatedBaker: Baker = { ...baker, ...updates };
+    this.bakers.set(id, updatedBaker);
+    return updatedBaker;
+  }
+
   async searchBakers(location?: string, radius?: number, specialty?: string): Promise<Baker[]> {
     let bakers = Array.from(this.bakers.values()).filter(b => b.isActive);
     
@@ -243,6 +267,63 @@ export class MemStorage implements IStorage {
     // For simplicity, return all bakers for location/radius searches
     // In a real implementation, this would calculate distance based on coordinates
     return bakers;
+  }
+
+  async createLead(insertLead: InsertLead): Promise<Lead> {
+    const id = randomUUID();
+    const lead: Lead = { 
+      ...insertLead, 
+      id, 
+      createdAt: new Date(),
+      bakerId: insertLead.bakerId || null,
+      profileId: insertLead.profileId || null,
+      customerPhone: insertLead.customerPhone || null,
+      weddingDate: insertLead.weddingDate || null,
+      guestCount: insertLead.guestCount || null,
+      budget: insertLead.budget || null,
+      message: insertLead.message || null,
+      estimateId: insertLead.estimateId || null,
+    };
+    this.leads.set(id, lead);
+    return lead;
+  }
+
+  async getLead(id: string): Promise<Lead | undefined> {
+    return this.leads.get(id);
+  }
+
+  async getLeadsByBaker(bakerId: string): Promise<Lead[]> {
+    return Array.from(this.leads.values()).filter(lead => lead.bakerId === bakerId);
+  }
+
+  async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with id ${id} not found`);
+    }
+    
+    const updatedLead: Lead = { ...lead, ...updates };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const message: Message = { 
+      ...insertMessage, 
+      id, 
+      createdAt: new Date(),
+      leadId: insertMessage.leadId || null,
+      senderId: insertMessage.senderId || null,
+    };
+    this.messages.set(id, message);
+    return message;
+  }
+
+  async getMessagesByLead(leadId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(message => message.leadId === leadId)
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
   }
 }
 
