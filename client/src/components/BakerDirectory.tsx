@@ -103,15 +103,25 @@ export default function BakerDirectory() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Search & Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="text-2xl font-serif font-semibold mb-6 text-foreground">
-            Find Professional Bakers
-          </h2>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95 backdrop-blur-sm">
+        <CardContent className="p-8">
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <MapPin className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-serif font-bold text-foreground">
+                Find Professional Bakers
+              </h2>
+              <p className="text-sm text-muted-foreground font-medium">
+                Connect with local wedding cake specialists
+              </p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="md:col-span-2">
               <Label htmlFor="location">Location</Label>
               <div className="relative">
@@ -157,17 +167,22 @@ export default function BakerDirectory() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Button onClick={handleSearch} data-testid="button-search-bakers">
-              <Search className="w-4 h-4 mr-2" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <Button 
+              onClick={handleSearch} 
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold h-12"
+              data-testid="button-search-bakers"
+            >
+              <Search className="w-5 h-5 mr-2" />
               Search Bakers
             </Button>
             <Button
               variant="outline"
               onClick={handleUseCurrentLocation}
+              className="border-2 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-300 font-semibold h-12"
               data-testid="button-use-current-location"
             >
-              <Navigation className="w-4 h-4 mr-2" />
+              <Navigation className="w-5 h-5 mr-2" />
               Use Current Location
             </Button>
           </div>
@@ -181,21 +196,21 @@ export default function BakerDirectory() {
           <p className="mt-2 text-muted-foreground">Loading bakers...</p>
         </div>
       ) : bakers && bakers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {bakers.map((baker) => (
-            <Card key={baker.id} className="hover:shadow-md transition-shadow" data-testid={`card-baker-${baker.id}`}>
-              <div className="aspect-video bg-muted rounded-t-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2 mx-auto">
-                      <i className="fas fa-birthday-cake text-primary text-2xl"></i>
+            <Card key={baker.id} className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 border-0 bg-gradient-to-br from-white to-white/90 backdrop-blur-sm" data-testid={`card-baker-${baker.id}`}>
+              <div className="aspect-video bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-t-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10 flex items-center justify-center">
+                  <div className="text-center transform group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-20 h-20 bg-white/95 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-3 mx-auto shadow-lg">
+                      <span className="text-3xl">🎂</span>
                     </div>
-                    <p className="text-sm text-foreground font-medium">Professional Bakery</p>
+                    <p className="text-sm text-foreground font-semibold">Professional Bakery</p>
                   </div>
                 </div>
               </div>
 
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="text-lg font-semibold text-foreground" data-testid={`text-baker-name-${baker.id}`}>
@@ -210,12 +225,15 @@ export default function BakerDirectory() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {baker.specialties?.slice(0, 3).map((specialty, index) => (
                     <Badge
                       key={index}
-                      variant={index === 0 ? "default" : "secondary"}
-                      className="text-xs"
+                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                        index === 0 
+                          ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-md' 
+                          : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                      } transition-all duration-200`}
                       data-testid={`badge-specialty-${baker.id}-${index}`}
                     >
                       {specialty}
@@ -227,14 +245,17 @@ export default function BakerDirectory() {
                   {baker.description}
                 </p>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground" data-testid={`text-price-range-${baker.id}`}>
-                    {baker.priceRange}
-                  </span>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-2 rounded-full">
+                    <span className="text-sm font-bold text-primary" data-testid={`text-price-range-${baker.id}`}>
+                      {baker.priceRange}
+                    </span>
+                  </div>
                   <div className="flex space-x-2">
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="w-10 h-10 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
                       onClick={() => handleViewPortfolio(baker.id)}
                       data-testid={`button-view-portfolio-${baker.id}`}
                     >
@@ -243,6 +264,7 @@ export default function BakerDirectory() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="w-10 h-10 rounded-full hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
                       onClick={() => handleContactBaker(baker)}
                       data-testid={`button-contact-baker-${baker.id}`}
                     >
@@ -251,6 +273,7 @@ export default function BakerDirectory() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="w-10 h-10 rounded-full hover:bg-purple-50 hover:text-purple-600 transition-colors duration-200"
                       onClick={() => handleShareEstimate(baker.id)}
                       data-testid={`button-share-estimate-${baker.id}`}
                     >
@@ -273,7 +296,12 @@ export default function BakerDirectory() {
       {/* Load More */}
       {bakers && bakers.length > 0 && (
         <div className="text-center">
-          <Button variant="secondary" size="lg" data-testid="button-load-more-bakers">
+          <Button 
+            variant="outline"
+            size="lg"
+            className="px-8 py-4 border-2 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-300 font-semibold rounded-2xl"
+            data-testid="button-load-more-bakers"
+          >
             Load More Bakers
           </Button>
         </div>

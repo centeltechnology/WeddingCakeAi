@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Printer, Save } from "lucide-react";
+import { FileText, Printer, Save, Cake } from "lucide-react";
 import { calculateTotal } from "@/lib/calculator";
 import { generatePDF } from "@/lib/pdf-generator";
 import { useMutation } from "@tanstack/react-query";
@@ -133,15 +133,25 @@ export default function Calculator() {
   return (
     <div className="calculator-grid">
       {/* Calculator Form Section */}
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="text-2xl font-serif font-semibold mb-6 text-foreground">
-              Cake Configuration
-            </h2>
+      <div className="space-y-8">
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95 backdrop-blur-sm">
+          <CardContent className="p-8">
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+                <Cake className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-serif font-bold text-foreground">
+                  Cake Configuration
+                </h2>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Design your perfect wedding cake
+                </p>
+              </div>
+            </div>
 
             {/* Basic Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
                 <Label htmlFor="eventDate">Event Date</Label>
                 <Input
@@ -166,9 +176,14 @@ export default function Calculator() {
             </div>
 
             {/* Cake Size & Tiers */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-4 text-foreground">Size & Structure</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mb-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">📏</span>
+                </div>
+                <h3 className="text-xl font-serif font-semibold text-foreground">Size & Structure</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label htmlFor="tiers">Number of Tiers</Label>
                   <Select value={config.tiers.toString()} onValueChange={(value) => updateConfig({ tiers: parseInt(value) })}>
@@ -215,9 +230,14 @@ export default function Calculator() {
             </div>
 
             {/* Flavors */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-4 text-foreground">Flavors</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">🍰</span>
+                </div>
+                <h3 className="text-xl font-serif font-semibold text-foreground">Flavors</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="cakeFlavor">Cake Flavor</Label>
                   <Select value={config.cakeFlavor} onValueChange={(value) => updateConfig({ cakeFlavor: value })}>
@@ -253,10 +273,15 @@ export default function Calculator() {
             </div>
 
             {/* Decorations */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-4 text-foreground">Decorations & Add-ons</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+            <div className="mb-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✨</span>
+                </div>
+                <h3 className="text-xl font-serif font-semibold text-foreground">Decorations & Add-ons</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="fondant"
@@ -264,11 +289,11 @@ export default function Calculator() {
                       onCheckedChange={(checked) => handleDecorationChange('fondant', checked as boolean)}
                       data-testid="checkbox-fondant"
                     />
-                    <Label htmlFor="fondant" className="font-medium">Fondant Covering</Label>
+                    <Label htmlFor="fondant" className="font-semibold">Fondant Covering</Label>
                   </div>
-                  <span className="text-sm text-muted-foreground">+$150</span>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$150</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="flowers"
@@ -276,11 +301,11 @@ export default function Calculator() {
                       onCheckedChange={(checked) => handleDecorationChange('flowers', checked as boolean)}
                       data-testid="checkbox-flowers"
                     />
-                    <Label htmlFor="flowers" className="font-medium">Fresh Flowers</Label>
+                    <Label htmlFor="flowers" className="font-semibold">Fresh Flowers</Label>
                   </div>
-                  <span className="text-sm text-muted-foreground">+$75</span>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$75</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="goldAccents"
@@ -288,11 +313,11 @@ export default function Calculator() {
                       onCheckedChange={(checked) => handleDecorationChange('goldAccents', checked as boolean)}
                       data-testid="checkbox-gold-accents"
                     />
-                    <Label htmlFor="goldAccents" className="font-medium">Gold Leaf Accents</Label>
+                    <Label htmlFor="goldAccents" className="font-semibold">Gold Leaf Accents</Label>
                   </div>
-                  <span className="text-sm text-muted-foreground">+$100</span>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$100</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="customTopper"
@@ -300,17 +325,22 @@ export default function Calculator() {
                       onCheckedChange={(checked) => handleDecorationChange('customTopper', checked as boolean)}
                       data-testid="checkbox-custom-topper"
                     />
-                    <Label htmlFor="customTopper" className="font-medium">Custom Cake Topper</Label>
+                    <Label htmlFor="customTopper" className="font-semibold">Custom Cake Topper</Label>
                   </div>
-                  <span className="text-sm text-muted-foreground">+$50</span>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$50</span>
                 </div>
               </div>
             </div>
 
             {/* Delivery Options */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-4 text-foreground">Delivery & Setup</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">🚚</span>
+                </div>
+                <h3 className="text-xl font-serif font-semibold text-foreground">Delivery & Setup</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="delivery">Delivery Option</Label>
                   <Select value={config.delivery} onValueChange={(value) => updateConfig({ delivery: value })}>
@@ -344,12 +374,22 @@ export default function Calculator() {
       </div>
 
       {/* Pricing Summary Section */}
-      <div className="space-y-6">
-        <Card className="sticky top-6">
-          <CardContent className="pt-6">
-            <h2 className="text-2xl font-serif font-semibold mb-6 text-foreground">
-              Pricing Estimate
-            </h2>
+      <div className="space-y-8">
+        <Card className="sticky top-6 border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/30 backdrop-blur-sm">
+          <CardContent className="p-8">
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-xl font-bold">💰</span>
+              </div>
+              <div>
+                <h2 className="text-3xl font-serif font-bold text-foreground">
+                  Pricing Estimate
+                </h2>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Live calculation updates
+                </p>
+              </div>
+            </div>
 
             {/* Line Items */}
             <div className="space-y-3 mb-6">
@@ -382,45 +422,50 @@ export default function Calculator() {
             </div>
 
             {/* Total */}
-            <div className="bg-primary/10 p-4 rounded-lg mb-6">
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl mb-8 border border-primary/20 shadow-lg">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-foreground">Total Estimate</span>
-                <span className="text-2xl font-bold text-primary" data-testid="text-total">
-                  ${pricing.total.toFixed(2)}
-                </span>
+                <div>
+                  <span className="text-xl font-serif font-bold text-foreground">Total Estimate</span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Serves approximately {config.guestCount} guests
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" data-testid="text-total">
+                    ${pricing.total.toFixed(2)}
+                  </span>
+                  <div className="text-sm text-muted-foreground font-medium">
+                    ${(pricing.total / config.guestCount).toFixed(2)} per guest
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Serves approximately {config.guestCount} guests
-              </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <Button
                 onClick={handleGeneratePDF}
-                className="w-full"
-                variant="default"
+                className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-generate-pdf"
               >
-                <FileText className="w-4 h-4 mr-2" />
+                <FileText className="w-5 h-5 mr-3" />
                 Download PDF Estimate
               </Button>
               <Button
                 onClick={handlePrint}
-                className="w-full"
-                variant="secondary"
+                className="w-full h-12 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-print-estimate"
               >
-                <Printer className="w-4 h-4 mr-2" />
+                <Printer className="w-5 h-5 mr-3" />
                 Print Estimate
               </Button>
               <Button
                 onClick={handleSaveEstimate}
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 disabled={saveEstimateMutation.isPending}
                 data-testid="button-save-estimate"
               >
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-5 h-5 mr-3" />
                 {saveEstimateMutation.isPending ? 'Saving...' : 'Save to Profile'}
               </Button>
             </div>
