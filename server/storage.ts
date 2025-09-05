@@ -238,7 +238,8 @@ export class MemStorage implements IStorage {
       description: insertBaker.description || null,
       isActive: insertBaker.isActive !== undefined ? insertBaker.isActive : true,
       specialties: insertBaker.specialties || [],
-      portfolio: insertBaker.portfolio || []
+      portfolio: insertBaker.portfolio || [],
+      subscriptionPlan: insertBaker.subscriptionPlan || null
     };
     this.bakers.set(id, baker);
     return baker;
@@ -283,6 +284,7 @@ export class MemStorage implements IStorage {
       budget: insertLead.budget || null,
       message: insertLead.message || null,
       estimateId: insertLead.estimateId || null,
+      status: insertLead.status || null,
     };
     this.leads.set(id, lead);
     return lead;
