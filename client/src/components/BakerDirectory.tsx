@@ -5,12 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Search, Navigation, Star, Phone, Share, Image } from "lucide-react";
+import { MapPin, Search, Navigation, Star, Phone, Share, Image, ArrowRight, Store } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Baker } from "@shared/schema";
 
-export default function BakerDirectory() {
+interface BakerDirectoryProps {
+  onSwitchToBakersPortal?: () => void;
+}
+
+export default function BakerDirectory({ onSwitchToBakersPortal }: BakerDirectoryProps = {}) {
   const { toast } = useToast();
   const [searchLocation, setSearchLocation] = useState("");
   const [searchRadius, setSearchRadius] = useState("25");
@@ -188,6 +192,35 @@ export default function BakerDirectory() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Baker Callout */}
+      {onSwitchToBakersPortal && (
+        <Card className="border border-gradient-to-r from-primary/20 to-purple-500/20 bg-gradient-to-r from-primary/5 via-purple-50/50 to-primary/5 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Store className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground text-lg">Are you a baker?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Claim your listing & upgrade to reach more couples
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={onSwitchToBakersPortal}
+                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                data-testid="button-switch-to-bakers-portal"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Baker Results */}
       {isLoading ? (

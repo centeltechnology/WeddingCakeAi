@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Cake, Share } from "lucide-react";
+import { Cake, Share, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";
 import Profile from "@/components/Profile";
+import Plans from "@/monetization/Plans";
 
 const tabs = [
   { id: 'calculator', label: 'Calculator', icon: Cake },
   { id: 'bakers', label: 'Find Bakers', icon: 'fas fa-map-marker-alt' },
+  { id: 'bakersPortal', label: 'For Bakers', icon: Store },
   { id: 'profile', label: 'Profile', icon: 'fas fa-user' }
 ];
 
@@ -82,6 +84,18 @@ export default function WeddingCakeCalculator() {
               <span>Find Bakers</span>
             </button>
             <button
+              onClick={() => setActiveTab('bakersPortal')}
+              className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
+                activeTab === 'bakersPortal' 
+                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50'
+              }`}
+              data-testid="tab-bakers-portal"
+            >
+              <Store className="w-5 h-5" />
+              <span>For Bakers</span>
+            </button>
+            <button
               onClick={() => setActiveTab('profile')}
               className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
                 activeTab === 'profile' 
@@ -98,7 +112,14 @@ export default function WeddingCakeCalculator() {
 
         {/* Tab Content */}
         {activeTab === 'calculator' && <Calculator />}
-        {activeTab === 'bakers' && <BakerDirectory />}
+        {activeTab === 'bakers' && <BakerDirectory onSwitchToBakersPortal={() => setActiveTab('bakersPortal')} />}
+        {activeTab === 'bakersPortal' && (
+          <div className="flex justify-center">
+            <div className="w-full">
+              <Plans />
+            </div>
+          </div>
+        )}
         {activeTab === 'profile' && <Profile />}
       </div>
     </div>

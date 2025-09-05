@@ -470,8 +470,25 @@ export default function Calculator() {
               </Button>
             </div>
 
+            {/* Disclaimer */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-800 mb-2">Important Notice</h4>
+                  <p className="text-sm text-amber-700 leading-relaxed">
+                    This is an estimated price based on standard pricing models. Final pricing may vary based on specific requirements, 
+                    complexity, availability, and other factors determined by individual bakers. Please contact bakers directly for 
+                    accurate quotes and confirmation.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Additional Notes */}
-            <div className="mt-6 pt-6 border-t border-border">
+            <div className="pt-6 border-t border-border">
               <Label htmlFor="specialRequests">Special Requests</Label>
               <Textarea
                 id="specialRequests"
