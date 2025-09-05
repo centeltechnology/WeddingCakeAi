@@ -6,7 +6,7 @@ import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";
 import Profile from "@/components/Profile";
 import Plans from "@/monetization/Plans";
-import logoImage from "@assets/Elegant Wedding Cake Logo Design_1757100721153.png";
+import logoImage from "@assets/Minimalist Golden-Brown Wedding Cake Design_1757101253561.png";
 
 const tabs = [
   { id: 'calculator', label: 'Calculator', icon: Cake },
