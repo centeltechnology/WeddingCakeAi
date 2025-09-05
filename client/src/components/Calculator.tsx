@@ -481,7 +481,7 @@ export default function Calculator() {
                 data-testid="button-visualize-cake"
               >
                 <Sparkles className="w-5 h-5 mr-3" />
-                Visualize My Cake with DreamCake Designer
+                Visualize My Cake
               </Button>
               <p className="text-xs text-slate-500 mt-2 text-center">
                 ✨ Premium Feature: Unlimited cake visualizations available in Bride Plus Pack.
