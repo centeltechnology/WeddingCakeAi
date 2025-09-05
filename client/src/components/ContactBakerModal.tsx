@@ -103,7 +103,7 @@ export default function ContactBakerModal({ baker, onClose }: ContactBakerModalP
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={handleOverlayClick}
     >
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-gradient-to-br from-white to-white/95">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
         <CardHeader className="border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -166,7 +166,7 @@ export default function ContactBakerModal({ baker, onClose }: ContactBakerModalP
               <span className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">Or send a detailed inquiry</span>
+              <span className="bg-card dark:bg-background px-2 text-muted-foreground">Or send a detailed inquiry</span>
             </div>
           </div>
 

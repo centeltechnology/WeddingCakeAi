@@ -31,9 +31,9 @@ export default function PortfolioGallery({ baker, onClose }: PortfolioGalleryPro
   if (portfolio.length === 0) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <Card className="max-w-md mx-auto bg-white">
+        <Card className="max-w-md mx-auto bg-card dark:bg-card">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Eye className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">No Portfolio Yet</h3>

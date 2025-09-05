@@ -211,7 +211,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
       {/* Main Content */}
       <Tabs defaultValue="leads" className="space-y-6">
-        <TabsList className="bg-white/60 backdrop-blur-sm p-2 rounded-2xl shadow-lg">
+        <TabsList className="bg-card/60 dark:bg-card/60 backdrop-blur-sm p-2 rounded-2xl shadow-lg">
           <TabsTrigger value="leads" className="rounded-xl">Lead Management</TabsTrigger>
           <TabsTrigger value="portfolio" className="rounded-xl">Portfolio</TabsTrigger>
           <TabsTrigger value="analytics" className="rounded-xl">Analytics</TabsTrigger>
