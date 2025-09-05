@@ -375,7 +375,7 @@ export default function Calculator() {
 
       {/* Pricing Summary Section */}
       <div className="space-y-8">
-        <Card className="sticky top-6 border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/30 backdrop-blur-sm">
+        <Card className="sticky top-6 border-0 shadow-xl bg-gradient-to-br from-card via-card to-muted/30 dark:from-card dark:via-card dark:to-muted/30 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
