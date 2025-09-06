@@ -145,21 +145,21 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
 
   const paymentStats = {
     totalRevenue: payments
-      .filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + parseFloat(p.paidAmount), 0),
+      .filter((p: any) => p.status === 'completed')
+      .reduce((sum: number, p: any) => sum + parseFloat(p.amount || '0'), 0),
     pendingAmount: payments
-      .filter(p => p.status !== 'paid')
-      .reduce((sum, p) => sum + parseFloat(p.remainingAmount), 0),
-    overdueCount: payments.filter(p => p.status === 'overdue').length,
+      .filter((p: any) => p.status === 'pending')
+      .reduce((sum: number, p: any) => sum + parseFloat(p.amount || '0'), 0),
+    overdueCount: payments.filter((p: any) => p.status === 'failed').length,
     thisMonth: payments
-      .filter(p => {
-        const paymentDate = new Date(p.paidAt || p.createdAt);
+      .filter((p: any) => {
+        const paymentDate = new Date(p.createdAt);
         const now = new Date();
         return paymentDate.getMonth() === now.getMonth() && 
                paymentDate.getFullYear() === now.getFullYear() &&
-               p.status === 'paid';
+               p.status === 'completed';
       })
-      .reduce((sum, p) => sum + parseFloat(p.paidAmount), 0)
+      .reduce((sum: number, p: any) => sum + parseFloat(p.amount || '0'), 0)
   };
 
   return (

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import type { Quote, QuoteTemplate, Customer, QuoteItem } from '@shared/schema';
 import jsPDF from 'jspdf';
+import { StripeCheckout, QuickPaymentButton } from './StripeCheckout';
 
 interface QuoteBuilderProps {
   bakerId: string;
@@ -401,6 +402,16 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                           <Download className="h-3 w-3 mr-1" />
                           PDF
                         </Button>
+                        {quote.depositAmount && parseFloat(quote.depositAmount) > 0 && (
+                          <QuickPaymentButton 
+                            quote={quote} 
+                            type="deposit"
+                            onPaymentComplete={() => {
+                              // Refresh quotes after payment
+                              queryClient.invalidateQueries({ queryKey: ['/api/quotes'] });
+                            }}
+                          />
+                        )}
                       </div>
                     </CardContent>
                   </Card>
