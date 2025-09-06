@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TenantBrandProvider } from "@/components/TenantBrandProvider";
 import Home from "@/pages/home";
+import Features from "@/pages/features";
+import About from "@/pages/about";
+import Pricing from "@/pages/pricing";
 import Signup from "@/pages/signup";
 import DemoTenant from "@/pages/demo-tenant";
 import CustomerLogin from "@/pages/customer-login";
@@ -20,6 +23,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/features" component={Features} />
+      <Route path="/about" component={About} />
+      <Route path="/pricing" component={Pricing} />
       <Route path="/signup" component={Signup} />
       <Route path="/demo-tenant" component={DemoTenant} />
       <Route path="/customer-login" component={CustomerLogin} />
