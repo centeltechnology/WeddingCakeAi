@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTenant } from './TenantBrandProvider';
-import { Building2, Settings, Home, BarChart3 } from 'lucide-react';
+import { ChefHat, Settings, Home, BarChart3, Sparkles } from 'lucide-react';
 
 export function NavigationHeader() {
   const [location] = useLocation();
@@ -18,15 +18,15 @@ export function NavigationHeader() {
             {branding.logoUrl ? (
               <img src={branding.logoUrl} alt="Logo" className="h-8 w-auto" />
             ) : (
-              <Building2 className="h-8 w-8 text-primary" />
+              <ChefHat className="h-8 w-8 text-primary" />
             )}
             <div>
               <h1 className="text-xl font-bold text-primary">
-                {tenant?.name || 'WeddingCake AI'}
+                {tenant?.name || 'Bakewise'}
               </h1>
               {tenant && (
                 <p className="text-xs text-muted-foreground">
-                  Powered by WeddingCake AI
+                  Powered by Bakewise
                 </p>
               )}
             </div>
@@ -52,9 +52,9 @@ export function NavigationHeader() {
             </Link>
           </Button>
 
-          {/* Show different navigation based on context */}
+          {/* Baker-focused navigation */}
           {tenant ? (
-            // Tenant-specific navigation
+            // Baker dashboard for multi-tenant customers
             <Button
               variant={location === '/admin' ? 'default' : 'ghost'}
               size="sm"
@@ -62,11 +62,11 @@ export function NavigationHeader() {
             >
               <Link href="/admin" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <span className="hidden sm:inline">My Bakery</span>
               </Link>
             </Button>
           ) : (
-            // Main platform navigation
+            // Main Bakewise platform navigation
             <>
               <Button
                 variant={location === '/admin' ? 'default' : 'ghost'}
@@ -74,8 +74,8 @@ export function NavigationHeader() {
                 asChild
               >
                 <Link href="/admin" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Venue Admin</span>
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Link>
               </Button>
               
@@ -84,8 +84,9 @@ export function NavigationHeader() {
                 size="sm"
                 asChild
               >
-                <Link href="/demo-tenant">
-                  <span className="hidden sm:inline">Demo Venue</span>
+                <Link href="/demo-tenant" className="flex items-center space-x-2">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="hidden sm:inline">Live Demo</span>
                   <span className="sm:hidden">Demo</span>
                 </Link>
               </Button>
