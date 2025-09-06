@@ -113,8 +113,8 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-serif font-bold text-foreground">Portfolio Management</h3>
-              <p className="text-muted-foreground">Showcase your best cake creations</p>
+              <h3 className="text-2xl font-serif font-bold text-gray-900">Portfolio Management</h3>
+              <p className="text-gray-800">Showcase your best cake creations</p>
             </div>
             <Badge className="bg-primary/10 text-primary">
               {portfolio.length}/{maxImages} Images
@@ -128,8 +128,8 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
               <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Upload className="w-8 h-8 text-white" />
               </div>
-              <h4 className="text-lg font-semibold text-foreground mb-2">Add Portfolio Images</h4>
-              <p className="text-muted-foreground mb-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Add Portfolio Images</h4>
+              <p className="text-gray-800 mb-6">
                 Upload high-quality photos of your wedding cakes to attract more customers
               </p>
               <ObjectUploader
@@ -151,8 +151,8 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
           {/* Portfolio Grid */}
           {portfolio.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <ImageIcon className="w-5 h-5 mr-2" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <ImageIcon className="w-5 h-5 mr-2 text-gray-900" />
                 Your Portfolio ({portfolio.length})
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

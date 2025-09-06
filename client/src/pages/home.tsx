@@ -88,8 +88,8 @@ export default function Home() {
         <Card className="bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 mb-16">
           <CardHeader className="text-center">
             <Globe className="h-12 w-12 text-primary mx-auto mb-4" />
-            <CardTitle className="text-2xl mb-2">🎨 White-Label Magic</CardTitle>
-            <CardDescription className="text-lg">
+            <CardTitle className="text-2xl mb-2 text-gray-900">🎨 White-Label Magic</CardTitle>
+            <CardDescription className="text-lg text-gray-800">
               Embed your quote builder anywhere with your own branding
             </CardDescription>
           </CardHeader>
@@ -97,18 +97,18 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="flex items-center space-x-3">
                 <Sparkles className="h-6 w-6 text-pink-600" />
-                <span>Branded widgets for your website</span>
+                <span className="text-gray-900">Branded widgets for your website</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Heart className="h-6 w-6 text-purple-600" />
-                <span>Custom colors and styling</span>
+                <span className="text-gray-900">Custom colors and styling</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Zap className="h-6 w-6 text-orange-600" />
-                <span>Instant quote generation</span>
+                <span className="text-gray-900">Instant quote generation</span>
               </div>
             </div>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-gray-800 mb-6">
               Let your customers get instant quotes right from your website, 
               all while maintaining your unique brand identity.
             </p>
