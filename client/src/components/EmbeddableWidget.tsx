@@ -43,7 +43,7 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
       name: 'Quote Calculator',
       description: 'Interactive cake pricing calculator for your website',
       category: 'Lead Generation',
-      preview: 'https://via.placeholder.com/400x300/ec4899/ffffff?text=Quote+Calculator',
+      preview: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjZWM0ODk5Ii8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0Ij5RdW90ZSBDYWxjdWxhdG9yPC90ZXh0Pgo8L3N2Zz4K',
       embedCode: `<iframe src="https://bakewise.com/widgets/quote-calculator/${bakerId}" width="100%" height="600" frameborder="0"></iframe>`
     },
     {
@@ -51,7 +51,7 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
       name: 'Booking Form',
       description: 'Simple booking form to capture customer inquiries',
       category: 'Lead Generation',
-      preview: 'https://via.placeholder.com/400x300/8b5cf6/ffffff?text=Booking+Form',
+      preview: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjOGI1Y2Y2Ii8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0Ij5Cb29raW5nIEZvcm08L3RleHQ+Cjwvc3ZnPgo=',
       embedCode: `<iframe src="https://bakewise.com/widgets/booking-form/${bakerId}" width="100%" height="500" frameborder="0"></iframe>`
     },
     {
@@ -59,7 +59,7 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
       name: 'Portfolio Gallery',
       description: 'Showcase your best work with an interactive gallery',
       category: 'Showcase',
-      preview: 'https://via.placeholder.com/400x300/f59e0b/ffffff?text=Portfolio+Gallery',
+      preview: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjZjU5ZTBiIi8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIj5Qb3J0Zm9saW8gR2FsbGVyeTwvdGV4dD4KPC9zdmc+Cg==',
       embedCode: `<iframe src="https://bakewise.com/widgets/portfolio/${bakerId}" width="100%" height="400" frameborder="0"></iframe>`
     },
     {
@@ -67,7 +67,7 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
       name: 'Customer Reviews',
       description: 'Display customer testimonials and ratings',
       category: 'Social Proof',
-      preview: 'https://via.placeholder.com/400x300/10b981/ffffff?text=Customer+Reviews',
+      preview: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjMTBiOTgxIi8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIj5DdXN0b21lciBSZXZpZXdzPC90ZXh0Pgo8L3N2Zz4K',
       embedCode: `<iframe src="https://bakewise.com/widgets/testimonials/${bakerId}" width="100%" height="350" frameborder="0"></iframe>`
     }
   ];

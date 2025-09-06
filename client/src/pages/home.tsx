@@ -112,9 +112,11 @@ export default function Home() {
               Let your customers get instant quotes right from your website, 
               all while maintaining your unique brand identity.
             </p>
-            <Button variant="outline" size="lg">
-              See Widget Demo
-            </Button>
+            <Link href="/demo-tenant">
+              <Button variant="outline" size="lg">
+                See Widget Demo
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
