@@ -109,7 +109,7 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-white/95">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-gray-100 to-gray-200">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -157,7 +157,7 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {portfolio.map((imageUrl, index) => (
-                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/50">
+                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-0 bg-gray-100/80">
                     <div className="aspect-square relative overflow-hidden rounded-t-2xl">
                       <img
                         src={imageUrl}

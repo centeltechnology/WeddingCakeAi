@@ -85,7 +85,7 @@ export default function Home() {
         </div>
 
         {/* White-label Section */}
-        <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200 mb-16">
+        <Card className="bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 mb-16">
           <CardHeader className="text-center">
             <Globe className="h-12 w-12 text-primary mx-auto mb-4" />
             <CardTitle className="text-2xl mb-2">🎨 White-Label Magic</CardTitle>
