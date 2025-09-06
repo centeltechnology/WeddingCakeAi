@@ -19,6 +19,11 @@ import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
 import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import { CakeCalculator } from "@/components/CakeCalculator";
 import NotFound from "@/pages/not-found";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
+import Cookies from "@/pages/cookies";
+import AcceptableUse from "@/pages/acceptable-use";
+import Help from "@/pages/help";
 
 function Router() {
   return (
@@ -45,6 +50,11 @@ function Router() {
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
       <Route path="/calculator" component={() => <CakeCalculator bakerId="baker-1" />} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/cookies" component={Cookies} />
+      <Route path="/acceptable-use" component={AcceptableUse} />
+      <Route path="/help" component={Help} />
       <Route component={NotFound} />
     </Switch>
   );
