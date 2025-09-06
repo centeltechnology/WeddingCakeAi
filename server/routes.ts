@@ -810,29 +810,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Calling Replicate API with prompt:', prompt);
       
-      // Use SDXL model for high-quality image generation
-      const output = await replicate.run(
-        "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
-        {
-          input: {
-            prompt: prompt,
-            width: 768,
-            height: 768,
-            num_inference_steps: 25,
-            guidance_scale: 7.5,
-            scheduler: "DPMSolverMultistep",
-            negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy, watermark, text, signature"
-          }
+      // Use a model that returns direct URLs instead of streams
+      const prediction = await replicate.predictions.create({
+        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b", // SDXL model
+        input: {
+          prompt: prompt,
+          width: 768,
+          height: 768,
+          num_inference_steps: 25,
+          guidance_scale: 7.5,
+          scheduler: "DPMSolverMultistep",
+          negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy, watermark, text, signature"
         }
-      );
+      });
 
-      console.log('Replicate API response:', output);
+      console.log('Prediction created:', prediction.id);
       
-      // The output is an array of image URLs
-      const imageUrl = Array.isArray(output) ? output[0] : output;
+      // Wait for prediction to complete
+      let completedPrediction = prediction;
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds timeout
       
-      if (!imageUrl) {
-        console.log('No image URL in response');
+      while (completedPrediction.status !== 'succeeded' && completedPrediction.status !== 'failed' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        completedPrediction = await replicate.predictions.get(prediction.id);
+        attempts++;
+        console.log(`Prediction status: ${completedPrediction.status}, attempt: ${attempts}`);
+      }
+      
+      if (completedPrediction.status === 'failed') {
+        console.log('Prediction failed:', completedPrediction.error);
+        return res.status(500).json({ 
+          message: "Image generation failed", 
+          error: completedPrediction.error 
+        });
+      }
+      
+      if (completedPrediction.status !== 'succeeded') {
+        console.log('Prediction timed out');
+        return res.status(500).json({ 
+          message: "Image generation timed out", 
+          error: "Please try again" 
+        });
+      }
+
+      console.log('Replicate API response:', completedPrediction.output);
+      
+      // The output should now be an array of image URLs
+      const imageUrl = Array.isArray(completedPrediction.output) ? completedPrediction.output[0] : completedPrediction.output;
+      
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        console.log('No valid image URL in response:', typeof imageUrl, imageUrl);
         return res.status(500).json({ message: "No image generated" });
       }
       
