@@ -17,11 +17,11 @@ interface SocialShareProps {
 }
 
 export default function SocialShare({
-  title = "Check out my wedding cake estimate from Wedding CakeAI!",
-  description = "I just created my dream wedding cake estimate using AI-powered calculations.",
+  title = "Check out my cake estimate from Bakewise!",
+  description = "I just created my custom cake estimate using Bakewise's professional platform.",
   url = window.location.href,
   estimateTotal,
-  hashtags = ["WeddingCakeAI", "WeddingPlanning", "DreamWedding"]
+  hashtags = ["Bakewise", "CakeDecorating", "BakingBusiness"]
 }: SocialShareProps) {
   const { toast } = useToast();
 

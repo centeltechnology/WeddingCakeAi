@@ -10,12 +10,12 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-  title = "Wedding CakeAI - AI-Powered Wedding Cake Calculator & Baker Directory",
-  description = "Plan your perfect wedding cake with AI-powered cost estimation, baker discovery, and cake visualization. Get instant pricing for custom wedding cakes and connect with trusted local bakers.",
-  image = "/og-image.jpg",
-  url = "https://weddingcakeai.com",
+  title = "Bakewise - Complete Business Management Platform for Cake Decorators & Bakeries",
+  description = "Streamline your cake decorating business with Bakewise's all-in-one platform. Features CRM, quote builder, AI cake calculator, payment processing, and digital contracts for bakeries and specialty dessert vendors.",
+  image = "/og-image.png",
+  url = "https://bakewise.com",
   type = "website",
-  keywords = "wedding cake calculator, wedding cake cost, cake pricing, wedding baker, cake estimate, AI cake design, wedding planning, custom wedding cake"
+  keywords = "cake decorating business, bakery management software, cake pricing calculator, bakery CRM, custom cake quotes, wedding cake business, cake decorator tools, bakery payment processing"
 }: SEOHeadProps) {
   
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function SEOHead({
     // Basic meta tags
     updateMetaTag('description', description);
     updateMetaTag('keywords', keywords);
-    updateMetaTag('author', 'Wedding CakeAI');
+    updateMetaTag('author', 'Bakewise');
     updateMetaTag('robots', 'index, follow');
     updateMetaTag('viewport', 'width=device-width, initial-scale=1.0');
 
@@ -50,7 +50,7 @@ export default function SEOHead({
     updateMetaTag('og:image', image, 'property');
     updateMetaTag('og:url', url, 'property');
     updateMetaTag('og:type', type, 'property');
-    updateMetaTag('og:site_name', 'Wedding CakeAI', 'property');
+    updateMetaTag('og:site_name', 'Bakewise', 'property');
 
     // Twitter meta tags
     updateMetaTag('twitter:card', 'summary_large_image');
@@ -59,40 +59,46 @@ export default function SEOHead({
     updateMetaTag('twitter:image', image);
 
     // Additional meta tags for better SEO
-    updateMetaTag('theme-color', '#B8860B');
+    updateMetaTag('theme-color', '#f43f5e');
     updateMetaTag('apple-mobile-web-app-capable', 'yes');
     updateMetaTag('apple-mobile-web-app-status-bar-style', 'default');
-    updateMetaTag('apple-mobile-web-app-title', 'Wedding CakeAI');
+    updateMetaTag('apple-mobile-web-app-title', 'Bakewise');
 
     // Structured data for rich snippets
     const structuredData = {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Wedding CakeAI",
+      "@type": "SoftwareApplication",
+      "name": "Bakewise",
       "url": url,
       "description": description,
-      "applicationCategory": "Wedding Planning",
+      "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web Browser",
       "offers": {
         "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+        "price": "29",
+        "priceCurrency": "USD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "29.00",
+          "priceCurrency": "USD",
+          "unitText": "per month"
+        }
       },
       "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "2500",
+        "ratingValue": "4.8",
+        "reviewCount": "1250",
         "bestRating": "5",
         "worstRating": "1"
       },
       "author": {
         "@type": "Organization",
-        "name": "Wedding CakeAI",
+        "name": "Bakewise",
         "url": url
       },
       "provider": {
         "@type": "Organization",
-        "name": "Wedding CakeAI",
+        "name": "Bakewise",
         "url": url
       }
     };
