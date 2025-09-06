@@ -75,7 +75,8 @@ interface QuoteRequest {
   timeline: string;
 }
 
-const CAKE_SIZES = [
+// Default fallback values - these will be replaced by dynamic pricing
+const DEFAULT_CAKE_SIZES = [
   { size: "6-inch", servings: 12, basePrice: 65 },
   { size: "8-inch", servings: 24, basePrice: 85 },
   { size: "10-inch", servings: 38, basePrice: 115 },
@@ -83,20 +84,20 @@ const CAKE_SIZES = [
   { size: "14-inch", servings: 78, basePrice: 185 }
 ];
 
-const CAKE_FLAVORS = [
-  { id: "vanilla", name: "Classic Vanilla", premium: false },
-  { id: "chocolate", name: "Rich Chocolate", premium: false },
-  { id: "strawberry", name: "Fresh Strawberry", premium: false },
-  { id: "lemon", name: "Lemon Zest", premium: false },
-  { id: "red-velvet", name: "Red Velvet", premium: true },
-  { id: "funfetti", name: "Funfetti", premium: false },
-  { id: "carrot", name: "Carrot Spice", premium: true },
-  { id: "champagne", name: "Champagne", premium: true },
-  { id: "salted-caramel", name: "Salted Caramel", premium: true },
-  { id: "cookies-cream", name: "Cookies & Cream", premium: true }
+const DEFAULT_CAKE_FLAVORS = [
+  { id: "vanilla", name: "Classic Vanilla", premium: false, upcharge: 0 },
+  { id: "chocolate", name: "Rich Chocolate", premium: false, upcharge: 0 },
+  { id: "strawberry", name: "Fresh Strawberry", premium: false, upcharge: 0 },
+  { id: "lemon", name: "Lemon Zest", premium: false, upcharge: 0 },
+  { id: "red-velvet", name: "Red Velvet", premium: true, upcharge: 15 },
+  { id: "funfetti", name: "Funfetti", premium: false, upcharge: 0 },
+  { id: "carrot", name: "Carrot Spice", premium: true, upcharge: 15 },
+  { id: "champagne", name: "Champagne", premium: true, upcharge: 15 },
+  { id: "salted-caramel", name: "Salted Caramel", premium: true, upcharge: 15 },
+  { id: "cookies-cream", name: "Cookies & Cream", premium: true, upcharge: 15 }
 ];
 
-const DECORATION_OPTIONS: DecorationOption[] = [
+const DEFAULT_DECORATION_OPTIONS: DecorationOption[] = [
   // Fresh Flowers
   { id: "fresh-roses", name: "Fresh Roses", description: "Beautiful fresh roses in your choice of colors", price: 45, category: "flowers" },
   { id: "fresh-peonies", name: "Fresh Peonies", description: "Elegant peonies for a romantic touch", price: 65, category: "flowers" },
@@ -146,6 +147,35 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     queryKey: [`/api/bakers/${bakerId}`],
   });
 
+  // Fetch dynamic pricing configuration
+  const { data: pricingConfig } = useQuery({
+    queryKey: [`/api/bakers/${bakerId}/pricing`],
+  });
+
+  // Use dynamic pricing or fallback to defaults (memoized for performance)
+  const CAKE_SIZES = React.useMemo(() => 
+    pricingConfig?.cakeSizes || DEFAULT_CAKE_SIZES, 
+    [pricingConfig]
+  );
+  
+  const CAKE_FLAVORS = React.useMemo(() => 
+    pricingConfig?.flavors?.map(f => ({
+      id: f.id,
+      name: f.name,
+      premium: f.isPremium,
+      upcharge: f.upcharge
+    })) || DEFAULT_CAKE_FLAVORS, 
+    [pricingConfig]
+  );
+  
+  const DECORATION_OPTIONS = React.useMemo(() => 
+    pricingConfig?.decorations?.filter(d => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
+    [pricingConfig]
+  );
+  
+  const TAX_RATE = (pricingConfig?.taxRate || 8.75) / 100;
+  const DELIVERY_FEE = pricingConfig?.deliverySettings?.baseDeliveryFee || 50;
+
   // Add initial tier
   useEffect(() => {
     if (tiers.length === 0) {
@@ -194,7 +224,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   const calculatePricing = (): PricingBreakdown => {
     const baseCake = tiers.reduce((sum, tier) => {
       const sizePrice = tier.basePrice;
-      const flavorUpcharge = CAKE_FLAVORS.find(f => f.id === tier.flavor)?.premium ? 15 : 0;
+      const flavorUpcharge = CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge || 0;
       return sum + sizePrice + flavorUpcharge;
     }, 0);
 
@@ -203,9 +233,9 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
       return sum + (decoration?.price || 0);
     }, 0);
 
-    const delivery = customerInfo.venue ? 50 : 0;
+    const delivery = customerInfo.venue ? DELIVERY_FEE : 0;
     const subtotal = baseCake + decorations + delivery;
-    const tax = subtotal * 0.0875; // 8.75% tax
+    const tax = subtotal * TAX_RATE;
     const total = subtotal + tax;
 
     return { baseCake, decorations, delivery, subtotal, tax, total };
@@ -369,7 +399,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                           <SelectContent>
                             {CAKE_FLAVORS.map((flavor) => (
                               <SelectItem key={flavor.id} value={flavor.id}>
-                                {flavor.name} {flavor.premium && <Badge variant="secondary" className="ml-2">Premium +$15</Badge>}
+                                {flavor.name} {flavor.upcharge > 0 && <Badge variant="secondary" className="ml-2">Premium +${flavor.upcharge}</Badge>}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -379,8 +409,8 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
 
                     <div className="mt-3 text-sm text-gray-600">
                       Serves {tier.servings} people • Base price: ${tier.basePrice}
-                      {CAKE_FLAVORS.find(f => f.id === tier.flavor)?.premium && (
-                        <span className="text-pink-600"> (+$15 premium flavor)</span>
+                      {CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge > 0 && (
+                        <span className="text-pink-600"> (+${CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge} premium flavor)</span>
                       )}
                     </div>
                   </div>

@@ -33,6 +33,7 @@ import { QuoteBuilder } from "./QuoteBuilder";
 import { ContractManager } from "./ContractManager";
 import { PaymentManager } from "./PaymentManager";
 import { EmbeddableWidget } from "./EmbeddableWidget";
+import { PricingManager } from "./PricingManager";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {

@@ -1339,6 +1339,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Baker Pricing Configuration API
+  app.get('/api/bakers/:bakerId/pricing', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      
+      // Mock pricing configuration - in real app, fetch from database
+      const pricingConfig = {
+        id: `pricing-${bakerId}`,
+        bakerId,
+        cakeSizes: [
+          { size: "6-inch", servings: 12, basePrice: 75, costToMake: 30, profitMargin: 60 },
+          { size: "8-inch", servings: 24, basePrice: 95, costToMake: 40, profitMargin: 58 },
+          { size: "10-inch", servings: 38, basePrice: 125, costToMake: 55, profitMargin: 56 },
+          { size: "12-inch", servings: 56, basePrice: 155, costToMake: 75, profitMargin: 52 },
+          { size: "14-inch", servings: 78, basePrice: 195, costToMake: 100, profitMargin: 49 }
+        ],
+        flavors: [
+          { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false },
+          { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false },
+          { id: "strawberry", name: "Fresh Strawberry", upcharge: 0, isPremium: false },
+          { id: "lemon", name: "Lemon Zest", upcharge: 0, isPremium: false },
+          { id: "red-velvet", name: "Red Velvet", upcharge: 18, isPremium: true },
+          { id: "funfetti", name: "Funfetti", upcharge: 8, isPremium: false },
+          { id: "carrot", name: "Carrot Spice", upcharge: 20, isPremium: true },
+          { id: "champagne", name: "Champagne", upcharge: 28, isPremium: true },
+          { id: "salted-caramel", name: "Salted Caramel", upcharge: 25, isPremium: true },
+          { id: "cookies-cream", name: "Cookies & Cream", upcharge: 15, isPremium: true }
+        ],
+        decorations: [
+          { id: "fresh-roses", name: "Fresh Roses", description: "Beautiful fresh roses", price: 50, costToMake: 22, category: "flowers", isActive: true },
+          { id: "fresh-peonies", name: "Fresh Peonies", description: "Elegant peonies", price: 70, costToMake: 32, category: "flowers", isActive: true },
+          { id: "buttercream-rosettes", name: "Buttercream Rosettes", description: "Hand-piped roses", price: 40, costToMake: 18, category: "design", isActive: true },
+          { id: "fondant-draping", name: "Fondant Draping", description: "Elegant draping", price: 60, costToMake: 28, category: "design", isActive: true },
+          { id: "gold-leaf", name: "Gold Leaf Accent", description: "Edible gold leaf", price: 95, costToMake: 50, category: "design", isActive: true },
+          { id: "custom-monogram", name: "Custom Monogram", description: "Personalized monogram", price: 50, costToMake: 18, category: "topper", isActive: true }
+        ],
+        taxRate: 9.25,
+        deliverySettings: {
+          baseDeliveryFee: 60,
+          freeDeliveryMinimum: 250,
+          deliveryRadius: 30,
+          perMileRate: 3.0
+        },
+        profitSettings: {
+          defaultMargin: 58,
+          minimumMargin: 40,
+          laborRate: 30
+        },
+        lastUpdated: new Date().toISOString()
+      };
+
+      res.json(pricingConfig);
+    } catch (error) {
+      console.error('Error fetching baker pricing:', error);
+      res.status(500).json({ error: 'Failed to fetch pricing configuration' });
+    }
+  });
+
+  app.put('/api/bakers/:bakerId/pricing', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const pricingConfig = {
+        ...req.body,
+        id: `pricing-${bakerId}`,
+        bakerId,
+        lastUpdated: new Date().toISOString()
+      };
+
+      // In real app, save to database
+      console.log('Baker pricing configuration updated:', pricingConfig);
+
+      res.json({
+        success: true,
+        message: 'Pricing configuration updated successfully',
+        config: pricingConfig
+      });
+    } catch (error) {
+      console.error('Error updating baker pricing:', error);
+      res.status(500).json({ error: 'Failed to update pricing configuration' });
+    }
+  });
+
   // Cake Calculator Quote Request API
   app.post('/api/bakers/:bakerId/quote-requests', async (req, res) => {
     try {
