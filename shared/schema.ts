@@ -298,8 +298,23 @@ export const customers = pgTable("customers", {
   lastContactDate: timestamp("last_contact_date"),
   nextFollowUpDate: date("next_follow_up_date"),
   stripeCustomerId: varchar("stripe_customer_id"), // Added for Stripe integration
+  // Customer Portal Authentication
+  hasPortalAccess: boolean("has_portal_access").default(false),
+  portalPassword: text("portal_password"), // Hashed password for portal access
+  portalLastLogin: timestamp("portal_last_login"),
+  portalActivationToken: varchar("portal_activation_token"),
+  portalActivatedAt: timestamp("portal_activated_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Customer Portal Sessions
+export const customerSessions = pgTable("customer_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  sessionToken: varchar("session_token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const customerNotes = pgTable("customer_notes", {

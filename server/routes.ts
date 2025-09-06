@@ -938,6 +938,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer Portal Authentication
+  app.post('/api/customer/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email and password are required' 
+        });
+      }
+
+      // Find customer by email
+      const customer = await storage.getCustomerByEmail(email);
+      if (!customer) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid email or password' 
+        });
+      }
+
+      // Check if customer has portal access
+      if (!customer.hasPortalAccess) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Portal access not activated. Contact your baker for access.' 
+        });
+      }
+
+      // For demo purposes, we'll use a simple password check
+      // In production, use proper password hashing
+      const isValidPassword = customer.portalPassword === password;
+      if (!isValidPassword) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid email or password' 
+        });
+      }
+
+      // Create simple session token (in production, use proper JWT or session management)
+      const sessionToken = Buffer.from(`${customer.id}:${Date.now()}`).toString('base64');
+      
+      // Update last login (simplified for demo)
+      await storage.updateCustomer(customer.id, {
+        portalLastLogin: new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        customerId: customer.id,
+        sessionToken,
+        customer: {
+          name: customer.name,
+          email: customer.email
+        }
+      });
+    } catch (error) {
+      console.error('Customer login error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
+  app.get('/api/customers/:customerId/quotes', async (req, res) => {
+    try {
+      const quotes = await storage.getQuotesByCustomerId(req.params.customerId);
+      res.json(quotes);
+    } catch (error) {
+      console.error('Error fetching customer quotes:', error);
+      res.status(500).json({ error: 'Failed to fetch quotes' });
+    }
+  });
+
+  app.get('/api/customers/:customerId/transactions', async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsByCustomerId(req.params.customerId);
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching customer transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  });
+
   // Advanced Quote API Routes
   app.get('/api/quote-templates', async (req, res) => {
     try {
