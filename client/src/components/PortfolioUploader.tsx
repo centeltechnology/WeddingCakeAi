@@ -139,10 +139,10 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
                 onComplete={handleComplete}
                 buttonClassName="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold px-8 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Image
+                <Upload className="w-5 h-5 mr-2 text-white" />
+                <span className="text-white font-semibold">Upload Image</span>
               </ObjectUploader>
-              <p className="text-xs text-muted-foreground mt-3">
+              <p className="text-xs text-gray-800 mt-3 font-medium">
                 Supported formats: JPG, PNG (Max 5MB)
               </p>
             </div>
@@ -194,9 +194,9 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
           )}
 
           {portfolio.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>No portfolio images yet. Upload your first cake photo to get started!</p>
+            <div className="text-center py-12 text-gray-800">
+              <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-70 text-gray-700" />
+              <p className="font-medium">No portfolio images yet. Upload your first cake photo to get started!</p>
             </div>
           )}
         </CardContent>
