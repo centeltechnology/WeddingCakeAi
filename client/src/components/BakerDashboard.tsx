@@ -146,78 +146,106 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-serif font-bold text-foreground">Baker Dashboard</h1>
-          <p className="text-xl text-muted-foreground">Welcome back, {baker.name}!</p>
-        </div>
-        <Badge className={`${subscriptionPlan === 'free' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' : subscriptionPlan === 'pro' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200'} text-sm font-semibold px-4 py-2`}>
-          {subscriptionPlan.toUpperCase()} Plan
-        </Badge>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
+      {/* Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-200/20 to-rose-200/20 rounded-full blur-3xl"></div>
       </div>
+      
+      <div className="max-w-7xl mx-auto p-6 space-y-8 relative z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Baker Dashboard</h1>
+            <p className="text-xl text-gray-600">Welcome back, {baker.name}!</p>
+          </div>
+          <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+            subscriptionPlan === 'free' 
+              ? 'bg-white/80 text-gray-800' 
+              : subscriptionPlan === 'pro' 
+                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
+                : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+          }`}>
+            {subscriptionPlan.toUpperCase()} Plan
+          </Badge>
+        </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600">Total Leads</p>
-                <p className="text-3xl font-bold text-blue-900">{leadStats.total}</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{leadStats.total}</p>
               </div>
-              <BarChart3 className="w-8 h-8 text-blue-600" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-blue-600/30 rounded-full blur-lg"></div>
+                <BarChart3 className="w-8 h-8 text-blue-600 relative" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-amber-600">New</p>
-                <p className="text-3xl font-bold text-amber-900">{leadStats.new}</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">{leadStats.new}</p>
               </div>
-              <Eye className="w-8 h-8 text-amber-600" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/30 to-amber-600/30 rounded-full blur-lg"></div>
+                <Eye className="w-8 h-8 text-amber-600 relative" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-600">Quoted</p>
-                <p className="text-3xl font-bold text-purple-900">{leadStats.quoted}</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">{leadStats.quoted}</p>
               </div>
-              <DollarSign className="w-8 h-8 text-purple-600" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/30 to-purple-600/30 rounded-full blur-lg"></div>
+                <DollarSign className="w-8 h-8 text-purple-600 relative" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600">Booked</p>
-                <p className="text-3xl font-bold text-green-900">{leadStats.booked}</p>
+                <p className="text-sm font-medium text-emerald-600">Booked</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">{leadStats.booked}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/30 to-emerald-600/30 rounded-full blur-lg"></div>
+                <CheckCircle className="w-8 h-8 text-emerald-600 relative" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-50 to-rose-100">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-rose-600">Conversion</p>
-                <p className="text-3xl font-bold text-rose-900">
+                <p className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-rose-800 bg-clip-text text-transparent">
                   {leadStats.total > 0 ? Math.round((leadStats.booked / leadStats.total) * 100) : 0}%
                 </p>
               </div>
-              <BarChart3 className="w-8 h-8 text-rose-600" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-rose-600/30 rounded-full blur-lg"></div>
+                <BarChart3 className="w-8 h-8 text-rose-600 relative" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -227,24 +255,24 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       <Tabs defaultValue="leads" className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* Business Operations */}
-          <Card className="border-0 shadow-sm">
+          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
                 <Briefcase className="w-4 h-4 mr-2" />
                 Business
               </h3>
             </CardHeader>
             <CardContent className="space-y-1">
               <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="leads" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="leads" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <Users className="w-4 h-4 mr-2" />
                   Leads
                 </TabsTrigger>
-                <TabsTrigger value="quotes" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="quotes" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <FileText className="w-4 h-4 mr-2" />
                   Quotes
                 </TabsTrigger>
-                <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <FileCheck className="w-4 h-4 mr-2" />
                   Contracts
                 </TabsTrigger>
@@ -253,20 +281,20 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           </Card>
 
           {/* Revenue Management */}
-          <Card className="border-0 shadow-sm">
+          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
                 <DollarSign className="w-4 h-4 mr-2" />
                 Revenue
               </h3>
             </CardHeader>
             <CardContent className="space-y-1">
               <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="payments" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="payments" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <CreditCard className="w-4 h-4 mr-2" />
                   Payments
                 </TabsTrigger>
-                <TabsTrigger value="pricing" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="pricing" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Pricing
                 </TabsTrigger>
@@ -275,20 +303,20 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           </Card>
 
           {/* Marketing & Portfolio */}
-          <Card className="border-0 shadow-sm">
+          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
                 <Monitor className="w-4 h-4 mr-2" />
                 Marketing
               </h3>
             </CardHeader>
             <CardContent className="space-y-1">
               <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="portfolio" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="portfolio" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <Upload className="w-4 h-4 mr-2" />
                   Portfolio
                 </TabsTrigger>
-                <TabsTrigger value="widgets" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="widgets" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <Code className="w-4 h-4 mr-2" />
                   Widgets
                 </TabsTrigger>
@@ -297,16 +325,16 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           </Card>
 
           {/* Account & Settings */}
-          <Card className="border-0 shadow-sm">
+          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
                 <UserCog className="w-4 h-4 mr-2" />
                 Account
               </h3>
             </CardHeader>
             <CardContent className="space-y-1">
               <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="account" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="account" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </TabsTrigger>
@@ -316,22 +344,22 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </div>
 
         <TabsContent value="leads">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
-            <CardHeader className="border-b border-gray-100">
+          <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
+            <CardHeader className="border-b border-rose-100/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-serif font-bold text-foreground">Your Leads</h3>
+                <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Leads</h3>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-500" />
                     <Input
                       placeholder="Search leads..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64"
+                      className="pl-10 w-64 border-rose-200 focus:border-rose-400 focus:ring-rose-400"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-40 border-rose-200 focus:border-rose-400 focus:ring-rose-400">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -475,6 +503,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           <AccountSettings bakerId={bakerId} />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
