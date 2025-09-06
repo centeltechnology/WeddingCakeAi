@@ -6,10 +6,10 @@
 :root {
   --background: hsl(350, 40%, 97%);
   --foreground: hsl(340, 15%, 25%);
-  --card: hsl(350, 50%, 98%);
-  --card-foreground: hsl(340, 15%, 25%);
-  --popover: hsl(350, 50%, 98%);
-  --popover-foreground: hsl(340, 15%, 25%);
+  --card: hsl(350, 40%, 95%);
+  --card-foreground: hsl(340, 20%, 15%);
+  --popover: hsl(350, 40%, 95%);
+  --popover-foreground: hsl(340, 20%, 15%);
   --primary: hsl(340, 55%, 65%);
   --primary-foreground: hsl(0, 0%, 98%);
   --secondary: hsl(320, 20%, 90%);

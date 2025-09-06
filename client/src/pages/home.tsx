@@ -33,7 +33,7 @@ export default function Home() {
           
           <div className="flex justify-center space-x-4 mb-12">
             <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
-              <Link href="/admin">Start Your Sweet Journey</Link>
+              <Link href="/signup">Start Your Sweet Journey</Link>
             </Button>
             <Button variant="outline" asChild size="lg">
               <Link href="/demo-tenant">See It In Action</Link>
