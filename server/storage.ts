@@ -1595,6 +1595,17 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Helper function to convert undefined to null for database operations
+function sanitizeForDb<T extends Record<string, any>>(obj: T): T {
+  const result = { ...obj };
+  Object.keys(result).forEach(key => {
+    if (result[key] === undefined) {
+      result[key] = null;
+    }
+  });
+  return result;
+}
+
 // Database Storage Implementation
 export class DatabaseStorage implements IStorage {
   // User operations
@@ -1720,7 +1731,7 @@ export class DatabaseStorage implements IStorage {
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const [lead] = await db
       .insert(leads)
-      .values({ ...insertLead, id: insertLead.id || randomUUID() })
+      .values(sanitizeForDb({ ...insertLead, id: insertLead.id || randomUUID() }))
       .returning();
     return lead;
   }
@@ -1741,7 +1752,7 @@ export class DatabaseStorage implements IStorage {
   async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead> {
     const [lead] = await db
       .update(leads)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(sanitizeForDb({ ...updates, updatedAt: new Date() }))
       .where(eq(leads.id, id))
       .returning();
     return lead;
@@ -1815,8 +1826,8 @@ export class DatabaseStorage implements IStorage {
     return transaction || undefined;
   }
 
-  async createAvailability(availability: InsertAvailability): Promise<Availability> {
-    const [result] = await db.insert(availability).values({ ...availability, id: availability.id || randomUUID() }).returning();
+  async createAvailability(insertAvailability: InsertAvailability): Promise<Availability> {
+    const [result] = await db.insert(availability).values({ ...insertAvailability, id: insertAvailability.id || randomUUID() }).returning();
     return result;
   }
 
@@ -1825,7 +1836,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAvailability(id: string, updates: Partial<InsertAvailability>): Promise<Availability | undefined> {
-    const [result] = await db.update(availability).set(updates).where(eq(availability.id, id)).returning();
+    const [result] = await db.update(availability).set({ ...updates, updatedAt: new Date() }).where(eq(availability.id, id)).returning();
     return result || undefined;
   }
 
@@ -1886,6 +1897,14 @@ export class DatabaseStorage implements IStorage {
 
   async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.subdomain, subdomain));
+    return tenant || undefined;
+  }
+
+  async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
+    // Check both subdomain and custom domain
+    const [tenant] = await db.select().from(tenants).where(
+      or(eq(tenants.subdomain, domain), eq(tenants.customDomain, domain))
+    );
     return tenant || undefined;
   }
 
