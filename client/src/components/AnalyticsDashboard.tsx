@@ -43,7 +43,7 @@ export function AnalyticsDashboard({ bakerId }: AnalyticsDashboardProps) {
     queryKey: ['/api/bakers', bakerId, 'analytics', 'summary', startDate, endDate],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/bakers/${bakerId}/analytics?startDate=${startDate}&endDate=${endDate}`);
-      return response as AnalyticsSummary;
+      return response.json() as Promise<AnalyticsSummary>;
     },
   });
 
@@ -51,7 +51,7 @@ export function AnalyticsDashboard({ bakerId }: AnalyticsDashboardProps) {
     queryKey: ['/api/bakers', bakerId, 'analytics', selectedMetric],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/bakers/${bakerId}/analytics?metric=${selectedMetric}`);
-      return response as AnalyticsData[];
+      return response.json() as Promise<AnalyticsData[]>;
     },
   });
 
@@ -59,7 +59,7 @@ export function AnalyticsDashboard({ bakerId }: AnalyticsDashboardProps) {
     queryKey: ['/api/bakers', bakerId, 'transactions'],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/bakers/${bakerId}/transactions`);
-      return response as any[];
+      return response.json() as Promise<any[]>;
     },
   });
 
