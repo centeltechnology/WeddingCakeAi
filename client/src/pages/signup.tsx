@@ -94,7 +94,7 @@ export default function Signup() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return await apiRequest('POST', '/api/bakers', {
+      const response = await apiRequest('POST', '/api/bakers', {
         name: data.bakeryName,
         email: data.email,
         phone: data.phone || null,
@@ -104,8 +104,9 @@ export default function Signup() {
         description: null,
         portfolio: []
       });
+      return await response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: (baker) => {
       toast({
         title: "Welcome to Bakewise!",
         description: "Your account has been created successfully. Redirecting to your dashboard...",
@@ -113,7 +114,7 @@ export default function Signup() {
       
       // Redirect to baker dashboard
       setTimeout(() => {
-        setLocation(`/baker/${response.id}/dashboard`);
+        setLocation(`/baker/${baker.id}/dashboard`);
       }, 2000);
     },
     onError: (error: any) => {
