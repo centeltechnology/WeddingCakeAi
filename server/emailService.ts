@@ -12,11 +12,12 @@ const mailjet = new Mailjet({
 export interface EmailParams {
   to: string;
   toName?: string;
-  from: string;
+  from?: string;
   fromName?: string;
   subject: string;
   textPart?: string;
   htmlPart?: string;
+  text?: string; // For simple text emails
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
@@ -27,8 +28,8 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
         Messages: [
           {
             From: {
-              Email: params.from,
-              Name: params.fromName || 'Wedding Cake Calculator'
+              Email: params.from || 'noreply@bakewise.co',
+              Name: params.fromName || 'Bakewise'
             },
             To: [
               {
@@ -37,7 +38,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
               }
             ],
             Subject: params.subject,
-            TextPart: params.textPart,
+            TextPart: params.textPart || params.text,
             HTMLPart: params.htmlPart
           }
         ]
@@ -166,6 +167,271 @@ Wedding Cake Calculator Team`,
 <p>Thank you for being part of our wedding cake community! 💕</p>
 
 <p>Best regards,<br><strong>Wedding Cake Calculator Team</strong></p>
+</div>`
+  }),
+
+  // Quote-related email templates
+  quoteSent: (customerName: string, bakerName: string, quoteNumber: string, amount: string, validUntil: string) => ({
+    subject: `Your Custom Quote from ${bakerName} - Quote #${quoteNumber}`,
+    textPart: `Hi ${customerName},
+
+Great news! ${bakerName} has prepared a custom quote for your special event.
+
+Quote Details:
+- Quote Number: #${quoteNumber}
+- Total Amount: $${amount}
+- Valid Until: ${validUntil}
+
+Please review your quote and let us know if you have any questions. You can view the full details and accept the quote through your customer portal.
+
+Best regards,
+${bakerName}`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #f472b6;">Your Custom Quote is Ready! 🎂</h2>
+<p>Hi <strong>${customerName}</strong>,</p>
+<p>Great news! <strong>${bakerName}</strong> has prepared a custom quote for your special event.</p>
+
+<div style="background-color: #fdf2f8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f472b6;">
+<h3 style="color: #be185d; margin-top: 0;">Quote Details:</h3>
+<ul style="list-style: none; padding: 0;">
+<li><strong>Quote Number:</strong> #${quoteNumber}</li>
+<li><strong>Total Amount:</strong> $${amount}</li>
+<li><strong>Valid Until:</strong> ${validUntil}</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="#" style="background-color: #f472b6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Quote Details</a>
+</div>
+
+<p>Please review your quote and let us know if you have any questions. You can view the full details and accept the quote through your customer portal.</p>
+
+<p>Best regards,<br><strong>${bakerName}</strong></p>
+</div>`
+  }),
+
+  quoteApproved: (bakerName: string, customerName: string, quoteNumber: string, amount: string) => ({
+    subject: `Quote Approved! - Quote #${quoteNumber} from ${customerName}`,
+    textPart: `Hi ${bakerName},
+
+Congratulations! ${customerName} has approved quote #${quoteNumber} for $${amount}.
+
+Next Steps:
+1. Send the contract for signature
+2. Collect the deposit payment
+3. Schedule any needed consultations
+
+You can view the full quote details in your dashboard.
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #10b981;">Quote Approved! 🎉</h2>
+<p>Hi <strong>${bakerName}</strong>,</p>
+<p>Congratulations! <strong>${customerName}</strong> has approved quote #${quoteNumber} for <strong>$${amount}</strong>.</p>
+
+<div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+<h3 style="color: #047857; margin-top: 0;">Next Steps:</h3>
+<ol>
+<li>Send the contract for signature</li>
+<li>Collect the deposit payment</li>
+<li>Schedule any needed consultations</li>
+</ol>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="#" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Quote Details</a>
+</div>
+
+<p>You can view the full quote details in your dashboard.</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
+</div>`
+  }),
+
+  // Contract-related email templates
+  contractSent: (customerName: string, bakerName: string, contractNumber: string) => ({
+    subject: `Contract Ready for Signature - ${bakerName}`,
+    textPart: `Hi ${customerName},
+
+Your contract from ${bakerName} is ready for signature!
+
+Contract Number: ${contractNumber}
+
+Please review the contract terms and sign electronically through your customer portal. Once signed, your order will be confirmed and we can begin planning your special event.
+
+If you have any questions about the contract terms, please contact ${bakerName} directly.
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #8b5cf6;">Contract Ready for Signature! 📝</h2>
+<p>Hi <strong>${customerName}</strong>,</p>
+<p>Your contract from <strong>${bakerName}</strong> is ready for signature!</p>
+
+<div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p><strong>Contract Number:</strong> ${contractNumber}</p>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="#" style="background-color: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review & Sign Contract</a>
+</div>
+
+<p>Please review the contract terms and sign electronically through your customer portal. Once signed, your order will be confirmed and we can begin planning your special event.</p>
+
+<p>If you have any questions about the contract terms, please contact <strong>${bakerName}</strong> directly.</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
+</div>`
+  }),
+
+  contractSigned: (bakerName: string, customerName: string, contractNumber: string) => ({
+    subject: `Contract Signed! - ${customerName} Contract #${contractNumber}`,
+    textPart: `Hi ${bakerName},
+
+Great news! ${customerName} has signed contract #${contractNumber}.
+
+The contract is now legally binding and you can proceed with:
+1. Collecting the deposit payment
+2. Scheduling consultations
+3. Beginning production planning
+
+You can download the signed contract from your dashboard.
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #10b981;">Contract Signed! ✅</h2>
+<p>Hi <strong>${bakerName}</strong>,</p>
+<p>Great news! <strong>${customerName}</strong> has signed contract #${contractNumber}.</p>
+
+<div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+<p>The contract is now legally binding and you can proceed with:</p>
+<ol>
+<li>Collecting the deposit payment</li>
+<li>Scheduling consultations</li>
+<li>Beginning production planning</li>
+</ol>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="#" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Download Signed Contract</a>
+</div>
+
+<p>You can download the signed contract from your dashboard.</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
+</div>`
+  }),
+
+  // Payment-related email templates
+  paymentReminder: (customerName: string, bakerName: string, amount: string, dueDate: string, type: string) => ({
+    subject: `Payment Reminder - ${type} Due ${dueDate}`,
+    textPart: `Hi ${customerName},
+
+This is a friendly reminder that your ${type.toLowerCase()} payment of $${amount} to ${bakerName} is due on ${dueDate}.
+
+You can easily make your payment through your customer portal using our secure payment system.
+
+If you have any questions about your payment, please contact ${bakerName} directly.
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #f59e0b;">Payment Reminder 💳</h2>
+<p>Hi <strong>${customerName}</strong>,</p>
+<p>This is a friendly reminder that your <strong>${type.toLowerCase()}</strong> payment of <strong>$${amount}</strong> to <strong>${bakerName}</strong> is due on <strong>${dueDate}</strong>.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="#" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Make Payment</a>
+</div>
+
+<p>You can easily make your payment through your customer portal using our secure payment system.</p>
+
+<p>If you have any questions about your payment, please contact <strong>${bakerName}</strong> directly.</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
+</div>`
+  }),
+
+  paymentConfirmation: (customerName: string, bakerName: string, amount: string, type: string, transactionId: string) => ({
+    subject: `Payment Confirmation - $${amount} ${type}`,
+    textPart: `Hi ${customerName},
+
+Your payment has been successfully processed!
+
+Payment Details:
+- Amount: $${amount}
+- Type: ${type}
+- Baker: ${bakerName}
+- Transaction ID: ${transactionId}
+
+Thank you for your payment. ${bakerName} will be notified and will contact you regarding next steps.
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #10b981;">Payment Confirmed! ✅</h2>
+<p>Hi <strong>${customerName}</strong>,</p>
+<p>Your payment has been successfully processed!</p>
+
+<div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+<h3 style="color: #047857; margin-top: 0;">Payment Details:</h3>
+<ul style="list-style: none; padding: 0;">
+<li><strong>Amount:</strong> $${amount}</li>
+<li><strong>Type:</strong> ${type}</li>
+<li><strong>Baker:</strong> ${bakerName}</li>
+<li><strong>Transaction ID:</strong> ${transactionId}</li>
+</ul>
+</div>
+
+<p>Thank you for your payment. <strong>${bakerName}</strong> will be notified and will contact you regarding next steps.</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
+</div>`
+  }),
+
+  // Automated follow-up templates
+  followUpReminder: (bakerName: string, customerName: string, daysSinceLastContact: number, customerEmail: string) => ({
+    subject: `Follow-up Reminder - ${customerName} (${daysSinceLastContact} days ago)`,
+    textPart: `Hi ${bakerName},
+
+This is a reminder to follow up with ${customerName}. It's been ${daysSinceLastContact} days since your last contact.
+
+Customer Email: ${customerEmail}
+
+Consider reaching out to:
+- Check on their decision timeline
+- Answer any additional questions
+- Provide updated pricing if needed
+- Schedule a tasting or consultation
+
+Consistent follow-up helps convert inquiries into bookings!
+
+Best regards,
+Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<h2 style="color: #f59e0b;">Follow-up Reminder 📞</h2>
+<p>Hi <strong>${bakerName}</strong>,</p>
+<p>This is a reminder to follow up with <strong>${customerName}</strong>. It's been <strong>${daysSinceLastContact} days</strong> since your last contact.</p>
+
+<div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p><strong>Customer Email:</strong> ${customerEmail}</p>
+</div>
+
+<div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<h3 style="margin-top: 0;">Consider reaching out to:</h3>
+<ul>
+<li>Check on their decision timeline</li>
+<li>Answer any additional questions</li>
+<li>Provide updated pricing if needed</li>
+<li>Schedule a tasting or consultation</li>
+</ul>
+</div>
+
+<p>Consistent follow-up helps convert inquiries into bookings!</p>
+
+<p>Best regards,<br><strong>Bakewise Team</strong></p>
 </div>`
   })
 };
