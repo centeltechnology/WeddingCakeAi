@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { DreamCakeDesigner } from './DreamCakeDesigner';
 import {
   Cake,
   Heart,
@@ -24,7 +25,10 @@ import {
   Phone,
   DollarSign,
   ChevronRight,
-  Check
+  Check,
+  Eye,
+  Wand2,
+  Send
 } from 'lucide-react';
 
 interface CakeCalculatorProps {
@@ -130,6 +134,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   const [tiers, setTiers] = useState<CakeTier[]>([]);
   const [selectedDecorations, setSelectedDecorations] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
+  const [showAIDesigner, setShowAIDesigner] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
@@ -159,7 +164,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   );
   
   const CAKE_FLAVORS = React.useMemo(() => 
-    pricingConfig?.flavors?.map(f => ({
+    pricingConfig?.flavors?.map((f: any) => ({
       id: f.id,
       name: f.name,
       premium: f.isPremium,
@@ -169,7 +174,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   );
   
   const DECORATION_OPTIONS = React.useMemo(() => 
-    pricingConfig?.decorations?.filter(d => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
+    pricingConfig?.decorations?.filter((d: any) => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
     [pricingConfig]
   );
   
@@ -206,8 +211,8 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
         ? { 
             ...tier, 
             ...updates,
-            basePrice: updates.size ? CAKE_SIZES.find(s => s.size === updates.size)?.basePrice || tier.basePrice : tier.basePrice,
-            servings: updates.size ? CAKE_SIZES.find(s => s.size === updates.size)?.servings || tier.servings : tier.servings
+            basePrice: updates.size ? CAKE_SIZES.find((s: any) => s.size === updates.size)?.basePrice || tier.basePrice : tier.basePrice,
+            servings: updates.size ? CAKE_SIZES.find((s: any) => s.size === updates.size)?.servings || tier.servings : tier.servings
           } 
         : tier
     ));
@@ -224,12 +229,12 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   const calculatePricing = (): PricingBreakdown => {
     const baseCake = tiers.reduce((sum, tier) => {
       const sizePrice = tier.basePrice;
-      const flavorUpcharge = CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge || 0;
+      const flavorUpcharge = CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge || 0;
       return sum + sizePrice + flavorUpcharge;
     }, 0);
 
     const decorations = selectedDecorations.reduce((sum, decorationId) => {
-      const decoration = DECORATION_OPTIONS.find(d => d.id === decorationId);
+      const decoration = DECORATION_OPTIONS.find((d: any) => d.id === decorationId);
       return sum + (decoration?.price || 0);
     }, 0);
 
@@ -287,9 +292,30 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   const pricing = calculatePricing();
   const totalServings = tiers.reduce((sum, tier) => sum + tier.servings, 0);
 
+  // AI Configuration for Dream Cake Designer
+  const getAIConfiguration = () => {
+    const primaryTier = tiers[0] || { size: "8-inch", flavor: "vanilla" };
+    const decorationConfig = {
+      fondant: selectedDecorations.includes('fondant-draping'),
+      flowers: selectedDecorations.some(d => d.includes('rose') || d.includes('flower') || d.includes('peonies')),
+      goldAccents: selectedDecorations.includes('gold-leaf'),
+      customTopper: selectedDecorations.some(d => d.includes('topper') || d.includes('monogram'))
+    };
+
+    return {
+      tiers: tiers.length,
+      baseSize: parseInt(primaryTier.size.replace('-inch', '')) || 8,
+      shape: "round",
+      cakeFlavor: primaryTier.flavor,
+      filling: "buttercream",
+      decorations: decorationConfig,
+      specialRequests: specialRequests
+    };
+  };
+
   if (!baker) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p className="mt-2 text-muted-foreground">Loading cake calculator...</p>
@@ -299,140 +325,206 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-pink-50 to-purple-50 ${className || ''}`}>
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-              <Cake className="h-6 w-6 text-white" />
+    <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100 ${className || ''}`}>
+      {/* Modern Header */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-rose-100 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Cake className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-3 w-3 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  {baker.name}
+                </h1>
+                <p className="text-sm text-gray-600 font-medium">AI-Powered Cake Designer</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{baker.name}</h1>
-              <p className="text-sm text-gray-600">Dream Cake Calculator</p>
+            <div className="hidden md:flex items-center space-x-2">
+              <Button
+                onClick={() => setShowAIDesigner(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                disabled={tiers.length === 0}
+                data-testid="button-ai-visualize"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Visualize My Cake
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-8">
-            {[
-              { step: 1, title: "Design Your Cake", icon: Cake },
-              { step: 2, title: "Choose Decorations", icon: Sparkles },
-              { step: 3, title: "Your Information", icon: Heart },
-              { step: 4, title: "Quote Sent!", icon: Check }
-            ].map(({ step: stepNum, title, icon: Icon }) => (
-              <div key={stepNum} className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  step >= stepNum ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <p className="text-xs mt-2 text-center">{title}</p>
+      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
+        {/* Modern Progress Steps */}
+        <div className="mb-12">
+          <div className="flex items-center justify-center">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="flex items-center space-x-8">
+                {[
+                  { step: 1, title: "Design", icon: Cake, color: "from-blue-500 to-indigo-500" },
+                  { step: 2, title: "Decorations", icon: Sparkles, color: "from-purple-500 to-pink-500" },
+                  { step: 3, title: "Details", icon: Heart, color: "from-pink-500 to-rose-500" },
+                  { step: 4, title: "Complete", icon: Check, color: "from-emerald-500 to-teal-500" }
+                ].map(({ step: stepNum, title, icon: Icon, color }, index) => (
+                  <div key={stepNum} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                        step >= stepNum 
+                          ? `bg-gradient-to-r ${color} text-white shadow-lg transform scale-110` 
+                          : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        <Icon className="h-5 w-5" />
+                        {step > stepNum && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center">
+                            <Check className="h-5 w-5 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <p className={`text-sm mt-2 font-medium transition-colors ${
+                        step >= stepNum ? 'text-gray-900' : 'text-gray-400'
+                      }`}>
+                        {title}
+                      </p>
+                    </div>
+                    {index < 3 && (
+                      <div className={`w-8 h-0.5 mx-3 transition-colors ${
+                        step > stepNum ? 'bg-gradient-to-r from-emerald-400 to-teal-400' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* Step 1: Cake Design */}
+        {/* Step 1: Modern Cake Design */}
         {step === 1 && (
           <div className="space-y-8">
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Design Your Dream Cake</CardTitle>
-                <CardDescription>
-                  Build your perfect cake layer by layer. Choose sizes, flavors, and see real-time pricing.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Design Your Dream Cake</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Create your perfect cake layer by layer with our intelligent designer
+              </p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+              <div className="p-8 space-y-8">
                 {tiers.map((tier, index) => (
-                  <div key={tier.id} className="border rounded-lg p-4 bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">
-                        Tier {index + 1} {index === 0 ? "(Bottom)" : index === tiers.length - 1 ? "(Top)" : "(Middle)"}
-                      </h3>
-                      {tiers.length > 1 && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeTier(tier.id)}
-                          className="text-red-600 hover:text-red-700"
-                          data-testid={`button-remove-tier-${tier.id}`}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                  <div key={tier.id} className="group relative">
+                    <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              {index === 0 ? "Base Tier" : index === tiers.length - 1 ? "Top Tier" : "Middle Tier"}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {index === 0 ? "Foundation layer" : index === tiers.length - 1 ? "Perfect finale" : "Supporting layer"}
+                            </p>
+                          </div>
+                        </div>
+                        {tiers.length > 1 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => removeTier(tier.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                            data-testid={`button-remove-tier-${tier.id}`}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Cake Size</Label>
-                        <Select
-                          value={tier.size}
-                          onValueChange={(size) => updateTier(tier.id, { size })}
-                        >
-                          <SelectTrigger data-testid={`select-size-${tier.id}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CAKE_SIZES.map((size) => (
-                              <SelectItem key={size.size} value={size.size}>
-                                {size.size} - Serves {size.servings} - ${size.basePrice}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Cake Size</Label>
+                          <Select
+                            value={tier.size}
+                            onValueChange={(size) => updateTier(tier.id, { size })}
+                          >
+                            <SelectTrigger className="bg-white border-gray-200" data-testid={`select-size-${tier.id}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CAKE_SIZES.map((size: any) => (
+                                <SelectItem key={size.size} value={size.size}>
+                                  {size.size} - Serves {size.servings} - ${size.basePrice}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Flavor</Label>
+                          <Select
+                            value={tier.flavor}
+                            onValueChange={(flavor) => updateTier(tier.id, { flavor })}
+                          >
+                            <SelectTrigger className="bg-white border-gray-200" data-testid={`select-flavor-${tier.id}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CAKE_FLAVORS.map((flavor: any) => (
+                                <SelectItem key={flavor.id} value={flavor.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{flavor.name}</span>
+                                    {flavor.upcharge > 0 && (
+                                      <Badge variant="secondary" className="ml-2 text-xs">+${flavor.upcharge}</Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
-                      <div>
-                        <Label>Flavor</Label>
-                        <Select
-                          value={tier.flavor}
-                          onValueChange={(flavor) => updateTier(tier.id, { flavor })}
-                        >
-                          <SelectTrigger data-testid={`select-flavor-${tier.id}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CAKE_FLAVORS.map((flavor) => (
-                              <SelectItem key={flavor.id} value={flavor.id}>
-                                {flavor.name} {flavor.upcharge > 0 && <Badge variant="secondary" className="ml-2">Premium +${flavor.upcharge}</Badge>}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Serves {tier.servings} people</span>
+                          <span className="font-semibold text-blue-600">
+                            ${tier.basePrice}
+                            {CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge > 0 && (
+                              <span className="text-pink-600"> (+${CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge})</span>
+                            )}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="mt-3 text-sm text-gray-600">
-                      Serves {tier.servings} people • Base price: ${tier.basePrice}
-                      {CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge > 0 && (
-                        <span className="text-pink-600"> (+${CAKE_FLAVORS.find(f => f.id === tier.flavor)?.upcharge} premium flavor)</span>
-                      )}
                     </div>
                   </div>
                 ))}
 
-                <div className="text-center">
+                <div className="text-center space-y-4">
                   <Button 
                     variant="outline" 
                     onClick={addTier}
                     disabled={tiers.length >= 4}
+                    className="border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-600 hover:text-blue-600"
                     data-testid="button-add-tier"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Another Tier
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500">
                     {tiers.length >= 4 ? "Maximum 4 tiers" : "You can add up to 4 tiers"}
                   </p>
                 </div>
 
                 {/* Current Pricing */}
-                <Card className="bg-pink-50 border-pink-200">
+                <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
                   <CardContent className="pt-6">
                     <div className="flex justify-between items-center">
                       <div>
@@ -453,55 +545,68 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                   </CardContent>
                 </Card>
 
-                <div className="text-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  {/* AI Visualization Button for Mobile */}
+                  <Button
+                    onClick={() => setShowAIDesigner(true)}
+                    variant="outline"
+                    className="border-purple-200 text-purple-600 hover:bg-purple-50 md:hidden"
+                    disabled={tiers.length === 0}
+                    data-testid="button-ai-visualize-mobile"
+                  >
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Visualize My Cake
+                  </Button>
+                  
                   <Button 
                     onClick={() => setStep(2)}
                     size="lg"
-                    className="px-8"
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-8 shadow-lg hover:shadow-xl transition-all duration-300"
                     data-testid="button-continue-to-decorations"
                   >
                     Continue to Decorations
                     <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Step 2: Decorations */}
+        {/* Step 2: Decorations - Keep existing logic but modernize styling */}
         {step === 2 && (
           <div className="space-y-8">
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Choose Your Decorations</CardTitle>
-                <CardDescription>
-                  Add beautiful decorative elements to make your cake truly special.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Choose Your Decorations</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Add beautiful decorative elements to make your cake truly special
+              </p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+              <div className="p-8 space-y-8">
                 {/* Decoration Categories */}
                 {[
-                  { category: 'flowers', title: 'Fresh Flowers', icon: '🌸' },
-                  { category: 'design', title: 'Design Elements', icon: '🎨' },
-                  { category: 'topper', title: 'Cake Toppers', icon: '👰‍♀️' },
-                  { category: 'extras', title: 'Extra Touches', icon: '✨' }
-                ].map(({ category, title, icon }) => (
+                  { category: 'flowers', title: 'Fresh Flowers', icon: '🌸', color: 'from-pink-500 to-rose-500' },
+                  { category: 'design', title: 'Design Elements', icon: '🎨', color: 'from-purple-500 to-pink-500' },
+                  { category: 'topper', title: 'Cake Toppers', icon: '👰‍♀️', color: 'from-blue-500 to-indigo-500' },
+                  { category: 'extras', title: 'Extra Touches', icon: '✨', color: 'from-emerald-500 to-teal-500' }
+                ].map(({ category, title, icon, color }) => (
                   <div key={category}>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center">
-                      <span className="mr-2">{icon}</span>
-                      {title}
-                    </h3>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className={`flex items-center mb-4 p-3 bg-gradient-to-r ${color} rounded-xl text-white`}>
+                      <span className="text-2xl mr-3">{icon}</span>
+                      <h3 className="text-xl font-semibold">{title}</h3>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
                       {DECORATION_OPTIONS
-                        .filter(decoration => decoration.category === category)
-                        .map((decoration) => (
+                        .filter((decoration: any) => decoration.category === category)
+                        .map((decoration: any) => (
                           <div
                             key={decoration.id}
-                            className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                            className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-300 ${
                               selectedDecorations.includes(decoration.id)
-                                ? 'border-pink-500 bg-pink-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                ? 'border-pink-400 bg-pink-50 shadow-lg'
+                                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                             }`}
                             onClick={() => toggleDecoration(decoration.id)}
                             data-testid={`decoration-${decoration.id}`}
@@ -527,123 +632,149 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                 ))}
 
                 {/* Special Requests */}
-                <div className="mt-6">
-                  <Label>Special Requests or Custom Ideas</Label>
+                <div className="mt-8">
+                  <Label className="text-lg font-semibold text-gray-900 mb-3 block">Special Requests or Custom Ideas</Label>
                   <Textarea
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
                     placeholder="Tell us about any special design ideas, dietary restrictions, or custom requests..."
-                    rows={3}
-                    className="mt-2"
+                    rows={4}
+                    className="bg-white border-gray-200 text-base"
                     data-testid="textarea-special-requests"
                   />
                 </div>
 
                 {/* Pricing Summary */}
-                <Card className="bg-purple-50 border-purple-200">
+                <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
                   <CardContent className="pt-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Base Cake</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-lg">
+                        <span className="font-medium">Base Cake</span>
                         <span>${pricing.baseCake.toFixed(2)}</span>
                       </div>
                       {pricing.decorations > 0 && (
-                        <div className="flex justify-between">
-                          <span>Decorations ({selectedDecorations.length} selected)</span>
+                        <div className="flex justify-between text-lg">
+                          <span className="font-medium">Decorations ({selectedDecorations.length} selected)</span>
                           <span>${pricing.decorations.toFixed(2)}</span>
                         </div>
                       )}
                       <Separator />
-                      <div className="flex justify-between font-semibold">
+                      <div className="flex justify-between font-semibold text-xl">
                         <span>Estimated Subtotal</span>
                         <span className="text-purple-600">${(pricing.baseCake + pricing.decorations).toFixed(2)}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Final pricing may vary based on your specific requirements
+                      <p className="text-sm text-gray-500 mt-2">
+                        *Final pricing may vary based on your specific requirements and will be confirmed in your personalized quote.
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between">
                   <Button 
-                    variant="outline" 
                     onClick={() => setStep(1)}
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     data-testid="button-back-to-design"
                   >
+                    <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
                     Back to Design
                   </Button>
-                  <Button 
-                    onClick={() => setStep(3)}
-                    size="lg"
-                    data-testid="button-continue-to-info"
-                  >
-                    Continue to Contact Info
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      onClick={() => setShowAIDesigner(true)}
+                      variant="outline"
+                      className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                      disabled={tiers.length === 0}
+                      data-testid="button-ai-visualize-step2"
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Visualize My Cake
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => setStep(3)}
+                      size="lg"
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 shadow-lg hover:shadow-xl transition-all duration-300"
+                      data-testid="button-continue-to-details"
+                    >
+                      Continue to Details
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Step 3: Customer Information */}
         {step === 3 && (
           <div className="space-y-8">
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Tell Us About Your Event</CardTitle>
-                <CardDescription>
-                  Help us create the perfect quote for your special day.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Tell Us About Your Event</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Help us create the perfect quote for your special occasion
+              </p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+              <div className="p-8 space-y-8">
+                <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <Label>Your Name *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Your Name *</Label>
                     <Input
                       value={customerInfo.name}
                       onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                      placeholder="Full name"
+                      placeholder="Enter your full name"
+                      className="bg-white border-gray-200"
                       data-testid="input-customer-name"
                     />
                   </div>
+
                   <div>
-                    <Label>Email Address *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Email Address *</Label>
                     <Input
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
-                      placeholder="your@email.com"
+                      placeholder="your.email@example.com"
+                      className="bg-white border-gray-200"
                       data-testid="input-customer-email"
                     />
                   </div>
+
                   <div>
-                    <Label>Phone Number</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Phone Number</Label>
                     <Input
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                       placeholder="(555) 123-4567"
+                      className="bg-white border-gray-200"
                       data-testid="input-customer-phone"
                     />
                   </div>
+
                   <div>
-                    <Label>Event Date *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Event Date *</Label>
                     <Input
                       type="date"
                       value={customerInfo.eventDate}
                       onChange={(e) => setCustomerInfo({...customerInfo, eventDate: e.target.value})}
+                      className="bg-white border-gray-200"
                       data-testid="input-event-date"
                     />
                   </div>
+
                   <div>
-                    <Label>Event Type</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Event Type</Label>
                     <Select
                       value={customerInfo.eventType}
                       onValueChange={(eventType) => setCustomerInfo({...customerInfo, eventType})}
                     >
-                      <SelectTrigger data-testid="select-event-type">
+                      <SelectTrigger className="bg-white border-gray-200" data-testid="select-event-type">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -651,43 +782,44 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                         <SelectItem value="birthday">Birthday</SelectItem>
                         <SelectItem value="anniversary">Anniversary</SelectItem>
                         <SelectItem value="graduation">Graduation</SelectItem>
-                        <SelectItem value="corporate">Corporate Event</SelectItem>
-                        <SelectItem value="other">Other Celebration</SelectItem>
+                        <SelectItem value="baby-shower">Baby Shower</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div>
-                    <Label>Expected Guest Count</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Guest Count</Label>
                     <Input
                       type="number"
                       value={customerInfo.guestCount}
                       onChange={(e) => setCustomerInfo({...customerInfo, guestCount: parseInt(e.target.value) || 0})}
-                      placeholder="Number of guests"
+                      placeholder="100"
+                      className="bg-white border-gray-200"
                       data-testid="input-guest-count"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label>Venue Name & Address</Label>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Venue Address (for delivery estimates)</Label>
                   <Input
                     value={customerInfo.venue}
                     onChange={(e) => setCustomerInfo({...customerInfo, venue: e.target.value})}
-                    placeholder="Venue name and full address for delivery"
+                    placeholder="Enter venue address or leave blank for pickup"
+                    className="bg-white border-gray-200"
                     data-testid="input-venue"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <Label>Preferred Contact Method</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Preferred Contact Method</Label>
                     <Select
                       value={customerInfo.contactPreference}
-                      onValueChange={(contactPreference: 'email' | 'phone') => 
-                        setCustomerInfo({...customerInfo, contactPreference})
-                      }
+                      onValueChange={(contactPreference: 'email' | 'phone') => setCustomerInfo({...customerInfo, contactPreference})}
                     >
-                      <SelectTrigger data-testid="select-contact-preference">
+                      <SelectTrigger className="bg-white border-gray-200" data-testid="select-contact-preference">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -696,43 +828,44 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div>
-                    <Label>Timeline</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Timeline</Label>
                     <Select
                       value={customerInfo.timeline}
                       onValueChange={(timeline) => setCustomerInfo({...customerInfo, timeline})}
                     >
-                      <SelectTrigger data-testid="select-timeline">
+                      <SelectTrigger className="bg-white border-gray-200" data-testid="select-timeline">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="urgent">ASAP (Rush order)</SelectItem>
-                        <SelectItem value="soon">Within 2 weeks</SelectItem>
-                        <SelectItem value="month">Within a month</SelectItem>
-                        <SelectItem value="flexible">I'm flexible</SelectItem>
+                        <SelectItem value="flexible">Flexible</SelectItem>
+                        <SelectItem value="urgent">Urgent (within 2 weeks)</SelectItem>
+                        <SelectItem value="soon">Soon (2-4 weeks)</SelectItem>
+                        <SelectItem value="planning">Planning ahead (1+ months)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                {/* Final Pricing Summary */}
-                <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+                {/* Final Summary */}
+                <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
                   <CardContent className="pt-6">
-                    <h3 className="text-lg font-semibold mb-4">Quote Summary</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h3>
+                    <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span>Cake ({totalServings} servings, {tiers.length} tier{tiers.length !== 1 ? 's' : ''})</span>
+                        <span>Base Cake ({tiers.length} tier{tiers.length !== 1 ? 's' : ''})</span>
                         <span>${pricing.baseCake.toFixed(2)}</span>
                       </div>
                       {pricing.decorations > 0 && (
                         <div className="flex justify-between">
-                          <span>Decorations ({selectedDecorations.length} items)</span>
+                          <span>Decorations</span>
                           <span>${pricing.decorations.toFixed(2)}</span>
                         </div>
                       )}
                       {pricing.delivery > 0 && (
                         <div className="flex justify-between">
-                          <span>Delivery</span>
+                          <span>Estimated Delivery</span>
                           <span>${pricing.delivery.toFixed(2)}</span>
                         </div>
                       )}
@@ -742,34 +875,38 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                         <span>${pricing.subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tax (8.75%)</span>
+                        <span>Estimated Tax</span>
                         <span>${pricing.tax.toFixed(2)}</span>
                       </div>
                       <Separator />
-                      <div className="flex justify-between text-lg font-bold">
+                      <div className="flex justify-between font-bold text-lg">
                         <span>Estimated Total</span>
-                        <span className="text-pink-600">${pricing.total.toFixed(2)}</span>
+                        <span className="text-emerald-600">${pricing.total.toFixed(2)}</span>
                       </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        *This is an estimate. Final pricing will be confirmed in your personalized quote.
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-3">
-                      * This is an estimated quote. Final pricing will be confirmed after consultation with {baker.name}.
-                    </p>
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between">
                   <Button 
-                    variant="outline" 
                     onClick={() => setStep(2)}
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     data-testid="button-back-to-decorations"
                   >
+                    <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
                     Back to Decorations
                   </Button>
+
                   <Button 
                     onClick={handleSubmit}
                     size="lg"
                     disabled={!customerInfo.name || !customerInfo.email || !customerInfo.eventDate || submitQuoteRequest.isPending}
-                    data-testid="button-submit-quote-request"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-8 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                    data-testid="button-submit-quote"
                   >
                     {submitQuoteRequest.isPending ? (
                       <>
@@ -778,73 +915,68 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                       </>
                     ) : (
                       <>
+                        <Send className="h-4 w-4 mr-2" />
                         Send Quote Request
-                        <Heart className="h-4 w-4 ml-2" />
                       </>
                     )}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Step 4: Success */}
         {step === 4 && (
-          <div className="space-y-8">
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Check className="h-10 w-10 text-green-600" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                  Quote Request Sent Successfully!
-                </h2>
-                <p className="text-lg text-gray-600 mb-6">
-                  Thank you for choosing {baker.name}! We've received your cake design and will get back to you within 24 hours with a detailed quote.
+          <div className="text-center py-16">
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-12 max-w-2xl mx-auto">
+              <div className="w-24 h-24 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check className="h-12 w-12 text-white" />
+              </div>
+              <h2 className="text-3xl font-serif font-bold text-gray-900 mb-4">Quote Request Sent!</h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Thank you for choosing {baker.name}! We'll review your requirements and get back to you within 24 hours with a personalized quote.
+              </p>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">
+                  We'll contact you via {customerInfo.contactPreference} at {customerInfo.contactPreference === 'email' ? customerInfo.email : customerInfo.phone}
                 </p>
-                
-                <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
-                  <div className="text-left space-y-2">
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                      <span className="text-sm">We'll review your design and requirements</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                      <span className="text-sm">You'll receive a detailed quote via {customerInfo.contactPreference}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                      <span className="text-sm">Schedule a consultation to finalize your dream cake</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Button 
-                    onClick={() => {
-                      setStep(1);
-                      setTiers([]);
-                      setSelectedDecorations([]);
-                      setSpecialRequests("");
-                      setCustomerInfo({
-                        name: "", email: "", phone: "", eventDate: "", eventType: "wedding",
-                        guestCount: 100, venue: "", contactPreference: "email", timeline: "flexible"
-                      });
-                    }}
-                    variant="outline"
-                    data-testid="button-create-another-quote"
-                  >
-                    Create Another Quote
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <Button 
+                  onClick={() => {
+                    setStep(1);
+                    setTiers([]);
+                    setSelectedDecorations([]);
+                    setSpecialRequests("");
+                    setCustomerInfo({
+                      name: "",
+                      email: "",
+                      phone: "",
+                      eventDate: "",
+                      eventType: "wedding",
+                      guestCount: 100,
+                      venue: "",
+                      contactPreference: "email",
+                      timeline: "flexible"
+                    });
+                  }}
+                  variant="outline"
+                  className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                  data-testid="button-create-another"
+                >
+                  Create Another Quote
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* AI Dream Cake Designer Modal */}
+      <DreamCakeDesigner
+        config={getAIConfiguration()}
+        isOpen={showAIDesigner}
+        onClose={() => setShowAIDesigner(false)}
+      />
     </div>
   );
 }
