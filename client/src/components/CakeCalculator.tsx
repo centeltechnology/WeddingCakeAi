@@ -159,12 +159,12 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
 
   // Use dynamic pricing or fallback to defaults (memoized for performance)
   const CAKE_SIZES = React.useMemo(() => 
-    pricingConfig?.cakeSizes || DEFAULT_CAKE_SIZES, 
+    (pricingConfig as any)?.cakeSizes || DEFAULT_CAKE_SIZES, 
     [pricingConfig]
   );
   
   const CAKE_FLAVORS = React.useMemo(() => 
-    pricingConfig?.flavors?.map((f: any) => ({
+    (pricingConfig as any)?.flavors?.map((f: any) => ({
       id: f.id,
       name: f.name,
       premium: f.isPremium,
@@ -174,12 +174,12 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   );
   
   const DECORATION_OPTIONS = React.useMemo(() => 
-    pricingConfig?.decorations?.filter((d: any) => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
+    (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
     [pricingConfig]
   );
   
-  const TAX_RATE = (pricingConfig?.taxRate || 8.75) / 100;
-  const DELIVERY_FEE = pricingConfig?.deliverySettings?.baseDeliveryFee || 50;
+  const TAX_RATE = ((pricingConfig as any)?.taxRate || 8.75) / 100;
+  const DELIVERY_FEE = (pricingConfig as any)?.deliverySettings?.baseDeliveryFee || 50;
 
   // Add initial tier
   useEffect(() => {
@@ -341,7 +341,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
               </div>
               <div>
                 <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  {baker.name}
+                  {(baker as any)?.name || 'Loading...'}
                 </h1>
                 <p className="text-sm text-gray-600 font-medium">AI-Powered Cake Designer</p>
               </div>
@@ -817,7 +817,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">Preferred Contact Method</Label>
                     <Select
                       value={customerInfo.contactPreference}
-                      onValueChange={(contactPreference: 'email' | 'phone') => setCustomerInfo({...customerInfo, contactPreference})}
+                      onValueChange={(contactPreference) => setCustomerInfo({...customerInfo, contactPreference: contactPreference as 'email' | 'phone'})}
                     >
                       <SelectTrigger className="bg-white border-gray-200" data-testid="select-contact-preference">
                         <SelectValue />
@@ -935,7 +935,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
               </div>
               <h2 className="text-3xl font-serif font-bold text-gray-900 mb-4">Quote Request Sent!</h2>
               <p className="text-lg text-gray-600 mb-8">
-                Thank you for choosing {baker.name}! We'll review your requirements and get back to you within 24 hours with a personalized quote.
+                Thank you for choosing {(baker as any)?.name || 'us'}! We'll review your requirements and get back to you within 24 hours with a personalized quote.
               </p>
               <div className="space-y-4">
                 <p className="text-sm text-gray-500">
