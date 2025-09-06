@@ -5,7 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { NavigationHeader } from '@/components/NavigationHeader';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   ChefHat, 
   Check, 
@@ -78,6 +81,8 @@ const plans = [
 ];
 
 export default function Signup() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     bakeryName: '',
     ownerName: '',
@@ -87,11 +92,59 @@ export default function Signup() {
     selectedPlan: 'professional'
   });
 
+  const signupMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      return await apiRequest('POST', '/api/bakers', {
+        name: data.bakeryName,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.city || null,
+        subscriptionPlan: data.selectedPlan,
+        specialties: [],
+        description: null,
+        portfolio: []
+      });
+    },
+    onSuccess: (response) => {
+      toast({
+        title: "Welcome to Bakewise!",
+        description: "Your account has been created successfully. Redirecting to your dashboard...",
+      });
+      
+      // Redirect to baker dashboard
+      setTimeout(() => {
+        setLocation(`/baker/${response.id}/dashboard`);
+      }, 2000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.bakeryName || !formData.ownerName || !formData.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    signupMutation.mutate(formData);
   };
 
   return (
@@ -212,8 +265,9 @@ export default function Signup() {
                 Fill out the form below to create your Bakewise account
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="bakeryName">Bakery Name *</Label>
                   <Input
@@ -285,14 +339,20 @@ export default function Signup() {
                 </div>
               </div>
 
-              <Button className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg transition-all duration-300" size="lg">
-                Start Your 14-Day Free Trial
+              <Button 
+                type="submit"
+                disabled={signupMutation.isPending}
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg transition-all duration-300" 
+                size="lg"
+              >
+                {signupMutation.isPending ? "Creating Account..." : "Start Your 14-Day Free Trial"}
               </Button>
               
-              <p className="text-xs text-gray-500 text-center">
-                No credit card required. Cancel anytime. 
-                By signing up, you agree to our Terms of Service and Privacy Policy.
-              </p>
+                <p className="text-xs text-gray-500 text-center">
+                  No credit card required. Cancel anytime. 
+                  By signing up, you agree to our Terms of Service and Privacy Policy.
+                </p>
+              </form>
             </CardContent>
           </Card>
         </div>

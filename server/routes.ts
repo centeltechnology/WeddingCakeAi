@@ -203,6 +203,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new baker (signup)
+  app.post("/api/bakers", async (req, res) => {
+    try {
+      const bakerData = insertBakerSchema.parse(req.body);
+      const baker = await storage.createBaker(bakerData);
+      
+      // Also create a baker profile
+      await storage.createBakerProfile({
+        bakerId: baker.id,
+        businessName: baker.name,
+        bio: null,
+        businessHours: null,
+        socialMedia: null,
+        certifications: null,
+        yearsExperience: null,
+        teamSize: null,
+        leadTime: null,
+        consultationFee: null,
+        minimumOrder: null,
+        deliveryRadius: null,
+        dietaryOptions: null
+      });
+      
+      res.status(201).json(baker);
+    } catch (error: any) {
+      console.error("Error creating baker:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   app.get("/api/bakers/:id", async (req, res) => {
     try {
       const baker = await storage.getBaker(req.params.id);
