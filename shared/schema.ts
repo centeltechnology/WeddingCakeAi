@@ -261,6 +261,234 @@ export const analytics = pgTable("analytics", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Enhanced CRM System
+export const customers = pgTable("customers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  partnerName: text("partner_name"),
+  eventDate: date("event_date"),
+  eventType: text("event_type").default('wedding'), // wedding, birthday, anniversary, other
+  venue: text("venue"),
+  venueAddress: text("venue_address"),
+  guestCount: integer("guest_count"),
+  budget: text("budget"),
+  source: text("source"), // referral, website, social, etc
+  status: text("status").default('inquiry'), // inquiry, quoted, contracted, completed, cancelled
+  dietaryRestrictions: json("dietary_restrictions").$type<{
+    glutenFree?: boolean;
+    vegan?: boolean;
+    nutFree?: boolean;
+    dairyFree?: boolean;
+    keto?: boolean;
+    other?: string;
+  }>().default({}),
+  preferences: json("preferences").$type<{
+    flavors?: string[];
+    styles?: string[];
+    colors?: string[];
+    themes?: string[];
+  }>().default({}),
+  priority: text("priority").default('medium'), // high, medium, low
+  tags: text("tags").array(),
+  lastContactDate: timestamp("last_contact_date"),
+  nextFollowUpDate: date("next_follow_up_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const customerNotes = pgTable("customer_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  note: text("note").notNull(),
+  type: text("type").default('general'), // general, follow_up, quote, contract, payment
+  isPrivate: boolean("is_private").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Quote Builder System
+export const quoteTemplates = pgTable("quote_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"), // wedding, birthday, corporate, etc
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }),
+  pricePerServing: decimal("price_per_serving", { precision: 8, scale: 2 }),
+  tiers: json("tiers").$type<{
+    tierNumber: number;
+    diameter: number;
+    height: number;
+    servings: number;
+    priceMultiplier: number;
+  }[]>().default([]),
+  addOns: json("add_ons").$type<{
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+  }[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quotes = pgTable("quotes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  templateId: varchar("template_id").references(() => quoteTemplates.id),
+  quoteNumber: text("quote_number").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  eventDate: date("event_date"),
+  eventType: text("event_type"),
+  guestCount: integer("guest_count"),
+  deliveryAddress: text("delivery_address"),
+  setupTime: text("setup_time"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 4 }).default('0.0875'),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }),
+  total: decimal("total", { precision: 10, scale: 2 }),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  depositPercentage: decimal("deposit_percentage", { precision: 5, scale: 2 }).default('50.00'),
+  status: text("status").default('draft'), // draft, sent, viewed, approved, rejected, expired
+  validUntil: date("valid_until"),
+  customerNotes: text("customer_notes"),
+  internalNotes: text("internal_notes"),
+  terms: text("terms"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  sentAt: timestamp("sent_at"),
+  viewedAt: timestamp("viewed_at"),
+  approvedAt: timestamp("approved_at"),
+});
+
+export const quoteItems = pgTable("quote_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteId: varchar("quote_id").notNull().references(() => quotes.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 8, scale: 2 }).default('1'),
+  unitPrice: decimal("unit_price", { precision: 8, scale: 2 }),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }),
+  category: text("category"), // cake, decoration, delivery, setup
+  sortOrder: integer("sort_order").default(0),
+});
+
+// Contract Management System
+export const contractTemplates = pgTable("contract_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  template: text("template").notNull(), // HTML template with placeholders
+  category: text("category"), // wedding, corporate, standard
+  terms: text("terms"),
+  cancellationPolicy: text("cancellation_policy"),
+  paymentTerms: text("payment_terms"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const contracts = pgTable("contracts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  quoteId: varchar("quote_id").references(() => quotes.id),
+  templateId: varchar("template_id").references(() => contractTemplates.id),
+  contractNumber: text("contract_number").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(), // Final contract HTML
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  remainingBalance: decimal("remaining_balance", { precision: 10, scale: 2 }),
+  eventDate: date("event_date"),
+  deliveryDate: date("delivery_date"),
+  setupTime: text("setup_time"),
+  deliveryAddress: text("delivery_address"),
+  specialInstructions: text("special_instructions"),
+  status: text("status").default('draft'), // draft, sent, signed, active, completed, cancelled
+  signedAt: timestamp("signed_at"),
+  completedAt: timestamp("completed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const contractSignatures = pgTable("contract_signatures", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contractId: varchar("contract_id").notNull().references(() => contracts.id),
+  signerName: text("signer_name").notNull(),
+  signerEmail: text("signer_email").notNull(),
+  signerType: text("signer_type").notNull(), // customer, baker, witness
+  signatureData: text("signature_data"), // Base64 signature image or e-signature token
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  signedAt: timestamp("signed_at").defaultNow(),
+});
+
+// Enhanced Payment System
+export const paymentPlans = pgTable("payment_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contractId: varchar("contract_id").notNull().references(() => contracts.id),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }).default('0'),
+  remainingAmount: decimal("remaining_amount", { precision: 10, scale: 2 }),
+  status: text("status").default('active'), // active, completed, cancelled, overdue
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const paymentSchedule = pgTable("payment_schedule", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planId: varchar("plan_id").notNull().references(() => paymentPlans.id),
+  dueDate: date("due_date").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  description: text("description"),
+  status: text("status").default('pending'), // pending, paid, overdue, cancelled
+  paidAt: timestamp("paid_at"),
+  transactionId: varchar("transaction_id").references(() => transactions.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  contractId: varchar("contract_id").references(() => contracts.id),
+  quoteId: varchar("quote_id").references(() => quotes.id),
+  invoiceNumber: text("invoice_number").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }),
+  total: decimal("total", { precision: 10, scale: 2 }),
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }).default('0'),
+  remainingBalance: decimal("remaining_balance", { precision: 10, scale: 2 }),
+  dueDate: date("due_date"),
+  status: text("status").default('draft'), // draft, sent, paid, overdue, cancelled
+  sentAt: timestamp("sent_at"),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Enhanced baker profiles with additional fields
 export const bakerProfiles = pgTable("baker_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -285,6 +513,25 @@ export const insertAvailabilitySchema = createInsertSchema(availability).omit({ 
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
 export const insertBakerProfileSchema = createInsertSchema(bakerProfiles).omit({ id: true, createdAt: true, updatedAt: true });
 
+// CRM schemas
+export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCustomerNoteSchema = createInsertSchema(customerNotes).omit({ id: true, createdAt: true });
+
+// Quote schemas
+export const insertQuoteTemplateSchema = createInsertSchema(quoteTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertQuoteSchema = createInsertSchema(quotes).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({ id: true });
+
+// Contract schemas
+export const insertContractTemplateSchema = createInsertSchema(contractTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertContractSignatureSchema = createInsertSchema(contractSignatures).omit({ id: true, signedAt: true });
+
+// Payment schemas
+export const insertPaymentPlanSchema = createInsertSchema(paymentPlans).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedule).omit({ id: true, createdAt: true });
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, updatedAt: true });
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Transaction = typeof transactions.$inferSelect;
@@ -295,3 +542,33 @@ export type Analytics = typeof analytics.$inferSelect;
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type BakerProfile = typeof bakerProfiles.$inferSelect;
 export type InsertBakerProfile = z.infer<typeof insertBakerProfileSchema>;
+
+// CRM types
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type CustomerNote = typeof customerNotes.$inferSelect;
+export type InsertCustomerNote = z.infer<typeof insertCustomerNoteSchema>;
+
+// Quote types
+export type QuoteTemplate = typeof quoteTemplates.$inferSelect;
+export type InsertQuoteTemplate = z.infer<typeof insertQuoteTemplateSchema>;
+export type Quote = typeof quotes.$inferSelect;
+export type InsertQuote = z.infer<typeof insertQuoteSchema>;
+export type QuoteItem = typeof quoteItems.$inferSelect;
+export type InsertQuoteItem = z.infer<typeof insertQuoteItemSchema>;
+
+// Contract types
+export type ContractTemplate = typeof contractTemplates.$inferSelect;
+export type InsertContractTemplate = z.infer<typeof insertContractTemplateSchema>;
+export type Contract = typeof contracts.$inferSelect;
+export type InsertContract = z.infer<typeof insertContractSchema>;
+export type ContractSignature = typeof contractSignatures.$inferSelect;
+export type InsertContractSignature = z.infer<typeof insertContractSignatureSchema>;
+
+// Payment types
+export type PaymentPlan = typeof paymentPlans.$inferSelect;
+export type InsertPaymentPlan = z.infer<typeof insertPaymentPlanSchema>;
+export type PaymentSchedule = typeof paymentSchedule.$inferSelect;
+export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
