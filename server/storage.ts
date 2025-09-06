@@ -1250,7 +1250,7 @@ export class MemStorage implements IStorage {
       email: "emily.thompson@email.com",
       phone: "(555) 234-5678",
       partnerName: "James Thompson",
-      eventDate: new Date('2024-09-15'),
+      eventDate: '2024-09-15',
       eventType: "wedding",
       venue: "Sunset Gardens",
       guestCount: 120,
@@ -1274,7 +1274,7 @@ export class MemStorage implements IStorage {
       name: "Sarah Wilson",
       email: "sarah.wilson@email.com",
       phone: "(555) 345-6789",
-      eventDate: new Date('2024-10-22'),
+      eventDate: '2024-10-22',
       eventType: "birthday",
       guestCount: 25,
       budget: "$300-500",
@@ -1290,6 +1290,99 @@ export class MemStorage implements IStorage {
 
     this.customers.set(customer1.id, customer1);
     this.customers.set(customer2.id, customer2);
+
+    // Create sample leads for baker-1
+    const lead1: Lead = {
+      id: "lead-1",
+      tenantId: sampleTenantId,
+      bakerId: sampleBakerId,
+      profileId: null,
+      customerName: "Jessica Martinez",
+      customerEmail: "jessica.martinez@email.com",
+      customerPhone: "(555) 789-0123",
+      weddingDate: "2024-11-30",
+      guestCount: 85,
+      budget: "$1200-1800",
+      message: "Hi! I'm looking for a 2-tier wedding cake for my November wedding. We love vintage designs and would prefer vanilla and chocolate flavors. Can you provide a quote?",
+      status: "new",
+      estimateId: null,
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    };
+
+    const lead2: Lead = {
+      id: "lead-2", 
+      tenantId: sampleTenantId,
+      bakerId: sampleBakerId,
+      profileId: null,
+      customerName: "Michael & Anna Chen",
+      customerEmail: "anna.chen@email.com",
+      customerPhone: "(555) 456-7890",
+      weddingDate: "2024-12-15",
+      guestCount: 150,
+      budget: "$2000-3000",
+      message: "We're planning our December wedding and need a 3-tier cake. We're interested in modern designs with gold accents. Do you do tasting sessions?",
+      status: "contacted",
+      estimateId: null,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+    };
+
+    const lead3: Lead = {
+      id: "lead-3",
+      tenantId: sampleTenantId,
+      bakerId: sampleBakerId,
+      profileId: null,
+      customerName: "David Johnson",
+      customerEmail: "david.johnson@email.com", 
+      customerPhone: "(555) 321-9876",
+      weddingDate: "2025-01-20",
+      guestCount: 200,
+      budget: "$3000+",
+      message: "Looking for an elaborate 4-tier wedding cake with sugar flowers. This is for a black-tie wedding at the Grand Ballroom. Budget is flexible for the right design.",
+      status: "quoted",
+      estimateId: null,
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    };
+
+    const lead4: Lead = {
+      id: "lead-4",
+      tenantId: sampleTenantId,
+      bakerId: sampleBakerId,
+      profileId: null,
+      customerName: "Rachel Thompson",
+      customerEmail: "rachel.t@email.com",
+      customerPhone: "(555) 654-3210",
+      weddingDate: "2024-10-05",
+      guestCount: 50,
+      budget: "$800-1200",
+      message: "Small intimate wedding cake needed. We love rustic, naked cake styles with fresh berries. Can you accommodate dietary restrictions?",
+      status: "booked",
+      estimateId: null,
+      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
+    };
+
+    const lead5: Lead = {
+      id: "lead-5",
+      tenantId: sampleTenantId,
+      bakerId: sampleBakerId,
+      profileId: null,
+      customerName: "Kevin Brown",
+      customerEmail: "k.brown@email.com",
+      customerPhone: null,
+      weddingDate: "2024-09-28",
+      guestCount: 75,
+      budget: "$1000-1500",
+      message: "Quick question about pricing for a 2-tier wedding cake with buttercream frosting.",
+      status: "declined",
+      estimateId: null,
+      createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000), // 3 weeks ago
+    };
+
+    // Add leads to storage
+    this.leads.set(lead1.id, lead1);
+    this.leads.set(lead2.id, lead2);
+    this.leads.set(lead3.id, lead3);
+    this.leads.set(lead4.id, lead4);
+    this.leads.set(lead5.id, lead5);
 
     // Create sample quote template
     const quoteTemplate: QuoteTemplate = {
@@ -1327,7 +1420,7 @@ export class MemStorage implements IStorage {
       quoteNumber: "Q2024-001",
       title: "Emily & James Wedding Cake",
       description: "3-tier wedding cake for 120 guests",
-      eventDate: customer1.eventDate,
+      eventDate: '2024-09-15',
       eventType: "wedding",
       guestCount: 120,
       deliveryAddress: "Sunset Gardens, 456 Garden Path, Event City, CA",
