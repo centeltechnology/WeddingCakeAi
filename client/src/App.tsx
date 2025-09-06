@@ -4,8 +4,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TenantBrandProvider } from "@/components/TenantBrandProvider";
 import Home from "@/pages/home";
 import BakerDashboard from "@/components/BakerDashboard";
+import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,6 +17,7 @@ function Router() {
       <Route path="/baker/:id/dashboard">
         {(params) => <BakerDashboard bakerId={params.id} />}
       </Route>
+      <Route path="/admin" component={VenueAdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -24,10 +27,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="wedding-cake-theme">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <TenantBrandProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </TenantBrandProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
