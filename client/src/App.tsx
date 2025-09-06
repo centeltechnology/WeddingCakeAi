@@ -32,7 +32,7 @@ function Router() {
       <Route path="/admin">
         {() => <BakerDashboard bakerId="baker-1" />}
       </Route>
-      <Route path="/super-admin" component={SuperAdminDashboard} />
+      <Route path="/super-admin" component={() => <SuperAdminDashboard />} />
       <Route component={NotFound} />
     </Switch>
   );
