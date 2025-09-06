@@ -195,7 +195,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         description: "Invitation sent successfully!",
       });
       setNewTeamMember({ email: '', role: 'viewer' });
-      queryClient.invalidateQueries([`/api/bakers/${bakerId}/team`]);
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/team`] });
     },
     onError: () => {
       toast({

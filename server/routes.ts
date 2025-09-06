@@ -1421,6 +1421,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Account Management APIs
+  app.get('/api/bakers/:bakerId/account', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      
+      // Mock account data - in real app, fetch from database
+      const account = {
+        id: bakerId,
+        businessName: 'Sweet Dreams Bakery',
+        ownerName: 'Sarah Johnson',
+        email: 'sarah@sweetdreamsbakery.com',
+        phone: '(555) 123-4567',
+        address: {
+          street: '123 Main Street',
+          city: 'San Francisco',
+          state: 'CA',
+          zipCode: '94102'
+        },
+        businessHours: {
+          monday: { open: '08:00', close: '18:00', closed: false },
+          tuesday: { open: '08:00', close: '18:00', closed: false },
+          wednesday: { open: '08:00', close: '18:00', closed: false },
+          thursday: { open: '08:00', close: '18:00', closed: false },
+          friday: { open: '08:00', close: '18:00', closed: false },
+          saturday: { open: '09:00', close: '16:00', closed: false },
+          sunday: { open: '09:00', close: '14:00', closed: true }
+        },
+        notifications: {
+          newLeads: true,
+          paymentUpdates: true,
+          marketingEmails: false
+        }
+      };
+
+      res.json(account);
+    } catch (error) {
+      console.error('Error fetching account:', error);
+      res.status(500).json({ error: 'Failed to fetch account information' });
+    }
+  });
+
+  app.get('/api/bakers/:bakerId/subscription', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      
+      // Mock subscription data - in real app, fetch from database/Stripe
+      const subscription = {
+        id: `sub-${bakerId}`,
+        plan: 'pro',
+        status: 'active',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        cancelAtPeriodEnd: false,
+        features: [
+          'Unlimited leads',
+          'Advanced quote builder',
+          'Contract management',
+          'Payment processing',
+          'Team collaboration',
+          'Priority support'
+        ],
+        limits: {
+          leads: -1, // unlimited
+          portfolio: -1, // unlimited
+          teamMembers: 5
+        }
+      };
+
+      res.json(subscription);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription information' });
+    }
+  });
+
+  app.get('/api/bakers/:bakerId/team', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      
+      // Mock team data - in real app, fetch from database
+      const team = [
+        {
+          id: 'member-1',
+          name: 'Sarah Johnson',
+          email: 'sarah@sweetdreamsbakery.com',
+          role: 'owner',
+          status: 'active',
+          joinedAt: '2024-01-15T10:00:00Z',
+          lastActive: new Date().toISOString()
+        },
+        {
+          id: 'member-2',
+          name: 'Mike Chen',
+          email: 'mike@sweetdreamsbakery.com',
+          role: 'admin',
+          status: 'active',
+          joinedAt: '2024-02-01T14:30:00Z',
+          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+        }
+      ];
+
+      res.json(team);
+    } catch (error) {
+      console.error('Error fetching team:', error);
+      res.status(500).json({ error: 'Failed to fetch team information' });
+    }
+  });
+
+  app.post('/api/bakers/:bakerId/team', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const { email, role } = req.body;
+
+      if (!email || !role) {
+        return res.status(400).json({ error: 'Email and role are required' });
+      }
+
+      // Mock team member invitation - in real app, send invitation email
+      const invitation = {
+        id: `invite-${Date.now()}`,
+        bakerId,
+        email,
+        role,
+        status: 'pending',
+        invitedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+      };
+
+      console.log('Team member invitation sent:', invitation);
+
+      res.json({
+        success: true,
+        message: 'Invitation sent successfully',
+        invitation
+      });
+    } catch (error) {
+      console.error('Error inviting team member:', error);
+      res.status(500).json({ error: 'Failed to send team invitation' });
+    }
+  });
+
   // Cake Calculator Quote Request API
   app.post('/api/bakers/:bakerId/quote-requests', async (req, res) => {
     try {

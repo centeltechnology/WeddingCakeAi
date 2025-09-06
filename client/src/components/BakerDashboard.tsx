@@ -27,7 +27,7 @@ import {
   Code,
   Settings,
   Briefcase,
-  PresentationChart,
+  Monitor,
   UserCog
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -278,7 +278,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
-                <PresentationChart className="w-4 h-4 mr-2" />
+                <Monitor className="w-4 h-4 mr-2" />
                 Marketing
               </h3>
             </CardHeader>
