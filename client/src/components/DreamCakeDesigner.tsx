@@ -6,8 +6,9 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Real AI image generation using Replicate API
 async function generateCakeImage(prompt: string): Promise<string> {
-  const response = await apiRequest('POST', '/api/generate-cake-image', { prompt }) as { imageUrl: string };
-  return response.imageUrl;
+  const response = await apiRequest('POST', '/api/generate-cake-image', { prompt });
+  const data = await response.json() as { imageUrl: string };
+  return data.imageUrl;
 }
 
 interface CakeConfiguration {
