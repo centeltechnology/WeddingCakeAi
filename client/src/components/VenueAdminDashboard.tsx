@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenant } from './TenantBrandProvider';
 import { useToast } from '@/hooks/use-toast';
+import { CrmDashboard } from './CrmDashboard';
 import { 
   Users, 
   Calendar, 
@@ -19,7 +20,9 @@ import {
   Phone,
   Settings,
   Palette,
-  Upload
+  Upload,
+  FileText,
+  UserCheck
 } from 'lucide-react';
 
 interface Lead {
@@ -145,12 +148,59 @@ export function VenueAdminDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-md">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+          <TabsTrigger value="crm" data-testid="tab-crm">
+            <Users className="h-4 w-4 mr-2" />
+            CRM
+          </TabsTrigger>
+          <TabsTrigger value="quotes" data-testid="tab-quotes">
+            <FileText className="h-4 w-4 mr-2" />
+            Quotes
+          </TabsTrigger>
+          <TabsTrigger value="contracts" data-testid="tab-contracts">
+            <UserCheck className="h-4 w-4 mr-2" />
+            Contracts
+          </TabsTrigger>
           <TabsTrigger value="leads" data-testid="tab-leads">Leads</TabsTrigger>
           <TabsTrigger value="bakers" data-testid="tab-bakers">Bakers</TabsTrigger>
           <TabsTrigger value="branding" data-testid="tab-branding">Branding</TabsTrigger>
         </TabsList>
+
+        {/* CRM Tab */}
+        <TabsContent value="crm" className="space-y-6">
+          <CrmDashboard bakerId="baker-1" />
+        </TabsContent>
+
+        {/* Quotes Tab */}
+        <TabsContent value="quotes" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quote Builder</CardTitle>
+              <CardDescription>
+                Create and manage professional quotes for your customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Advanced quote builder coming soon...</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Contracts Tab */}
+        <TabsContent value="contracts" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contract Management</CardTitle>
+              <CardDescription>
+                Digital contracts with e-signatures and automated workflows
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Contract system coming soon...</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">

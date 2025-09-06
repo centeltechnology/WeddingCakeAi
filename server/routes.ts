@@ -656,6 +656,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CRM API Routes
+  app.get('/api/customers', async (req, res) => {
+    try {
+      const { bakerId, tenantId, search } = req.query;
+      
+      let customers;
+      if (search && typeof search === 'string') {
+        customers = await storage.searchCustomers(bakerId as string, search);
+      } else if (bakerId) {
+        customers = await storage.getCustomersByBaker(bakerId as string);
+      } else if (tenantId) {
+        customers = await storage.getCustomersByTenant(tenantId as string);
+      } else {
+        return res.status(400).json({ error: 'bakerId or tenantId is required' });
+      }
+      
+      res.json(customers);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+  });
+
+  app.post('/api/customers', async (req, res) => {
+    try {
+      const customerData = req.body;
+      const customer = await storage.createCustomer(customerData);
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      res.status(500).json({ error: 'Failed to create customer' });
+    }
+  });
+
+  app.get('/api/customers/:id', async (req, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error('Error fetching customer:', error);
+      res.status(500).json({ error: 'Failed to fetch customer' });
+    }
+  });
+
+  app.put('/api/customers/:id', async (req, res) => {
+    try {
+      const updates = req.body;
+      const customer = await storage.updateCustomer(req.params.id, updates);
+      res.json(customer);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      res.status(500).json({ error: 'Failed to update customer' });
+    }
+  });
+
+  app.get('/api/customers/:id/notes', async (req, res) => {
+    try {
+      const notes = await storage.getCustomerNotes(req.params.id);
+      res.json(notes);
+    } catch (error) {
+      console.error('Error fetching customer notes:', error);
+      res.status(500).json({ error: 'Failed to fetch customer notes' });
+    }
+  });
+
+  app.post('/api/customers/:id/notes', async (req, res) => {
+    try {
+      const noteData = {
+        ...req.body,
+        customerId: req.params.id,
+      };
+      const note = await storage.createCustomerNote(noteData);
+      res.status(201).json(note);
+    } catch (error) {
+      console.error('Error creating customer note:', error);
+      res.status(500).json({ error: 'Failed to create customer note' });
+    }
+  });
+
+  // Quote API Routes
+  app.get('/api/quote-templates', async (req, res) => {
+    try {
+      const { bakerId } = req.query;
+      if (!bakerId) {
+        return res.status(400).json({ error: 'bakerId is required' });
+      }
+      const templates = await storage.getQuoteTemplates(bakerId as string);
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching quote templates:', error);
+      res.status(500).json({ error: 'Failed to fetch quote templates' });
+    }
+  });
+
+  app.post('/api/quote-templates', async (req, res) => {
+    try {
+      const template = await storage.createQuoteTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error('Error creating quote template:', error);
+      res.status(500).json({ error: 'Failed to create quote template' });
+    }
+  });
+
+  app.get('/api/quotes', async (req, res) => {
+    try {
+      const { bakerId, customerId } = req.query;
+      
+      let quotes;
+      if (bakerId) {
+        quotes = await storage.getQuotesByBaker(bakerId as string);
+      } else if (customerId) {
+        quotes = await storage.getQuotesByCustomer(customerId as string);
+      } else {
+        return res.status(400).json({ error: 'bakerId or customerId is required' });
+      }
+      
+      res.json(quotes);
+    } catch (error) {
+      console.error('Error fetching quotes:', error);
+      res.status(500).json({ error: 'Failed to fetch quotes' });
+    }
+  });
+
+  app.post('/api/quotes', async (req, res) => {
+    try {
+      const quote = await storage.createQuote(req.body);
+      res.status(201).json(quote);
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      res.status(500).json({ error: 'Failed to create quote' });
+    }
+  });
+
+  app.get('/api/quotes/:id', async (req, res) => {
+    try {
+      const quote = await storage.getQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      res.json(quote);
+    } catch (error) {
+      console.error('Error fetching quote:', error);
+      res.status(500).json({ error: 'Failed to fetch quote' });
+    }
+  });
+
+  app.put('/api/quotes/:id', async (req, res) => {
+    try {
+      const quote = await storage.updateQuote(req.params.id, req.body);
+      res.json(quote);
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      res.status(500).json({ error: 'Failed to update quote' });
+    }
+  });
+
+  app.get('/api/quotes/:id/items', async (req, res) => {
+    try {
+      const items = await storage.getQuoteItems(req.params.id);
+      res.json(items);
+    } catch (error) {
+      console.error('Error fetching quote items:', error);
+      res.status(500).json({ error: 'Failed to fetch quote items' });
+    }
+  });
+
+  app.post('/api/quotes/:id/items', async (req, res) => {
+    try {
+      const itemData = {
+        ...req.body,
+        quoteId: req.params.id,
+      };
+      const item = await storage.createQuoteItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      console.error('Error creating quote item:', error);
+      res.status(500).json({ error: 'Failed to create quote item' });
+    }
+  });
+
+  // Contract API Routes
+  app.get('/api/contracts', async (req, res) => {
+    try {
+      const { bakerId, customerId } = req.query;
+      
+      let contracts;
+      if (bakerId) {
+        contracts = await storage.getContractsByBaker(bakerId as string);
+      } else if (customerId) {
+        contracts = await storage.getContractsByCustomer(customerId as string);
+      } else {
+        return res.status(400).json({ error: 'bakerId or customerId is required' });
+      }
+      
+      res.json(contracts);
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+      res.status(500).json({ error: 'Failed to fetch contracts' });
+    }
+  });
+
+  app.post('/api/contracts', async (req, res) => {
+    try {
+      const contract = await storage.createContract(req.body);
+      res.status(201).json(contract);
+    } catch (error) {
+      console.error('Error creating contract:', error);
+      res.status(500).json({ error: 'Failed to create contract' });
+    }
+  });
+
+  // Payment API Routes
+  app.get('/api/payment-plans', async (req, res) => {
+    try {
+      const { bakerId } = req.query;
+      if (!bakerId) {
+        return res.status(400).json({ error: 'bakerId is required' });
+      }
+      const plans = await storage.getPaymentPlansByBaker(bakerId as string);
+      res.json(plans);
+    } catch (error) {
+      console.error('Error fetching payment plans:', error);
+      res.status(500).json({ error: 'Failed to fetch payment plans' });
+    }
+  });
+
+  app.post('/api/payment-plans', async (req, res) => {
+    try {
+      const plan = await storage.createPaymentPlan(req.body);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error('Error creating payment plan:', error);
+      res.status(500).json({ error: 'Failed to create payment plan' });
+    }
+  });
+
+  app.get('/api/invoices', async (req, res) => {
+    try {
+      const { bakerId, customerId } = req.query;
+      
+      let invoices;
+      if (bakerId) {
+        invoices = await storage.getInvoicesByBaker(bakerId as string);
+      } else if (customerId) {
+        invoices = await storage.getInvoicesByCustomer(customerId as string);
+      } else {
+        return res.status(400).json({ error: 'bakerId or customerId is required' });
+      }
+      
+      res.json(invoices);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      res.status(500).json({ error: 'Failed to fetch invoices' });
+    }
+  });
+
+  app.post('/api/invoices', async (req, res) => {
+    try {
+      const invoice = await storage.createInvoice(req.body);
+      res.status(201).json(invoice);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      res.status(500).json({ error: 'Failed to create invoice' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
