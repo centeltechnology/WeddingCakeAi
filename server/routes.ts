@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
-  insertTenantSchema, insertTenantConfigurationSchema 
+  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema
 } from "@shared/schema";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
@@ -212,8 +212,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also create a baker profile
       await storage.createBakerProfile({
         bakerId: baker.id,
-        businessName: baker.name,
-        bio: null,
         businessHours: null,
         socialMedia: null,
         certifications: null,
