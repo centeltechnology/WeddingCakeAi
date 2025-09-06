@@ -28,7 +28,8 @@ import {
   Settings,
   Briefcase,
   Monitor,
-  UserCog
+  UserCog,
+  Globe
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -338,6 +339,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </TabsTrigger>
+                <TabsTrigger value="domain" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Domain
+                </TabsTrigger>
               </TabsList>
             </CardContent>
           </Card>
@@ -501,6 +506,107 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="account">
           <AccountSettings bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="domain">
+          <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
+            <CardHeader className="border-b border-rose-100/50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Domain Settings</h3>
+                <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  Professional Branding
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Subdomain Configuration */}
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                  <CardHeader>
+                    <h4 className="text-lg font-semibold text-blue-800 flex items-center">
+                      <Globe className="w-5 h-5 mr-2" />
+                      Your Bakewise Subdomain
+                    </h4>
+                    <p className="text-sm text-blue-600">Create your professional subdomain</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-blue-800">Choose your subdomain:</label>
+                      <div className="flex items-center space-x-2">
+                        <Input 
+                          placeholder="yourbakery" 
+                          className="flex-1"
+                          data-testid="input-subdomain"
+                        />
+                        <span className="text-sm text-gray-600">.bakewise.com</span>
+                      </div>
+                      <p className="text-xs text-blue-600">This will be your professional URL: yourbakery.bakewise.com</p>
+                    </div>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700" data-testid="button-save-subdomain">
+                      Save Subdomain
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Custom Domain */}
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                  <CardHeader>
+                    <h4 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <Globe className="w-5 h-5 mr-2" />
+                      Custom Domain (Pro)
+                    </h4>
+                    <p className="text-sm text-purple-600">Use your own domain name</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-purple-800">Your domain:</label>
+                      <Input 
+                        placeholder="yourbakery.com" 
+                        className="w-full"
+                        data-testid="input-custom-domain"
+                      />
+                      <p className="text-xs text-purple-600">Point your domain to our servers for professional branding</p>
+                    </div>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700" data-testid="button-save-custom-domain">
+                      Configure Custom Domain
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Current Domain Status */}
+              <Card className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <CardHeader>
+                  <h4 className="text-lg font-semibold text-green-800">Current Configuration</h4>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                      <div>
+                        <p className="font-medium text-green-800">Active Domain</p>
+                        <p className="text-sm text-green-600">hotbunsbakery.bakewise.com</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                      <div className="p-3 bg-white rounded-lg border border-green-200">
+                        <p className="text-sm text-green-600">SSL Certificate</p>
+                        <p className="font-semibold text-green-800">✓ Secured</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-lg border border-green-200">
+                        <p className="text-sm text-green-600">Status</p>
+                        <p className="font-semibold text-green-800">✓ Active</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-lg border border-green-200">
+                        <p className="text-sm text-green-600">Propagation</p>
+                        <p className="font-semibold text-green-800">✓ Complete</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       </div>
