@@ -3,6 +3,71 @@ import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, dat
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Multi-tenancy tables
+export const tenants = pgTable("tenants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  subdomain: varchar("subdomain").notNull().unique(),
+  customDomain: varchar("custom_domain"),
+  contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone"),
+  address: text("address"),
+  subscriptionPlan: text("subscription_plan").default('basic'), // basic, premium, enterprise
+  subscriptionStatus: text("subscription_status").default('active'), // active, suspended, cancelled
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tenantConfigurations = pgTable("tenant_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  logoUrl: text("logo_url"),
+  primaryColor: varchar("primary_color").default('#B8860B'),
+  secondaryColor: varchar("secondary_color").default('#F5E6B3'),
+  accentColor: varchar("accent_color").default('#8B7355'),
+  customMessages: json("custom_messages").$type<{
+    heroTitle?: string;
+    heroSubtitle?: string;
+    footerMessage?: string;
+    emailSignature?: string;
+  }>().default({}),
+  customCss: text("custom_css"),
+  emailTemplates: json("email_templates").$type<{
+    leadNotification?: string;
+    customerWelcome?: string;
+    estimateReady?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tenantBakerNetworks = pgTable("tenant_baker_networks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  isApproved: boolean("is_approved").default(false),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).default('0.0500'), // 5% default
+  priority: integer("priority").default(0), // Higher number = shown first
+  isExclusive: boolean("is_exclusive").default(false), // Only this tenant can show this baker
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tenantRevenueSharing = pgTable("tenant_revenue_sharing", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  leadId: varchar("lead_id").notNull().references(() => leads.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  orderAmount: decimal("order_amount", { precision: 10, scale: 2 }),
+  tenantCommission: decimal("tenant_commission", { precision: 10, scale: 2 }),
+  bakerPayout: decimal("baker_payout", { precision: 10, scale: 2 }),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }),
+  status: text("status").default('pending'), // pending, processed, paid
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -11,6 +76,7 @@ export const users = pgTable("users", {
 
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id), // Added for multi-tenancy
   userId: varchar("user_id").references(() => users.id),
   name: text("name").notNull(),
   email: text("email").notNull(),
@@ -32,6 +98,7 @@ export const profiles = pgTable("profiles", {
 
 export const estimates = pgTable("estimates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id), // Added for multi-tenancy
   profileId: varchar("profile_id").references(() => profiles.id),
   name: text("name").notNull(),
   eventDate: text("event_date"),
@@ -76,6 +143,7 @@ export const bakers = pgTable("bakers", {
 
 export const leads = pgTable("leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id), // Added for multi-tenancy
   bakerId: varchar("baker_id").references(() => bakers.id),
   profileId: varchar("profile_id").references(() => profiles.id),
   customerName: text("customer_name").notNull(),
@@ -106,6 +174,12 @@ export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, cre
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 
+// Multi-tenancy schemas
+export const insertTenantSchema = createInsertSchema(tenants).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTenantConfigurationSchema = createInsertSchema(tenantConfigurations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTenantBakerNetworkSchema = createInsertSchema(tenantBakerNetworks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTenantRevenueSharingSchema = createInsertSchema(tenantRevenueSharing).omit({ id: true, createdAt: true });
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type InsertEstimate = z.infer<typeof insertEstimateSchema>;
@@ -113,12 +187,24 @@ export type InsertBaker = z.infer<typeof insertBakerSchema>;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
+// Multi-tenancy types
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type InsertTenantConfiguration = z.infer<typeof insertTenantConfigurationSchema>;
+export type InsertTenantBakerNetwork = z.infer<typeof insertTenantBakerNetworkSchema>;
+export type InsertTenantRevenueSharing = z.infer<typeof insertTenantRevenueSharingSchema>;
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Estimate = typeof estimates.$inferSelect;
 export type Baker = typeof bakers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+
+// Multi-tenancy types
+export type Tenant = typeof tenants.$inferSelect;
+export type TenantConfiguration = typeof tenantConfigurations.$inferSelect;
+export type TenantBakerNetwork = typeof tenantBakerNetworks.$inferSelect;
+export type TenantRevenueSharing = typeof tenantRevenueSharing.$inferSelect;
 
 // Reviews and ratings system
 export const reviews = pgTable("reviews", {

@@ -3,7 +3,9 @@ import {
   type Baker, type InsertBaker, type Lead, type InsertLead, type Message, type InsertMessage,
   type Review, type InsertReview, type Transaction, type InsertTransaction, 
   type Availability, type InsertAvailability, type Analytics, type InsertAnalytics, 
-  type BakerProfile, type InsertBakerProfile 
+  type BakerProfile, type InsertBakerProfile,
+  type Tenant, type InsertTenant, type TenantConfiguration, type InsertTenantConfiguration,
+  type TenantBakerNetwork, type InsertTenantBakerNetwork, type TenantRevenueSharing, type InsertTenantRevenueSharing
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -15,11 +17,13 @@ export interface IStorage {
   createProfile(profile: InsertProfile): Promise<Profile>;
   getProfile(id: string): Promise<Profile | undefined>;
   getProfileByUserId(userId: string): Promise<Profile | undefined>;
+  getProfilesByTenant(tenantId: string): Promise<Profile[]>;
   updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile>;
   
   createEstimate(estimate: InsertEstimate): Promise<Estimate>;
   getEstimate(id: string): Promise<Estimate | undefined>;
   getEstimatesByProfile(profileId: string): Promise<Estimate[]>;
+  getEstimatesByTenant(tenantId: string): Promise<Estimate[]>;
   updateEstimate(id: string, updates: Partial<InsertEstimate>): Promise<Estimate>;
   deleteEstimate(id: string): Promise<boolean>;
   
@@ -27,11 +31,12 @@ export interface IStorage {
   getBaker(id: string): Promise<Baker | undefined>;
   createBaker(baker: InsertBaker): Promise<Baker>;
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
-  searchBakers(location?: string, radius?: number, specialty?: string): Promise<Baker[]>;
+  searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   
   createLead(lead: InsertLead): Promise<Lead>;
   getLead(id: string): Promise<Lead | undefined>;
   getLeadsByBaker(bakerId: string): Promise<Lead[]>;
+  getLeadsByTenant(tenantId: string): Promise<Lead[]>;
   updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead>;
   
   createMessage(message: InsertMessage): Promise<Message>;
@@ -66,6 +71,25 @@ export interface IStorage {
   createBakerProfile(profile: InsertBakerProfile): Promise<BakerProfile>;
   getBakerProfileByBakerId(bakerId: string): Promise<BakerProfile | undefined>;
   updateBakerProfile(id: string, updates: Partial<InsertBakerProfile>): Promise<BakerProfile | undefined>;
+
+  // Multi-tenancy methods
+  createTenant(tenant: InsertTenant): Promise<Tenant>;
+  getTenant(id: string): Promise<Tenant | undefined>;
+  getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined>;
+  getTenantByDomain(domain: string): Promise<Tenant | undefined>;
+  updateTenant(id: string, updates: Partial<InsertTenant>): Promise<Tenant>;
+  
+  createTenantConfiguration(config: InsertTenantConfiguration): Promise<TenantConfiguration>;
+  getTenantConfiguration(tenantId: string): Promise<TenantConfiguration | undefined>;
+  updateTenantConfiguration(tenantId: string, updates: Partial<InsertTenantConfiguration>): Promise<TenantConfiguration>;
+  
+  createTenantBakerNetwork(network: InsertTenantBakerNetwork): Promise<TenantBakerNetwork>;
+  getTenantBakerNetworks(tenantId: string): Promise<TenantBakerNetwork[]>;
+  updateTenantBakerNetwork(id: string, updates: Partial<InsertTenantBakerNetwork>): Promise<TenantBakerNetwork>;
+  
+  createTenantRevenueSharing(sharing: InsertTenantRevenueSharing): Promise<TenantRevenueSharing>;
+  getTenantRevenueSharing(tenantId: string): Promise<TenantRevenueSharing[]>;
+  updateTenantRevenueSharing(id: string, updates: Partial<InsertTenantRevenueSharing>): Promise<TenantRevenueSharing>;
 }
 
 export class MemStorage implements IStorage {
@@ -80,6 +104,12 @@ export class MemStorage implements IStorage {
   private availability: Map<string, Availability>;
   private analytics: Map<string, Analytics>;
   private bakerProfiles: Map<string, BakerProfile>;
+  
+  // Multi-tenancy storage
+  private tenants: Map<string, Tenant>;
+  private tenantConfigurations: Map<string, TenantConfiguration>;
+  private tenantBakerNetworks: Map<string, TenantBakerNetwork>;
+  private tenantRevenueSharing: Map<string, TenantRevenueSharing>;
 
   constructor() {
     this.users = new Map();
@@ -94,8 +124,40 @@ export class MemStorage implements IStorage {
     this.analytics = new Map();
     this.bakerProfiles = new Map();
     
-    // Initialize with sample baker data
+    // Multi-tenancy storage
+    this.tenants = new Map();
+    this.tenantConfigurations = new Map();
+    this.tenantBakerNetworks = new Map();
+    this.tenantRevenueSharing = new Map();
+    
+    // Initialize with sample data
     this.initializeBakers();
+    this.initializeTenants();
+  }
+
+  private initializeTenants() {
+    const sampleTenants: InsertTenant[] = [
+      {
+        name: "Grand Ballroom Wedding Venue",
+        subdomain: "grandballroom",
+        contactEmail: "events@grandballroom.com",
+        contactPhone: "(555) 987-6543",
+        address: "100 Luxury Lane, Uptown",
+        subscriptionPlan: "premium"
+      },
+      {
+        name: "Rustic Barn Weddings",
+        subdomain: "rusticbarn", 
+        contactEmail: "bookings@rusticbarn.com",
+        contactPhone: "(555) 456-7890",
+        address: "500 Country Road, Countryside",
+        subscriptionPlan: "basic"
+      }
+    ];
+
+    sampleTenants.forEach(tenant => {
+      this.createTenant(tenant);
+    });
   }
 
   private initializeBakers() {
@@ -172,6 +234,7 @@ export class MemStorage implements IStorage {
       ...insertProfile, 
       id, 
       createdAt: new Date(),
+      tenantId: insertProfile.tenantId || null,
       userId: insertProfile.userId || null,
       address: insertProfile.address || null,
       phone: insertProfile.phone || null,
@@ -195,6 +258,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.profiles.values()).find(p => p.userId === userId);
   }
 
+  async getProfilesByTenant(tenantId: string): Promise<Profile[]> {
+    return Array.from(this.profiles.values()).filter(p => p.tenantId === tenantId);
+  }
+
   async updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile> {
     const existing = this.profiles.get(id);
     if (!existing) {
@@ -215,6 +282,7 @@ export class MemStorage implements IStorage {
       ...insertEstimate, 
       id, 
       createdAt: new Date(),
+      tenantId: insertEstimate.tenantId || null,
       profileId: insertEstimate.profileId || null,
       eventDate: insertEstimate.eventDate || null,
       guestCount: insertEstimate.guestCount || null,
@@ -241,6 +309,10 @@ export class MemStorage implements IStorage {
 
   async getEstimatesByProfile(profileId: string): Promise<Estimate[]> {
     return Array.from(this.estimates.values()).filter(e => e.profileId === profileId);
+  }
+
+  async getEstimatesByTenant(tenantId: string): Promise<Estimate[]> {
+    return Array.from(this.estimates.values()).filter(e => e.tenantId === tenantId);
   }
 
   async updateEstimate(id: string, updates: Partial<InsertEstimate>): Promise<Estimate> {
@@ -302,8 +374,16 @@ export class MemStorage implements IStorage {
     return updatedBaker;
   }
 
-  async searchBakers(location?: string, radius?: number, specialty?: string): Promise<Baker[]> {
+  async searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]> {
     let bakers = Array.from(this.bakers.values()).filter(b => b.isActive);
+    
+    // Filter by tenant baker network if tenantId provided
+    if (tenantId) {
+      const tenantBakerNetworks = Array.from(this.tenantBakerNetworks.values())
+        .filter(network => network.tenantId === tenantId && network.isApproved);
+      const approvedBakerIds = new Set(tenantBakerNetworks.map(network => network.bakerId));
+      bakers = bakers.filter(b => approvedBakerIds.has(b.id));
+    }
     
     if (specialty && specialty !== 'all') {
       bakers = bakers.filter(b => 
@@ -322,6 +402,7 @@ export class MemStorage implements IStorage {
       ...insertLead, 
       id, 
       createdAt: new Date(),
+      tenantId: insertLead.tenantId || null,
       bakerId: insertLead.bakerId || null,
       profileId: insertLead.profileId || null,
       customerPhone: insertLead.customerPhone || null,
@@ -342,6 +423,10 @@ export class MemStorage implements IStorage {
 
   async getLeadsByBaker(bakerId: string): Promise<Lead[]> {
     return Array.from(this.leads.values()).filter(lead => lead.bakerId === bakerId);
+  }
+
+  async getLeadsByTenant(tenantId: string): Promise<Lead[]> {
+    return Array.from(this.leads.values()).filter(lead => lead.tenantId === tenantId);
   }
 
   async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead> {
@@ -583,6 +668,162 @@ export class MemStorage implements IStorage {
     
     const updated = { ...profile, ...updates, updatedAt: new Date() };
     this.bakerProfiles.set(id, updated);
+    return updated;
+  }
+
+  // Multi-tenancy methods
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+    const id = randomUUID();
+    const tenant: Tenant = {
+      ...insertTenant,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customDomain: insertTenant.customDomain || null,
+      contactPhone: insertTenant.contactPhone || null,
+      address: insertTenant.address || null,
+      subscriptionPlan: insertTenant.subscriptionPlan || 'basic',
+      subscriptionStatus: insertTenant.subscriptionStatus || 'active',
+      isActive: insertTenant.isActive !== undefined ? insertTenant.isActive : true,
+    };
+    this.tenants.set(id, tenant);
+    
+    // Create default configuration for new tenant
+    await this.createTenantConfiguration({
+      tenantId: id,
+      primaryColor: '#B8860B',
+      secondaryColor: '#F5E6B3', 
+      accentColor: '#8B7355',
+      customMessages: {
+        heroTitle: `Welcome to ${tenant.name}`,
+        heroSubtitle: 'Plan your perfect wedding cake with our expert partners'
+      }
+    });
+    
+    return tenant;
+  }
+
+  async getTenant(id: string): Promise<Tenant | undefined> {
+    return this.tenants.get(id);
+  }
+
+  async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
+    return Array.from(this.tenants.values()).find(t => t.subdomain === subdomain && t.isActive);
+  }
+
+  async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
+    return Array.from(this.tenants.values()).find(t => t.customDomain === domain && t.isActive);
+  }
+
+  async updateTenant(id: string, updates: Partial<InsertTenant>): Promise<Tenant> {
+    const tenant = this.tenants.get(id);
+    if (!tenant) {
+      throw new Error(`Tenant with id ${id} not found`);
+    }
+    
+    const updated: Tenant = { ...tenant, ...updates, updatedAt: new Date() };
+    this.tenants.set(id, updated);
+    return updated;
+  }
+
+  async createTenantConfiguration(insertConfig: InsertTenantConfiguration): Promise<TenantConfiguration> {
+    const id = randomUUID();
+    const config: TenantConfiguration = {
+      ...insertConfig,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      logoUrl: insertConfig.logoUrl || null,
+      primaryColor: insertConfig.primaryColor || '#B8860B',
+      secondaryColor: insertConfig.secondaryColor || '#F5E6B3',
+      accentColor: insertConfig.accentColor || '#8B7355',
+      customMessages: insertConfig.customMessages as any || {},
+      customCss: insertConfig.customCss || null,
+      emailTemplates: insertConfig.emailTemplates as any || {},
+    };
+    this.tenantConfigurations.set(id, config);
+    return config;
+  }
+
+  async getTenantConfiguration(tenantId: string): Promise<TenantConfiguration | undefined> {
+    return Array.from(this.tenantConfigurations.values()).find(c => c.tenantId === tenantId);
+  }
+
+  async updateTenantConfiguration(tenantId: string, updates: Partial<InsertTenantConfiguration>): Promise<TenantConfiguration> {
+    const config = Array.from(this.tenantConfigurations.values()).find(c => c.tenantId === tenantId);
+    if (!config) {
+      throw new Error(`Tenant configuration for tenant ${tenantId} not found`);
+    }
+    
+    const updated: TenantConfiguration = { ...config, ...updates, updatedAt: new Date() };
+    this.tenantConfigurations.set(config.id, updated);
+    return updated;
+  }
+
+  async createTenantBakerNetwork(insertNetwork: InsertTenantBakerNetwork): Promise<TenantBakerNetwork> {
+    const id = randomUUID();
+    const network: TenantBakerNetwork = {
+      ...insertNetwork,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isApproved: insertNetwork.isApproved !== undefined ? insertNetwork.isApproved : false,
+      commissionRate: insertNetwork.commissionRate || '0.0500',
+      priority: insertNetwork.priority || 0,
+      isExclusive: insertNetwork.isExclusive !== undefined ? insertNetwork.isExclusive : false,
+    };
+    this.tenantBakerNetworks.set(id, network);
+    return network;
+  }
+
+  async getTenantBakerNetworks(tenantId: string): Promise<TenantBakerNetwork[]> {
+    return Array.from(this.tenantBakerNetworks.values())
+      .filter(network => network.tenantId === tenantId)
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  }
+
+  async updateTenantBakerNetwork(id: string, updates: Partial<InsertTenantBakerNetwork>): Promise<TenantBakerNetwork> {
+    const network = this.tenantBakerNetworks.get(id);
+    if (!network) {
+      throw new Error(`Tenant baker network with id ${id} not found`);
+    }
+    
+    const updated: TenantBakerNetwork = { ...network, ...updates, updatedAt: new Date() };
+    this.tenantBakerNetworks.set(id, updated);
+    return updated;
+  }
+
+  async createTenantRevenueSharing(insertSharing: InsertTenantRevenueSharing): Promise<TenantRevenueSharing> {
+    const id = randomUUID();
+    const sharing: TenantRevenueSharing = {
+      ...insertSharing,
+      id,
+      createdAt: new Date(),
+      orderAmount: insertSharing.orderAmount || null,
+      tenantCommission: insertSharing.tenantCommission || null,
+      bakerPayout: insertSharing.bakerPayout || null,
+      commissionRate: insertSharing.commissionRate || null,
+      status: insertSharing.status || 'pending',
+      processedAt: insertSharing.processedAt || null,
+    };
+    this.tenantRevenueSharing.set(id, sharing);
+    return sharing;
+  }
+
+  async getTenantRevenueSharing(tenantId: string): Promise<TenantRevenueSharing[]> {
+    return Array.from(this.tenantRevenueSharing.values())
+      .filter(sharing => sharing.tenantId === tenantId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async updateTenantRevenueSharing(id: string, updates: Partial<InsertTenantRevenueSharing>): Promise<TenantRevenueSharing> {
+    const sharing = this.tenantRevenueSharing.get(id);
+    if (!sharing) {
+      throw new Error(`Tenant revenue sharing with id ${id} not found`);
+    }
+    
+    const updated: TenantRevenueSharing = { ...sharing, ...updates };
+    this.tenantRevenueSharing.set(id, updated);
     return updated;
   }
 }
