@@ -27,6 +27,7 @@ import Help from "@/pages/help";
 import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
+import SuperAdminLogin from "@/pages/super-admin-login";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/admin">
         {() => <BakerDashboard bakerId="baker-1" />}
       </Route>
+      <Route path="/super-admin-login" component={SuperAdminLogin} />
       <Route path="/super-admin" component={() => <SuperAdminDashboard />} />
       <Route path="/baker/:bakerId/calculator">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
