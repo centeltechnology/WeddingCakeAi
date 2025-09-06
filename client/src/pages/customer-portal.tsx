@@ -104,21 +104,30 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
+      {/* Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-200/20 to-rose-200/20 rounded-full blur-3xl"></div>
+      </div>
+      
       {/* Header */}
-      <div className="border-b bg-white">
+      <div className="border-b border-white/20 backdrop-blur-sm bg-white/80 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold">
-                {customer.name.charAt(0).toUpperCase()}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
+                <div className="w-10 h-10 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold relative">
+                  {customer.name.charAt(0).toUpperCase()}
+                </div>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Welcome back, {customer.name}!</h1>
-                <p className="text-sm text-muted-foreground">Manage your orders and profile</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Welcome back, {customer.name}!</h1>
+                <p className="text-sm text-gray-600">Manage your orders and profile</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
+            <Button variant="outline" onClick={handleLogout} data-testid="button-logout" className="border-rose-200 text-rose-600 hover:bg-rose-50">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
@@ -127,23 +136,26 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="quotes" data-testid="tab-quotes">My Quotes</TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">Payments</TabsTrigger>
-            <TabsTrigger value="profile" data-testid="tab-profile">Profile</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 backdrop-blur-sm bg-white/80 border-white/20 shadow-lg">
+            <TabsTrigger value="overview" data-testid="tab-overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="quotes" data-testid="tab-quotes" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">My Quotes</TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">Payments</TabsTrigger>
+            <TabsTrigger value="profile" data-testid="tab-profile" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">Profile</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* Event Overview */}
-              <Card>
+              <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
-                    <Heart className="h-5 w-5 text-pink-600" />
-                    <CardTitle className="text-lg">Your Event</CardTitle>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-400/30 to-rose-400/30 rounded-full blur-lg"></div>
+                      <Heart className="h-5 w-5 text-pink-600 relative" />
+                    </div>
+                    <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Event</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -173,11 +185,14 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
               </Card>
 
               {/* Quotes Summary */}
-              <Card>
+              <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-lg">Quotes</CardTitle>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-blue-600/30 rounded-full blur-lg"></div>
+                      <FileText className="h-5 w-5 text-blue-600 relative" />
+                    </div>
+                    <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Quotes</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -203,11 +218,14 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
               </Card>
 
               {/* Payment Summary */}
-              <Card>
+              <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
-                    <CreditCard className="h-5 w-5 text-green-600" />
-                    <CardTitle className="text-lg">Payments</CardTitle>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/30 to-emerald-600/30 rounded-full blur-lg"></div>
+                      <CreditCard className="h-5 w-5 text-emerald-600 relative" />
+                    </div>
+                    <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Payments</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>

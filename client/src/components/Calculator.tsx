@@ -135,20 +135,29 @@ export default function Calculator() {
   };
 
   return (
-    <div className="calculator-grid">
+    <div className="calculator-grid bg-gradient-to-br from-rose-50 via-white to-pink-50 min-h-screen">
+      {/* Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-200/20 to-rose-200/20 rounded-full blur-3xl"></div>
+      </div>
+      
       {/* Calculator Form Section */}
-      <div className="space-y-8">
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95 backdrop-blur-sm">
+      <div className="space-y-8 relative z-10">
+        <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
           <CardContent className="p-8">
             <div className="flex items-center space-x-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                <Cake className="w-6 h-6 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-400 to-pink-400 rounded-2xl blur-lg opacity-30"></div>
+                <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg relative">
+                  <Cake className="w-6 h-6 text-white" />
+                </div>
               </div>
               <div>
-                <h2 className="text-3xl font-serif font-bold text-foreground">
+                <h2 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                   Cake Configuration
                 </h2>
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-sm text-gray-600 font-medium">
                   Design your perfect wedding cake
                 </p>
               </div>
