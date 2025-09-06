@@ -11,6 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.883.0",
     "@google-cloud/storage": "^7.17.0",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
@@ -69,7 +70,6 @@
     "memorystore": "^1.6.7",
     "nanoid": "^5.1.5",
     "next-themes": "^0.4.6",
-    "node-mailjet": "^6.0.9",
     "openid-client": "^6.7.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",

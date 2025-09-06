@@ -1,12 +1,15 @@
-import Mailjet from 'node-mailjet';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
-if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_SECRET_KEY) {
-  throw new Error("MAILJET_API_KEY and MAILJET_SECRET_KEY environment variables must be set");
+if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
+  throw new Error("AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION environment variables must be set for SES");
 }
 
-const mailjet = new Mailjet({
-  apiKey: process.env.MAILJET_API_KEY,
-  apiSecret: process.env.MAILJET_SECRET_KEY
+const sesClient = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 export interface EmailParams {
@@ -22,32 +25,48 @@ export interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
-    const request = await mailjet
-      .post('send', { version: 'v3.1' })
-      .request({
-        Messages: [
-          {
-            From: {
-              Email: params.from || 'noreply@bakewise.co',
-              Name: params.fromName || 'Bakewise'
-            },
-            To: [
-              {
-                Email: params.to,
-                Name: params.toName
-              }
-            ],
-            Subject: params.subject,
-            TextPart: params.textPart || params.text,
-            HTMLPart: params.htmlPart
-          }
-        ]
-      });
+    const emailParams = {
+      Source: `${params.fromName || 'Bakewise'} <${params.from || 'noreply@bakewise.co'}>`,
+      Destination: {
+        ToAddresses: [
+          params.toName 
+            ? `${params.toName} <${params.to}>` 
+            : params.to
+        ],
+      },
+      Message: {
+        Subject: {
+          Data: params.subject,
+          Charset: 'UTF-8',
+        },
+        Body: {
+          ...(params.textPart || params.text ? {
+            Text: {
+              Data: params.textPart || params.text!,
+              Charset: 'UTF-8',
+            }
+          } : {}),
+          ...(params.htmlPart ? {
+            Html: {
+              Data: params.htmlPart,
+              Charset: 'UTF-8',
+            }
+          } : {}),
+        },
+      },
+    };
 
-    console.log('Email sent successfully:', request.body);
+    const command = new SendEmailCommand(emailParams);
+    const response = await sesClient.send(command);
+    
+    console.log('Email sent successfully via AWS SES:', {
+      messageId: response.MessageId,
+      to: params.to,
+      subject: params.subject
+    });
     return true;
   } catch (error) {
-    console.error('Mailjet email error:', error);
+    console.error('AWS SES email error:', error);
     return false;
   }
 }
