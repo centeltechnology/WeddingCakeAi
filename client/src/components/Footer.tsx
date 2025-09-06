@@ -7,7 +7,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
+    <footer className="bg-gray-50 border-t border-gray-200 mt-auto relative z-10">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -26,22 +26,22 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900">Platform</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-features">
+                <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-features">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-pricing">
+                <Link href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-pricing">
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-about">
+                <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-about">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-baker-login">
+                <Link href="/admin" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-baker-login">
                   Baker Login
                 </Link>
               </li>
@@ -53,17 +53,17 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@bakewise.com" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-contact">
+                <a href="mailto:support@bakewise.com" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-contact">
                   Contact Support
                 </a>
               </li>
               <li>
-                <Link href="/help" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-help">
+                <Link href="/help" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-help">
                   Help Center
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@bakewise.com" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-business">
+                <a href="mailto:hello@bakewise.com" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-business">
                   Business Inquiries
                 </a>
               </li>
@@ -75,22 +75,22 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-terms">
+                <Link href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-terms">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-privacy">
+                <Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-privacy">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-cookies">
+                <Link href="/cookies" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-cookies">
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link href="/acceptable-use" className="text-gray-600 hover:text-gray-900 transition-colors" data-testid="footer-acceptable-use">
+                <Link href="/acceptable-use" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-acceptable-use">
                   Acceptable Use
                 </Link>
               </li>
