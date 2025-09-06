@@ -297,6 +297,7 @@ export const customers = pgTable("customers", {
   tags: text("tags").array(),
   lastContactDate: timestamp("last_contact_date"),
   nextFollowUpDate: date("next_follow_up_date"),
+  stripeCustomerId: varchar("stripe_customer_id"), // Added for Stripe integration
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

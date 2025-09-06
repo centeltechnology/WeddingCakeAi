@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   CreditCard, 
   Plus, 
@@ -60,61 +61,25 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
   const [activeTab, setActiveTab] = useState('payments');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Mock payment data - in real app would come from API
-  const payments: Payment[] = [
-    {
-      id: 'payment-1',
-      invoiceNumber: 'INV-2024-001',
-      customerName: 'Emily Thompson',
-      customerId: 'customer-1',
-      contractId: 'contract-1',
-      amount: '693.28',
-      paidAmount: '693.28',
-      remainingAmount: '0.00',
-      dueDate: '2024-08-01',
-      status: 'paid',
-      paymentMethod: 'Credit Card',
-      createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-      paidAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'payment-2',
-      invoiceNumber: 'INV-2024-002',
-      customerName: 'Emily Thompson',
-      customerId: 'customer-1',
-      contractId: 'contract-1',
-      amount: '693.28',
-      paidAmount: '0.00',
-      remainingAmount: '693.28',
-      dueDate: '2024-09-08',
-      status: 'pending',
-      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'payment-3',
-      invoiceNumber: 'INV-2024-003',
-      customerName: 'Jessica Martinez',
-      customerId: 'customer-2',
-      amount: '625.00',
-      paidAmount: '0.00',
-      remainingAmount: '625.00',
-      dueDate: '2024-12-01',
-      status: 'sent',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'payment-4',
-      invoiceNumber: 'INV-2024-004',
-      customerName: 'David Johnson',
-      customerId: 'customer-3',
-      amount: '1750.00',
-      paidAmount: '0.00',
-      remainingAmount: '1750.00',
-      dueDate: '2024-12-15',
-      status: 'overdue',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  // Fetch transactions/payments from API
+  const { data: payments = [], isLoading: paymentsLoading } = useQuery<any[]>({
+    queryKey: ['/api/bakers', bakerId, 'transactions'],
+    queryFn: async () => {
+      const response = await fetch(`/api/bakers/${bakerId}/transactions`);
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
     }
-  ];
+  });
+
+  // Fetch quotes for payment integration
+  const { data: quotes = [] } = useQuery({
+    queryKey: ['/api/quotes', bakerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/quotes?bakerId=${bakerId}`);
+      if (!response.ok) throw new Error('Failed to fetch quotes');
+      return response.json();
+    }
+  });
 
   const paymentPlans: PaymentPlan[] = [
     {

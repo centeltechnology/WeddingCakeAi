@@ -405,16 +405,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { amount, bakerId, customerId, type } = req.body;
+      const { amount, bakerId, customerId, type, quoteId, description } = req.body;
+      
+      // Get customer info for Stripe customer creation
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      // Create or retrieve Stripe customer
+      let stripeCustomer;
+      if (customer.stripeCustomerId) {
+        stripeCustomer = await stripe.customers.retrieve(customer.stripeCustomerId);
+      } else {
+        stripeCustomer = await stripe.customers.create({
+          email: customer.email,
+          name: customer.name,
+          phone: customer.phone || undefined,
+          metadata: {
+            customerId: customer.id,
+            bakerId
+          }
+        });
+        
+        // Update customer with Stripe ID
+        await storage.updateCustomer(customerId, { 
+          stripeCustomerId: stripeCustomer.id 
+        });
+      }
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
+        customer: stripeCustomer.id,
         metadata: {
           bakerId,
           customerId,
+          quoteId: quoteId || '',
           type
-        }
+        },
+        description: description || `${type} payment`,
+        automatic_payment_methods: {
+          enabled: true,
+        },
       });
 
       // Track transaction
@@ -425,13 +458,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount.toString(),
         status: 'pending',
         stripePaymentIntentId: paymentIntent.id,
-        description: `${type} payment`
+        description: description || `${type} payment`
       });
 
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
       console.error('Payment intent creation error:', error);
       res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Create payment intent for quote deposit
+  app.post("/api/quotes/:quoteId/create-deposit-payment", async (req, res) => {
+    try {
+      const { quoteId } = req.params;
+      const quote = await storage.getQuote(quoteId);
+      
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+
+      if (!quote.depositAmount || parseFloat(quote.depositAmount) <= 0) {
+        return res.status(400).json({ message: "No deposit amount set for this quote" });
+      }
+
+      const customer = await storage.getCustomer(quote.customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      // Create or retrieve Stripe customer
+      let stripeCustomer;
+      if (customer.stripeCustomerId) {
+        stripeCustomer = await stripe.customers.retrieve(customer.stripeCustomerId);
+      } else {
+        stripeCustomer = await stripe.customers.create({
+          email: customer.email,
+          name: customer.name,
+          phone: customer.phone || undefined,
+          metadata: {
+            customerId: customer.id,
+            bakerId: quote.bakerId
+          }
+        });
+        
+        await storage.updateCustomer(quote.customerId, { 
+          stripeCustomerId: stripeCustomer.id 
+        });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(parseFloat(quote.depositAmount) * 100),
+        currency: "usd",
+        customer: stripeCustomer.id,
+        metadata: {
+          bakerId: quote.bakerId,
+          customerId: quote.customerId,
+          quoteId: quote.id,
+          type: 'deposit'
+        },
+        description: `Deposit for ${quote.title} (Quote #${quote.quoteNumber})`,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      // Track transaction
+      await storage.createTransaction({
+        bakerId: quote.bakerId,
+        customerId: quote.customerId,
+        type: 'deposit',
+        amount: quote.depositAmount,
+        status: 'pending',
+        stripePaymentIntentId: paymentIntent.id,
+        description: `Deposit for Quote #${quote.quoteNumber}`
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        amount: quote.depositAmount 
+      });
+    } catch (error: any) {
+      console.error('Deposit payment creation error:', error);
+      res.status(500).json({ message: "Error creating deposit payment: " + error.message });
+    }
+  });
+
+  // Create payment intent for final payment
+  app.post("/api/quotes/:quoteId/create-final-payment", async (req, res) => {
+    try {
+      const { quoteId } = req.params;
+      const quote = await storage.getQuote(quoteId);
+      
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+
+      const depositAmount = parseFloat(quote.depositAmount || '0');
+      const totalAmount = parseFloat(quote.total || '0');
+      const finalAmount = totalAmount - depositAmount;
+
+      if (finalAmount <= 0) {
+        return res.status(400).json({ message: "No final payment required" });
+      }
+
+      const customer = await storage.getCustomer(quote.customerId);
+      if (!customer || !customer.stripeCustomerId) {
+        return res.status(404).json({ message: "Customer not found or not set up for payments" });
+      }
+
+      const stripeCustomer = await stripe.customers.retrieve(customer.stripeCustomerId);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(finalAmount * 100),
+        currency: "usd",
+        customer: stripeCustomer.id,
+        metadata: {
+          bakerId: quote.bakerId,
+          customerId: quote.customerId,
+          quoteId: quote.id,
+          type: 'final_payment'
+        },
+        description: `Final payment for ${quote.title} (Quote #${quote.quoteNumber})`,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      // Track transaction
+      await storage.createTransaction({
+        bakerId: quote.bakerId,
+        customerId: quote.customerId,
+        type: 'final_payment',
+        amount: finalAmount.toString(),
+        status: 'pending',
+        stripePaymentIntentId: paymentIntent.id,
+        description: `Final payment for Quote #${quote.quoteNumber}`
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        amount: finalAmount.toString() 
+      });
+    } catch (error: any) {
+      console.error('Final payment creation error:', error);
+      res.status(500).json({ message: "Error creating final payment: " + error.message });
     }
   });
 
@@ -449,6 +620,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (transaction) {
           await storage.updateTransactionStatus(transaction.id, 'completed');
+          
+          // If this was a deposit payment, update quote status
+          if (paymentIntent.metadata.type === 'deposit' && paymentIntent.metadata.quoteId) {
+            await storage.updateQuote(paymentIntent.metadata.quoteId, {
+              status: 'deposit_paid'
+            });
+          }
+          
+          // If this was a final payment, mark quote as fully paid
+          if (paymentIntent.metadata.type === 'final_payment' && paymentIntent.metadata.quoteId) {
+            await storage.updateQuote(paymentIntent.metadata.quoteId, {
+              status: 'paid'
+            });
+          }
+
+          // Send confirmation email (if email service is configured)
+          try {
+            const customer = await storage.getCustomer(paymentIntent.metadata.customerId);
+            if (customer) {
+              await sendEmail({
+                to: customer.email,
+                subject: 'Payment Confirmation',
+                text: `Dear ${customer.name},\n\nYour payment of $${(paymentIntent.amount / 100).toFixed(2)} has been successfully processed.\n\nDescription: ${paymentIntent.description}\n\nThank you for your business!`
+              });
+            }
+          } catch (emailError) {
+            console.error('Failed to send payment confirmation email:', emailError);
+            // Don't fail the webhook for email issues
+          }
         }
       }
       
