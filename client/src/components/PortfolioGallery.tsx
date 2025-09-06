@@ -100,6 +100,12 @@ export default function PortfolioGallery({ baker, onClose }: PortfolioGalleryPro
                   src={imageUrl}
                   alt={`${baker.name} cake ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border border-white/30">
@@ -123,6 +129,12 @@ export default function PortfolioGallery({ baker, onClose }: PortfolioGalleryPro
               src={selectedImage}
               alt="Full size cake"
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              loading="eager"
+              decoding="async"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.alt = 'Image failed to load';
+              }}
             />
             <Button
               variant="ghost"
