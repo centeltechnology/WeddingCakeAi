@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TenantBrandProvider } from "@/components/TenantBrandProvider";
 import Home from "@/pages/home";
+import DemoTenant from "@/pages/demo-tenant";
 import BakerDashboard from "@/components/BakerDashboard";
 import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
 import NotFound from "@/pages/not-found";
@@ -14,6 +15,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/demo-tenant" component={DemoTenant} />
       <Route path="/baker/:id/dashboard">
         {(params) => <BakerDashboard bakerId={params.id} />}
       </Route>
