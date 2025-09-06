@@ -199,6 +199,27 @@ export class MemStorage implements IStorage {
   private paymentSchedule: Map<string, PaymentSchedule>;
   private invoices: Map<string, Invoice>;
 
+  private initializeSuperAdminUser() {
+    // Create default super admin user for testing
+    // Using synchronous bcrypt for simplicity in constructor
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    
+    const superAdmin: User = {
+      id: 'super-admin-1',
+      username: 'admin',
+      email: 'admin@bakewise.com',
+      password: hashedPassword,
+      role: 'super_admin',
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.users.set('super-admin-1', superAdmin);
+  }
+
   constructor() {
     this.users = new Map();
     this.profiles = new Map();
@@ -238,6 +259,7 @@ export class MemStorage implements IStorage {
     this.invoices = new Map();
     
     // Initialize with sample data
+    this.initializeSuperAdminUser();
     this.initializeBakers();
     this.initializeTenants();
     this.initializeSampleData();
