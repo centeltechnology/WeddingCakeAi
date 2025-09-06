@@ -13,6 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DreamCakeDesigner } from "@/components/DreamCakeDesigner";
+import SocialShare from "@/components/SocialShare";
 
 interface CakeConfiguration {
   eventDate: string;
@@ -471,6 +472,14 @@ export default function Calculator() {
                 <Save className="w-5 h-5 mr-3" />
                 {saveEstimateMutation.isPending ? 'Saving...' : 'Save to Profile'}
               </Button>
+              
+              <div className="flex justify-center">
+                <SocialShare 
+                  title="Check out my wedding cake estimate!"
+                  description={`I estimated my dream wedding cake cost using Wedding CakeAI`}
+                  estimateTotal={pricing.total}
+                />
+              </div>
             </div>
 
             {/* DreamCake Designer Section */}
