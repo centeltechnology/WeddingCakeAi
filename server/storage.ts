@@ -13,7 +13,7 @@ import {
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
-  paymentPlans, paymentSchedules, invoices
+  paymentPlans, paymentSchedule, invoices
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";

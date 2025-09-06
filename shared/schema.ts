@@ -326,7 +326,7 @@ export const teamMembers = pgTable("team_members", {
   email: varchar("email").notNull(),
   role: varchar("role").notNull().$type<'owner' | 'admin' | 'editor' | 'viewer'>().default('viewer'),
   status: varchar("status").notNull().$type<'active' | 'pending' | 'suspended'>().default('active'),
-  invitedBy: varchar("invited_by").references(() => teamMembers.id),
+  invitedBy: varchar("invited_by").references((): any => teamMembers.id),
   invitedAt: timestamp("invited_at").defaultNow(),
   lastActive: timestamp("last_active"),
   createdAt: timestamp("created_at").defaultNow(),
