@@ -127,7 +127,12 @@ export default function WeddingCakeCalculator() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'calculator' && <Calculator />}
+        {activeTab === 'calculator' && (
+          <>
+            <Calculator />
+            <Testimonials />
+          </>
+        )}
         {activeTab === 'bakers' && <BakerDirectory onSwitchToBakersPortal={() => setActiveTab('bakersPortal')} />}
         {activeTab === 'bakersPortal' && (
           <div className="flex justify-center">
@@ -136,6 +141,7 @@ export default function WeddingCakeCalculator() {
             </div>
           </div>
         )}
+        {activeTab === 'blog' && <Blog />}
         {activeTab === 'profile' && <Profile />}
       </div>
     </div>
