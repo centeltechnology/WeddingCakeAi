@@ -1403,6 +1403,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Branding API Routes
+  app.get('/api/branding/:tenantId', async (req, res) => {
+    try {
+      // Mock branding configuration for demo
+      const brandingConfig = {
+        id: `branding-${req.params.tenantId}`,
+        tenantId: req.params.tenantId,
+        logoUrl: 'https://via.placeholder.com/200x80/f43f5e/ffffff?text=Sweet+Dreams',
+        brandColors: {
+          primary: '#f43f5e',
+          secondary: '#fda4af',
+          accent: '#fb7185',
+          background: '#fef2f2',
+          text: '#881337'
+        },
+        typography: {
+          fontFamily: 'Inter, sans-serif',
+          headingFont: 'Playfair Display, serif',
+          fontSize: 'medium'
+        },
+        customDomain: 'sweetdreams.com',
+        domainVerified: true,
+        emailBranding: {
+          enabled: true,
+          headerLogo: true,
+          footerBranding: true,
+          customSignature: 'Best regards,\nSweet Dreams Bakery Team\nCreating sweet memories since 2015',
+          socialLinks: {
+            website: 'https://sweetdreams.com',
+            instagram: '@sweetdreamsbakery',
+            facebook: 'facebook.com/sweetdreamsbakery'
+          }
+        },
+        whiteLabel: {
+          enabled: true,
+          hidePoweredBy: true,
+          customFavicon: 'https://via.placeholder.com/32x32/f43f5e/ffffff?text=SD'
+        },
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(brandingConfig);
+    } catch (error) {
+      console.error('Error fetching branding config:', error);
+      res.status(500).json({ error: 'Failed to fetch branding configuration' });
+    }
+  });
+
+  app.put('/api/branding/:tenantId', async (req, res) => {
+    try {
+      // In a real implementation, update the branding config in storage
+      const updatedConfig = {
+        ...req.body,
+        id: `branding-${req.params.tenantId}`,
+        tenantId: req.params.tenantId,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(updatedConfig);
+    } catch (error) {
+      console.error('Error updating branding config:', error);
+      res.status(500).json({ error: 'Failed to update branding configuration' });
+    }
+  });
+
+  app.post('/api/branding/:tenantId/logo', async (req, res) => {
+    try {
+      // Mock logo upload response
+      const logoUrl = 'https://via.placeholder.com/200x80/8b5cf6/ffffff?text=New+Logo';
+      res.json({ logoUrl, success: true });
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      res.status(500).json({ error: 'Failed to upload logo' });
+    }
+  });
+
+  app.post('/api/branding/:tenantId/verify-domain', async (req, res) => {
+    try {
+      const { domain } = req.body;
+      // Mock domain verification
+      res.json({ verified: true, domain });
+    } catch (error) {
+      console.error('Error verifying domain:', error);
+      res.status(500).json({ error: 'Failed to verify domain' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
