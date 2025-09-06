@@ -1339,6 +1339,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cake Calculator Quote Request API
+  app.post('/api/bakers/:bakerId/quote-requests', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const quoteRequest = {
+        id: `quote-request-${Date.now()}`,
+        bakerId,
+        tenantId: 'tenant-1', // This would come from baker lookup
+        ...req.body,
+        status: 'new',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // In a real app, this would save to database and trigger notifications
+      // For demo, we'll just simulate success
+      console.log('New cake calculator quote request:', quoteRequest);
+      
+      // Simulate email notification to baker
+      setTimeout(() => {
+        console.log(`Email notification sent to baker ${bakerId} about new quote request`);
+      }, 1000);
+
+      res.status(201).json({
+        success: true,
+        message: 'Quote request submitted successfully',
+        quoteRequestId: quoteRequest.id
+      });
+    } catch (error) {
+      console.error('Error processing quote request:', error);
+      res.status(500).json({ error: 'Failed to process quote request' });
+    }
+  });
+
   // Advanced Quote API Routes
   app.get('/api/quote-templates', async (req, res) => {
     try {

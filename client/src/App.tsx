@@ -13,6 +13,7 @@ import CustomerPortal from "@/pages/customer-portal";
 import BakerDashboard from "@/components/BakerDashboard";
 import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
 import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
+import { CakeCalculator } from "@/components/CakeCalculator";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +34,10 @@ function Router() {
         {() => <BakerDashboard bakerId="baker-1" />}
       </Route>
       <Route path="/super-admin" component={() => <SuperAdminDashboard />} />
+      <Route path="/baker/:bakerId/calculator">
+        {(params) => <CakeCalculator bakerId={params.bakerId} />}
+      </Route>
+      <Route path="/calculator" component={() => <CakeCalculator bakerId="baker-1" />} />
       <Route component={NotFound} />
     </Switch>
   );
