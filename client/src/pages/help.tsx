@@ -98,19 +98,23 @@ export default function Help() {
                   For Bakers
                 </h3>
                 <div className="space-y-3">
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Setting Up Your Subdomain</h4>
-                      <p className="text-sm text-gray-600">Learn how to claim your professional bakewise.com subdomain</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/subdomain-setup">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Setting Up Your Subdomain</h4>
+                        <p className="text-sm text-gray-600">Learn how to claim your professional bakewise.com subdomain</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Creating Quote Templates</h4>
-                      <p className="text-sm text-gray-600">Build reusable templates for faster quote generation</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/quote-templates">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Creating Quote Templates</h4>
+                        <p className="text-sm text-gray-600">Build reusable templates for faster quote generation</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">
@@ -135,12 +139,14 @@ export default function Help() {
                   For Customers
                 </h3>
                 <div className="space-y-3">
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">How to Order a Custom Cake</h4>
-                      <p className="text-sm text-gray-600">Step-by-step guide to placing your first order</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/custom-cake-ordering">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">How to Order a Custom Cake</h4>
+                        <p className="text-sm text-gray-600">Step-by-step guide to placing your first order</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">

@@ -24,6 +24,9 @@ import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
 import AcceptableUse from "@/pages/acceptable-use";
 import Help from "@/pages/help";
+import SubdomainSetup from "@/pages/help/subdomain-setup";
+import QuoteTemplates from "@/pages/help/quote-templates";
+import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
 
 function Router() {
   return (
@@ -55,6 +58,9 @@ function Router() {
       <Route path="/cookies" component={Cookies} />
       <Route path="/acceptable-use" component={AcceptableUse} />
       <Route path="/help" component={Help} />
+      <Route path="/help/subdomain-setup" component={SubdomainSetup} />
+      <Route path="/help/quote-templates" component={QuoteTemplates} />
+      <Route path="/help/custom-cake-ordering" component={CustomCakeOrdering} />
       <Route component={NotFound} />
     </Switch>
   );
