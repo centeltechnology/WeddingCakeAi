@@ -20,11 +20,19 @@ import {
   Search,
   Filter,
   Upload,
-  BarChart3
+  BarChart3,
+  FileText,
+  CreditCard,
+  FileCheck,
+  Code
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PortfolioUploader from "./PortfolioUploader";
+import { QuoteBuilder } from "./QuoteBuilder";
+import { ContractManager } from "./ContractManager";
+import { PaymentManager } from "./PaymentManager";
+import { EmbeddableWidget } from "./EmbeddableWidget";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -211,10 +219,31 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
       {/* Main Content */}
       <Tabs defaultValue="leads" className="space-y-6">
-        <TabsList className="bg-card/60 dark:bg-card/60 backdrop-blur-sm p-2 rounded-2xl shadow-lg">
-          <TabsTrigger value="leads" className="rounded-xl">Lead Management</TabsTrigger>
-          <TabsTrigger value="portfolio" className="rounded-xl">Portfolio</TabsTrigger>
-          <TabsTrigger value="analytics" className="rounded-xl">Analytics</TabsTrigger>
+        <TabsList className="bg-card/60 dark:bg-card/60 backdrop-blur-sm p-2 rounded-2xl shadow-lg grid grid-cols-6 w-full">
+          <TabsTrigger value="leads" className="rounded-xl text-xs">
+            <Users className="w-4 h-4 mr-1" />
+            Leads
+          </TabsTrigger>
+          <TabsTrigger value="quotes" className="rounded-xl text-xs">
+            <FileText className="w-4 h-4 mr-1" />
+            Quotes
+          </TabsTrigger>
+          <TabsTrigger value="contracts" className="rounded-xl text-xs">
+            <FileCheck className="w-4 h-4 mr-1" />
+            Contracts
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="rounded-xl text-xs">
+            <CreditCard className="w-4 h-4 mr-1" />
+            Payments
+          </TabsTrigger>
+          <TabsTrigger value="widgets" className="rounded-xl text-xs">
+            <Code className="w-4 h-4 mr-1" />
+            Widgets
+          </TabsTrigger>
+          <TabsTrigger value="portfolio" className="rounded-xl text-xs">
+            <Upload className="w-4 h-4 mr-1" />
+            Portfolio
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="leads">
@@ -349,22 +378,24 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="portfolio">
-          <PortfolioUploader bakerId={bakerId} />
+        <TabsContent value="quotes">
+          <QuoteBuilder bakerId={bakerId} />
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
-            <CardContent className="p-8">
-              <div className="text-center py-12">
-                <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">Analytics Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Detailed analytics and reporting features will be available in a future update.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="contracts">
+          <ContractManager bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentManager bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="widgets">
+          <EmbeddableWidget bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="portfolio">
+          <PortfolioUploader bakerId={bakerId} />
         </TabsContent>
       </Tabs>
     </div>
