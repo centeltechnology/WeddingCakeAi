@@ -606,11 +606,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/webhooks/stripe", async (req, res) => {
+  app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('Stripe webhook secret not configured');
+      return res.status(400).send('Webhook secret not configured');
+    }
+
+    let event;
+
     try {
-      // Handle Stripe webhooks for payment status updates
-      const event = req.body;
-      
+      // Verify webhook signature
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object;
         
@@ -654,8 +669,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ received: true });
     } catch (error: any) {
-      console.error('Webhook error:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
