@@ -1,4 +1,5 @@
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { Footer } from "@/components/Footer";
 import Plans from "@/monetization/Plans";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,6 +211,8 @@ export default function Pricing() {
           </Card>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

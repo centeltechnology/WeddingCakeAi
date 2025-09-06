@@ -1,4 +1,5 @@
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -312,6 +313,8 @@ export default function Features() {
           </Card>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }
