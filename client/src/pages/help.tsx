@@ -61,9 +61,12 @@ export default function Help() {
                   variant="outline" 
                   className="border-green-600 text-green-700 hover:bg-green-50" 
                   data-testid="button-view-docs"
-                  onClick={() => window.open('https://docs.bakewise.com', '_blank')}
+                  onClick={() => {
+                    const topicsSection = document.querySelector('[data-section="topics"]');
+                    topicsSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
-                  View Docs
+                  View Guides
                 </Button>
               </CardContent>
             </Card>
@@ -88,7 +91,7 @@ export default function Help() {
           </div>
 
           {/* Common Topics */}
-          <div className="mb-12">
+          <div className="mb-12" data-section="topics">
             <h2 className="text-2xl font-serif font-bold text-gray-900 mb-8">Popular Topics</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
