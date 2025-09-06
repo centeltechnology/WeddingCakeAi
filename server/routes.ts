@@ -2314,6 +2314,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Authentication Routes
+  app.post('/api/super-admin/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Username and password are required' 
+        });
+      }
+
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== 'super_admin') {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+      }
+
+      // Verify password using bcrypt
+      const bcrypt = require('bcryptjs');
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Account is disabled' 
+        });
+      }
+
+      // Create JWT token
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          username: user.username, 
+          role: user.role 
+        },
+        process.env.JWT_SECRET || 'fallback_secret_key_for_development',
+        { expiresIn: '24h' }
+      );
+
+      // Update last login time
+      await storage.updateUser(user.id, {
+        lastLoginAt: new Date(),
+      });
+
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role
+        }
+      });
+
+    } catch (error) {
+      console.error('Super admin login error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
+  // Middleware to verify super admin token
+  const verifySuperAdminToken = (req: any, res: any, next: any) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Access token required' });
+    }
+
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key_for_development');
+      
+      if (decoded.role !== 'super_admin') {
+        return res.status(403).json({ success: false, message: 'Super admin access required' });
+      }
+      
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+  };
+
+  // Super Admin Dashboard API Routes (protected)
+  app.get('/api/super-admin/stats', verifySuperAdminToken, async (req, res) => {
+    try {
+      // Mock platform statistics for now
+      const stats = {
+        totalTenants: 47,
+        activeTenants: 42,
+        totalUsers: 234,
+        monthlyRevenue: 12580.50,
+        totalRevenue: 156780.25,
+        revenueGrowth: 15.3,
+        activeUsers24h: 89,
+        systemHealth: 98.5
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching super admin stats:', error);
+      res.status(500).json({ error: 'Failed to fetch platform statistics' });
+    }
+  });
+
+  app.get('/api/super-admin/tenants', verifySuperAdminToken, async (req, res) => {
+    try {
+      // Mock tenant data for now
+      const tenants = [
+        {
+          id: 'tenant-1',
+          name: 'Sweet Dreams Bakery',
+          status: 'active',
+          planType: 'premium',
+          monthlyRevenue: 2850.75,
+          userCount: 12,
+          lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'tenant-2', 
+          name: 'Artisan Cakes Co.',
+          status: 'trial',
+          planType: 'basic',
+          monthlyRevenue: 0,
+          userCount: 3,
+          lastActivity: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      res.json(tenants);
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      res.status(500).json({ error: 'Failed to fetch tenants' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
