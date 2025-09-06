@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import {
-  Widget,
+  Zap,
   Palette,
   Monitor,
   Smartphone,
@@ -102,7 +102,7 @@ interface AdvancedWidgetBuilderProps {
 }
 
 const widgetTypes = [
-  { id: 'quote-form', name: 'Quote Request Form', icon: Widget, description: 'Let customers request custom quotes' },
+  { id: 'quote-form', name: 'Quote Request Form', icon: Zap, description: 'Let customers request custom quotes' },
   { id: 'gallery', name: 'Photo Gallery', icon: Image, description: 'Showcase your work beautifully' },
   { id: 'contact', name: 'Contact Form', icon: MousePointer, description: 'Simple contact and inquiry form' },
   { id: 'testimonials', name: 'Testimonials Slider', icon: Zap, description: 'Display customer reviews' },
@@ -334,7 +334,7 @@ export function AdvancedWidgetBuilder({ bakerId }: AdvancedWidgetBuilderProps) {
     });
   };
 
-  const previewDevice = previewDevices.find(d => d.id === previewDevice) || previewDevices[0];
+  const currentPreviewDevice = previewDevices.find(d => d.id === previewDevice) || previewDevices[0];
 
   if (isLoading) {
     return (
@@ -949,7 +949,7 @@ export function AdvancedWidgetBuilder({ bakerId }: AdvancedWidgetBuilderProps) {
                     className="border rounded-lg overflow-hidden bg-white shadow-lg"
                     style={{
                       width: selectedWidget.dimensions.responsive ? '100%' : selectedWidget.dimensions.width,
-                      maxWidth: previewDevice.width,
+                      maxWidth: currentPreviewDevice.width,
                       height: selectedWidget.dimensions.height,
                       backgroundColor: selectedWidget.styling.backgroundColor,
                       borderRadius: selectedWidget.styling.borderRadius,

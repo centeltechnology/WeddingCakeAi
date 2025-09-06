@@ -586,7 +586,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                 <div className="p-4 bg-muted rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Domain Status</span>
-                    <Badge variant={brandingConfig.domainVerified ? "success" : "secondary"}>
+                    <Badge variant={brandingConfig.domainVerified ? "default" : "secondary"}>
                       {brandingConfig.domainVerified ? (
                         <>
                           <Check className="h-3 w-3 mr-1" />

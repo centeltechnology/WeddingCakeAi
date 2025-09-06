@@ -1491,6 +1491,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advanced Widget Builder API Routes
+  app.get('/api/widgets/:bakerId', async (req, res) => {
+    try {
+      // Mock widget data for demo
+      const widgets = [
+        {
+          id: 'widget-1',
+          name: 'Custom Quote Form',
+          type: 'quote-form',
+          dimensions: { width: 400, height: 600, responsive: true },
+          styling: {
+            backgroundColor: '#ffffff',
+            borderColor: '#e5e7eb',
+            borderRadius: 8,
+            borderWidth: 1,
+            padding: 24,
+            fontFamily: 'Inter, sans-serif',
+            fontSize: 14,
+            primaryColor: '#f43f5e',
+            secondaryColor: '#fda4af',
+            textColor: '#1f2937',
+            buttonStyle: 'rounded',
+            shadowIntensity: 2
+          },
+          content: {
+            title: 'Get Your Custom Quote',
+            subtitle: 'Tell us about your dream cake and we\'ll create a personalized quote for you.',
+            fields: [
+              { id: 'name', type: 'text', label: 'Full Name', placeholder: 'Enter your name', required: true },
+              { id: 'email', type: 'email', label: 'Email Address', placeholder: 'your@email.com', required: true },
+              { id: 'event-date', type: 'date', label: 'Event Date', placeholder: 'Select date', required: true },
+              { id: 'details', type: 'textarea', label: 'Cake Details', placeholder: 'Tell us about your cake...', required: true }
+            ],
+            submitText: 'Get My Quote',
+            successMessage: 'Thank you! We\'ll get back to you within 24 hours.'
+          },
+          behavior: {
+            autoHeight: true,
+            smoothScroll: true,
+            loadingAnimation: true,
+            validationStyle: 'inline',
+            submitAction: 'modal'
+          },
+          integrations: {
+            googleAnalytics: false,
+            facebookPixel: false,
+            customCss: '',
+            customJs: ''
+          },
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      res.json(widgets);
+    } catch (error) {
+      console.error('Error fetching widgets:', error);
+      res.status(500).json({ error: 'Failed to fetch widgets' });
+    }
+  });
+
+  app.post('/api/widgets/:bakerId', async (req, res) => {
+    try {
+      const newWidget = {
+        id: `widget-${Date.now()}`,
+        ...req.body,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.status(201).json(newWidget);
+    } catch (error) {
+      console.error('Error creating widget:', error);
+      res.status(500).json({ error: 'Failed to create widget' });
+    }
+  });
+
+  app.put('/api/widgets/:bakerId/:widgetId', async (req, res) => {
+    try {
+      const updatedWidget = {
+        ...req.body,
+        id: req.params.widgetId,
+        updatedAt: new Date().toISOString()
+      };
+      
+      res.json(updatedWidget);
+    } catch (error) {
+      console.error('Error updating widget:', error);
+      res.status(500).json({ error: 'Failed to update widget' });
+    }
+  });
+
+  app.delete('/api/widgets/:bakerId/:widgetId', async (req, res) => {
+    try {
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting widget:', error);
+      res.status(500).json({ error: 'Failed to delete widget' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
