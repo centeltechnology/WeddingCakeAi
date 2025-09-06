@@ -1494,283 +1494,89 @@ export class MemStorage implements IStorage {
       description: "Standard contract for wedding cake orders with terms, conditions, and payment schedule",
       template: `<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
         <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">WEDDING CAKE SERVICE AGREEMENT</h1>
-        
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Contract Details</h2>
-          <p><strong>Contract Number:</strong> {{CONTRACT_NUMBER}}</p>
-          <p><strong>Date:</strong> {{CONTRACT_DATE}}</p>
-          <p><strong>Baker:</strong> {{BAKER_NAME}}</p>
-          <p><strong>Baker Address:</strong> {{BAKER_ADDRESS}}</p>
-          <p><strong>Baker Phone:</strong> {{BAKER_PHONE}}</p>
-          <p><strong>Baker Email:</strong> {{BAKER_EMAIL}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Client Information</h2>
-          <p><strong>Client Name:</strong> {{CUSTOMER_NAME}}</p>
-          <p><strong>Partner Name:</strong> {{PARTNER_NAME}}</p>
-          <p><strong>Client Phone:</strong> {{CUSTOMER_PHONE}}</p>
-          <p><strong>Client Email:</strong> {{CUSTOMER_EMAIL}}</p>
-          <p><strong>Event Date:</strong> {{EVENT_DATE}}</p>
-          <p><strong>Event Venue:</strong> {{EVENT_VENUE}}</p>
-          <p><strong>Guest Count:</strong> {{GUEST_COUNT}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Cake Details & Pricing</h2>
-          <p><strong>Cake Description:</strong> {{CAKE_DESCRIPTION}}</p>
-          <p><strong>Number of Servings:</strong> {{SERVINGS}}</p>
-          <p><strong>Flavors:</strong> {{FLAVORS}}</p>
-          <p><strong>Special Dietary Requirements:</strong> {{DIETARY_REQUIREMENTS}}</p>
-          <p><strong>Decorations:</strong> {{DECORATIONS}}</p>
-          <div style="background-color: #f7fafc; padding: 15px; border-radius: 8px; margin-top: 15px;">
-            <p><strong>Total Contract Amount:</strong> ${{TOTAL_AMOUNT}}</p>
-            <p><strong>Deposit Required:</strong> ${{DEPOSIT_AMOUNT}} ({{DEPOSIT_PERCENTAGE}}%)</p>
-            <p><strong>Balance Due:</strong> ${{BALANCE_AMOUNT}}</p>
-            <p><strong>Final Payment Due:</strong> {{FINAL_PAYMENT_DATE}}</p>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Delivery & Setup</h2>
-          <p><strong>Delivery Address:</strong> {{DELIVERY_ADDRESS}}</p>
-          <p><strong>Delivery Date:</strong> {{DELIVERY_DATE}}</p>
-          <p><strong>Setup Time:</strong> {{SETUP_TIME}}</p>
-          <p><strong>Special Instructions:</strong> {{SPECIAL_INSTRUCTIONS}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Terms and Conditions</h2>
-          <ol style="line-height: 1.6;">
-            <li><strong>Deposit:</strong> A non-refundable deposit of {{DEPOSIT_PERCENTAGE}}% is required to secure your event date.</li>
-            <li><strong>Final Payment:</strong> The remaining balance is due 7 days prior to the event date.</li>
-            <li><strong>Cake Design:</strong> Final cake design and decorations will be confirmed at least 2 weeks before the event.</li>
-            <li><strong>Delivery:</strong> Baker will deliver and set up the cake at the specified venue at the agreed time.</li>
-            <li><strong>Cancellation:</strong> Client may cancel up to 30 days before the event for a 50% refund (minus deposit). Cancellations within 30 days forfeit all payments.</li>
-            <li><strong>Weather:</strong> Baker is not responsible for delivery delays due to severe weather conditions.</li>
-            <li><strong>Venue Access:</strong> Client is responsible for ensuring baker has appropriate access to venue for delivery and setup.</li>
-            <li><strong>Changes:</strong> Any changes to the original order must be requested in writing at least 14 days before the event.</li>
-            <li><strong>Liability:</strong> Baker's liability is limited to the amount paid for services rendered.</li>
-            <li><strong>Force Majeure:</strong> Neither party shall be liable for delays or failures in performance due to circumstances beyond their control.</li>
-          </ol>
-        </div>
-
-        <div style="margin-bottom: 40px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Signatures</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-            <div>
-              <p><strong>Baker Signature:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{BAKER_NAME}}</p>
-              <p>Date: _______________</p>
-            </div>
-            <div>
-              <p><strong>Client Signature:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{CUSTOMER_NAME}}</p>
-              <p>Date: _______________</p>
-            </div>
-          </div>
+        <p><strong>Contract Number:</strong> [CONTRACT_NUMBER]</p>
+        <p><strong>Baker:</strong> [BAKER_NAME]</p>
+        <p><strong>Client:</strong> [CUSTOMER_NAME]</p>
+        <p><strong>Event Date:</strong> [EVENT_DATE]</p>
+        <p><strong>Total Amount:</strong> $[TOTAL_AMOUNT]</p>
+        <p><strong>Deposit:</strong> $[DEPOSIT_AMOUNT]</p>
+        <h2>Terms and Conditions</h2>
+        <p>1. 50% deposit required to secure date</p>
+        <p>2. Final payment due 7 days before event</p>
+        <p>3. Cancellation policy applies per terms</p>
+        <div style="margin-top: 40px;">
+          <p>Baker Signature: _________________</p>
+          <p>Client Signature: _________________</p>
         </div>
       </div>`,
       category: "wedding",
-      terms: "50% deposit required. Final payment due 7 days before event. Cancellation policy applies.",
-      cancellationPolicy: "Client may cancel up to 30 days before the event for a 50% refund (minus deposit). Cancellations within 30 days forfeit all payments.",
-      paymentTerms: "50% deposit required to secure date. Remaining balance due 7 days prior to event date. Payments accepted via cash, check, or card.",
+      terms: "50% deposit required. Final payment due 7 days before event.",
+      cancellationPolicy: "30-day notice required for partial refund.",
+      paymentTerms: "50% deposit to secure date. Balance due 7 days prior.",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Birthday & Special Occasion Contract
+    // Birthday Contract
     const birthdayContract: ContractTemplate = {
       id: "template-birthday-standard",
       tenantId,
       bakerId,
-      name: "Birthday & Special Occasion Cake Agreement",
-      description: "Contract for birthday parties, anniversaries, and special celebration cakes",
+      name: "Birthday Cake Agreement",
+      description: "Contract for birthday and special occasion cakes",
       template: `<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">BIRTHDAY & SPECIAL OCCASION CAKE AGREEMENT</h1>
-        
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Contract Details</h2>
-          <p><strong>Contract Number:</strong> {{CONTRACT_NUMBER}}</p>
-          <p><strong>Date:</strong> {{CONTRACT_DATE}}</p>
-          <p><strong>Baker:</strong> {{BAKER_NAME}}</p>
-          <p><strong>Baker Contact:</strong> {{BAKER_PHONE}} | {{BAKER_EMAIL}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Customer Information</h2>
-          <p><strong>Customer Name:</strong> {{CUSTOMER_NAME}}</p>
-          <p><strong>Phone:</strong> {{CUSTOMER_PHONE}}</p>
-          <p><strong>Email:</strong> {{CUSTOMER_EMAIL}}</p>
-          <p><strong>Event Date:</strong> {{EVENT_DATE}}</p>
-          <p><strong>Event Type:</strong> {{EVENT_TYPE}}</p>
-          <p><strong>Number of Guests:</strong> {{GUEST_COUNT}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Cake Specifications</h2>
-          <p><strong>Cake Description:</strong> {{CAKE_DESCRIPTION}}</p>
-          <p><strong>Size/Servings:</strong> {{SERVINGS}}</p>
-          <p><strong>Flavors:</strong> {{FLAVORS}}</p>
-          <p><strong>Decorations:</strong> {{DECORATIONS}}</p>
-          <p><strong>Special Requests:</strong> {{SPECIAL_REQUESTS}}</p>
-          <div style="background-color: #f7fafc; padding: 15px; border-radius: 8px; margin-top: 15px;">
-            <p><strong>Total Amount:</strong> ${{TOTAL_AMOUNT}}</p>
-            <p><strong>Deposit:</strong> ${{DEPOSIT_AMOUNT}}</p>
-            <p><strong>Balance Due on Pickup/Delivery:</strong> ${{BALANCE_AMOUNT}}</p>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Pickup/Delivery Information</h2>
-          <p><strong>Pickup Date & Time:</strong> {{PICKUP_DATE}} at {{PICKUP_TIME}}</p>
-          <p><strong>Delivery Address (if applicable):</strong> {{DELIVERY_ADDRESS}}</p>
-          <p><strong>Delivery Fee:</strong> {{DELIVERY_FEE}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Terms & Conditions</h2>
-          <ol style="line-height: 1.6;">
-            <li><strong>Order Confirmation:</strong> A 50% deposit confirms your order and secures your date.</li>
-            <li><strong>Payment:</strong> Remaining balance due on pickup/delivery day.</li>
-            <li><strong>Cancellation:</strong> 48-hour notice required for cancellation to receive deposit refund.</li>
-            <li><strong>Changes:</strong> Design changes must be requested at least 48 hours in advance.</li>
-            <li><strong>Pickup:</strong> Customer is responsible for timely pickup. Baker is not responsible for quality after pickup time.</li>
-            <li><strong>Storage:</strong> Cake should be refrigerated if not consumed within 4 hours.</li>
-            <li><strong>Allergies:</strong> Customer must inform baker of any food allergies or dietary restrictions.</li>
-          </ol>
-        </div>
-
-        <div style="margin-bottom: 40px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Agreement</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-            <div>
-              <p><strong>Baker:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{BAKER_NAME}}</p>
-              <p>Date: _______________</p>
-            </div>
-            <div>
-              <p><strong>Customer:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{CUSTOMER_NAME}}</p>
-              <p>Date: _______________</p>
-            </div>
-          </div>
+        <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">BIRTHDAY CAKE AGREEMENT</h1>
+        <p><strong>Contract Number:</strong> [CONTRACT_NUMBER]</p>
+        <p><strong>Baker:</strong> [BAKER_NAME]</p>
+        <p><strong>Customer:</strong> [CUSTOMER_NAME]</p>
+        <p><strong>Event Date:</strong> [EVENT_DATE]</p>
+        <p><strong>Total Amount:</strong> $[TOTAL_AMOUNT]</p>
+        <h2>Terms</h2>
+        <p>1. 50% deposit secures order</p>
+        <p>2. Balance due on pickup/delivery</p>
+        <p>3. 48-hour notice for changes</p>
+        <div style="margin-top: 40px;">
+          <p>Baker: _________________</p>
+          <p>Customer: _________________</p>
         </div>
       </div>`,
       category: "birthday",
-      terms: "50% deposit to secure order. Balance due on pickup/delivery.",
-      cancellationPolicy: "48-hour notice required for cancellation to receive deposit refund.",
-      paymentTerms: "50% deposit required. Remaining balance due on pickup or delivery day.",
+      terms: "50% deposit to secure order. Balance due on pickup.",
+      cancellationPolicy: "48-hour notice required for deposit refund.",
+      paymentTerms: "50% deposit, balance on pickup/delivery.",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Corporate Event Contract
+    // Corporate Contract
     const corporateContract: ContractTemplate = {
       id: "template-corporate-standard",
       tenantId,
       bakerId,
-      name: "Corporate Event Catering Agreement",
-      description: "Professional contract for corporate events, office parties, and business celebrations",
+      name: "Corporate Event Agreement",
+      description: "Professional contract for corporate events and business celebrations",
       template: `<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">CORPORATE EVENT CATERING AGREEMENT</h1>
-        
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Service Provider</h2>
-          <p><strong>Business Name:</strong> {{BAKER_NAME}}</p>
-          <p><strong>Address:</strong> {{BAKER_ADDRESS}}</p>
-          <p><strong>Phone:</strong> {{BAKER_PHONE}}</p>
-          <p><strong>Email:</strong> {{BAKER_EMAIL}}</p>
-          <p><strong>License/Tax ID:</strong> {{BUSINESS_LICENSE}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Client Company</h2>
-          <p><strong>Company Name:</strong> {{COMPANY_NAME}}</p>
-          <p><strong>Contact Person:</strong> {{CONTACT_PERSON}}</p>
-          <p><strong>Title:</strong> {{CONTACT_TITLE}}</p>
-          <p><strong>Phone:</strong> {{COMPANY_PHONE}}</p>
-          <p><strong>Email:</strong> {{COMPANY_EMAIL}}</p>
-          <p><strong>Billing Address:</strong> {{BILLING_ADDRESS}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Event Details</h2>
-          <p><strong>Event Type:</strong> {{EVENT_TYPE}}</p>
-          <p><strong>Event Date:</strong> {{EVENT_DATE}}</p>
-          <p><strong>Event Time:</strong> {{EVENT_TIME}}</p>
-          <p><strong>Event Location:</strong> {{EVENT_LOCATION}}</p>
-          <p><strong>Expected Attendees:</strong> {{ATTENDEE_COUNT}}</p>
-          <p><strong>Setup Time Required:</strong> {{SETUP_TIME}}</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Catering Services & Pricing</h2>
-          <p><strong>Menu Description:</strong> {{MENU_DESCRIPTION}}</p>
-          <p><strong>Dietary Accommodations:</strong> {{DIETARY_ACCOMMODATIONS}}</p>
-          <p><strong>Service Level:</strong> {{SERVICE_LEVEL}}</p>
-          <div style="background-color: #f7fafc; padding: 15px; border-radius: 8px; margin-top: 15px;">
-            <p><strong>Subtotal:</strong> ${{SUBTOTAL}}</p>
-            <p><strong>Service Fee ({{SERVICE_FEE_PERCENT}}%):</strong> ${{SERVICE_FEE}}</p>
-            <p><strong>Delivery/Setup Fee:</strong> ${{DELIVERY_FEE}}</p>
-            <p><strong>Tax ({{TAX_RATE}}%):</strong> ${{TAX_AMOUNT}}</p>
-            <p><strong>Total Contract Amount:</strong> ${{TOTAL_AMOUNT}}</p>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Payment Terms</h2>
-          <p><strong>Deposit Required:</strong> ${{DEPOSIT_AMOUNT}} ({{DEPOSIT_PERCENTAGE}}%)</p>
-          <p><strong>Payment Schedule:</strong> {{PAYMENT_SCHEDULE}}</p>
-          <p><strong>Final Payment Due:</strong> {{FINAL_PAYMENT_DATE}}</p>
-          <p><strong>Accepted Payment Methods:</strong> Check, ACH Transfer, Corporate Credit Card</p>
-          <p><strong>Net Payment Terms:</strong> {{NET_TERMS}} days</p>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Terms & Conditions</h2>
-          <ol style="line-height: 1.6;">
-            <li><strong>Confirmation:</strong> This agreement is binding upon receipt of signed contract and deposit.</li>
-            <li><strong>Guest Count:</strong> Final headcount must be confirmed 72 hours prior to event.</li>
-            <li><strong>Venue Access:</strong> Client responsible for ensuring vendor access and adequate setup space.</li>
-            <li><strong>Cancellation:</strong> 14-day notice required. Cancellation fees may apply.</li>
-            <li><strong>Force Majeure:</strong> Neither party liable for delays due to circumstances beyond control.</li>
-            <li><strong>Liability:</strong> Service provider maintains appropriate business insurance.</li>
-            <li><strong>Intellectual Property:</strong> Client grants permission for photography for marketing purposes.</li>
-            <li><strong>Modifications:</strong> Changes must be requested in writing with 7-day notice minimum.</li>
-          </ol>
-        </div>
-
-        <div style="margin-bottom: 40px;">
-          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Authorization</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-            <div>
-              <p><strong>Service Provider:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{BAKER_NAME}}</p>
-              <p>Title: Owner/Manager</p>
-              <p>Date: _______________</p>
-            </div>
-            <div>
-              <p><strong>Client Company:</strong></p>
-              <div style="border-bottom: 1px solid #000; height: 40px; margin: 10px 0;"></div>
-              <p>{{CONTACT_PERSON}}</p>
-              <p>Title: {{CONTACT_TITLE}}</p>
-              <p>Date: _______________</p>
-            </div>
-          </div>
+        <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">CORPORATE EVENT AGREEMENT</h1>
+        <p><strong>Business:</strong> [BAKER_NAME]</p>
+        <p><strong>Client Company:</strong> [COMPANY_NAME]</p>
+        <p><strong>Contact:</strong> [CONTACT_PERSON]</p>
+        <p><strong>Event Date:</strong> [EVENT_DATE]</p>
+        <p><strong>Total Amount:</strong> $[TOTAL_AMOUNT]</p>
+        <h2>Corporate Terms</h2>
+        <p>1. Standard corporate payment terms</p>
+        <p>2. Net 30 payment for established accounts</p>
+        <p>3. 14-day cancellation notice required</p>
+        <div style="margin-top: 40px;">
+          <p>Service Provider: _________________</p>
+          <p>Client Representative: _________________</p>
         </div>
       </div>`,
       category: "corporate",
-      terms: "Standard corporate payment terms apply. Net 30 payment terms for established accounts.",
-      cancellationPolicy: "14-day notice required for cancellation. Cancellation fees apply based on notice period.",
-      paymentTerms: "Deposit required upon contract signing. Balance due per agreed payment schedule or Net 30 terms.",
+      terms: "Net 30 payment terms for established accounts.",
+      cancellationPolicy: "14-day notice required. Cancellation fees may apply.",
+      paymentTerms: "Standard corporate payment schedule or Net 30.",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
