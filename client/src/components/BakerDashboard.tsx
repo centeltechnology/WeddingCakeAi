@@ -237,6 +237,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             <CreditCard className="w-4 h-4 mr-1" />
             Payments
           </TabsTrigger>
+          <TabsTrigger value="pricing" className="rounded-xl text-xs">
+            <DollarSign className="w-4 h-4 mr-1" />
+            Pricing
+          </TabsTrigger>
           <TabsTrigger value="widgets" className="rounded-xl text-xs">
             <Code className="w-4 h-4 mr-1" />
             Widgets
@@ -389,6 +393,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="payments">
           <PaymentManager bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="pricing">
+          <PricingManager bakerId={bakerId} />
         </TabsContent>
 
         <TabsContent value="widgets">

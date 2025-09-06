@@ -252,6 +252,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
           </Button>
           <Button 
             variant="outline"
+            onClick={() => window.open(`/baker/${bakerId}/calculator`, '_blank')}
             data-testid="button-preview-calculator"
           >
             <Eye className="h-4 w-4 mr-2" />
