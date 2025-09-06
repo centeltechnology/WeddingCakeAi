@@ -12,6 +12,7 @@ import CustomerLogin from "@/pages/customer-login";
 import CustomerPortal from "@/pages/customer-portal";
 import BakerDashboard from "@/components/BakerDashboard";
 import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
+import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/admin">
         {() => <BakerDashboard bakerId="baker-1" />}
       </Route>
+      <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1085,6 +1085,260 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin API Routes
+  app.get('/api/super-admin/stats', async (req, res) => {
+    try {
+      const stats = {
+        totalTenants: 15,
+        activeTenants: 12,
+        totalUsers: 847,
+        monthlyRevenue: 18750.00,
+        totalRevenue: 156230.00,
+        revenueGrowth: 12.5,
+        activeUsers24h: 342,
+        systemHealth: 99.8
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching platform stats:', error);
+      res.status(500).json({ error: 'Failed to fetch platform statistics' });
+    }
+  });
+
+  app.get('/api/super-admin/tenants', async (req, res) => {
+    try {
+      const tenants = [
+        {
+          id: 'tenant-1',
+          name: 'Sweet Dreams Bakery',
+          status: 'active',
+          planType: 'Professional',
+          monthlyRevenue: 2850.00,
+          userCount: 8,
+          lastActivity: '2024-01-15T10:30:00Z',
+          createdAt: '2023-11-20T08:15:00Z'
+        },
+        {
+          id: 'tenant-2',
+          name: 'Artisan Cakes Co',
+          status: 'active',
+          planType: 'Premium',
+          monthlyRevenue: 4200.00,
+          userCount: 12,
+          lastActivity: '2024-01-16T14:22:00Z',
+          createdAt: '2023-10-15T12:45:00Z'
+        },
+        {
+          id: 'tenant-3',
+          name: 'Wedding Wonders',
+          status: 'trial',
+          planType: 'Trial',
+          monthlyRevenue: 0.00,
+          userCount: 3,
+          lastActivity: '2024-01-14T16:45:00Z',
+          createdAt: '2024-01-10T09:30:00Z'
+        },
+        {
+          id: 'tenant-4',
+          name: 'Custom Cake Studio',
+          status: 'suspended',
+          planType: 'Basic',
+          monthlyRevenue: 950.00,
+          userCount: 5,
+          lastActivity: '2024-01-05T11:20:00Z',
+          createdAt: '2023-12-01T14:10:00Z'
+        },
+        {
+          id: 'tenant-5',
+          name: 'Deluxe Desserts',
+          status: 'active',
+          planType: 'Premium',
+          monthlyRevenue: 3650.00,
+          userCount: 15,
+          lastActivity: '2024-01-16T09:15:00Z',
+          createdAt: '2023-09-30T16:22:00Z'
+        }
+      ];
+      res.json(tenants);
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      res.status(500).json({ error: 'Failed to fetch tenants' });
+    }
+  });
+
+  app.get('/api/super-admin/users', async (req, res) => {
+    try {
+      const users = [
+        {
+          id: 'user-1',
+          name: 'Sarah Johnson',
+          email: 'sarah@sweetdreams.com',
+          tenantId: 'tenant-1',
+          tenantName: 'Sweet Dreams Bakery',
+          role: 'owner',
+          status: 'active',
+          lastLogin: '2024-01-16T08:30:00Z',
+          createdAt: '2023-11-20T08:15:00Z'
+        },
+        {
+          id: 'user-2',
+          name: 'Mike Chen',
+          email: 'mike@artisancakes.com',
+          tenantId: 'tenant-2',
+          tenantName: 'Artisan Cakes Co',
+          role: 'owner',
+          status: 'active',
+          lastLogin: '2024-01-15T19:45:00Z',
+          createdAt: '2023-10-15T12:45:00Z'
+        },
+        {
+          id: 'user-3',
+          name: 'Emma Wilson',
+          email: 'emma@sweetdreams.com',
+          tenantId: 'tenant-1',
+          tenantName: 'Sweet Dreams Bakery',
+          role: 'admin',
+          status: 'active',
+          lastLogin: '2024-01-16T10:15:00Z',
+          createdAt: '2023-12-05T14:30:00Z'
+        },
+        {
+          id: 'user-4',
+          name: 'David Martinez',
+          email: 'david@weddingwonders.com',
+          tenantId: 'tenant-3',
+          tenantName: 'Wedding Wonders',
+          role: 'owner',
+          status: 'pending',
+          lastLogin: '2024-01-14T16:45:00Z',
+          createdAt: '2024-01-10T09:30:00Z'
+        },
+        {
+          id: 'user-5',
+          name: 'Lisa Brown',
+          email: 'lisa@customcake.com',
+          tenantId: 'tenant-4',
+          tenantName: 'Custom Cake Studio',
+          role: 'owner',
+          status: 'suspended',
+          lastLogin: '2024-01-05T11:20:00Z',
+          createdAt: '2023-12-01T14:10:00Z'
+        },
+        {
+          id: 'user-6',
+          name: 'Tom Anderson',
+          email: 'tom@deluxedesserts.com',
+          tenantId: 'tenant-5',
+          tenantName: 'Deluxe Desserts',
+          role: 'owner',
+          status: 'active',
+          lastLogin: '2024-01-16T07:30:00Z',
+          createdAt: '2023-09-30T16:22:00Z'
+        },
+        {
+          id: 'user-7',
+          name: 'Rachel Green',
+          email: 'rachel@deluxedesserts.com',
+          tenantId: 'tenant-5',
+          tenantName: 'Deluxe Desserts',
+          role: 'admin',
+          status: 'active',
+          lastLogin: '2024-01-15T16:20:00Z',
+          createdAt: '2023-11-15T11:45:00Z'
+        },
+        {
+          id: 'user-8',
+          name: 'James Wilson',
+          email: 'james@artisancakes.com',
+          tenantId: 'tenant-2',
+          tenantName: 'Artisan Cakes Co',
+          role: 'editor',
+          status: 'active',
+          lastLogin: '2024-01-16T12:10:00Z',
+          createdAt: '2023-12-20T09:15:00Z'
+        }
+      ];
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.get('/api/super-admin/system-metrics', async (req, res) => {
+    try {
+      const metrics = [
+        {
+          name: 'CPU Usage',
+          value: 12.5,
+          unit: '%',
+          status: 'healthy',
+          trend: 'stable'
+        },
+        {
+          name: 'Memory Usage',
+          value: 68.2,
+          unit: '%',
+          status: 'healthy',
+          trend: 'up'
+        },
+        {
+          name: 'Disk Usage',
+          value: 42.8,
+          unit: '%',
+          status: 'healthy',
+          trend: 'up'
+        },
+        {
+          name: 'Response Time',
+          value: 145,
+          unit: 'ms',
+          status: 'healthy',
+          trend: 'down'
+        },
+        {
+          name: 'API Requests/min',
+          value: 2847,
+          unit: '',
+          status: 'healthy',
+          trend: 'up'
+        },
+        {
+          name: 'Error Rate',
+          value: 0.12,
+          unit: '%',
+          status: 'healthy',
+          trend: 'down'
+        },
+        {
+          name: 'Database Connections',
+          value: 23,
+          unit: '',
+          status: 'healthy',
+          trend: 'stable'
+        },
+        {
+          name: 'Queue Length',
+          value: 4,
+          unit: '',
+          status: 'healthy',
+          trend: 'stable'
+        },
+        {
+          name: 'Cache Hit Rate',
+          value: 94.7,
+          unit: '%',
+          status: 'healthy',
+          trend: 'up'
+        }
+      ];
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching system metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch system metrics' });
+    }
+  });
+
   // Advanced Quote API Routes
   app.get('/api/quote-templates', async (req, res) => {
     try {
