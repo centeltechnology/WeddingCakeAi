@@ -1,5 +1,5 @@
 import { NavigationHeader } from "@/components/NavigationHeader";
-import { Plans } from "@/monetization/Plans";
+import Plans from "@/monetization/Plans";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
