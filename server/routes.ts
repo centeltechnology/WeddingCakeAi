@@ -3,8 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
-  insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema 
+  insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
+  insertTenantSchema, insertTenantConfigurationSchema 
 } from "@shared/schema";
+import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
 import Stripe from "stripe";
@@ -22,8 +24,47 @@ const replicate = new Replicate({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Profile routes
-  app.post("/api/profiles", async (req, res) => {
+  // Apply tenant middleware globally
+  app.use(tenantMiddleware);
+  app.use(injectTenantBranding);
+  
+  // Tenant management routes (admin only)
+  app.post("/api/admin/tenants", async (req, res) => {
+    try {
+      const parsedData = insertTenantSchema.parse(req.body);
+      const tenant = await storage.createTenant(parsedData);
+      res.json(tenant);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+  
+  app.get("/api/tenant/info", async (req, res) => {
+    try {
+      if (!req.tenant) {
+        return res.json({ tenant: null, config: null });
+      }
+      
+      const config = await storage.getTenantConfiguration(req.tenant.id);
+      res.json({ tenant: req.tenant, config });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching tenant info" });
+    }
+  });
+  
+  app.put("/api/tenant/config", requireTenant, async (req, res) => {
+    try {
+      const tenantId = req.tenant!.id;
+      const updates = req.body;
+      const config = await storage.updateTenantConfiguration(tenantId, updates);
+      res.json(config);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Update failed" });
+    }
+  });
+  
+  // Profile routes - now tenant-aware
+  app.post("/api/profiles", enforceTenantIsolation, async (req, res) => {
     try {
       const profileData = insertProfileSchema.parse(req.body);
       const profile = await storage.createProfile(profileData);
@@ -39,9 +80,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
+      
+      // Tenant isolation check
+      const tenantId = getTenantId(req);
+      if (tenantId && profile.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
       res.json(profile);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get("/api/tenant/profiles", requireTenant, async (req, res) => {
+    try {
+      const tenantId = req.tenant!.id;
+      const profiles = await storage.getProfilesByTenant(tenantId);
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching tenant profiles" });
     }
   });
 
@@ -55,8 +113,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Estimate routes
-  app.post("/api/estimates", async (req, res) => {
+  // Estimate routes - now tenant-aware
+  app.post("/api/estimates", enforceTenantIsolation, async (req, res) => {
     try {
       const estimateData = insertEstimateSchema.parse(req.body);
       const estimate = await storage.createEstimate(estimateData);
@@ -109,14 +167,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Baker routes
+  // Baker routes - now tenant-aware
   app.get("/api/bakers", async (req, res) => {
     try {
       const { location, radius, specialty, priceRange, rating, dietary } = req.query;
+      const tenantId = getTenantId(req);
+      
       let bakers = await storage.searchBakers(
         location as string,
         radius ? parseInt(radius as string) : undefined,
-        specialty as string
+        specialty as string,
+        tenantId || undefined
       );
       
       // Advanced filtering
