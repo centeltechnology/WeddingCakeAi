@@ -1,17 +1,22 @@
 import { useState } from "react";
-import { Cake, Share, Store } from "lucide-react";
+import { Cake, Share, Store, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";
 import Profile from "@/components/Profile";
 import Plans from "@/monetization/Plans";
+import Testimonials from "@/components/Testimonials";
+import Blog from "@/components/Blog";
+import SEOHead from "@/components/SEOHead";
+import SocialShare from "@/components/SocialShare";
 import logoImage from "@assets/Minimalist Golden-Brown Wedding Cake Design_1757101253561.png";
 
 const tabs = [
   { id: 'calculator', label: 'Calculator', icon: Cake },
   { id: 'bakers', label: 'Find Bakers', icon: 'fas fa-map-marker-alt' },
   { id: 'bakersPortal', label: 'For Bakers', icon: Store },
+  { id: 'blog', label: 'Blog', icon: BookOpen },
   { id: 'profile', label: 'Profile', icon: 'fas fa-user' }
 ];
 
@@ -20,6 +25,7 @@ export default function WeddingCakeCalculator() {
 
   return (
     <div className="min-h-screen">
+      <SEOHead />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-card/80 border-b border-border/50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,15 +53,7 @@ export default function WeddingCakeCalculator() {
                 <div className="text-xs text-muted-foreground">No signup required</div>
               </div>
               <ThemeToggle />
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
-                data-testid="button-share-estimate"
-              >
-                <Share className="w-4 h-4 mr-2" />
-                Share Estimate
-              </Button>
+              <SocialShare />
             </div>
           </div>
         </div>
@@ -100,6 +98,18 @@ export default function WeddingCakeCalculator() {
             >
               <Store className="w-5 h-5" />
               <span>For Bakers</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('blog')}
+              className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-3 ${
+                activeTab === 'blog' 
+                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 scale-105' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-gray-700/50'
+              }`}
+              data-testid="tab-blog"
+            >
+              <BookOpen className="w-5 h-5" />
+              <span>Blog</span>
             </button>
             <button
               onClick={() => setActiveTab('profile')}

@@ -45,12 +45,12 @@ export default function SEOHead({
     updateMetaTag('viewport', 'width=device-width, initial-scale=1.0');
 
     // Open Graph meta tags
-    updateMetaTag('og:title', title, true);
-    updateMetaTag('og:description', description, true);
-    updateMetaTag('og:image', image, true);
-    updateMetaTag('og:url', url, true);
-    updateMetaTag('og:type', type, true);
-    updateMetaTag('og:site_name', 'Wedding CakeAI', true);
+    updateMetaTag('og:title', title, 'property');
+    updateMetaTag('og:description', description, 'property');
+    updateMetaTag('og:image', image, 'property');
+    updateMetaTag('og:url', url, 'property');
+    updateMetaTag('og:type', type, 'property');
+    updateMetaTag('og:site_name', 'Wedding CakeAI', 'property');
 
     // Twitter meta tags
     updateMetaTag('twitter:card', 'summary_large_image');
@@ -98,7 +98,7 @@ export default function SEOHead({
     };
 
     // Add structured data script
-    let structuredDataScript = document.querySelector('#structured-data');
+    let structuredDataScript = document.querySelector('#structured-data') as HTMLScriptElement;
     if (!structuredDataScript) {
       structuredDataScript = document.createElement('script');
       structuredDataScript.id = 'structured-data';
