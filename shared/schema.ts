@@ -312,7 +312,7 @@ export const customerNotes = pgTable("customer_notes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Quote Builder System
+// Advanced Quote Builder System
 export const quoteTemplates = pgTable("quote_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id").references(() => tenants.id),
@@ -320,22 +320,109 @@ export const quoteTemplates = pgTable("quote_templates", {
   name: text("name").notNull(),
   description: text("description"),
   category: text("category"), // wedding, birthday, corporate, etc
+  subcategory: text("subcategory"), // rustic-wedding, modern-corporate, kids-birthday
+  
+  // Enhanced Pricing Structure
   basePrice: decimal("base_price", { precision: 10, scale: 2 }),
   pricePerServing: decimal("price_per_serving", { precision: 8, scale: 2 }),
+  minimumOrder: decimal("minimum_order", { precision: 10, scale: 2 }),
+  
+  // Advanced Pricing Logic
+  pricingModel: text("pricing_model").default('fixed'), // fixed, per_serving, tiered, custom
+  seasonalPricing: json("seasonal_pricing").$type<{
+    season: string; // spring, summer, fall, winter
+    multiplier: number;
+    startDate: string; // MM-DD format
+    endDate: string; // MM-DD format
+  }[]>().default([]),
+  
+  volumeDiscounts: json("volume_discounts").$type<{
+    minQuantity: number;
+    maxQuantity: number | null;
+    discountPercentage: number;
+    discountType: 'percentage' | 'fixed_amount';
+  }[]>().default([]),
+  
+  // Enhanced Tier Configuration
   tiers: json("tiers").$type<{
     tierNumber: number;
+    name: string; // "6\" Top", "8\" Middle", "10\" Base"
     diameter: number;
     height: number;
     servings: number;
+    basePrice: number;
     priceMultiplier: number;
+    isOptional: boolean;
   }[]>().default([]),
+  
+  // Advanced Add-ons System
   addOns: json("add_ons").$type<{
+    id: string;
     name: string;
     description: string;
+    category: string; // decorations, flavors, fillings, extras
     price: number;
-    category: string;
+    pricingType: 'fixed' | 'per_serving' | 'per_tier';
+    isRequired: boolean;
+    maxQuantity?: number;
+    dependsOn?: string[]; // other add-on IDs this depends on
+    conflictsWith?: string[]; // add-on IDs this conflicts with
+    imageUrl?: string;
   }[]>().default([]),
+  
+  // Flavor and Filling Options
+  flavorOptions: json("flavor_options").$type<{
+    id: string;
+    name: string;
+    description: string;
+    priceModifier: number; // additional cost or discount
+    isDefault: boolean;
+    isAvailable: boolean;
+    allergens?: string[];
+  }[]>().default([]),
+  
+  fillingOptions: json("filling_options").$type<{
+    id: string;
+    name: string;
+    description: string;
+    priceModifier: number;
+    isDefault: boolean;
+    isAvailable: boolean;
+    allergens?: string[];
+  }[]>().default([]),
+  
+  // Delivery and Setup Options
+  deliveryOptions: json("delivery_options").$type<{
+    type: string; // pickup, standard_delivery, white_glove, setup_only
+    name: string;
+    description: string;
+    basePrice: number;
+    pricePerMile?: number;
+    maxDistance?: number; // miles
+    setupIncluded: boolean;
+    leadTime: number; // hours needed
+  }[]>().default([]),
+  
+  // Business Rules
+  leadTime: integer("lead_time").default(168), // hours (default 1 week)
+  maxAdvanceBooking: integer("max_advance_booking").default(8760), // hours (default 1 year)
+  cancellationPolicy: text("cancellation_policy"),
+  
+  // Template Metadata
+  tags: text("tags").array().default([]),
+  difficulty: text("difficulty").default('medium'), // easy, medium, hard, expert
+  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
+  profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }), // percentage
+  
+  // Template Settings
   isActive: boolean("is_active").default(true),
+  isPublic: boolean("is_public").default(false), // can other bakers see this template?
+  isFeatured: boolean("is_featured").default(false),
+  
+  // Terms and Conditions
+  terms: text("terms"),
+  notes: text("notes"), // internal baker notes
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

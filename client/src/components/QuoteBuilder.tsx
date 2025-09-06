@@ -29,6 +29,8 @@ import {
 import type { Quote, QuoteTemplate, Customer, QuoteItem } from '@shared/schema';
 import jsPDF from 'jspdf';
 import { StripeCheckout, QuickPaymentButton } from './StripeCheckout';
+import { AdvancedQuoteTemplates } from './AdvancedQuoteTemplates';
+import { calculateAdvancedPrice } from '@/lib/advancedCalculator';
 
 interface QuoteBuilderProps {
   bakerId: string;

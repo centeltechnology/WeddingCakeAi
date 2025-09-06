@@ -938,10 +938,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quote API Routes
+  // Advanced Quote API Routes
   app.get('/api/quote-templates', async (req, res) => {
     try {
-      const { bakerId } = req.query;
+      const { bakerId, category, isActive } = req.query;
       if (!bakerId) {
         return res.status(400).json({ error: 'bakerId is required' });
       }
@@ -950,6 +950,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching quote templates:', error);
       res.status(500).json({ error: 'Failed to fetch quote templates' });
+    }
+  });
+
+  app.put('/api/quote-templates/:id', async (req, res) => {
+    try {
+      const template = await storage.updateQuoteTemplate(req.params.id, req.body);
+      if (!template) {
+        return res.status(404).json({ error: 'Quote template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('Error updating quote template:', error);
+      res.status(500).json({ error: 'Failed to update quote template' });
+    }
+  });
+
+  app.delete('/api/quote-templates/:id', async (req, res) => {
+    try {
+      const success = await storage.deleteQuoteTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: 'Quote template not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting quote template:', error);
+      res.status(500).json({ error: 'Failed to delete quote template' });
+    }
+  });
+
+  app.get('/api/quote-templates/:id', async (req, res) => {
+    try {
+      const template = await storage.getQuoteTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: 'Quote template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('Error fetching quote template:', error);
+      res.status(500).json({ error: 'Failed to fetch quote template' });
+    }
+  });
+
+  app.post('/api/quote-templates/:id/duplicate', async (req, res) => {
+    try {
+      const originalTemplate = await storage.getQuoteTemplate(req.params.id);
+      if (!originalTemplate) {
+        return res.status(404).json({ error: 'Quote template not found' });
+      }
+      
+      const duplicatedTemplate = {
+        ...originalTemplate,
+        id: undefined,
+        name: `${originalTemplate.name} (Copy)`,
+        isPublic: false,
+        isFeatured: false,
+        createdAt: undefined,
+        updatedAt: undefined
+      };
+      
+      const newTemplate = await storage.createQuoteTemplate(duplicatedTemplate);
+      res.status(201).json(newTemplate);
+    } catch (error) {
+      console.error('Error duplicating quote template:', error);
+      res.status(500).json({ error: 'Failed to duplicate quote template' });
     }
   });
 

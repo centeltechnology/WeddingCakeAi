@@ -1,16 +1,16 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
-if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
-  throw new Error("AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION environment variables must be set for SES");
-}
+let sesClient: SESClient | null = null;
 
-const sesClient = new SESClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION) {
+  sesClient = new SESClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
 export interface EmailParams {
   to: string;
@@ -24,6 +24,11 @@ export interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  if (!sesClient) {
+    console.warn('AWS SES not configured. Skipping email send.');
+    return false;
+  }
+
   try {
     const emailParams = {
       Source: `${params.fromName || 'Bakewise'} <${params.from || 'noreply@bakewise.co'}>`,
