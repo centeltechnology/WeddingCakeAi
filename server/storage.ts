@@ -262,21 +262,28 @@ export class MemStorage implements IStorage {
   }
 
   private initializeBakers() {
+    // Create the demo baker with specific ID "baker-1" for the admin dashboard
+    const demoBaker: Baker = {
+      id: "baker-1",
+      name: "Sweet Dreams Bakery",
+      email: "contact@sweetdreamsbakery.com",
+      phone: "(555) 123-4567",
+      address: "123 Main St, Downtown",
+      latitude: "40.7128",
+      longitude: "-74.0060",
+      rating: "4.9",
+      priceRange: "$8-15/serving",
+      specialties: ["Wedding Specialist", "Custom Designs", "Gluten-Free"],
+      description: "Specializing in elegant wedding cakes with custom designs. Over 15 years of experience creating memorable centerpieces for your special day.",
+      portfolio: [],
+      isActive: true,
+      createdAt: new Date(),
+      subscriptionPlan: "premium"
+    };
+    this.bakers.set("baker-1", demoBaker);
+
+    // Create other sample bakers with random IDs
     const sampleBakers: InsertBaker[] = [
-      {
-        name: "Sweet Dreams Bakery",
-        email: "contact@sweetdreamsbakery.com",
-        phone: "(555) 123-4567",
-        address: "123 Main St, Downtown",
-        latitude: "40.7128",
-        longitude: "-74.0060",
-        rating: "4.9",
-        priceRange: "$8-15/serving",
-        specialties: ["Wedding Specialist", "Custom Designs", "Gluten-Free"],
-        description: "Specializing in elegant wedding cakes with custom designs. Over 15 years of experience creating memorable centerpieces for your special day.",
-        portfolio: [],
-        isActive: true,
-      },
       {
         name: "Artisan Cake Studio",
         email: "info@artisancakestudio.com",
