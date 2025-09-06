@@ -52,6 +52,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching tenant info" });
     }
   });
+
+  // Domain Configuration API
+  app.put('/api/tenant/domain', async (req, res) => {
+    try {
+      const { subdomain, customDomain } = req.body;
+      
+      if (!req.tenant) {
+        return res.status(401).json({ error: 'Tenant authentication required' });
+      }
+
+      // Validate subdomain format
+      if (subdomain && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomain)) {
+        return res.status(400).json({ 
+          error: 'Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.' 
+        });
+      }
+
+      // Check if subdomain is already taken
+      if (subdomain && subdomain !== req.tenant.subdomain) {
+        const existingTenant = await storage.getTenantBySubdomain(subdomain);
+        if (existingTenant) {
+          return res.status(409).json({ error: 'Subdomain already taken' });
+        }
+      }
+
+      // Update tenant domain settings
+      const updates: any = {};
+      if (subdomain) updates.subdomain = subdomain;
+      if (customDomain !== undefined) updates.customDomain = customDomain || null;
+
+      const updatedTenant = await storage.updateTenant(req.tenant.id, updates);
+      
+      res.json({
+        success: true,
+        tenant: updatedTenant,
+        message: subdomain ? 
+          `Subdomain updated to ${subdomain}.bakewise.com` : 
+          'Custom domain configuration updated'
+      });
+    } catch (error) {
+      console.error('Error updating domain configuration:', error);
+      res.status(500).json({ error: 'Failed to update domain configuration' });
+    }
+  });
+
+  app.post('/api/tenant/domain/check', async (req, res) => {
+    try {
+      const { subdomain } = req.body;
+      
+      if (!subdomain) {
+        return res.status(400).json({ error: 'Subdomain is required' });
+      }
+
+      // Validate subdomain format
+      if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomain)) {
+        return res.status(400).json({ 
+          available: false,
+          error: 'Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.' 
+        });
+      }
+
+      // Check availability
+      const existingTenant = await storage.getTenantBySubdomain(subdomain);
+      const available = !existingTenant;
+
+      res.json({
+        available,
+        subdomain: subdomain,
+        url: available ? `${subdomain}.bakewise.com` : null,
+        message: available ? 
+          `${subdomain}.bakewise.com is available!` : 
+          'This subdomain is already taken'
+      });
+    } catch (error) {
+      console.error('Error checking subdomain availability:', error);
+      res.status(500).json({ error: 'Failed to check subdomain availability' });
+    }
+  });
   
   app.put("/api/tenant/config", requireTenant, async (req, res) => {
     try {
