@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
 import { Search, MessageSquare, FileText, CreditCard, Users, Settings, ChefHat, Calendar } from "lucide-react";
 
 export default function Help() {
