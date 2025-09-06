@@ -39,7 +39,11 @@ export default function Help() {
                 <CardDescription>Get help from our team</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-contact-support">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700" 
+                  data-testid="button-contact-support"
+                  onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Bakewise Support Request'}
+                >
                   Send Message
                 </Button>
               </CardContent>
@@ -52,7 +56,12 @@ export default function Help() {
                 <CardDescription>Detailed guides and tutorials</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" data-testid="button-view-docs">
+                <Button 
+                  variant="outline" 
+                  className="border-green-600 text-green-700 hover:bg-green-50" 
+                  data-testid="button-view-docs"
+                  onClick={() => window.open('https://docs.bakewise.com', '_blank')}
+                >
                   View Docs
                 </Button>
               </CardContent>
@@ -65,7 +74,12 @@ export default function Help() {
                 <CardDescription>Manage your account settings</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <Button variant="outline" className="border-purple-600 text-purple-700 hover:bg-purple-50" data-testid="button-account-help">
+                <Button 
+                  variant="outline" 
+                  className="border-purple-600 text-purple-700 hover:bg-purple-50" 
+                  data-testid="button-account-help"
+                  onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Account Help Request&body=Please describe your account issue:'}
+                >
                   Get Help
                 </Button>
               </CardContent>
@@ -194,12 +208,14 @@ export default function Help() {
             <p className="text-gray-600 mb-6">
               Our support team is here to help you succeed on Bakewise
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button size="lg" className="bg-pink-600 hover:bg-pink-700" data-testid="button-email-support">
+            <div className="flex justify-center">
+              <Button 
+                size="lg" 
+                className="bg-pink-600 hover:bg-pink-700" 
+                data-testid="button-email-support"
+                onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Support Request&body=Hi Bakewise Team,%0A%0APlease describe how we can help you:'}
+              >
                 Email Support
-              </Button>
-              <Button variant="outline" size="lg" className="border-pink-200 text-pink-700 hover:bg-pink-50" data-testid="button-schedule-call">
-                Schedule a Call
               </Button>
             </div>
           </div>
