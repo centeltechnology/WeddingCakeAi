@@ -317,6 +317,36 @@ export const customerSessions = pgTable("customer_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Team Management Tables
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  role: varchar("role").notNull().$type<'owner' | 'admin' | 'editor' | 'viewer'>().default('viewer'),
+  status: varchar("status").notNull().$type<'active' | 'pending' | 'suspended'>().default('active'),
+  invitedBy: varchar("invited_by").references(() => teamMembers.id),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  lastActive: timestamp("last_active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const teamInvitations = pgTable("team_invitations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  email: varchar("email").notNull(),
+  role: varchar("role").notNull().$type<'admin' | 'editor' | 'viewer'>().default('viewer'),
+  invitedBy: varchar("invited_by").notNull().references(() => teamMembers.id),
+  invitationToken: varchar("invitation_token").notNull().unique(),
+  status: varchar("status").notNull().$type<'pending' | 'accepted' | 'expired'>().default('pending'),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
 export const customerNotes = pgTable("customer_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),

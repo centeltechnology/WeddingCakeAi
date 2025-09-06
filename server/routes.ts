@@ -1275,6 +1275,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Management API Routes
+  app.get('/api/teams/:bakerId/members', async (req, res) => {
+    try {
+      // Mock team members for demo
+      const members = [
+        {
+          id: 'member-1',
+          name: 'Sarah Johnson',
+          email: 'sarah@sweetdreams.com',
+          role: 'owner',
+          status: 'active',
+          invitedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          permissions: ['*']
+        },
+        {
+          id: 'member-2',
+          name: 'Mike Chen',
+          email: 'mike@sweetdreams.com',
+          role: 'admin',
+          status: 'active',
+          invitedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          lastActive: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+          permissions: ['team.manage', 'quotes.manage', 'customers.manage', 'analytics.view', 'settings.manage']
+        },
+        {
+          id: 'member-3',
+          name: 'Emma Wilson',
+          email: 'emma@sweetdreams.com',
+          role: 'editor',
+          status: 'active',
+          invitedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          permissions: ['quotes.create', 'quotes.edit', 'customers.manage', 'analytics.view']
+        }
+      ];
+      res.json(members);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      res.status(500).json({ error: 'Failed to fetch team members' });
+    }
+  });
+
+  app.post('/api/teams/:bakerId/invite', async (req, res) => {
+    try {
+      const { email, role } = req.body;
+      
+      if (!email || !role) {
+        return res.status(400).json({ error: 'Email and role are required' });
+      }
+
+      // For demo purposes, create a mock invitation
+      const invitation = {
+        id: `inv-${Date.now()}`,
+        bakerId: req.params.bakerId,
+        email,
+        role,
+        invitedBy: 'owner',
+        invitedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'pending'
+      };
+
+      // TODO: Integrate with storage when methods are implemented
+      res.status(201).json(invitation);
+    } catch (error) {
+      console.error('Error creating team invitation:', error);
+      res.status(500).json({ error: 'Failed to create invitation' });
+    }
+  });
+
+  app.get('/api/teams/:bakerId/invitations', async (req, res) => {
+    try {
+      // Mock data for demo
+      const invitations = [
+        {
+          id: 'inv-1',
+          email: 'team@example.com',
+          role: 'editor',
+          invitedBy: 'owner',
+          invitedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'pending'
+        }
+      ];
+      res.json(invitations);
+    } catch (error) {
+      console.error('Error fetching team invitations:', error);
+      res.status(500).json({ error: 'Failed to fetch invitations' });
+    }
+  });
+
+  app.delete('/api/teams/:bakerId/invitations/:invitationId', async (req, res) => {
+    try {
+      // TODO: Implement deletion when storage methods are available
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting team invitation:', error);
+      res.status(500).json({ error: 'Failed to delete invitation' });
+    }
+  });
+
+  app.put('/api/teams/:bakerId/members/:memberId', async (req, res) => {
+    try {
+      const { role } = req.body;
+      
+      if (!role) {
+        return res.status(400).json({ error: 'Role is required' });
+      }
+
+      // TODO: Implement update when storage methods are available
+      res.json({ success: true, role });
+    } catch (error) {
+      console.error('Error updating team member:', error);
+      res.status(500).json({ error: 'Failed to update team member' });
+    }
+  });
+
+  app.delete('/api/teams/:bakerId/members/:memberId', async (req, res) => {
+    try {
+      // TODO: Implement deletion when storage methods are available
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting team member:', error);
+      res.status(500).json({ error: 'Failed to delete team member' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
