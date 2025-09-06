@@ -97,11 +97,25 @@ export function NavigationHeader() {
                 </Link>
               </Button>
 
+              {/* Baker Login Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="ml-2 border-2 border-blue-200 hover:border-blue-300 bg-blue-50/80 backdrop-blur-sm hover:bg-blue-100 text-blue-700 hover:text-blue-800 font-medium"
+                data-testid="nav-baker-login"
+              >
+                <Link href="/admin">
+                  <ChefHat className="h-4 w-4 mr-1" />
+                  <span>Baker Login</span>
+                </Link>
+              </Button>
+
               {/* CTA Button */}
               <Button
                 asChild
                 size="sm"
-                className="ml-4 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6"
+                className="ml-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6"
                 data-testid="nav-signup"
               >
                 <Link href="/signup">
