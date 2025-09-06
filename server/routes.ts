@@ -1005,7 +1005,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/customers/:customerId/quotes', async (req, res) => {
     try {
-      const quotes = await storage.getQuotesByCustomerId(req.params.customerId);
+      // Mock customer quotes for demo
+      const quotes = [
+        {
+          id: 'quote-customer-1',
+          tenantId: 'tenant-1',
+          bakerId: 'baker-1',
+          customerId: req.params.customerId,
+          quoteNumber: 'Q-2024-001',
+          title: 'Three-Tier Wedding Cake',
+          description: 'Elegant vanilla and chocolate wedding cake with fresh flowers and custom topper',
+          total: 850.00,
+          status: 'sent',
+          eventDate: '2024-08-15',
+          guestCount: 120,
+          validUntil: '2024-07-15',
+          notes: 'Customer requested gluten-free option for bottom tier',
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'quote-customer-2',
+          tenantId: 'tenant-1',
+          bakerId: 'baker-1',
+          customerId: req.params.customerId,
+          quoteNumber: 'Q-2024-002',
+          title: 'Anniversary Celebration Cake',
+          description: 'Custom two-tier chocolate cake with gold accents',
+          total: 425.00,
+          status: 'approved',
+          eventDate: '2024-09-20',
+          guestCount: 50,
+          validUntil: '2024-08-20',
+          createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
       res.json(quotes);
     } catch (error) {
       console.error('Error fetching customer quotes:', error);
@@ -1015,7 +1050,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/customers/:customerId/transactions', async (req, res) => {
     try {
-      const transactions = await storage.getTransactionsByCustomerId(req.params.customerId);
+      // Mock customer transactions for demo
+      const transactions = [
+        {
+          id: 'trans-customer-1',
+          tenantId: 'tenant-1',
+          bakerId: 'baker-1',
+          customerId: req.params.customerId,
+          amount: '212.50',
+          type: 'deposit',
+          status: 'succeeded',
+          description: 'Deposit for Anniversary Celebration Cake',
+          stripePaymentId: 'pi_1234567890',
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'trans-customer-2',
+          tenantId: 'tenant-1',
+          bakerId: 'baker-1',
+          customerId: req.params.customerId,
+          amount: '212.50',
+          type: 'final_payment',
+          status: 'pending',
+          description: 'Final payment for Anniversary Celebration Cake',
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
       res.json(transactions);
     } catch (error) {
       console.error('Error fetching customer transactions:', error);
