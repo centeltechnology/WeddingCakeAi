@@ -24,7 +24,11 @@ import {
   FileText,
   CreditCard,
   FileCheck,
-  Code
+  Code,
+  Settings,
+  Briefcase,
+  PresentationChart,
+  UserCog
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +38,7 @@ import { ContractManager } from "./ContractManager";
 import { PaymentManager } from "./PaymentManager";
 import { EmbeddableWidget } from "./EmbeddableWidget";
 import { PricingManager } from "./PricingManager";
+import { AccountSettings } from "./AccountSettings";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -218,38 +223,97 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </Card>
       </div>
 
-      {/* Main Content */}
+      {/* Navigation Tabs - Organized by Category */}
       <Tabs defaultValue="leads" className="space-y-6">
-        <TabsList className="bg-card/60 dark:bg-card/60 backdrop-blur-sm p-2 rounded-2xl shadow-lg grid grid-cols-6 w-full">
-          <TabsTrigger value="leads" className="rounded-xl text-xs">
-            <Users className="w-4 h-4 mr-1" />
-            Leads
-          </TabsTrigger>
-          <TabsTrigger value="quotes" className="rounded-xl text-xs">
-            <FileText className="w-4 h-4 mr-1" />
-            Quotes
-          </TabsTrigger>
-          <TabsTrigger value="contracts" className="rounded-xl text-xs">
-            <FileCheck className="w-4 h-4 mr-1" />
-            Contracts
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="rounded-xl text-xs">
-            <CreditCard className="w-4 h-4 mr-1" />
-            Payments
-          </TabsTrigger>
-          <TabsTrigger value="pricing" className="rounded-xl text-xs">
-            <DollarSign className="w-4 h-4 mr-1" />
-            Pricing
-          </TabsTrigger>
-          <TabsTrigger value="widgets" className="rounded-xl text-xs">
-            <Code className="w-4 h-4 mr-1" />
-            Widgets
-          </TabsTrigger>
-          <TabsTrigger value="portfolio" className="rounded-xl text-xs">
-            <Upload className="w-4 h-4 mr-1" />
-            Portfolio
-          </TabsTrigger>
-        </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {/* Business Operations */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <Briefcase className="w-4 h-4 mr-2" />
+                Business
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="leads" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Users className="w-4 h-4 mr-2" />
+                  Leads
+                </TabsTrigger>
+                <TabsTrigger value="quotes" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Quotes
+                </TabsTrigger>
+                <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Contracts
+                </TabsTrigger>
+              </TabsList>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Management */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <DollarSign className="w-4 h-4 mr-2" />
+                Revenue
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="payments" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Payments
+                </TabsTrigger>
+                <TabsTrigger value="pricing" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Pricing
+                </TabsTrigger>
+              </TabsList>
+            </CardContent>
+          </Card>
+
+          {/* Marketing & Portfolio */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <PresentationChart className="w-4 h-4 mr-2" />
+                Marketing
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="portfolio" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Portfolio
+                </TabsTrigger>
+                <TabsTrigger value="widgets" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Code className="w-4 h-4 mr-2" />
+                  Widgets
+                </TabsTrigger>
+              </TabsList>
+            </CardContent>
+          </Card>
+
+          {/* Account & Settings */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <UserCog className="w-4 h-4 mr-2" />
+                Account
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="account" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </CardContent>
+          </Card>
+        </div>
 
         <TabsContent value="leads">
           <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/95 dark:from-card dark:to-card/95">
@@ -405,6 +469,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="portfolio">
           <PortfolioUploader bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="account">
+          <AccountSettings bakerId={bakerId} />
         </TabsContent>
       </Tabs>
     </div>
