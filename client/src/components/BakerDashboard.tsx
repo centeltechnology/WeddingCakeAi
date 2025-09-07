@@ -29,7 +29,10 @@ import {
   Briefcase,
   Monitor,
   UserCog,
-  Globe
+  Globe,
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +56,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [subdomainInput, setSubdomainInput] = useState("");
   const [customDomainInput, setCustomDomainInput] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
+  };
 
   const { data: baker } = useQuery<Baker>({
     queryKey: ['/api/bakers', bakerId],
@@ -260,6 +268,96 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
+      {/* Navigation Header */}
+      <header className="bg-white border-b border-rose-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Baker Name */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Bakewise</h1>
+                  <p className="text-sm text-gray-500">
+                    {baker?.name || 'Baker Dashboard'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+                subscriptionPlan === 'free' 
+                  ? 'bg-white/80 text-gray-800' 
+                  : subscriptionPlan === 'pro' 
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
+                    : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+              }`}>
+                {subscriptionPlan.toUpperCase()} Plan
+              </Badge>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                data-testid="button-mobile-menu"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-4">
+              <div className="flex flex-col space-y-3">
+                <div className="flex items-center justify-between">
+                  <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+                    subscriptionPlan === 'free' 
+                      ? 'bg-white/80 text-gray-800' 
+                      : subscriptionPlan === 'pro' 
+                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
+                        : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                  }`}>
+                    {subscriptionPlan.toUpperCase()} Plan
+                  </Badge>
+                  <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-900"
+                    data-testid="button-logout-mobile"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
@@ -272,17 +370,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           <div>
             <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Baker Dashboard</h1>
             <p className="text-xl text-gray-600">Welcome back, {baker.name}!</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
-              subscriptionPlan === 'free' 
-                ? 'bg-white/80 text-gray-800' 
-                : subscriptionPlan === 'pro' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
-                  : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-            }`}>
-              {subscriptionPlan.toUpperCase()} Plan
-            </Badge>
           </div>
         </div>
 
