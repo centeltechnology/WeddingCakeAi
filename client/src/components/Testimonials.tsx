@@ -48,6 +48,33 @@ const testimonials: Testimonial[] = [
     review: "Love how detailed the estimates are! We used the platform to compare different designs and found the perfect balance of beauty and budget.",
     weddingDate: "August 2024", 
     cakeStyle: "3-tier lemon with lavender",
+  },
+  {
+    id: "5",
+    name: "Maria & James Rodriguez",
+    location: "Miami, FL",
+    rating: 5,
+    review: "Bakewise made planning our wedding cake so much easier! The calculator was incredibly accurate and we found a local baker who created exactly what we envisioned. The whole process was seamless.",
+    weddingDate: "November 2024",
+    cakeStyle: "5-tier tropical with orchids",
+  },
+  {
+    id: "6",
+    name: "Rachel Wong",
+    location: "Portland, OR",
+    rating: 5,
+    review: "As a busy bride planning from out of state, this platform was a lifesaver. I could compare bakers, get accurate pricing, and even see 3D previews of designs. Saved me so much time and stress!",
+    weddingDate: "December 2024",
+    cakeStyle: "2-tier rustic naked cake with berries",
+  },
+  {
+    id: "7",
+    name: "Lauren & Chris Mitchell",
+    location: "Nashville, TN",
+    rating: 5,
+    review: "We had a very specific vision for our cake and the AI recommendations helped us find a baker who specialized in exactly what we wanted. The pricing was transparent and no surprises on the final bill!",
+    weddingDate: "January 2025",
+    cakeStyle: "4-tier vintage with buttercream roses",
   }
 ];
 
