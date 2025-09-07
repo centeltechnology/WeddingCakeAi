@@ -40,6 +40,7 @@ import { PaymentManager } from "./PaymentManager";
 import { EmbeddableWidget } from "./EmbeddableWidget";
 import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
+import { PWAStatus } from "./PWAStatus";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -161,15 +162,18 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Baker Dashboard</h1>
             <p className="text-xl text-gray-600">Welcome back, {baker.name}!</p>
           </div>
-          <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
-            subscriptionPlan === 'free' 
-              ? 'bg-white/80 text-gray-800' 
-              : subscriptionPlan === 'pro' 
-                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
-                : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-          }`}>
-            {subscriptionPlan.toUpperCase()} Plan
-          </Badge>
+          <div className="flex items-center gap-4">
+            <PWAStatus />
+            <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+              subscriptionPlan === 'free' 
+                ? 'bg-white/80 text-gray-800' 
+                : subscriptionPlan === 'pro' 
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
+                  : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+            }`}>
+              {subscriptionPlan.toUpperCase()} Plan
+            </Badge>
+          </div>
         </div>
 
       {/* Stats Cards */}
