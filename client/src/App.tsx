@@ -30,6 +30,7 @@ import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 
 function Router() {
   return (
@@ -84,6 +85,7 @@ function App() {
             <TooltipProvider>
               <Toaster />
               <Router />
+              <ScrollToTopButton />
             </TooltipProvider>
           </TenantBrandProvider>
         </ThemeProvider>
