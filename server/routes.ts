@@ -244,7 +244,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('Error creating Stripe Connect account:', error);
-      res.status(500).json({ error: 'Failed to create Stripe Connect account' });
+      
+      // Handle specific Stripe verification errors
+      if (error.code === 'invalid_request_error' && error.message?.includes('verify your identity')) {
+        return res.status(400).json({ 
+          error: 'Stripe Account Verification Required',
+          message: 'Your Stripe account needs identity verification to enable payments. Please verify your account in your Stripe Dashboard before setting up payment processing.',
+          verificationUrl: 'https://dashboard.stripe.com/connect/accounts/overview'
+        });
+      }
+      
+      // Handle other Stripe errors
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({ 
+          error: 'Stripe Setup Error',
+          message: error.message || 'There was an issue with your Stripe account setup. Please check your Stripe account settings.'
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Failed to create Stripe Connect account',
+        message: 'An unexpected error occurred. Please try again or contact support.'
+      });
     }
   });
 
