@@ -197,6 +197,8 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingTenant, setEditingTenant] = useState<TenantSummary | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Fetch platform statistics
   const { data: platformStats, isLoading: statsLoading } = useQuery<PlatformStats>({
