@@ -203,35 +203,91 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Testimonial */}
+      {/* Business Testimonials */}
       <div className="relative py-20">
         <div className="container mx-auto px-4">
-          <Card className="border-0 bg-gradient-to-br from-orange-50/80 to-pink-50/80 backdrop-blur-md shadow-2xl overflow-hidden max-w-4xl mx-auto" data-testid="card-testimonial">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-pink-500/5"></div>
-            <CardContent className="text-center py-16 relative">
-              <div className="mb-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-serif font-bold text-gray-900 mb-4">
+              Trusted by Growing Bakeries
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              See how Bakewise helps cake professionals streamline their business and increase revenue
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Testimonial 1 */}
+            <Card className="border-0 bg-gradient-to-br from-pink-50/80 to-rose-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-1">
+              <CardContent className="p-6">
                 <div className="flex justify-center mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
+                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <blockquote className="text-2xl md:text-3xl font-serif italic mb-8 text-gray-800 leading-relaxed max-w-3xl mx-auto">
+                <p className="text-gray-700 mb-6 italic leading-relaxed">
                   "Bakewise transformed my cake business! I went from spending hours on quotes 
-                  to closing deals in minutes. My customers love how professional everything looks."
-                </blockquote>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-400 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg mr-4">
-                  S
+                  to closing deals in minutes. My revenue increased 400% in 6 months."
+                </p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                    S
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Sarah Martinez</p>
+                    <p className="text-sm text-gray-600">Sweet Dreams Cakery</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="font-semibold text-lg text-gray-900">Sarah Martinez</p>
-                  <p className="text-gray-600">Founder, Sweet Dreams Cakery</p>
-                  <p className="text-sm text-gray-500">🏆 400% revenue increase in 6 months</p>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 2 */}
+            <Card className="border-0 bg-gradient-to-br from-purple-50/80 to-pink-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-2">
+              <CardContent className="p-6">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-gray-700 mb-6 italic leading-relaxed">
+                  "The quote builder saves me 10 hours per week. My customers love the professional 
+                  PDFs and the payment integration makes closing sales so much easier."
+                </p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                    M
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Maria Rodriguez</p>
+                    <p className="text-sm text-gray-600">Elegant Occasions Cakes</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 3 */}
+            <Card className="border-0 bg-gradient-to-br from-orange-50/80 to-pink-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-3">
+              <CardContent className="p-6">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic leading-relaxed">
+                  "Managing customer relationships was chaos before Bakewise. Now I track every lead, 
+                  follow up automatically, and my conversion rate doubled!"
+                </p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                    J
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Jessica Thompson</p>
+                    <p className="text-sm text-gray-600">Artisan Cake Studio</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
       
