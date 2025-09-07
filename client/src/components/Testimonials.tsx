@@ -98,14 +98,12 @@ export default function Testimonials() {
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) {
-      console.log('Scrolling prev');
       emblaApi.scrollPrev();
     }
   }, [emblaApi]);
 
   const scrollNext = useCallback(() => {
     if (emblaApi) {
-      console.log('Scrolling next');
       emblaApi.scrollNext();
     }
   }, [emblaApi]);
@@ -118,7 +116,6 @@ export default function Testimonials() {
   );
 
   const onInit = useCallback((emblaApi: any) => {
-    console.log('Embla initialized', emblaApi);
     setScrollSnaps(emblaApi.scrollSnapList());
   }, []);
 
