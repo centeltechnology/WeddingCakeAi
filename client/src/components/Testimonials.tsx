@@ -91,21 +91,23 @@ const stats = [
 export default function Testimonials() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true,
-    align: 'start',
-    slidesToScroll: 1,
-    breakpoints: {
-      '(min-width: 768px)': { slidesToScroll: 2 }
-    }
+    align: 'start'
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
   const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
+    if (emblaApi) {
+      console.log('Scrolling prev');
+      emblaApi.scrollPrev();
+    }
   }, [emblaApi]);
 
   const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
+    if (emblaApi) {
+      console.log('Scrolling next');
+      emblaApi.scrollNext();
+    }
   }, [emblaApi]);
 
   const scrollTo = useCallback(
@@ -116,6 +118,7 @@ export default function Testimonials() {
   );
 
   const onInit = useCallback((emblaApi: any) => {
+    console.log('Embla initialized', emblaApi);
     setScrollSnaps(emblaApi.scrollSnapList());
   }, []);
 
@@ -138,7 +141,7 @@ export default function Testimonials() {
 
     const autoplay = setInterval(() => {
       emblaApi.scrollNext();
-    }, 5000); // Auto-slide every 5 seconds
+    }, 6000); // Auto-slide every 6 seconds
 
     return () => clearInterval(autoplay);
   }, [emblaApi]);
@@ -173,10 +176,10 @@ export default function Testimonials() {
 
         {/* Testimonials Carousel */}
         <div className="relative">
-          <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex">
+          <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={emblaRef}>
+            <div className="flex touch-pan-y">
               {testimonials.map((testimonial) => (
-                <div key={testimonial.id} className="flex-[0_0_100%] md:flex-[0_0_50%] px-4">
+                <div key={testimonial.id} className="flex-none w-full md:w-1/2 px-4">
                   <Card className="relative bg-card/50 backdrop-blur-sm border-border/50 hover:shadow-lg transition-all duration-300 h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
