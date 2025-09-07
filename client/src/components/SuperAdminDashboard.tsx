@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -79,6 +80,82 @@ interface SystemMetric {
   unit: string;
   status: 'healthy' | 'warning' | 'critical';
   trend: 'up' | 'down' | 'stable';
+}
+
+// Edit Tenant Modal Component
+function EditTenantModal({ 
+  tenant, 
+  isOpen, 
+  onClose,
+  onSave 
+}: {
+  tenant: TenantSummary | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updates: Partial<TenantSummary>) => void;
+}) {
+  const [name, setName] = useState(tenant?.name || '');
+  const [planType, setPlanType] = useState(tenant?.planType || '');
+
+  useEffect(() => {
+    if (tenant) {
+      setName(tenant.name);
+      setPlanType(tenant.planType);
+    }
+  }, [tenant]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      name: name.trim(),
+      planType: planType.trim(),
+    });
+  };
+
+  if (!tenant) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Tenant Settings</DialogTitle>
+          <DialogDescription>
+            Update settings for {tenant.name}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="tenant-name">Tenant Name</Label>
+            <Input
+              id="tenant-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              data-testid="input-tenant-name"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="plan-type">Plan Type</Label>
+            <Input
+              id="plan-type"
+              value={planType}
+              onChange={(e) => setPlanType(e.target.value)}
+              data-testid="input-plan-type"
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" data-testid="button-save-tenant">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // Password Change Form Component
@@ -319,6 +396,15 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const handleEditTenant = (tenant: TenantSummary) => {
     setEditingTenant(tenant);
     setShowEditModal(true);
+  };
+
+  const handleSaveTenant = (updates: Partial<TenantSummary>) => {
+    if (editingTenant) {
+      updateTenantMutation.mutate({
+        tenantId: editingTenant.id,
+        updates
+      });
+    }
   };
 
   const handleToggleTenantStatus = (tenant: TenantSummary) => {
@@ -868,6 +954,17 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Tenant Modal */}
+        <EditTenantModal
+          tenant={editingTenant}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingTenant(null);
+          }}
+          onSave={handleSaveTenant}
+        />
       </div>
     </div>
   );
