@@ -220,6 +220,54 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
     queryKey: ['/api/super-admin/system-metrics'],
   });
 
+  // Tenant management mutations
+  const updateTenantStatusMutation = useMutation({
+    mutationFn: async ({ tenantId, status }: { tenantId: string; status: 'active' | 'suspended' }) => {
+      const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}/status`, { status });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      toast({
+        title: "Success",
+        description: "Tenant status updated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update tenant status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateTenantMutation = useMutation({
+    mutationFn: async ({ tenantId, updates }: { tenantId: string; updates: Partial<TenantSummary> }) => {
+      const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}`, updates);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      setShowEditModal(false);
+      setEditingTenant(null);
+      toast({
+        title: "Success",
+        description: "Tenant updated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update tenant",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Filter tenants and users based on search
   const filteredTenants = tenants.filter(tenant => 
     tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -256,6 +304,40 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  // Click handlers for tenant actions
+  const handleViewTenant = (tenant: TenantSummary) => {
+    toast({
+      title: "Tenant Details",
+      description: `Viewing details for ${tenant.name}`,
+      variant: "default",
+    });
+    // In a real app, this would open a detailed view or navigate to tenant page
+  };
+
+  const handleEditTenant = (tenant: TenantSummary) => {
+    setEditingTenant(tenant);
+    setShowEditModal(true);
+  };
+
+  const handleToggleTenantStatus = (tenant: TenantSummary) => {
+    const newStatus = tenant.status === 'active' ? 'suspended' : 'active';
+    const action = newStatus === 'active' ? 'activate' : 'suspend';
+    
+    updateTenantStatusMutation.mutate({ 
+      tenantId: tenant.id, 
+      status: newStatus 
+    });
+  };
+
+  const handleAddTenant = () => {
+    toast({
+      title: "Add Tenant",
+      description: "Add new tenant functionality coming soon",
+      variant: "default",
+    });
+    // In a real app, this would open an add tenant modal
   };
 
   if (statsLoading) {
@@ -455,7 +537,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       <CardTitle>Tenant Management</CardTitle>
                       <CardDescription>Manage all bakeries on the platform</CardDescription>
                     </div>
-                    <Button data-testid="button-add-tenant">
+                    <Button onClick={handleAddTenant} data-testid="button-add-tenant">
                       <Building2 className="h-4 w-4 mr-2" />
                       Add Tenant
                     </Button>
@@ -512,23 +594,47 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                               </div>
                             </div>
                             <div className="mt-4 flex space-x-2">
-                              <Button variant="outline" size="sm" data-testid={`button-view-tenant-${tenant.id}`}>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewTenant(tenant)}
+                                data-testid={`button-view-tenant-${tenant.id}`}
+                              >
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </Button>
-                              <Button variant="outline" size="sm" data-testid={`button-edit-tenant-${tenant.id}`}>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleEditTenant(tenant)}
+                                data-testid={`button-edit-tenant-${tenant.id}`}
+                              >
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Settings
                               </Button>
                               {tenant.status === 'active' ? (
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" data-testid={`button-suspend-tenant-${tenant.id}`}>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600 hover:text-red-700" 
+                                  onClick={() => handleToggleTenantStatus(tenant)}
+                                  disabled={updateTenantStatusMutation.isPending}
+                                  data-testid={`button-suspend-tenant-${tenant.id}`}
+                                >
                                   <Lock className="h-4 w-4 mr-2" />
-                                  Suspend
+                                  {updateTenantStatusMutation.isPending ? "Suspending..." : "Suspend"}
                                 </Button>
                               ) : (
-                                <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700" data-testid={`button-activate-tenant-${tenant.id}`}>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-green-600 hover:text-green-700" 
+                                  onClick={() => handleToggleTenantStatus(tenant)}
+                                  disabled={updateTenantStatusMutation.isPending}
+                                  data-testid={`button-activate-tenant-${tenant.id}`}
+                                >
                                   <Unlock className="h-4 w-4 mr-2" />
-                                  Activate
+                                  {updateTenantStatusMutation.isPending ? "Activating..." : "Activate"}
                                 </Button>
                               )}
                             </div>
