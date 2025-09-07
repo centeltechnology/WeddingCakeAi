@@ -334,8 +334,12 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                   />
                 </div>
                 {editingProfile && (
-                  <div className="flex space-x-2">
-                    <Button size="sm" data-testid="button-save-profile">
+                  <div className="flex space-x-2 pt-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold px-4 py-2"
+                      data-testid="button-save-profile"
+                    >
                       <Save className="h-4 w-4 mr-2" />
                       Save Changes
                     </Button>
@@ -350,7 +354,14 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
             {/* Address */}
             <Card>
               <CardHeader>
-                <CardTitle>Business Address</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Business Address</CardTitle>
+                  {!editingProfile && (
+                    <p className="text-xs text-muted-foreground bg-blue-50 px-2 py-1 rounded-md">
+                      Click edit on Business Information to modify address
+                    </p>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -387,6 +398,21 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     data-testid="input-zip"
                   />
                 </div>
+                {editingProfile && (
+                  <div className="flex space-x-2 pt-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold px-4 py-2"
+                      data-testid="button-save-address"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Address
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEditingProfile(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
