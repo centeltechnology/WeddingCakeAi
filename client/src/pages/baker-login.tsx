@@ -34,10 +34,12 @@ export default function BakerLogin() {
   });
 
   const onSubmit = async (data: LoginForm) => {
+    console.log("Form submitted with data:", data);
     setIsLoading(true);
     setError("");
 
     try {
+      console.log("Sending login request...");
       const response = await fetch("/api/baker/login", {
         method: "POST",
         headers: {
@@ -46,11 +48,14 @@ export default function BakerLogin() {
         body: JSON.stringify(data),
       });
 
+      console.log("Response status:", response.status);
       const result = await response.json();
+      console.log("Response data:", result);
 
       if (response.ok && result.success) {
         // Store session token
         localStorage.setItem("baker_token", result.token);
+        console.log("Token stored, redirecting...");
         
         toast({
           title: "Login successful",
@@ -60,11 +65,12 @@ export default function BakerLogin() {
         // Redirect to baker dashboard
         setLocation("/admin");
       } else {
+        console.error("Login failed:", result);
         setError(result.message || "Invalid email or password");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("An error occurred during login. Please try again.");
+      setError(`Network error: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
