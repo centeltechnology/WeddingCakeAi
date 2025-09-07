@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { BillingDashboard } from '@/components/BillingDashboard';
 import {
   User,
   Mail,
@@ -46,6 +47,13 @@ interface AccountDetails {
     city: string;
     state: string;
     zipCode: string;
+  };
+  socialMedia: {
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    website: string;
+    tiktok: string;
   };
   businessHours: {
     monday: { open: string; close: string; closed: boolean };
@@ -470,85 +478,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
 
         {/* Subscription Tab */}
         <TabsContent value="subscription">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="h-5 w-5 mr-2" />
-                Subscription Management
-              </CardTitle>
-              <CardDescription>
-                Manage your plan and billing information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Current Plan */}
-              <div className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {subscription?.plan?.toUpperCase()} Plan
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Status: <span className="text-green-600 font-medium">{subscription?.status}</span>
-                    </p>
-                  </div>
-                  <Badge className={getPlanColor(subscription?.plan || 'free')}>
-                    <Crown className="w-4 h-4 mr-1" />
-                    {subscription?.plan?.toUpperCase()}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Next Billing Date</p>
-                    <p className="font-medium">
-                      {subscription?.currentPeriodEnd ? 
-                        new Date(subscription.currentPeriodEnd).toLocaleDateString() : 
-                        'N/A'
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Auto-Renewal</p>
-                    <p className="font-medium">
-                      {subscription?.cancelAtPeriodEnd ? (
-                        <span className="text-orange-600">Cancelled at period end</span>
-                      ) : (
-                        <span className="text-green-600">Active</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Plan Features</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {subscription?.features?.map((feature, index) => (
-                      <div key={index} className="flex items-center text-sm">
-                        <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex space-x-3">
-                  <Button variant="outline" data-testid="button-change-plan">
-                    Change Plan
-                  </Button>
-                  <Button variant="outline" data-testid="button-billing-history">
-                    View Billing History
-                  </Button>
-                  {!subscription?.cancelAtPeriodEnd && (
-                    <Button variant="destructive" data-testid="button-cancel-subscription">
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Cancel Subscription
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <BillingDashboard bakerId={bakerId} />
         </TabsContent>
 
         {/* Team Tab */}

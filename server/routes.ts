@@ -2766,6 +2766,283 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Baker Self-Service Billing API Routes
+  app.get('/api/bakers/:bakerId/billing', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Get current plan details
+      const currentPlan = baker.subscriptionPlan || 'free';
+      const billingInfo = {
+        subscriptionPlan: currentPlan,
+        subscriptionStatus: baker.subscriptionStatus || 'active',
+        currentPeriodStart: baker.currentPeriodStart,
+        currentPeriodEnd: baker.currentPeriodEnd,
+        cancelAtPeriodEnd: baker.cancelAtPeriodEnd || false,
+        stripeCustomerId: baker.stripeCustomerId,
+        usage: {
+          leads: await storage.getLeadCountForBaker(bakerId, 'current_month'),
+          leadsLimit: getLeadsLimit(currentPlan),
+          portfolioImages: (baker.portfolio || []).length,
+          portfolioLimit: getPortfolioLimit(currentPlan)
+        }
+      };
+
+      res.json(billingInfo);
+    } catch (error) {
+      console.error('Error fetching billing info:', error);
+      res.status(500).json({ error: 'Failed to fetch billing information' });
+    }
+  });
+
+  app.get('/api/bakers/:bakerId/billing/invoices', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker?.stripeCustomerId) {
+        return res.json([]);
+      }
+
+      // Fetch invoices from Stripe
+      const invoices = await stripe.invoices.list({
+        customer: baker.stripeCustomerId,
+        limit: 12,
+      });
+
+      const formattedInvoices = invoices.data.map(invoice => ({
+        id: invoice.id,
+        number: invoice.number,
+        amount: (invoice.total / 100),
+        status: invoice.status,
+        created: new Date(invoice.created * 1000).toISOString(),
+        pdfUrl: invoice.invoice_pdf,
+      }));
+
+      res.json(formattedInvoices);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      res.status(500).json({ error: 'Failed to fetch billing history' });
+    }
+  });
+
+  app.get('/api/billing/plans', async (req, res) => {
+    try {
+      const plans = [
+        {
+          id: 'free',
+          name: 'Free',
+          price: 0,
+          interval: 'month',
+          features: [
+            'Basic profile listing',
+            '3 leads per month',
+            'Standard placement in search',
+            'Basic contact information'
+          ]
+        },
+        {
+          id: 'pro',
+          name: 'Pro',
+          price: 79,
+          interval: 'month',
+          recommended: true,
+          stripePriceId: process.env.STRIPE_PRO_PRICE_ID,
+          features: [
+            'Full profile with photos',
+            'Unlimited leads',
+            'Priority placement in search',
+            'Portfolio & reviews',
+            'Advanced analytics',
+            'Customer messaging'
+          ]
+        },
+        {
+          id: 'plus',
+          name: 'Plus',
+          price: 149,
+          interval: 'month',
+          stripePriceId: process.env.STRIPE_PLUS_PRICE_ID,
+          features: [
+            'Everything in Pro',
+            'Boosted placement (top 3)',
+            'Lead concierge service',
+            'Calendar booking integration',
+            'Dedicated account manager',
+            'Custom branding options',
+            'Priority customer support',
+            'Advanced reporting suite'
+          ]
+        }
+      ];
+
+      res.json(plans);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+      res.status(500).json({ error: 'Failed to fetch available plans' });
+    }
+  });
+
+  app.post('/api/bakers/:bakerId/billing/change-plan', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const { planId } = req.body;
+      
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Handle downgrade to free plan
+      if (planId === 'free') {
+        await storage.updateBaker(bakerId, {
+          subscriptionPlan: 'free',
+          subscriptionStatus: 'active',
+          cancelAtPeriodEnd: false
+        });
+        
+        return res.json({ success: true, message: 'Plan downgraded to Free' });
+      }
+
+      // Handle upgrade/change to paid plan
+      const plans = {
+        pro: { priceId: process.env.STRIPE_PRO_PRICE_ID, price: 79 },
+        plus: { priceId: process.env.STRIPE_PLUS_PRICE_ID, price: 149 }
+      };
+
+      const selectedPlan = plans[planId as keyof typeof plans];
+      if (!selectedPlan?.priceId) {
+        return res.status(400).json({ error: 'Invalid plan selected' });
+      }
+
+      // Create or retrieve Stripe customer
+      let stripeCustomerId = baker.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: baker.email,
+          name: baker.name,
+          metadata: { bakerId }
+        });
+        stripeCustomerId = customer.id;
+        
+        await storage.updateBaker(bakerId, {
+          stripeCustomerId
+        });
+      }
+
+      // Create Stripe Checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: selectedPlan.priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing&success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing&cancelled=true`,
+        metadata: {
+          bakerId,
+          planId
+        }
+      });
+
+      res.json({ checkoutUrl: session.url });
+    } catch (error) {
+      console.error('Error changing plan:', error);
+      res.status(500).json({ error: 'Failed to change subscription plan' });
+    }
+  });
+
+  app.post('/api/bakers/:bakerId/billing/cancel', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker?.stripeCustomerId) {
+        return res.status(404).json({ error: 'No active subscription found' });
+      }
+
+      // Get active subscriptions
+      const subscriptions = await stripe.subscriptions.list({
+        customer: baker.stripeCustomerId,
+        status: 'active'
+      });
+
+      if (subscriptions.data.length === 0) {
+        return res.status(404).json({ error: 'No active subscription found' });
+      }
+
+      // Cancel subscription at period end
+      const subscription = subscriptions.data[0];
+      await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true
+      });
+
+      // Update baker record
+      await storage.updateBaker(bakerId, {
+        cancelAtPeriodEnd: true
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Subscription will be cancelled at the end of the current billing period' 
+      });
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      res.status(500).json({ error: 'Failed to cancel subscription' });
+    }
+  });
+
+  app.post('/api/bakers/:bakerId/billing/portal', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker?.stripeCustomerId) {
+        return res.status(404).json({ error: 'No billing account found' });
+      }
+
+      // Create Stripe customer portal session
+      const session = await stripe.billingPortal.sessions.create({
+        customer: baker.stripeCustomerId,
+        return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing`,
+      });
+
+      res.json({ portalUrl: session.url });
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      res.status(500).json({ error: 'Failed to open billing portal' });
+    }
+  });
+
+  // Helper functions for plan limits
+  function getLeadsLimit(plan: string): number {
+    switch (plan) {
+      case 'free': return 3;
+      case 'pro':
+      case 'plus': 
+        return -1; // Unlimited
+      default: return 3;
+    }
+  }
+
+  function getPortfolioLimit(plan: string): number {
+    switch (plan) {
+      case 'free': return 0;
+      case 'pro': return 20;
+      case 'plus': return -1; // Unlimited
+      default: return 0;
+    }
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
