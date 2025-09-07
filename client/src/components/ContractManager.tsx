@@ -57,6 +57,7 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [showNewTemplate, setShowNewTemplate] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
 
   // Fetch contracts from API
   const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
@@ -392,17 +393,27 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     Preview
                   </Button>
                   <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setEditingTemplate('wedding')}
+                    data-testid="button-edit-wedding-template"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
                     size="sm" 
                     className="flex-1"
                     onClick={() => {
                       toast({
                         title: "Template Selected",
-                        description: "Contract template is ready to use.",
+                        description: "Wedding cake contract template is ready to use.",
                       });
                     }}
-                    data-testid="button-use-template"
+                    data-testid="button-use-wedding-template"
                   >
-                    Use Template
+                    Use
                   </Button>
                 </div>
               </CardContent>
@@ -443,17 +454,27 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     Preview
                   </Button>
                   <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setEditingTemplate('wedding')}
+                    data-testid="button-edit-wedding-template"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
                     size="sm" 
                     className="flex-1"
                     onClick={() => {
                       toast({
                         title: "Template Selected",
-                        description: "Contract template is ready to use.",
+                        description: "Wedding cake contract template is ready to use.",
                       });
                     }}
-                    data-testid="button-use-template"
+                    data-testid="button-use-wedding-template"
                   >
-                    Use Template
+                    Use
                   </Button>
                 </div>
               </CardContent>
@@ -494,17 +515,27 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     Preview
                   </Button>
                   <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setEditingTemplate('wedding')}
+                    data-testid="button-edit-wedding-template"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
                     size="sm" 
                     className="flex-1"
                     onClick={() => {
                       toast({
                         title: "Template Selected",
-                        description: "Contract template is ready to use.",
+                        description: "Wedding cake contract template is ready to use.",
                       });
                     }}
-                    data-testid="button-use-template"
+                    data-testid="button-use-wedding-template"
                   >
-                    Use Template
+                    Use
                   </Button>
                 </div>
               </CardContent>
@@ -710,6 +741,97 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                   });
                 }} data-testid="button-save-template">
                   Save Template
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Template Edit Modal */}
+      {editingTemplate && (
+        <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Edit Contract Template</DialogTitle>
+              <DialogDescription>
+                Customize the {editingTemplate === 'wedding' ? 'Wedding Cake' : 'Contract'} template to fit your business needs
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Template Name</Label>
+                  <Input 
+                    defaultValue={editingTemplate === 'wedding' ? 'Wedding Cake Contract' : 'Contract Template'}
+                    data-testid="input-edit-template-name"
+                  />
+                </div>
+                <div>
+                  <Label>Template Description</Label>
+                  <Input 
+                    defaultValue={editingTemplate === 'wedding' ? 'Standard contract for wedding cake orders' : 'Contract template description'}
+                    data-testid="input-edit-template-description"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Payment Terms</Label>
+                  <Input 
+                    defaultValue={editingTemplate === 'wedding' ? '50% deposit, 50% final' : 'Full payment on order'}
+                    data-testid="input-edit-payment-terms"
+                  />
+                </div>
+                <div>
+                  <Label>Cancellation Policy</Label>
+                  <Input 
+                    defaultValue={editingTemplate === 'wedding' ? '7 days notice' : '48 hours notice'}
+                    data-testid="input-edit-cancellation"
+                  />
+                </div>
+                <div>
+                  <Label>Delivery Terms</Label>
+                  <Input 
+                    defaultValue={editingTemplate === 'wedding' ? 'Setup included' : 'Customer pickup'}
+                    data-testid="input-edit-delivery"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>Contract Content</Label>
+                <Textarea 
+                  placeholder="Enter the main contract text and terms..."
+                  defaultValue="This contract outlines the terms for a custom cake order between [BAKER NAME] and [CLIENT NAME]. The baker agrees to provide a custom cake according to the specifications agreed upon, and the client agrees to the terms and payment schedule outlined below."
+                  className="min-h-[200px]"
+                  data-testid="textarea-edit-contract-content"
+                />
+              </div>
+              
+              <div>
+                <Label>Additional Terms & Conditions</Label>
+                <Textarea 
+                  placeholder="Enter specific terms and conditions..."
+                  defaultValue="• All orders require a 50% deposit to secure the date\n• Final payment is due upon delivery\n• Changes to the order must be made 72 hours in advance\n• The baker is not responsible for damage after delivery\n• Client is responsible for providing accurate guest count"
+                  className="min-h-[150px]"
+                  data-testid="textarea-edit-terms-conditions"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setEditingTemplate(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  setEditingTemplate(null);
+                  toast({
+                    title: "Template Updated",
+                    description: "Your contract template has been saved with your custom changes.",
+                  });
+                }} data-testid="button-save-edited-template">
+                  Save Changes
                 </Button>
               </div>
             </div>
