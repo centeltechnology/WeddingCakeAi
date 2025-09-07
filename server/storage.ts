@@ -17,7 +17,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, like, sql } from "drizzle-orm";
+import { eq, and, or, like, sql, gte } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -57,6 +57,7 @@ export interface IStorage {
   getLeadsByBaker(bakerId: string): Promise<Lead[]>;
   getLeadsByTenant(tenantId: string): Promise<Lead[]>;
   updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead>;
+  getLeadCountForBaker(bakerId: string, period: 'current_month' | 'all_time'): Promise<number>;
   
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByLead(leadId: string): Promise<Message[]>;
@@ -537,6 +538,21 @@ export class MemStorage implements IStorage {
 
   async getLeadsByTenant(tenantId: string): Promise<Lead[]> {
     return Array.from(this.leads.values()).filter(lead => lead.tenantId === tenantId);
+  }
+
+  async getLeadCountForBaker(bakerId: string, period: 'current_month' | 'all_time'): Promise<number> {
+    const leads = Array.from(this.leads.values()).filter(lead => lead.bakerId === bakerId);
+    
+    if (period === 'current_month') {
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return leads.filter(lead => {
+        const leadDate = lead.createdAt ? new Date(lead.createdAt) : new Date();
+        return leadDate >= currentMonthStart;
+      }).length;
+    }
+    
+    return leads.length;
   }
 
   async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead> {
@@ -1756,6 +1772,22 @@ export class DatabaseStorage implements IStorage {
 
   async getLeadsByTenant(tenantId: string): Promise<Lead[]> {
     return await db.select().from(leads).where(eq(leads.tenantId, tenantId));
+  }
+
+  async getLeadCountForBaker(bakerId: string, period: 'current_month' | 'all_time'): Promise<number> {
+    if (period === 'current_month') {
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(leads)
+        .where(and(eq(leads.bakerId, bakerId), gte(leads.createdAt, currentMonthStart)));
+      return result[0]?.count || 0;
+    }
+    
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(leads)
+      .where(eq(leads.bakerId, bakerId));
+    return result[0]?.count || 0;
   }
 
   async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead> {

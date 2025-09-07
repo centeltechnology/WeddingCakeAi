@@ -66,29 +66,17 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
 
   // Fetch billing information
   const { data: billingInfo, isLoading } = useQuery<BillingInfo>({
-    queryKey: ['/api/bakers', bakerId, 'billing'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/bakers/${bakerId}/billing`);
-      return response;
-    },
+    queryKey: ['/api/bakers', bakerId, 'billing']
   });
 
   // Fetch invoices
   const { data: invoices } = useQuery<Invoice[]>({
-    queryKey: ['/api/bakers', bakerId, 'billing', 'invoices'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/bakers/${bakerId}/billing/invoices`);
-      return response;
-    },
+    queryKey: ['/api/bakers', bakerId, 'billing', 'invoices']
   });
 
   // Fetch available plans
   const { data: availablePlans } = useQuery<PlanOption[]>({
-    queryKey: ['/api/billing/plans'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/billing/plans');
-      return response;
-    },
+    queryKey: ['/api/billing/plans']
   });
 
   // Change plan mutation
@@ -96,7 +84,7 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
     mutationFn: async ({ planId }: { planId: string }) => {
       return await apiRequest('POST', `/api/bakers/${bakerId}/billing/change-plan`, { planId });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.checkoutUrl) {
         // Redirect to Stripe Checkout
         window.location.href = data.checkoutUrl;
@@ -144,7 +132,7 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
     mutationFn: async () => {
       return await apiRequest('POST', `/api/bakers/${bakerId}/billing/portal`);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       window.location.href = data.portalUrl;
     },
     onError: (error: any) => {
