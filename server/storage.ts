@@ -27,8 +27,9 @@ export interface IStorage {
   getUsersWithRole(role: string): Promise<User[]>;
 
   // Baker operations
-  createBaker(insertBaker: InsertBaker): Promise<Baker>;
+  getBakers(): Promise<Baker[]>;
   getBaker(id: string): Promise<Baker | undefined>;
+  createBaker(insertBaker: InsertBaker): Promise<Baker>;
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   getBakersByTenant(tenantId: string): Promise<Baker[]>;
@@ -45,12 +46,6 @@ export interface IStorage {
   getEstimatesByTenant(tenantId: string): Promise<Estimate[]>;
   updateEstimate(id: string, updates: Partial<InsertEstimate>): Promise<Estimate>;
   deleteEstimate(id: string): Promise<boolean>;
-  
-  getBakers(): Promise<Baker[]>;
-  getBaker(id: string): Promise<Baker | undefined>;
-  createBaker(baker: InsertBaker): Promise<Baker>;
-  updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
-  searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   
   createLead(lead: InsertLead): Promise<Lead>;
   getLead(id: string): Promise<Lead | undefined>;
@@ -299,7 +294,16 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      email: insertUser.email || null,
+      role: insertUser.role || null,
+      isActive: insertUser.isActive ?? true,
+      lastLoginAt: insertUser.lastLoginAt || null,
+      createdAt: insertUser.createdAt || new Date(),
+      updatedAt: insertUser.updatedAt || new Date()
+    };
     this.users.set(id, user);
     return user;
   }
@@ -312,6 +316,10 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...updates };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async getUsersWithRole(role: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.role === role);
   }
 
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
@@ -443,7 +451,11 @@ export class MemStorage implements IStorage {
       isActive: insertBaker.isActive !== undefined ? insertBaker.isActive : true,
       specialties: insertBaker.specialties || [],
       portfolio: insertBaker.portfolio || [],
-      subscriptionPlan: insertBaker.subscriptionPlan || null
+      subscriptionPlan: insertBaker.subscriptionPlan || 'free',
+      stripeConnectAccountId: insertBaker.stripeConnectAccountId || null,
+      stripeAccountStatus: insertBaker.stripeAccountStatus || 'not_started',
+      stripeOnboardingCompleted: insertBaker.stripeOnboardingCompleted || false,
+      stripeAccountType: insertBaker.stripeAccountType || 'express'
     };
     this.bakers.set(id, baker);
     return baker;
@@ -480,6 +492,13 @@ export class MemStorage implements IStorage {
     // For simplicity, return all bakers for location/radius searches
     // In a real implementation, this would calculate distance based on coordinates
     return bakers;
+  }
+
+  async getBakersByTenant(tenantId: string): Promise<Baker[]> {
+    const tenantBakerNetworks = Array.from(this.tenantBakerNetworks.values())
+      .filter(network => network.tenantId === tenantId && network.isApproved);
+    const approvedBakerIds = new Set(tenantBakerNetworks.map(network => network.bakerId));
+    return Array.from(this.bakers.values()).filter(b => approvedBakerIds.has(b.id) && b.isActive);
   }
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
@@ -791,6 +810,10 @@ export class MemStorage implements IStorage {
 
   async getTenant(id: string): Promise<Tenant | undefined> {
     return this.tenants.get(id);
+  }
+
+  async getTenants(): Promise<Tenant[]> {
+    return Array.from(this.tenants.values());
   }
 
   async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
