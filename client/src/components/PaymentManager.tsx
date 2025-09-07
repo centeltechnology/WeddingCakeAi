@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { StripeConnectOnboarding } from './StripeConnectOnboarding';
 import { 
   CreditCard, 
   Plus, 
@@ -58,7 +59,7 @@ interface PaymentPlan {
 
 export function PaymentManager({ bakerId }: PaymentManagerProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('payments');
+  const [activeTab, setActiveTab] = useState('account');
   const [isCreating, setIsCreating] = useState(false);
 
   // Fetch transactions/payments from API
@@ -243,7 +244,11 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="account" data-testid="tab-account-setup">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Account Setup
+          </TabsTrigger>
           <TabsTrigger value="payments" data-testid="tab-payments">
             <Receipt className="h-4 w-4 mr-2" />
             Invoices ({payments.length})
@@ -257,6 +262,10 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
             Analytics
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="account" className="space-y-4">
+          <StripeConnectOnboarding bakerId={bakerId} />
+        </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
           {payments.length === 0 ? (
