@@ -86,6 +86,7 @@ export interface IStorage {
   // Multi-tenancy methods
   createTenant(tenant: InsertTenant): Promise<Tenant>;
   getTenant(id: string): Promise<Tenant | undefined>;
+  getTenants(): Promise<Tenant[]>;
   getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined>;
   getTenantByDomain(domain: string): Promise<Tenant | undefined>;
   updateTenant(id: string, updates: Partial<InsertTenant>): Promise<Tenant>;
@@ -2100,6 +2101,43 @@ export class DatabaseStorage implements IStorage {
     return invoice;
   }
   async deleteInvoice(id: string): Promise<boolean> { return true; }
+
+  // Tenant operations
+  async getTenant(id: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id));
+    return tenant || undefined;
+  }
+
+  async getTenants(): Promise<Tenant[]> {
+    return await db.select().from(tenants);
+  }
+
+  async updateTenant(id: string, updates: Partial<InsertTenant>): Promise<Tenant> {
+    const [tenant] = await db
+      .update(tenants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(tenants.id, id))
+      .returning();
+    return tenant;
+  }
+
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+    const [tenant] = await db
+      .insert(tenants)
+      .values({ ...insertTenant, id: insertTenant.id || randomUUID() })
+      .returning();
+    return tenant;
+  }
+
+  async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.subdomain, subdomain));
+    return tenant || undefined;
+  }
+
+  async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.domain, domain));
+    return tenant || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();

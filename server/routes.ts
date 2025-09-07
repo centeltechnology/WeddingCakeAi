@@ -2468,6 +2468,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update tenant status
+  app.patch('/api/super-admin/tenants/:tenantId/status', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const { status } = req.body;
+
+      if (!status || !['active', 'suspended'].includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid status. Must be "active" or "suspended"' 
+        });
+      }
+
+      const tenant = await storage.getTenant(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Tenant not found' 
+        });
+      }
+
+      const updatedTenant = await storage.updateTenant(tenantId, { 
+        status, 
+        updatedAt: new Date() 
+      });
+
+      res.json({
+        success: true,
+        tenant: updatedTenant
+      });
+
+    } catch (error) {
+      console.error('Update tenant status error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
+  // Update tenant details
+  app.patch('/api/super-admin/tenants/:tenantId', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const updates = req.body;
+
+      // Remove non-updateable fields
+      delete updates.id;
+      delete updates.createdAt;
+
+      const tenant = await storage.getTenant(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Tenant not found' 
+        });
+      }
+
+      const updatedTenant = await storage.updateTenant(tenantId, { 
+        ...updates, 
+        updatedAt: new Date() 
+      });
+
+      res.json({
+        success: true,
+        tenant: updatedTenant
+      });
+
+    } catch (error) {
+      console.error('Update tenant error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
   // Change super admin password
   app.post('/api/super-admin/change-password', verifySuperAdminToken, async (req, res) => {
     try {
