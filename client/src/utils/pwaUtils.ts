@@ -260,7 +260,7 @@ export function onNetworkChange(callback: (isOnline: boolean) => void) {
 export function requestBackgroundSync(tag: string) {
   if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
     navigator.serviceWorker.ready.then((registration) => {
-      return registration.sync.register(tag);
+      return (registration as any).sync.register(tag);
     }).catch((error) => {
       console.error('Background sync registration failed:', error);
     });

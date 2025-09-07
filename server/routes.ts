@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
@@ -27,6 +28,21 @@ const replicate = new Replicate({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve PWA manifest
+  app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.resolve(process.cwd(), 'public', 'manifest.json'));
+  });
+  
+  // Serve service worker
+  app.get('/sw.js', (req, res) => {
+    res.sendFile(path.resolve(process.cwd(), 'public', 'sw.js'));
+  });
+  
+  // Serve offline page
+  app.get('/offline.html', (req, res) => {
+    res.sendFile(path.resolve(process.cwd(), 'public', 'offline.html'));
+  });
+  
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
   app.use(injectTenantBranding);
