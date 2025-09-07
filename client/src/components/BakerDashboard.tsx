@@ -34,7 +34,6 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PortfolioUploader from "./PortfolioUploader";
 import { QuoteBuilder } from "./QuoteBuilder";
@@ -51,7 +50,6 @@ interface BakerDashboardProps {
 
 export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [subdomainInput, setSubdomainInput] = useState("");
@@ -62,114 +60,134 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     window.location.href = '/api/logout';
   };
 
-  const { data: baker } = useQuery<Baker>({
-    queryKey: ['/api/bakers', bakerId],
-    queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}`);
-      if (!response.ok) throw new Error('Failed to fetch baker');
-      return response.json();
-    }
-  });
+  // Demo data for Sweet Dreams Bakery
+  const baker: Baker = {
+    id: bakerId,
+    businessName: "Sweet Dreams Bakery",
+    ownerName: "Sarah Johnson",
+    email: "admin@sweetdreamsbakery.com",
+    phone: "(555) 123-4567",
+    address: "123 Main Street, Downtown, CA 90210",
+    specialties: ["Wedding Cakes", "Birthday Cakes", "Cupcakes", "Custom Desserts"],
+    businessDescription: "Creating beautiful, delicious cakes for your special moments since 2018. We specialize in custom wedding cakes, celebration cakes, and artisan desserts made with premium ingredients.",
+    isActive: true,
+    createdAt: new Date('2023-01-15'),
+    updatedAt: new Date('2024-01-15'),
+    stripeAccountId: null,
+    businessLogo: null,
+    portfolioImages: [],
+    brandColor: "#f43f5e",
+    brandSecondaryColor: "#fda4af"
+  };
 
-  // Fetch baker domain configuration
-  const { data: domainConfig } = useQuery({
-    queryKey: ['/api/bakers', bakerId, 'domain'],
-    queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`);
-      if (!response.ok) return { subdomain: null, customDomain: null, isActive: false };
-      return response.json();
-    }
-  });
+  const domainConfig = {
+    subdomain: "sweetdreams",
+    customDomain: null,
+    isActive: true
+  };
 
-  const { data: leads, isLoading: leadsLoading } = useQuery<Lead[]>({
-    queryKey: ['/api/bakers', bakerId, 'leads'],
-    queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}/leads`);
-      if (!response.ok) throw new Error('Failed to fetch leads');
-      return response.json();
-    }
-  });
-
-  const updateLeadMutation = useMutation({
-    mutationFn: async ({ leadId, updates }: { leadId: string; updates: Partial<Lead> }) => {
-      const response = await fetch(`/api/leads/${leadId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!response.ok) throw new Error('Failed to update lead');
-      return response.json();
+  const leads: Lead[] = [
+    {
+      id: "1",
+      bakerId: bakerId,
+      name: "Emily & Michael",
+      email: "emily.anderson@email.com",
+      phone: "(555) 987-6543",
+      eventType: "Wedding",
+      eventDate: new Date('2024-06-15'),
+      guestCount: 150,
+      budget: 800,
+      message: "Looking for a 3-tier wedding cake with roses and gold accents. Our colors are blush pink and gold.",
+      status: "new" as const,
+      createdAt: new Date('2024-01-10'),
+      updatedAt: new Date('2024-01-10'),
+      cakeDetails: {
+        tiers: 3,
+        servings: 150,
+        flavors: ["Vanilla", "Strawberry"],
+        decorations: ["Fresh Roses", "Gold Leaf"]
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
+    {
+      id: "2", 
+      bakerId: bakerId,
+      name: "Lisa Martinez",
+      email: "lisa.martinez@email.com",
+      phone: "(555) 456-7890",
+      eventType: "Birthday",
+      eventDate: new Date('2024-02-28'),
+      guestCount: 25,
+      budget: 200,
+      message: "Need a unicorn-themed birthday cake for my daughter's 5th birthday. She loves purple and pink!",
+      status: "quoted" as const,
+      createdAt: new Date('2024-01-08'),
+      updatedAt: new Date('2024-01-12'),
+      cakeDetails: {
+        tiers: 2,
+        servings: 25,
+        flavors: ["Funfetti"],
+        decorations: ["Unicorn Horn", "Rainbow Buttercream", "Edible Glitter"]
+      }
+    },
+    {
+      id: "3",
+      bakerId: bakerId,
+      name: "David & Jennifer",
+      email: "david.chen@email.com",
+      phone: "(555) 234-5678",
+      eventType: "Anniversary",
+      eventDate: new Date('2024-03-20'),
+      guestCount: 40,
+      budget: 350,
+      message: "Celebrating our 10th wedding anniversary. Would love a romantic design with chocolate and raspberry flavors.",
+      status: "contracted" as const,
+      createdAt: new Date('2023-12-28'),
+      updatedAt: new Date('2024-01-05'),
+      cakeDetails: {
+        tiers: 2,
+        servings: 40,
+        flavors: ["Chocolate", "Raspberry"],
+        decorations: ["Sugar Flowers", "Pearl Draping"]
+      }
+    }
+  ];
+
+  const leadsLoading = false;
+
+  const updateLeadMutation = {
+    mutate: ({ leadId, updates }: { leadId: string; updates: Partial<Lead> }) => {
+      // Demo functionality - just show success message
       toast({
         title: "Lead Updated",
         description: "Lead status has been updated successfully!",
       });
-    }
-  });
-
-  // Subdomain save mutation
-  const saveSubdomainMutation = useMutation({
-    mutationFn: async (subdomain: string) => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subdomain })
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save subdomain');
-      }
-      return response.json();
     },
-    onSuccess: (data) => {
+    isPending: false
+  };
+
+  // Demo subdomain save functionality
+  const saveSubdomainMutation = {
+    mutate: (subdomain: string) => {
       toast({
         title: "Subdomain Updated",
-        description: data.message,
+        description: `Your subdomain has been set to: ${subdomain}.bakewise.com`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
       setSubdomainInput("");
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    isPending: false
+  };
 
-  // Custom domain save mutation
-  const saveCustomDomainMutation = useMutation({
-    mutationFn: async (customDomain: string) => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customDomain })
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save custom domain');
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
+  // Demo custom domain save functionality  
+  const saveCustomDomainMutation = {
+    mutate: (customDomain: string) => {
       toast({
-        title: "Custom Domain Updated",
-        description: data.message,
+        title: "Custom Domain Updated", 
+        description: `Your custom domain has been set to: ${customDomain}`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
       setCustomDomainInput("");
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    isPending: false
+  };
 
   const handleStatusChange = (leadId: string, newStatus: string) => {
     updateLeadMutation.mutate({ leadId, updates: { status: newStatus } });

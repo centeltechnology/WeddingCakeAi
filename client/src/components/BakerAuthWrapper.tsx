@@ -13,14 +13,10 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication for baker:", bakerId);
-        
         // Check for baker token in localStorage
         const token = localStorage.getItem("baker_token");
-        console.log("Token found:", !!token);
         
         if (!token) {
-          console.log("No token found, setting not authenticated");
           setIsAuthenticated(false);
           return;
         }
@@ -28,21 +24,17 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
         // Verify token by checking if it contains the expected baker ID
         try {
           const decodedToken = atob(token);
-          console.log("Decoded token:", decodedToken);
           
           if (decodedToken.includes(`baker:${bakerId}:`)) {
             // Token is valid for this baker
-            console.log("Token is valid, setting authenticated");
             setIsAuthenticated(true);
           } else {
             // Token is for a different baker or invalid
-            console.log("Token invalid for this baker, removing and redirecting");
             localStorage.removeItem("baker_token");
             setIsAuthenticated(false);
           }
         } catch (decodeError) {
           // Token is malformed
-          console.log("Token decode error:", decodeError);
           localStorage.removeItem("baker_token");
           setIsAuthenticated(false);
         }
