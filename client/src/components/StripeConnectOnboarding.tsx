@@ -33,14 +33,20 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   const [isStartingOnboarding, setIsStartingOnboarding] = useState(false);
 
   // Fetch Stripe Connect account status
-  const { data: accountStatus, isLoading } = useQuery<ConnectAccountStatus>({
+  const { data: accountStatus, isLoading, error } = useQuery<ConnectAccountStatus>({
     queryKey: ['/api/bakers', bakerId, 'stripe-connect', 'status'],
     queryFn: async () => {
       const response = await fetch(`/api/bakers/${bakerId}/stripe-connect/status`);
-      if (!response.ok) throw new Error('Failed to fetch account status');
+      if (!response.ok) {
+        // Return default status instead of throwing
+        return { 
+          status: 'not_started' as const, 
+          onboardingCompleted: false 
+        };
+      }
       return response.json();
     },
-    refetchInterval: 5000, // Check status every 5 seconds
+    retry: false,
   });
 
   // Start Stripe Connect onboarding
@@ -109,6 +115,61 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
     );
   }
 
+  // Show error state with setup button if API fails  
+  if (error) {
+    return (
+      <Card data-testid="stripe-connect-error">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Payment Account Setup
+          </CardTitle>
+          <CardDescription>
+            Set up your Stripe account to receive payments directly from customers
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              You need to complete your Stripe account setup to receive payments. 
+              This is a secure process managed by Stripe to verify your business information.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-3">
+            <h4 className="font-medium">What you'll need:</h4>
+            <ul className="text-sm text-gray-600 space-y-1 ml-4">
+              <li>• Business information and tax ID</li>
+              <li>• Bank account for deposits</li>
+              <li>• Personal identification</li>
+              <li>• Business website or social media</li>
+            </ul>
+          </div>
+
+          <Button 
+            onClick={handleStartOnboarding}
+            disabled={isStartingOnboarding || startOnboardingMutation.isPending}
+            className="w-full"
+            data-testid="button-start-onboarding"
+          >
+            {isStartingOnboarding || startOnboardingMutation.isPending ? (
+              <>
+                <Clock className="w-4 h-4 mr-2 animate-spin" />
+                Starting Setup...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Complete Account Setup
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card data-testid="stripe-connect-onboarding">
       <CardHeader>
@@ -124,7 +185,7 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!accountStatus?.onboardingCompleted ? (
+        {(!accountStatus?.onboardingCompleted) ? (
           <>
             <Alert>
               <Shield className="h-4 w-4" />
