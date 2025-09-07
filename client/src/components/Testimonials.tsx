@@ -173,10 +173,10 @@ export default function Testimonials() {
 
         {/* Testimonials Carousel */}
         <div className="relative">
-          <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={emblaRef}>
-            <div className="flex touch-pan-y">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex">
               {testimonials.map((testimonial) => (
-                <div key={testimonial.id} className="flex-none w-full md:w-1/2 px-4">
+                <div key={testimonial.id} className="flex-[0_0_100%] md:flex-[0_0_50%] min-w-0 pl-4">
                   <Card className="relative bg-card/50 backdrop-blur-sm border-border/50 hover:shadow-lg transition-all duration-300 h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
