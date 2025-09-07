@@ -67,13 +67,13 @@ interface TenantBrandProviderProps {
 export function TenantBrandProvider({ children }: TenantBrandProviderProps) {
   const [branding, setBranding] = useState<TenantBranding>(defaultBranding);
 
-  const { data: tenantData, isLoading } = useQuery<{ tenant: TenantInfo | null; config: any | null }>({
+  const { data, isLoading } = useQuery<{ tenant: TenantInfo | null; config: any | null }>({
     queryKey: ['/api/tenant/info'],
     retry: false,
   });
 
-  const tenant = tenantData?.tenant || null;
-  const config = tenantData?.config;
+  const tenant = data?.tenant || null;
+  const config = data?.config;
 
   useEffect(() => {
     if (config) {
