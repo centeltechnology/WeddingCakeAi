@@ -51,12 +51,24 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [subdomainInput, setSubdomainInput] = useState("");
+  const [customDomainInput, setCustomDomainInput] = useState("");
 
   const { data: baker } = useQuery<Baker>({
     queryKey: ['/api/bakers', bakerId],
     queryFn: async () => {
       const response = await fetch(`/api/bakers/${bakerId}`);
       if (!response.ok) throw new Error('Failed to fetch baker');
+      return response.json();
+    }
+  });
+
+  // Fetch tenant information for domain settings
+  const { data: tenant } = useQuery({
+    queryKey: ['/api/tenant'],
+    queryFn: async () => {
+      const response = await fetch('/api/tenant');
+      if (!response.ok) throw new Error('Failed to fetch tenant');
       return response.json();
     }
   });
@@ -89,8 +101,106 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     }
   });
 
+  // Subdomain save mutation
+  const saveSubdomainMutation = useMutation({
+    mutationFn: async (subdomain: string) => {
+      const response = await fetch('/api/tenant/domain', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subdomain })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save subdomain');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Subdomain Updated",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenant'] });
+      setSubdomainInput("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Custom domain save mutation
+  const saveCustomDomainMutation = useMutation({
+    mutationFn: async (customDomain: string) => {
+      const response = await fetch('/api/tenant/domain', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customDomain })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save custom domain');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Custom Domain Updated",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenant'] });
+      setCustomDomainInput("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleStatusChange = (leadId: string, newStatus: string) => {
     updateLeadMutation.mutate({ leadId, updates: { status: newStatus } });
+  };
+
+  const handleSaveSubdomain = async () => {
+    if (!subdomainInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a subdomain",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate subdomain format
+    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomainInput)) {
+      toast({
+        title: "Error",
+        description: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveSubdomainMutation.mutate(subdomainInput);
+  };
+
+  const handleSaveCustomDomain = async () => {
+    if (!customDomainInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a custom domain",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveCustomDomainMutation.mutate(customDomainInput);
   };
 
   const filteredLeads = leads?.filter(lead => {
