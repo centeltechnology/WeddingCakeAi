@@ -204,82 +204,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Testimonials Section */}
-      <div className="py-16 bg-gradient-to-b from-background to-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-serif font-bold text-foreground mb-4">
-              Trusted by Thousands of Couples
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Join the couples who found their perfect wedding cake through Bakewise
-            </p>
-          </div>
-          
-          {/* Testimonials Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 w-4 h-4">★</span>
-                ))}
-              </div>
-              <p className="text-foreground mb-4 leading-relaxed">
-                "Bakewise transformed my cake business! I went from spending hours on quotes to closing deals in minutes. My customers love how professional everything looks."
-              </p>
-              <div className="border-t border-border pt-4">
-                <div className="font-semibold text-foreground">Sarah Martinez</div>
-                <div className="text-sm text-muted-foreground">Sweet Dreams Cakery</div>
-                <div className="text-xs text-primary mt-1">🏆 400% revenue increase</div>
-              </div>
-            </div>
-            
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 w-4 h-4">★</span>
-                ))}
-              </div>
-              <p className="text-foreground mb-4 leading-relaxed">
-                "The calculator was incredibly accurate and we found a local baker who created exactly what we envisioned. The whole process was seamless."
-              </p>
-              <div className="border-t border-border pt-4">
-                <div className="font-semibold text-foreground">Maria Rodriguez</div>
-                <div className="text-sm text-muted-foreground">Miami, FL • November 2024</div>
-                <div className="text-xs text-primary mt-1">5-tier tropical with orchids</div>
-              </div>
-            </div>
-            
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400 w-4 h-4">★</span>
-                ))}
-              </div>
-              <p className="text-foreground mb-4 leading-relaxed">
-                "Love how detailed the estimates are! We used the platform to compare different designs and found the perfect balance of beauty and budget."
-              </p>
-              <div className="border-t border-border pt-4">
-                <div className="font-semibold text-foreground">Jessica Kim</div>
-                <div className="text-sm text-muted-foreground">Seattle, WA • October 2024</div>
-                <div className="text-xs text-primary mt-1">4-tier red velvet with peonies</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Call to Action */}
-          <div className="text-center mt-12">
-            <p className="text-muted-foreground mb-4">
-              Ready to plan your dream wedding cake?
-            </p>
-            <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-2">
-              <span className="text-sm font-medium text-primary">
-                Free to use • No signup required • Instant estimates
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Testimonials Carousel */}
+      <Testimonials />
       
       <Footer />
     </div>

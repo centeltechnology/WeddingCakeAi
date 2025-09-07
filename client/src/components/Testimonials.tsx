@@ -1,5 +1,8 @@
-import { Star, Quote, Users, CheckCircle } from "lucide-react";
+import { Star, Quote, Users, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import useEmblaCarousel from 'embla-carousel-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Testimonial {
   id: string;
@@ -86,6 +89,70 @@ const stats = [
 ];
 
 export default function Testimonials() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    align: 'start',
+    skipSnaps: false,
+    dragFree: false
+  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) {
+      emblaApi.scrollPrev();
+    }
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) {
+      emblaApi.scrollNext();
+    }
+  }, [emblaApi]);
+
+  const scrollTo = useCallback(
+    (index: number) => {
+      if (emblaApi) emblaApi.scrollTo(index);
+    },
+    [emblaApi]
+  );
+
+  const onInit = useCallback((emblaApi: any) => {
+    setScrollSnaps(emblaApi.scrollSnapList());
+  }, []);
+
+  const onSelect = useCallback((emblaApi: any) => {
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    onInit(emblaApi);
+    onSelect(emblaApi);
+    emblaApi.on('reInit', onInit);
+    emblaApi.on('select', onSelect);
+  }, [emblaApi, onInit, onSelect]);
+
+  // Auto-play functionality - disabled for debugging
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    console.log("Embla API initialized, starting autoplay");
+    const autoplay = setInterval(() => {
+      console.log("Auto-scrolling to next");
+      if (emblaApi.canScrollNext()) {
+        emblaApi.scrollNext();
+      } else {
+        emblaApi.scrollTo(0);
+      }
+    }, 4000); // Auto-slide every 4 seconds
+
+    return () => {
+      console.log("Clearing autoplay interval");
+      clearInterval(autoplay);
+    };
+  }, [emblaApi]);
 
   return (
     <section className="py-16 bg-gradient-to-b from-background to-muted/30">
@@ -115,53 +182,95 @@ export default function Testimonials() {
           </div>
         </div>
 
-        {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.slice(0, 6).map((testimonial) => (
-            <Card key={testimonial.id} className="relative bg-card/50 backdrop-blur-sm border-border/50 hover:shadow-lg transition-all duration-300 h-full">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    {/* Rating Stars */}
-                    <div className="flex items-center mb-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < testimonial.rating
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {testimonial.rating}.0
-                      </span>
-                    </div>
-                    
-                    {/* Review Text */}
-                    <p className="text-foreground mb-4 leading-relaxed">
-                      "{testimonial.review}"
-                    </p>
-                    
-                    {/* Customer Info */}
-                    <div className="border-t border-border pt-4">
-                      <div className="font-semibold text-foreground">
-                        {testimonial.name}
+        {/* Testimonials Carousel */}
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex">
+              {testimonials.map((testimonial) => (
+                <div key={testimonial.id} className="flex-[0_0_100%] md:flex-[0_0_50%] min-w-0 pl-4">
+                  <Card className="relative bg-card/50 backdrop-blur-sm border-border/50 hover:shadow-lg transition-all duration-300 h-full">
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                          {/* Rating Stars */}
+                          <div className="flex items-center mb-3">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < testimonial.rating
+                                    ? "text-yellow-400 fill-current"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              {testimonial.rating}.0
+                            </span>
+                          </div>
+                          
+                          {/* Review Text */}
+                          <p className="text-foreground mb-4 leading-relaxed">
+                            "{testimonial.review}"
+                          </p>
+                          
+                          {/* Customer Info */}
+                          <div className="border-t border-border pt-4">
+                            <div className="font-semibold text-foreground">
+                              {testimonial.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {testimonial.location} • {testimonial.weddingDate}
+                            </div>
+                            <div className="text-xs text-primary mt-1">
+                              {testimonial.cakeStyle}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {testimonial.location} • {testimonial.weddingDate}
-                      </div>
-                      <div className="text-xs text-primary mt-1">
-                        {testimonial.cakeStyle}
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation Buttons */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border-rose-200 hover:bg-white hover:border-rose-300 shadow-lg z-10"
+            onClick={scrollPrev}
+            data-testid="button-testimonial-prev"
+          >
+            <ChevronLeft className="h-5 w-5 text-rose-600" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border-rose-200 hover:bg-white hover:border-rose-300 shadow-lg z-10"
+            onClick={scrollNext}
+            data-testid="button-testimonial-next"
+          >
+            <ChevronRight className="h-5 w-5 text-rose-600" />
+          </Button>
+
+          {/* Dots Indicator */}
+          <div className="flex justify-center mt-8 space-x-3">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === selectedIndex
+                    ? "bg-rose-500 scale-110 shadow-md"
+                    : "bg-rose-200 hover:bg-rose-300"
+                }`}
+                onClick={() => scrollTo(index)}
+                data-testid={`button-testimonial-dot-${index}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Call to Action */}
