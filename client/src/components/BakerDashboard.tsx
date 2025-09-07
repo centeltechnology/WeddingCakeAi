@@ -40,7 +40,6 @@ import { PaymentManager } from "./PaymentManager";
 import { EmbeddableWidget } from "./EmbeddableWidget";
 import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
-import { PWAStatus } from "./PWAStatus";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -163,7 +162,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             <p className="text-xl text-gray-600">Welcome back, {baker.name}!</p>
           </div>
           <div className="flex items-center gap-4">
-            <PWAStatus />
             <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
               subscriptionPlan === 'free' 
                 ? 'bg-white/80 text-gray-800' 

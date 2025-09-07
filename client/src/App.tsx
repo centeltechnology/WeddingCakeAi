@@ -31,8 +31,6 @@ import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { registerServiceWorker } from "@/utils/pwaUtils";
 import { useEffect } from "react";
 
 function Router() {
@@ -80,11 +78,6 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    // Register service worker for PWA functionality
-    registerServiceWorker();
-  }, []);
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -94,7 +87,6 @@ function App() {
               <Toaster />
               <Router />
               <ScrollToTopButton />
-              <PWAInstallPrompt />
             </TooltipProvider>
           </TenantBrandProvider>
         </ThemeProvider>
