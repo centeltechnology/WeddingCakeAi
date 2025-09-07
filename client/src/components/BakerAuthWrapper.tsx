@@ -13,23 +13,34 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check authentication by trying to fetch baker data
-        const response = await fetch(`/api/bakers/${bakerId}`);
+        // Check for baker token in localStorage
+        const token = localStorage.getItem("baker_token");
         
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else if (response.status === 401) {
-          // User not authenticated - redirect to login
-          window.location.href = '/api/login';
+        if (!token) {
+          setIsAuthenticated(false);
           return;
-        } else {
-          // Other error - baker not found, etc.
+        }
+
+        // Verify token by checking if it contains the expected baker ID
+        try {
+          const decodedToken = atob(token);
+          if (decodedToken.includes(`baker:${bakerId}:`)) {
+            // Token is valid for this baker
+            setIsAuthenticated(true);
+          } else {
+            // Token is for a different baker or invalid
+            localStorage.removeItem("baker_token");
+            setIsAuthenticated(false);
+          }
+        } catch (decodeError) {
+          // Token is malformed
+          localStorage.removeItem("baker_token");
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        // On network error, try to redirect to login
-        window.location.href = '/api/login';
+        localStorage.removeItem("baker_token");
+        setIsAuthenticated(false);
       }
     };
 
@@ -48,29 +59,10 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
     );
   }
 
-  // Not authenticated or error - redirect handled above
+  // Not authenticated - redirect to login
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium mb-2">Access Denied</h3>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to access this baker dashboard.
-          </p>
-          <button 
-            onClick={() => setLocation('/')}
-            className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
+    setLocation("/baker-login");
+    return null;
   }
 
   // Authenticated - render protected content
