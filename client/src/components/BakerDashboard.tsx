@@ -394,9 +394,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         <TabsContent value="leads">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
             <CardHeader className="border-b border-rose-100/50">
-              <div className="flex items-center justify-between">
+              <div className="space-y-4">
                 <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Leads</h3>
-                <div className="flex items-center space-x-4">
+                
+                {/* Desktop: Horizontal layout */}
+                <div className="hidden md:flex items-center space-x-4">
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
                     <Input
@@ -409,6 +411,33 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-40 bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm" data-testid="select-status-filter">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="quoted">Quoted</SelectItem>
+                      <SelectItem value="booked">Booked</SelectItem>
+                      <SelectItem value="declined">Declined</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Mobile: Stacked layout */}
+                <div className="md:hidden space-y-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
+                    <Input
+                      placeholder="Search leads..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-full bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm"
+                      data-testid="input-search-leads-mobile"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm" data-testid="select-status-filter-mobile">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
