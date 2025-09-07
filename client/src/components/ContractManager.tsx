@@ -51,52 +51,23 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 
-  // Mock data for now - in real app would come from API
-  const contracts: Contract[] = [
-    {
-      id: 'contract-1',
-      contractNumber: 'CON-2024-001',
-      title: 'Emily & James Wedding Cake Contract',
-      status: 'signed',
-      customerId: 'customer-1',
-      customerName: 'Emily Thompson',
-      content: 'Wedding cake contract for 3-tier vanilla and strawberry cake with buttercream frosting...',
-      terms: 'Payment terms: 50% deposit upon signing, final payment due 7 days before event.',
-      eventDate: '2024-09-15',
-      totalAmount: '1386.56',
-      depositAmount: '693.28',
-      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      signedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'contract-2',
-      contractNumber: 'CON-2024-002',
-      title: 'Jessica Martinez Wedding Cake Contract',
-      status: 'pending',
-      customerId: 'customer-2',
-      customerName: 'Jessica Martinez',
-      content: '2-tier wedding cake contract with vintage design...',
-      terms: 'Payment terms: 50% deposit upon signing, final payment due 7 days before event.',
-      eventDate: '2024-11-30',
-      totalAmount: '1250.00',
-      depositAmount: '625.00',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'contract-3',
-      contractNumber: 'CON-2024-003',
-      title: 'David Johnson Wedding Cake Contract',
-      status: 'sent',
-      customerId: 'customer-3',
-      customerName: 'David Johnson',
-      content: '4-tier elaborate wedding cake with sugar flowers...',
-      terms: 'Payment terms: 50% deposit upon signing, final payment due 7 days before event.',
-      eventDate: '2025-01-20',
-      totalAmount: '3500.00',
-      depositAmount: '1750.00',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  // Fetch contracts from API
+  const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
+    queryKey: [`/api/bakers/${bakerId}/contracts`],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/bakers/${bakerId}/contracts`);
+        if (!response.ok) {
+          if (response.status === 404) return []; // No contracts yet
+          throw new Error('Failed to fetch contracts');
+        }
+        return response.json();
+      } catch (error) {
+        console.log('Contracts not found, returning empty array');
+        return []; // Return empty array for now
+      }
     }
-  ];
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -129,14 +100,51 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
     });
   };
 
+  // Calculate contract statistics
   const contractStats = {
-    total: contracts.length,
-    signed: contracts.filter(c => c.status === 'signed').length,
-    pending: contracts.filter(c => c.status === 'pending' || c.status === 'sent').length,
-    revenue: contracts
-      .filter(c => c.status === 'signed')
-      .reduce((sum, c) => sum + parseFloat(c.totalAmount), 0)
+    total: contracts?.length || 0,
+    signed: contracts?.filter(c => c.status === 'signed').length || 0,
+    pending: contracts?.filter(c => c.status === 'pending' || c.status === 'sent').length || 0,
+    revenue: contracts?.filter(c => c.status === 'signed').reduce((sum, c) => sum + parseFloat(c.totalAmount), 0) || 0
   };
+
+  // Show loading state
+  if (contractsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-foreground">Contract Management</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -222,7 +230,7 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="contracts" data-testid="tab-contracts">
             <FileCheck className="h-4 w-4 mr-2" />
-            Contracts ({contracts.length})
+            Contracts ({contracts?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="templates" data-testid="tab-contract-templates">
             <Edit className="h-4 w-4 mr-2" />
@@ -235,7 +243,7 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
         </TabsList>
 
         <TabsContent value="contracts" className="space-y-4">
-          {contracts.length === 0 ? (
+          {!contracts || contracts.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <FileCheck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
