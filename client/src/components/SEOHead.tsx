@@ -12,8 +12,8 @@ interface SEOHeadProps {
 export default function SEOHead({
   title = "Bakewise - Complete Business Management Platform for Cake Decorators & Bakeries",
   description = "Streamline your cake decorating business with Bakewise's all-in-one platform. Features CRM, quote builder, AI cake calculator, payment processing, and digital contracts for bakeries and specialty dessert vendors.",
-  image = "/og-image.png",
-  url = "https://bakewise.com",
+  image = "https://bakewiseapp.com/og-image.png",
+  url = "https://bakewiseapp.com",
   type = "website",
   keywords = "cake decorating business, bakery management software, cake pricing calculator, bakery CRM, custom cake quotes, wedding cake business, cake decorator tools, bakery payment processing"
 }: SEOHeadProps) {
@@ -48,9 +48,13 @@ export default function SEOHead({
     updateMetaTag('og:title', title, 'property');
     updateMetaTag('og:description', description, 'property');
     updateMetaTag('og:image', image, 'property');
+    updateMetaTag('og:image:width', '1200', 'property');
+    updateMetaTag('og:image:height', '675', 'property');
+    updateMetaTag('og:image:type', 'image/png', 'property');
     updateMetaTag('og:url', url, 'property');
     updateMetaTag('og:type', type, 'property');
     updateMetaTag('og:site_name', 'Bakewise', 'property');
+    updateMetaTag('og:locale', 'en_US', 'property');
 
     // Twitter meta tags
     updateMetaTag('twitter:card', 'summary_large_image');
