@@ -43,6 +43,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(path.resolve(process.cwd(), 'public', 'offline.html'));
   });
   
+  // Serve og-image with proper headers
+  app.get('/og-image.png', (req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Content-Type', 'image/png');
+    res.sendFile(path.resolve(process.cwd(), 'public', 'og-image.png'));
+  });
+  
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
   app.use(injectTenantBranding);
