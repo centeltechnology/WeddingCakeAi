@@ -170,27 +170,17 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { data: teamMembers, isLoading: teamLoading } = useQuery<TeamMember[]>({
     queryKey: [`/api/bakers/${bakerId}/team`],
     queryFn: async () => {
-      // Mock data - in real app, fetch from API
-      return [
-        {
-          id: 'member-1',
-          name: 'Sarah Johnson',
-          email: 'sarah@sweetdreamsbakery.com',
-          role: 'owner',
-          status: 'active',
-          joinedAt: '2024-01-15T10:00:00Z',
-          lastActive: new Date().toISOString()
-        },
-        {
-          id: 'member-2',
-          name: 'Mike Chen',
-          email: 'mike@sweetdreamsbakery.com',
-          role: 'admin',
-          status: 'active',
-          joinedAt: '2024-02-01T14:30:00Z',
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+      try {
+        const response = await fetch(`/api/bakers/${bakerId}/team`);
+        if (!response.ok) {
+          if (response.status === 404) return []; // No team members yet
+          throw new Error('Failed to fetch team members');
         }
-      ];
+        return response.json();
+      } catch (error) {
+        console.log('Team members not found, returning empty array');
+        return []; // Return empty array for now
+      }
     }
   });
 
@@ -549,36 +539,49 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {teamMembers?.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                          {member.name.charAt(0).toUpperCase()}
+                  {teamMembers && teamMembers.length > 0 ? (
+                    teamMembers.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge className={getRoleColor(member.role)}>
-                          {member.role.toUpperCase()}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {member.status === 'active' ? (
-                            <span className="text-green-600">Active</span>
-                          ) : (
-                            <span className="text-orange-600">{member.status}</span>
+                        <div className="flex items-center space-x-3">
+                          <Badge className={getRoleColor(member.role)}>
+                            {member.role.toUpperCase()}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {member.status === 'active' ? (
+                              <span className="text-green-600">Active</span>
+                            ) : (
+                              <span className="text-orange-600">{member.status}</span>
+                            )}
+                          </div>
+                          {member.role !== 'owner' && (
+                            <Button variant="outline" size="sm" data-testid={`button-remove-${member.id}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
-                        {member.role !== 'owner' && (
-                          <Button variant="outline" size="sm" data-testid={`button-remove-${member.id}`}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">No team members yet</h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Start collaborating by inviting team members to help manage your bakery.
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Use the invite form above to add your first team member.
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
