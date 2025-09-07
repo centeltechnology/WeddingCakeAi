@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -158,12 +158,12 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   });
 
   // Use dynamic pricing or fallback to defaults (memoized for performance)
-  const CAKE_SIZES = React.useMemo(() => 
+  const CAKE_SIZES = useMemo(() => 
     (pricingConfig as any)?.cakeSizes || DEFAULT_CAKE_SIZES, 
     [pricingConfig]
   );
   
-  const CAKE_FLAVORS = React.useMemo(() => 
+  const CAKE_FLAVORS = useMemo(() => 
     (pricingConfig as any)?.flavors?.map((f: any) => ({
       id: f.id,
       name: f.name,
@@ -173,7 +173,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     [pricingConfig]
   );
   
-  const DECORATION_OPTIONS = React.useMemo(() => 
+  const DECORATION_OPTIONS = useMemo(() => 
     (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
     [pricingConfig]
   );
