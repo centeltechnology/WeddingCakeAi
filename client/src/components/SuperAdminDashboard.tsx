@@ -158,6 +158,83 @@ function EditTenantModal({
   );
 }
 
+// Edit User Modal Component
+function EditUserModal({ 
+  user, 
+  isOpen, 
+  onClose,
+  onSave 
+}: {
+  user: UserSummary | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updates: Partial<UserSummary>) => void;
+}) {
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      name: name.trim(),
+      email: email.trim(),
+    });
+  };
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit User Profile</DialogTitle>
+          <DialogDescription>
+            Update details for {user.name}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="user-name">Name</Label>
+            <Input
+              id="user-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              data-testid="input-user-name"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-email">Email</Label>
+            <Input
+              id="user-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              data-testid="input-user-email"
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" data-testid="button-save-user">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Password Change Form Component
 function PasswordChangeForm() {
   const { toast } = useToast();
@@ -276,6 +353,8 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingTenant, setEditingTenant] = useState<TenantSummary | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserSummary | null>(null);
+  const [showUserEditModal, setShowUserEditModal] = useState(false);
 
   // Fetch platform statistics
   const { data: platformStats, isLoading: statsLoading } = useQuery<PlatformStats>({
@@ -295,6 +374,31 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   // Fetch system metrics
   const { data: systemMetrics = [], isLoading: metricsLoading } = useQuery<SystemMetric[]>({
     queryKey: ['/api/super-admin/system-metrics'],
+  });
+
+  // User mutations
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: Partial<UserSummary> }) => {
+      const response = await apiRequest('PATCH', `/api/super-admin/users/${userId}`, updates);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+      setShowUserEditModal(false);
+      setEditingUser(null);
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
   });
 
   // Tenant management mutations
@@ -415,6 +519,21 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
       tenantId: tenant.id, 
       status: newStatus 
     });
+  };
+
+  // User action handlers
+  const handleEditUser = (user: UserSummary) => {
+    setEditingUser(user);
+    setShowUserEditModal(true);
+  };
+
+  const handleSaveUser = (updates: Partial<UserSummary>) => {
+    if (editingUser) {
+      updateUserMutation.mutate({
+        userId: editingUser.id,
+        updates
+      });
+    }
   };
 
   const handleAddTenant = () => {
@@ -798,8 +917,13 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                             <Badge className={getStatusColor(user.status)}>
                               {user.status}
                             </Badge>
-                            <Button variant="ghost" size="sm" data-testid={`button-user-actions-${user.id}`}>
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                              data-testid={`button-edit-user-${user.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -964,6 +1088,17 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
             setEditingTenant(null);
           }}
           onSave={handleSaveTenant}
+        />
+
+        {/* Edit User Modal */}
+        <EditUserModal
+          user={editingUser}
+          isOpen={showUserEditModal}
+          onClose={() => {
+            setShowUserEditModal(false);
+            setEditingUser(null);
+          }}
+          onSave={handleSaveUser}
         />
       </div>
     </div>

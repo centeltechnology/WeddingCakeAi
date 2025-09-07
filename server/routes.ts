@@ -2545,6 +2545,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user details 
+  app.patch('/api/super-admin/users/:userId', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const updates = req.body;
+
+      // Remove non-updateable fields
+      delete updates.id;
+      delete updates.createdAt;
+      delete updates.password; // Don't allow password updates through this endpoint
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { 
+        ...updates, 
+        updatedAt: new Date() 
+      });
+
+      res.json({
+        success: true,
+        user: updatedUser
+      });
+
+    } catch (error) {
+      console.error('Update user error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
   // Change super admin password
   app.post('/api/super-admin/change-password', verifySuperAdminToken, async (req, res) => {
     try {
