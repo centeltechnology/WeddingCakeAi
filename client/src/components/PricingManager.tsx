@@ -105,6 +105,17 @@ const DEFAULT_FLAVORS: FlavorPricing[] = [
   { id: "cookies-cream", name: "Cookies & Cream", upcharge: 12, isPremium: true }
 ];
 
+const DEFAULT_SHAPES: ShapePricing[] = [
+  { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
+  { id: "square", name: "Square", baseUpcharge: 25, costToMake: 10, profitMargin: 60 },
+  { id: "rectangular", name: "Rectangular", baseUpcharge: 35, costToMake: 15, profitMargin: 57 },
+  { id: "heart", name: "Heart", baseUpcharge: 45, costToMake: 20, profitMargin: 56 },
+  { id: "hexagon", name: "Hexagon", baseUpcharge: 55, costToMake: 25, profitMargin: 55 },
+  { id: "oval", name: "Oval", baseUpcharge: 40, costToMake: 18, profitMargin: 55 },
+  { id: "petal", name: "Petal", baseUpcharge: 65, costToMake: 30, profitMargin: 54 },
+  { id: "custom", name: "Custom Shape", baseUpcharge: 85, costToMake: 40, profitMargin: 53 }
+];
+
 const DEFAULT_DECORATIONS: DecorationPricing[] = [
   { id: "fresh-roses", name: "Fresh Roses", description: "Beautiful fresh roses", price: 45, costToMake: 20, category: "flowers", isActive: true },
   { id: "fresh-peonies", name: "Fresh Peonies", description: "Elegant peonies", price: 65, costToMake: 30, category: "flowers", isActive: true },
@@ -122,6 +133,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
   const [pricing, setPricing] = useState<BakerPricingConfig>({
     bakerId,
     cakeSizes: DEFAULT_CAKE_SIZES,
+    shapes: DEFAULT_SHAPES,
     flavors: DEFAULT_FLAVORS,
     decorations: DEFAULT_DECORATIONS,
     taxRate: 8.75,
