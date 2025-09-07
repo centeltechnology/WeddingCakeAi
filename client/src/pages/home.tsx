@@ -1,7 +1,6 @@
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { Footer } from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import Testimonials from "@/components/Testimonials";
 import { useTenant } from "@/components/TenantBrandProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -204,8 +203,37 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Testimonials Carousel */}
-      <Testimonials />
+      {/* Testimonial */}
+      <div className="relative py-20">
+        <div className="container mx-auto px-4">
+          <Card className="border-0 bg-gradient-to-br from-orange-50/80 to-pink-50/80 backdrop-blur-md shadow-2xl overflow-hidden max-w-4xl mx-auto" data-testid="card-testimonial">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-pink-500/5"></div>
+            <CardContent className="text-center py-16 relative">
+              <div className="mb-8">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <blockquote className="text-2xl md:text-3xl font-serif italic mb-8 text-gray-800 leading-relaxed max-w-3xl mx-auto">
+                  "Bakewise transformed my cake business! I went from spending hours on quotes 
+                  to closing deals in minutes. My customers love how professional everything looks."
+                </blockquote>
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-pink-400 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg mr-4">
+                  S
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-lg text-gray-900">Sarah Martinez</p>
+                  <p className="text-gray-600">Founder, Sweet Dreams Cakery</p>
+                  <p className="text-sm text-gray-500">🏆 400% revenue increase in 6 months</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
       
       <Footer />
     </div>
