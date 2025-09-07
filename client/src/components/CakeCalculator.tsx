@@ -151,7 +151,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     eventType: "wedding",
     guestCount: 100,
     venue: "",
-    contactPreference: "email" as const,
+    contactPreference: "email" as 'email' | 'phone',
     timeline: "flexible"
   });
 
