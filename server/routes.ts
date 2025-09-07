@@ -122,6 +122,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe Connect Onboarding Endpoints
+  app.post('/api/bakers/:bakerId/stripe-connect/create-account', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Create Stripe Connect account if it doesn't exist
+      let connectAccountId = baker.stripeConnectAccountId;
+      
+      if (!connectAccountId) {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          country: 'US',
+          email: baker.email,
+          business_profile: {
+            name: baker.name,
+          },
+          metadata: {
+            bakerId: bakerId
+          }
+        });
+        
+        connectAccountId = account.id;
+        
+        // Update baker with Connect account ID
+        await storage.updateBaker(bakerId, {
+          stripeConnectAccountId: connectAccountId,
+          stripeAccountStatus: 'pending'
+        });
+      }
+
+      // Create account link for onboarding
+      const accountLink = await stripe.accountLinks.create({
+        account: connectAccountId,
+        refresh_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=payments&refresh=true`,
+        return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=payments&success=true`,
+        type: 'account_onboarding',
+      });
+
+      res.json({ 
+        onboardingUrl: accountLink.url,
+        accountId: connectAccountId 
+      });
+    } catch (error: any) {
+      console.error('Error creating Stripe Connect account:', error);
+      res.status(500).json({ error: 'Failed to create Stripe Connect account' });
+    }
+  });
+
+  app.get('/api/bakers/:bakerId/stripe-connect/status', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      if (!baker.stripeConnectAccountId) {
+        return res.json({ 
+          status: 'not_started',
+          onboardingCompleted: false 
+        });
+      }
+
+      // Check account status with Stripe
+      const account = await stripe.accounts.retrieve(baker.stripeConnectAccountId);
+      
+      const onboardingCompleted = account.details_submitted && 
+                                   account.charges_enabled && 
+                                   account.payouts_enabled;
+
+      // Update baker status if changed
+      const newStatus = onboardingCompleted ? 'complete' : 
+                        account.details_submitted ? 'pending' : 'not_started';
+      
+      if (baker.stripeAccountStatus !== newStatus || 
+          baker.stripeOnboardingCompleted !== onboardingCompleted) {
+        await storage.updateBaker(bakerId, {
+          stripeAccountStatus: newStatus,
+          stripeOnboardingCompleted: onboardingCompleted
+        });
+      }
+
+      res.json({
+        status: newStatus,
+        onboardingCompleted,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled,
+        requirements: account.requirements
+      });
+    } catch (error: any) {
+      console.error('Error checking Stripe Connect status:', error);
+      res.status(500).json({ error: 'Failed to check account status' });
+    }
+  });
+
   app.post('/api/tenant/domain/check', async (req, res) => {
     try {
       const { subdomain } = req.body;
@@ -539,6 +640,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { amount, bakerId, customerId, type, quoteId, description } = req.body;
       
+      // Get baker info to check for Stripe Connect account
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      
       // Get customer info for Stripe customer creation
       const customer = await storage.getCustomer(customerId);
       if (!customer) {
@@ -566,7 +673,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const paymentIntent = await stripe.paymentIntents.create({
+      // Calculate application fee (platform commission) - 5% default
+      const applicationFeeAmount = Math.round(amount * 100 * 0.05); // 5% fee
+      
+      // Payment intent configuration
+      const paymentIntentConfig: any = {
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
         customer: stripeCustomer.id,
@@ -580,7 +691,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         automatic_payment_methods: {
           enabled: true,
         },
-      });
+      };
+
+      // If baker has Stripe Connect account and it's active, use it
+      if (baker.stripeConnectAccountId && baker.stripeOnboardingCompleted) {
+        paymentIntentConfig.on_behalf_of = baker.stripeConnectAccountId;
+        paymentIntentConfig.transfer_data = {
+          destination: baker.stripeConnectAccountId,
+        };
+        paymentIntentConfig.application_fee_amount = applicationFeeAmount;
+      }
+      
+      const paymentIntent = await stripe.paymentIntents.create(paymentIntentConfig);
 
       // Track transaction
       await storage.createTransaction({
