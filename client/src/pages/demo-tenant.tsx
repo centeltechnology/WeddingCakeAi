@@ -202,8 +202,22 @@ export default function DemoTenant() {
                       orders.sweetdreamsbakery.com
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Custom domains, white-label branding, and multi-tenant architecture.
+                  </p>
+                  <Button 
+                    asChild
+                    className="w-full" 
+                    variant="outline"
+                    data-testid="button-try-lead-capture"
+                  >
+                    <Link href="/baker/70c29a5d-72f3-443f-8c39-c2ced5210f05/calculator">
+                      <ChefHat className="h-4 w-4 mr-2" />
+                      Try Live Lead Capture Demo
+                    </Link>
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    See how customers submit cake inquiries that appear in your CRM
                   </p>
                 </CardContent>
               </Card>
