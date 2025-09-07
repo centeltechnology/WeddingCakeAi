@@ -323,6 +323,66 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     data-testid="input-phone"
                   />
                 </div>
+                
+                {/* Social Media Section */}
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Social Media</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Instagram Handle</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">@</span>
+                        <Input
+                          value={account?.socialMedia?.instagram || ''}
+                          disabled={!editingProfile}
+                          placeholder="your_instagram"
+                          className="pl-8"
+                          data-testid="input-instagram"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Facebook Page</Label>
+                      <Input
+                        value={account?.socialMedia?.facebook || ''}
+                        disabled={!editingProfile}
+                        placeholder="facebook.com/yourpage"
+                        data-testid="input-facebook"
+                      />
+                    </div>
+                    <div>
+                      <Label>TikTok Handle</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">@</span>
+                        <Input
+                          value={account?.socialMedia?.tiktok || ''}
+                          disabled={!editingProfile}
+                          placeholder="your_tiktok"
+                          className="pl-8"
+                          data-testid="input-tiktok"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Pinterest</Label>
+                      <Input
+                        value={account?.socialMedia?.pinterest || ''}
+                        disabled={!editingProfile}
+                        placeholder="pinterest.com/yourboard"
+                        data-testid="input-pinterest"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Website</Label>
+                      <Input
+                        value={account?.socialMedia?.website || ''}
+                        disabled={!editingProfile}
+                        placeholder="https://yourwebsite.com"
+                        data-testid="input-website"
+                      />
+                    </div>
+                  </div>
+                </div>
                 {editingProfile && (
                   <div className="flex space-x-2 pt-2">
                     <Button 

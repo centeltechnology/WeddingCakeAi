@@ -152,6 +152,14 @@ export const bakers = pgTable("bakers", {
   stripeAccountStatus: varchar("stripe_account_status").default('not_started'), // not_started, pending, complete, restricted
   stripeOnboardingCompleted: boolean("stripe_onboarding_completed").default(false),
   stripeAccountType: varchar("stripe_account_type").default('express'), // express, standard
+  // Social media handles
+  socialMedia: json("social_media").$type<{
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    pinterest?: string;
+    website?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
