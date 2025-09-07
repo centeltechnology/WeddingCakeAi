@@ -167,17 +167,18 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
           <Button 
             onClick={handleStartOnboarding}
             disabled={isStartingOnboarding || startOnboardingMutation.isPending}
-            className="w-full bg-primary hover:bg-primary/90"
+            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 text-lg shadow-lg border-0"
+            size="lg"
             data-testid="button-start-onboarding"
           >
             {isStartingOnboarding || startOnboardingMutation.isPending ? (
               <>
-                <Clock className="w-4 h-4 mr-2 animate-spin" />
+                <Clock className="w-5 h-5 mr-2 animate-spin" />
                 Setting Up Account...
               </>
             ) : (
               <>
-                <ExternalLink className="w-4 h-4 mr-2" />
+                <ExternalLink className="w-5 h-5 mr-2" />
                 Set Up Payment Account
               </>
             )}
@@ -225,17 +226,18 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
             <Button 
               onClick={handleStartOnboarding}
               disabled={isStartingOnboarding || startOnboardingMutation.isPending}
-              className="w-full bg-primary hover:bg-primary/90"
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 text-lg shadow-lg border-0"
+              size="lg"
               data-testid="button-start-onboarding-main"
             >
               {isStartingOnboarding || startOnboardingMutation.isPending ? (
                 <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  <Clock className="w-5 h-5 mr-2 animate-spin" />
                   Setting Up Account...
                 </>
               ) : (
                 <>
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink className="w-5 h-5 mr-2" />
                   Set Up Payment Account
                 </>
               )}
