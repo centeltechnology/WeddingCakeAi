@@ -144,6 +144,11 @@ export const bakers = pgTable("bakers", {
   portfolio: text("portfolio").array(),
   subscriptionPlan: text("subscription_plan").default('free'), // free, pro, plus
   isActive: boolean("is_active").default(true),
+  // Stripe Connect fields
+  stripeConnectAccountId: varchar("stripe_connect_account_id"),
+  stripeAccountStatus: varchar("stripe_account_status").default('not_started'), // not_started, pending, complete, restricted
+  stripeOnboardingCompleted: boolean("stripe_onboarding_completed").default(false),
+  stripeAccountType: varchar("stripe_account_type").default('express'), // express, standard
   createdAt: timestamp("created_at").defaultNow(),
 });
 
