@@ -33,6 +33,11 @@ export interface IStorage {
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   getBakersByTenant(tenantId: string): Promise<Baker[]>;
+
+  // Baker Profile operations
+  createBakerProfile(insertProfile: InsertBakerProfile): Promise<BakerProfile>;
+  getBakerProfileByBakerId(bakerId: string): Promise<BakerProfile | undefined>;
+  updateBakerProfile(id: string, updates: Partial<InsertBakerProfile>): Promise<BakerProfile | undefined>;
   
   createProfile(profile: InsertProfile): Promise<Profile>;
   getProfile(id: string): Promise<Profile | undefined>;
@@ -2161,6 +2166,29 @@ export class DatabaseStorage implements IStorage {
   async getBakersByTenant(tenantId: string): Promise<Baker[]> {
     // This would join with tenant baker networks in a real implementation
     return await db.select().from(bakers).where(eq(bakers.isActive, true));
+  }
+
+  // Baker Profile operations
+  async createBakerProfile(insertProfile: InsertBakerProfile): Promise<BakerProfile> {
+    const [profile] = await db
+      .insert(bakerProfiles)
+      .values({ ...insertProfile, id: insertProfile.id || randomUUID() })
+      .returning();
+    return profile;
+  }
+
+  async getBakerProfileByBakerId(bakerId: string): Promise<BakerProfile | undefined> {
+    const [profile] = await db.select().from(bakerProfiles).where(eq(bakerProfiles.bakerId, bakerId));
+    return profile || undefined;
+  }
+
+  async updateBakerProfile(id: string, updates: Partial<InsertBakerProfile>): Promise<BakerProfile | undefined> {
+    const [profile] = await db
+      .update(bakerProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(bakerProfiles.id, id))
+      .returning();
+    return profile || undefined;
   }
 }
 
