@@ -232,31 +232,31 @@ export default function Testimonials() {
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background shadow-lg"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border-rose-200 hover:bg-white hover:border-rose-300 shadow-lg z-10"
             onClick={scrollPrev}
             data-testid="button-testimonial-prev"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5 text-rose-600" />
           </Button>
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background shadow-lg"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border-rose-200 hover:bg-white hover:border-rose-300 shadow-lg z-10"
             onClick={scrollNext}
             data-testid="button-testimonial-next"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5 text-rose-600" />
           </Button>
 
           {/* Dots Indicator */}
-          <div className="flex justify-center mt-8 space-x-2">
-            {scrollSnaps.map((_, index) => (
+          <div className="flex justify-center mt-8 space-x-3">
+            {testimonials.map((_, index) => (
               <button
                 key={index}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === selectedIndex
-                    ? "bg-primary scale-110"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                    ? "bg-rose-500 scale-110 shadow-md"
+                    : "bg-rose-200 hover:bg-rose-300"
                 }`}
                 onClick={() => scrollTo(index)}
                 data-testid={`button-testimonial-dot-${index}`}
