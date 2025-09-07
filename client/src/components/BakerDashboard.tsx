@@ -721,14 +721,21 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                         <Input 
                           placeholder="yourbakery" 
                           className="flex-1"
+                          value={subdomainInput}
+                          onChange={(e) => setSubdomainInput(e.target.value.toLowerCase())}
                           data-testid="input-subdomain"
                         />
                         <span className="text-sm text-gray-600">.bakewise.com</span>
                       </div>
                       <p className="text-xs text-blue-600">This will be your professional URL: yourbakery.bakewise.com</p>
                     </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" data-testid="button-save-subdomain">
-                      Save Subdomain
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700" 
+                      onClick={handleSaveSubdomain}
+                      disabled={saveSubdomainMutation.isPending}
+                      data-testid="button-save-subdomain"
+                    >
+                      {saveSubdomainMutation.isPending ? "Saving..." : "Save Subdomain"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -748,12 +755,19 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       <Input 
                         placeholder="yourbakery.com" 
                         className="w-full"
+                        value={customDomainInput}
+                        onChange={(e) => setCustomDomainInput(e.target.value.toLowerCase())}
                         data-testid="input-custom-domain"
                       />
                       <p className="text-xs text-purple-600">Point your domain to our servers for professional branding</p>
                     </div>
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700" data-testid="button-save-custom-domain">
-                      Configure Custom Domain
+                    <Button 
+                      className="w-full bg-purple-600 hover:bg-purple-700" 
+                      onClick={handleSaveCustomDomain}
+                      disabled={saveCustomDomainMutation.isPending}
+                      data-testid="button-save-custom-domain"
+                    >
+                      {saveCustomDomainMutation.isPending ? "Configuring..." : "Configure Custom Domain"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -769,7 +783,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
                       <div>
                         <p className="font-medium text-green-800">Active Domain</p>
-                        <p className="text-sm text-green-600">hotbunsbakery.bakewise.com</p>
+                        <p className="text-sm text-green-600">
+                          {tenant?.customDomain || (tenant?.subdomain ? `${tenant.subdomain}.bakewise.com` : 'No domain configured')}
+                        </p>
                       </div>
                       <Badge className="bg-green-100 text-green-800">Active</Badge>
                     </div>
