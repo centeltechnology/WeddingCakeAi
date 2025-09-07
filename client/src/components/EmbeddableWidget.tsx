@@ -90,15 +90,18 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">Embeddable Widgets</h2>
-          <p className="text-muted-foreground">Add powerful widgets to your website to capture more leads</p>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">Embeddable Widgets</h2>
+            <p className="text-muted-foreground">Add powerful widgets to your website to capture more leads</p>
+          </div>
+          <Button variant="outline" className="w-full sm:w-auto">
+            <Globe className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Widget Documentation</span>
+            <span className="sm:hidden">Documentation</span>
+          </Button>
         </div>
-        <Button variant="outline">
-          <Globe className="h-4 w-4 mr-2" />
-          Widget Documentation
-        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
