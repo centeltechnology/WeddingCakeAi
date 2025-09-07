@@ -93,22 +93,32 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const [editingProfile, setEditingProfile] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'viewer' as const });
 
-  // Fetch account details
+  // Fetch actual baker data
+  const { data: baker } = useQuery<any>({
+    queryKey: [`/api/bakers`, bakerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/bakers/${bakerId}`);
+      if (!response.ok) throw new Error('Failed to fetch baker');
+      return response.json();
+    }
+  });
+
+  // Transform baker data to account details format
   const { data: account, isLoading: accountLoading } = useQuery<AccountDetails>({
     queryKey: [`/api/bakers/${bakerId}/account`],
     queryFn: async () => {
-      // Mock data - in real app, fetch from API
+      if (!baker) throw new Error('Baker data not loaded');
       return {
         id: bakerId,
-        businessName: 'Sweet Dreams Bakery',
-        ownerName: 'Sarah Johnson',
-        email: 'sarah@sweetdreamsbakery.com',
-        phone: '(555) 123-4567',
+        businessName: baker.name,
+        ownerName: baker.name, // Using baker name as owner for now  
+        email: baker.email,
+        phone: baker.phone || '',
         address: {
-          street: '123 Main Street',
-          city: 'San Francisco',
-          state: 'CA',
-          zipCode: '94102'
+          street: baker.address || '',
+          city: baker.address || '',
+          state: '',
+          zipCode: ''
         },
         businessHours: {
           monday: { open: '08:00', close: '18:00', closed: false },

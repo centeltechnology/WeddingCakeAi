@@ -34,7 +34,7 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
     textColor: '#1f2937',
     borderRadius: '8',
     showLogo: true,
-    companyName: 'Sweet Dreams Bakery'
+    companyName: 'Your Bakery'
   });
 
   const widgets = [

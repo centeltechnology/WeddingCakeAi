@@ -38,6 +38,7 @@ interface BrandingConfig {
   tenantId: string;
   logo?: string;
   logoUrl?: string;
+  businessName?: string;
   brandColors: {
     primary: string;
     secondary: string;
@@ -308,7 +309,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                   fontFamily: brandingConfig.typography.headingFont
                 }}
               >
-                Sweet Dreams Bakery
+                {brandingConfig.businessName || 'Your Bakery Name'}
               </h2>
               <p className="text-muted-foreground">
                 Experience our delicious custom cakes and desserts
