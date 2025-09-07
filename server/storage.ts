@@ -284,61 +284,7 @@ export class MemStorage implements IStorage {
   }
 
   private initializeBakers() {
-    // Create the demo baker with specific ID "baker-1" for the admin dashboard
-    const demoBaker: Baker = {
-      id: "baker-1",
-      name: "Sweet Dreams Bakery",
-      email: "contact@sweetdreamsbakery.com",
-      phone: "(555) 123-4567",
-      address: "123 Main St, Downtown",
-      latitude: "40.7128",
-      longitude: "-74.0060",
-      rating: "4.9",
-      priceRange: "$8-15/serving",
-      specialties: ["Wedding Specialist", "Custom Designs", "Gluten-Free"],
-      description: "Specializing in elegant wedding cakes with custom designs. Over 15 years of experience creating memorable centerpieces for your special day.",
-      portfolio: [],
-      isActive: true,
-      createdAt: new Date(),
-      subscriptionPlan: "premium"
-    };
-    this.bakers.set("baker-1", demoBaker);
-
-    // Create other sample bakers with random IDs
-    const sampleBakers: InsertBaker[] = [
-      {
-        name: "Artisan Cake Studio",
-        email: "info@artisancakestudio.com",
-        phone: "(555) 234-5678",
-        address: "456 Oak Ave, Midtown",
-        latitude: "40.7589",
-        longitude: "-73.9851",
-        rating: "4.6",
-        priceRange: "$12-20/serving",
-        specialties: ["Artistic Designs", "Fondant Expert", "Vegan Options"],
-        description: "Award-winning cake designer known for intricate sugar work and artistic fondant creations. Perfect for couples seeking unique, show-stopping designs.",
-        portfolio: [],
-        isActive: true,
-      },
-      {
-        name: "Bella's Bespoke Cakes",
-        email: "bella@bellasbespokecakes.com",
-        phone: "(555) 345-6789",
-        address: "789 River Rd, Riverside",
-        latitude: "40.6782",
-        longitude: "-74.0442",
-        rating: "4.8",
-        priceRange: "$6-12/serving",
-        specialties: ["Rustic Designs", "Organic Ingredients"],
-        description: "Family-owned bakery specializing in rustic, romantic designs using organic, locally-sourced ingredients. Perfect for outdoor and vintage-themed weddings.",
-        portfolio: [],
-        isActive: true,
-      },
-    ];
-
-    sampleBakers.forEach(baker => {
-      this.createBaker(baker);
-    });
+    // No demo data in production - clean slate for real bakers
   }
 
   async getUser(id: string): Promise<User | undefined> {
