@@ -12,11 +12,12 @@ async function generateCakeImage(prompt: string): Promise<string> {
 }
 
 interface CakeConfiguration {
-  tiers: number;
-  baseSize: number;
-  shape: string;
-  cakeFlavor: string;
-  filling: string;
+  tiers: Array<{
+    size: number;
+    shape: string;
+    flavor: string;
+  }>;
+  totalTiers: number;
   decorations: {
     fondant: boolean;
     flowers: boolean;
@@ -44,13 +45,19 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
     if (config.decorations.goldAccents) decorations.push("gold leaf accents");
     if (config.decorations.customTopper) decorations.push("custom cake topper");
 
-    // Create tier description with exact number
+    // Create tier description with exact number and individual shapes
     const tierNumbers = ['single', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
-    const tierDescription = config.tiers === 1 ? 'single-tier' : 
-                           config.tiers <= 8 ? `${tierNumbers[config.tiers - 1]}-tier` : 
-                           `${config.tiers}-tier`;
+    const tierDescription = config.totalTiers === 1 ? 'single-tier' : 
+                           config.totalTiers <= 8 ? `${tierNumbers[config.totalTiers - 1]}-tier` : 
+                           `${config.totalTiers}-tier`;
 
-    return `A stunning professional wedding cake photograph featuring a ${tierDescription} ${config.shape} cake with ${config.cakeFlavor.replace('-', ' ')} cake and ${config.filling.replace('-', ' ')} filling. The cake has exactly ${config.tiers} ${config.tiers === 1 ? 'tier' : 'tiers'} stacked vertically from largest at bottom to smallest at top. ${decorations.length > 0 ? `Beautifully decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Special features: ${config.specialRequests}.` : ''} Shot in a professional photography studio with perfect lighting, white backdrop, photorealistic, high resolution 4K, award-winning food photography, elegant and luxurious presentation, masterpiece quality.`;
+    // Create detailed tier descriptions with individual shapes and flavors
+    const tierDetails = config.tiers.map((tier, index) => {
+      const position = index === 0 ? 'bottom' : index === config.tiers.length - 1 ? 'top' : 'middle';
+      return `${tier.size}-inch ${tier.shape} ${tier.flavor.replace('-', ' ')} cake tier at ${position}`;
+    }).join(', ');
+
+    return `A stunning professional wedding cake photograph featuring a ${tierDescription} cake with exactly ${config.totalTiers} ${config.totalTiers === 1 ? 'tier' : 'tiers'} stacked vertically from largest at bottom to smallest at top. Tier details: ${tierDetails}. ${decorations.length > 0 ? `Beautifully decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Special features: ${config.specialRequests}.` : ''} Shot in a professional photography studio with perfect lighting, white backdrop, photorealistic, high resolution 4K, award-winning food photography, elegant and luxurious presentation, masterpiece quality.`;
   };
 
   const handleGenerateImage = async () => {

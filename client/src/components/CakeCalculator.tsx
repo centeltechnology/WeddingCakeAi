@@ -39,9 +39,11 @@ interface CakeCalculatorProps {
 interface CakeTier {
   id: string;
   size: string;
+  shape: string;
   flavor: string;
   servings: number;
   basePrice: number;
+  shapeUpcharge: number;
 }
 
 interface DecorationOption {
@@ -86,6 +88,12 @@ const DEFAULT_CAKE_SIZES = [
   { size: "10-inch", servings: 38, basePrice: 115 },
   { size: "12-inch", servings: 56, basePrice: 145 },
   { size: "14-inch", servings: 78, basePrice: 185 }
+];
+
+const CAKE_SHAPES = [
+  { id: "round", name: "Round", baseUpcharge: 0 },
+  { id: "heart", name: "Heart", baseUpcharge: 15 },
+  { id: "square", name: "Square", baseUpcharge: 10 }
 ];
 
 const DEFAULT_CAKE_FLAVORS = [
@@ -178,6 +186,11 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     [pricingConfig]
   );
   
+  const SHAPE_OPTIONS = useMemo(() => 
+    (pricingConfig as any)?.shapes || CAKE_SHAPES, 
+    [pricingConfig]
+  );
+  
   const TAX_RATE = ((pricingConfig as any)?.taxRate || 8.75) / 100;
   const DELIVERY_FEE = (pricingConfig as any)?.deliverySettings?.baseDeliveryFee || 50;
 
@@ -189,12 +202,16 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
   }, []);
 
   const addTier = () => {
+    if (tiers.length >= 6) return; // Limit to 6 tiers
+    
     const newTier: CakeTier = {
       id: `tier-${Date.now()}`,
       size: "8-inch",
+      shape: "round",
       flavor: "vanilla",
       servings: 24,
-      basePrice: 85
+      basePrice: 85,
+      shapeUpcharge: 0
     };
     setTiers([...tiers, newTier]);
   };
@@ -212,7 +229,8 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
             ...tier, 
             ...updates,
             basePrice: updates.size ? CAKE_SIZES.find((s: any) => s.size === updates.size)?.basePrice || tier.basePrice : tier.basePrice,
-            servings: updates.size ? CAKE_SIZES.find((s: any) => s.size === updates.size)?.servings || tier.servings : tier.servings
+            servings: updates.size ? CAKE_SIZES.find((s: any) => s.size === updates.size)?.servings || tier.servings : tier.servings,
+            shapeUpcharge: updates.shape ? SHAPE_OPTIONS.find((s: any) => s.id === updates.shape)?.baseUpcharge || tier.shapeUpcharge : tier.shapeUpcharge
           } 
         : tier
     ));
@@ -230,7 +248,8 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     const baseCake = tiers.reduce((sum, tier) => {
       const sizePrice = tier.basePrice;
       const flavorUpcharge = CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge || 0;
-      return sum + sizePrice + flavorUpcharge;
+      const shapeUpcharge = tier.shapeUpcharge || 0;
+      return sum + sizePrice + flavorUpcharge + shapeUpcharge;
     }, 0);
 
     const decorations = selectedDecorations.reduce((sum, decorationId) => {
@@ -294,7 +313,6 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
 
   // AI Configuration for Dream Cake Designer
   const getAIConfiguration = () => {
-    const primaryTier = tiers[0] || { size: "8-inch", flavor: "vanilla" };
     const decorationConfig = {
       fondant: selectedDecorations.includes('fondant-draping'),
       flowers: selectedDecorations.some(d => d.includes('rose') || d.includes('flower') || d.includes('peonies')),
@@ -303,11 +321,12 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     };
 
     return {
-      tiers: tiers.length,
-      baseSize: parseInt(primaryTier.size.replace('-inch', '')) || 8,
-      shape: "round",
-      cakeFlavor: primaryTier.flavor,
-      filling: "buttercream",
+      tiers: tiers.map(tier => ({
+        size: parseInt(tier.size.replace('-inch', '')) || 8,
+        shape: tier.shape || "round",
+        flavor: tier.flavor || "vanilla"
+      })),
+      totalTiers: tiers.length,
       decorations: decorationConfig,
       specialRequests: specialRequests
     };
@@ -447,7 +466,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                         )}
                       </div>
                     
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label className="text-sm font-medium text-gray-700 mb-2 block">Cake Size</Label>
                           <Select
@@ -461,6 +480,30 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                               {CAKE_SIZES.map((size: any) => (
                                 <SelectItem key={size.size} value={size.size}>
                                   {size.size} - Serves {size.servings} - ${size.basePrice}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Shape</Label>
+                          <Select
+                            value={tier.shape || "round"}
+                            onValueChange={(shape) => updateTier(tier.id, { shape })}
+                          >
+                            <SelectTrigger className="bg-white border-gray-200" data-testid={`select-shape-${tier.id}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SHAPE_OPTIONS.map((shape: any) => (
+                                <SelectItem key={shape.id} value={shape.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{shape.name}</span>
+                                    {shape.baseUpcharge > 0 && (
+                                      <Badge variant="secondary" className="ml-2 text-xs bg-blue-100 text-blue-800">+${shape.baseUpcharge}</Badge>
+                                    )}
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -497,8 +540,11 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                           <span className="text-gray-600">Serves {tier.servings} people</span>
                           <span className="font-semibold text-blue-600">
                             ${tier.basePrice}
+                            {tier.shapeUpcharge > 0 && (
+                              <span className="text-blue-600"> (+${tier.shapeUpcharge} shape)</span>
+                            )}
                             {CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge > 0 && (
-                              <span className="text-pink-600"> (+${CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge})</span>
+                              <span className="text-pink-600"> (+${CAKE_FLAVORS.find((f: any) => f.id === tier.flavor)?.upcharge} flavor)</span>
                             )}
                           </span>
                         </div>
@@ -511,7 +557,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                   <Button 
                     variant="outline" 
                     onClick={addTier}
-                    disabled={tiers.length >= 4}
+                    disabled={tiers.length >= 6}
                     className="border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-600 hover:text-blue-600"
                     data-testid="button-add-tier"
                   >
@@ -519,7 +565,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     Add Another Tier
                   </Button>
                   <p className="text-xs text-gray-500">
-                    {tiers.length >= 4 ? "Maximum 4 tiers" : "You can add up to 4 tiers"}
+                    {tiers.length >= 6 ? "Maximum 6 tiers" : "You can add up to 6 tiers"}
                   </p>
                 </div>
 
