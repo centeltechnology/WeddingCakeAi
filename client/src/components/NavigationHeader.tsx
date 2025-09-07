@@ -105,7 +105,7 @@ export function NavigationHeader() {
                 className="ml-2 border-2 border-blue-200 hover:border-blue-300 bg-blue-50/80 backdrop-blur-sm hover:bg-blue-100 text-blue-700 hover:text-blue-800 font-medium"
                 data-testid="nav-baker-login"
               >
-                <Link href="/admin">
+                <Link href="/baker-login">
                   <ChefHat className="h-4 w-4 mr-1" />
                   <span>Baker Login</span>
                 </Link>

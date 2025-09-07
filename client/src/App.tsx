@@ -29,6 +29,7 @@ import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
+import BakerLogin from "@/pages/baker-login";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -62,6 +63,7 @@ function Router() {
           </BakerAuthWrapper>
         )}
       </Route>
+      <Route path="/baker-login" component={BakerLogin} />
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
       <Route path="/super-admin-login" component={SuperAdminLogin} />
       <Route path="/super-admin" component={() => (
