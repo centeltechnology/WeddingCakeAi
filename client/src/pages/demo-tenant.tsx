@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { CrmDashboard } from '@/components/CrmDashboard';
 import { Link } from 'wouter';
-import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck } from 'lucide-react';
+import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send } from 'lucide-react';
 
 export default function DemoTenant() {
   const [activeTab, setActiveTab] = useState('overview');
