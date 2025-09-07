@@ -12,7 +12,7 @@ interface SEOHeadProps {
 export default function SEOHead({
   title = "Bakewise - Complete Business Management Platform for Cake Decorators & Bakeries",
   description = "Streamline your cake decorating business with Bakewise's all-in-one platform. Features CRM, quote builder, AI cake calculator, payment processing, and digital contracts for bakeries and specialty dessert vendors.",
-  image = "https://bakewiseapp.com/og-image.png",
+  image = "/bakewise-og.png",
   url = "https://bakewiseapp.com",
   type = "website",
   keywords = "cake decorating business, bakery management software, cake pricing calculator, bakery CRM, custom cake quotes, wedding cake business, cake decorator tools, bakery payment processing"
