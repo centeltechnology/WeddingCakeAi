@@ -254,7 +254,50 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
       {/* Navigation Tabs - Organized by Category */}
       <Tabs defaultValue="leads" className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Mobile Tab Navigation */}
+        <div className="lg:hidden mb-6">
+          <TabsList className="grid w-full grid-cols-3 gap-1 h-auto p-1">
+            <TabsTrigger value="leads" className="flex-col h-20 gap-2 text-xs">
+              <Users className="w-5 h-5" />
+              <span>Leads</span>
+            </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex-col h-20 gap-2 text-xs">
+              <FileText className="w-5 h-5" />
+              <span>Quotes</span>
+            </TabsTrigger>
+            <TabsTrigger value="contracts" className="flex-col h-20 gap-2 text-xs">
+              <FileCheck className="w-5 h-5" />
+              <span>Contracts</span>
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex-col h-20 gap-2 text-xs">
+              <CreditCard className="w-5 h-5" />
+              <span>Payments</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex-col h-20 gap-2 text-xs">
+              <BarChart3 className="w-5 h-5" />
+              <span>Pricing</span>
+            </TabsTrigger>
+            <TabsTrigger value="portfolio" className="flex-col h-20 gap-2 text-xs">
+              <Upload className="w-5 h-5" />
+              <span>Portfolio</span>
+            </TabsTrigger>
+            <TabsTrigger value="widgets" className="flex-col h-20 gap-2 text-xs">
+              <Code className="w-5 h-5" />
+              <span>Widgets</span>
+            </TabsTrigger>
+            <TabsTrigger value="account" className="flex-col h-20 gap-2 text-xs">
+              <Settings className="w-5 h-5" />
+              <span>Settings</span>
+            </TabsTrigger>
+            <TabsTrigger value="domain" className="flex-col h-20 gap-2 text-xs">
+              <Globe className="w-5 h-5" />
+              <span>Domain</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Desktop Card-based Navigation */}
+        <div className="hidden lg:grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* Business Operations */}
           <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">

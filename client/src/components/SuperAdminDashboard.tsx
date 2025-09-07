@@ -583,28 +583,65 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview" data-testid="tab-overview">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="tenants" data-testid="tab-tenants">
-              <Building2 className="h-4 w-4 mr-2" />
-              Tenants
-            </TabsTrigger>
-            <TabsTrigger value="users" data-testid="tab-users">
-              <Users className="h-4 w-4 mr-2" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="system" data-testid="tab-system">
-              <Server className="h-4 w-4 mr-2" />
-              System
-            </TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+          {/* Mobile Tab Navigation */}
+          <div className="lg:hidden">
+            <TabsList className="grid w-full grid-cols-2 gap-2 h-auto p-2">
+              <TabsTrigger value="overview" data-testid="tab-overview" className="flex-col h-16 gap-1">
+                <BarChart3 className="h-5 w-5" />
+                <span className="text-xs">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="tenants" data-testid="tab-tenants" className="flex-col h-16 gap-1">
+                <Building2 className="h-5 w-5" />
+                <span className="text-xs">Tenants</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users" className="flex-col h-16 gap-1">
+                <Users className="h-5 w-5" />
+                <span className="text-xs">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="system" data-testid="tab-system" className="flex-col h-16 gap-1">
+                <Server className="h-5 w-5" />
+                <span className="text-xs">System</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings" className="flex-col h-16 gap-1">
+                <Settings className="h-5 w-5" />
+                <span className="text-xs">Settings</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" data-testid="tab-security" className="flex-col h-16 gap-1">
+                <Shield className="h-5 w-5" />
+                <span className="text-xs">Security</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Desktop Tab Navigation */}
+          <div className="hidden lg:block">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview" data-testid="tab-overview">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="tenants" data-testid="tab-tenants">
+                <Building2 className="h-4 w-4 mr-2" />
+                Tenants
+              </TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users">
+                <Users className="h-4 w-4 mr-2" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="system" data-testid="tab-system">
+                <Server className="h-4 w-4 mr-2" />
+                System
+              </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </TabsTrigger>
+              <TabsTrigger value="security" data-testid="tab-security">
+                <Shield className="h-4 w-4 mr-2" />
+                Security
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
