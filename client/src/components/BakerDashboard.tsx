@@ -398,17 +398,18 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Leads</h3>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-500" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
                     <Input
                       placeholder="Search leads..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                      className="pl-10 w-64 bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm"
+                      data-testid="input-search-leads"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40 border-rose-200 focus:border-rose-400 focus:ring-rose-400">
-                      <SelectValue />
+                    <SelectTrigger className="w-40 bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm" data-testid="select-status-filter">
+                      <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
