@@ -80,8 +80,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       return response.json();
     }
   });
-  
-  const tenant = tenantData?.tenant;
 
   const { data: leads, isLoading: leadsLoading } = useQuery<Lead[]>({
     queryKey: ['/api/bakers', bakerId, 'leads'],
