@@ -33,7 +33,8 @@ import {
   Mail,
   Bell,
   Lock,
-  Unlock
+  Unlock,
+  LogOut
 } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
@@ -575,6 +576,19 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 Platform Status: Healthy
               </Badge>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem('superAdminToken');
+                  window.location.href = '/super-admin/login';
+                }}
+                data-testid="button-logout"
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
             </div>
           </div>
         </div>
