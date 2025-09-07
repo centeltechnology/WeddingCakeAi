@@ -1353,6 +1353,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Logout endpoint
+  app.post('/api/logout', async (req, res) => {
+    // For token-based auth, logout is handled client-side by removing the token
+    // This endpoint exists to provide a consistent API response
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  });
+
   // Customer Portal Authentication
   app.post('/api/customer/login', async (req, res) => {
     try {
