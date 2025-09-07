@@ -2318,6 +2318,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Super Admin Authentication Routes
+  // Super Admin Setup (First-time setup)
+  app.post('/api/super-admin/setup', async (req, res) => {
+    try {
+      const { username, email, password } = req.body;
+
+      // Check if any super admin already exists
+      const existingUsers = await storage.getUsersWithRole('super_admin');
+      if (existingUsers && existingUsers.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Super admin account already exists. Use the login page instead.'
+        });
+      }
+
+      // Validate input
+      if (!username || !email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username, email, and password are required'
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 6 characters long'
+        });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username already exists'
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create super admin user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        role: 'super_admin',
+        isActive: true
+      });
+
+      // Create JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'fallback_dev_secret_key_change_in_production';
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          username: user.username, 
+          role: user.role 
+        },
+        jwtSecret,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        success: true,
+        message: 'Super admin account created successfully',
+        token
+      });
+
+    } catch (error) {
+      console.error('Super admin setup error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during setup'
+      });
+    }
+  });
+
   app.post('/api/super-admin/login', async (req, res) => {
     try {
       const { username, password } = req.body;

@@ -24,6 +24,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
+  getUsersWithRole(role: string): Promise<User[]>;
   
   createProfile(profile: InsertProfile): Promise<Profile>;
   getProfile(id: string): Promise<Profile | undefined>;
@@ -2137,6 +2138,10 @@ export class DatabaseStorage implements IStorage {
   async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.customDomain, domain));
     return tenant || undefined;
+  }
+
+  async getUsersWithRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
   }
 }
 

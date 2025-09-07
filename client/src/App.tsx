@@ -28,6 +28,7 @@ import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
 import SuperAdminLogin from "@/pages/super-admin-login";
+import SuperAdminSetup from "@/pages/super-admin-setup";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 
 function Router() {
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/admin">
         {() => <BakerDashboard bakerId="baker-1" />}
       </Route>
+      <Route path="/super-admin-setup" component={SuperAdminSetup} />
       <Route path="/super-admin-login" component={SuperAdminLogin} />
       <Route path="/super-admin" component={() => (
         <SuperAdminAuthWrapper>
