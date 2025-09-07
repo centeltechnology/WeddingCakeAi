@@ -33,7 +33,7 @@ import BakerLogin from "@/pages/baker-login";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 function Router() {
   return (
