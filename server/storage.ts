@@ -200,24 +200,8 @@ export class MemStorage implements IStorage {
   private invoices: Map<string, Invoice>;
 
   private initializeSuperAdminUser() {
-    // Create default super admin user for testing
-    // Using synchronous bcrypt for simplicity in constructor
-    const bcrypt = require('bcryptjs');
-    const hashedPassword = bcrypt.hashSync('admin123', 10);
-    
-    const superAdmin: User = {
-      id: 'super-admin-1',
-      username: 'admin',
-      email: 'admin@bakewise.com',
-      password: hashedPassword,
-      role: 'super_admin',
-      isActive: true,
-      lastLoginAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    this.users.set('super-admin-1', superAdmin);
+    // Note: Super admin user is now stored in database
+    // This method is kept for potential future MemStorage usage
   }
 
   constructor() {
@@ -1656,6 +1640,15 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values({ ...insertUser, id: insertUser.id || randomUUID() })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

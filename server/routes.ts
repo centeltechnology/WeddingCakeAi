@@ -12,6 +12,8 @@ import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
 import Stripe from "stripe";
 import Replicate from "replicate";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -2314,6 +2316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   // Super Admin Authentication Routes
   app.post('/api/super-admin/login', async (req, res) => {
     try {
@@ -2336,7 +2339,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify password using bcrypt
-      const bcrypt = require('bcryptjs');
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
@@ -2354,7 +2356,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create JWT token
-      const jwt = require('jsonwebtoken');
       const token = jwt.sign(
         { 
           userId: user.id, 
@@ -2399,7 +2400,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key_for_development');
       
       if (decoded.role !== 'super_admin') {
