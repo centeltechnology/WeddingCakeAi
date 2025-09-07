@@ -1952,6 +1952,10 @@ export class DatabaseStorage implements IStorage {
     return template || undefined;
   }
   async getQuoteTemplatesByBaker(bakerId: string): Promise<QuoteTemplate[]> { return []; }
+  async getQuoteTemplates(bakerId: string): Promise<QuoteTemplate[]> {
+    return await db.select().from(quoteTemplates).where(eq(quoteTemplates.bakerId, bakerId));
+  }
+  
   async updateQuoteTemplate(id: string, updates: Partial<InsertQuoteTemplate>): Promise<QuoteTemplate> {
     const [template] = await db.update(quoteTemplates).set(updates).where(eq(quoteTemplates.id, id)).returning();
     return template;

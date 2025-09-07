@@ -102,20 +102,41 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="widgets" data-testid="tab-widgets">
-            <Code className="h-4 w-4 mr-2" />
-            Available Widgets
-          </TabsTrigger>
-          <TabsTrigger value="customize" data-testid="tab-customize">
-            <Palette className="h-4 w-4 mr-2" />
-            Customize
-          </TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="tab-widget-analytics">
-            <Monitor className="h-4 w-4 mr-2" />
-            Analytics
-          </TabsTrigger>
-        </TabsList>
+        {/* Mobile Tab Navigation */}
+        <div className="md:hidden">
+          <TabsList className="grid w-full grid-cols-1 gap-2 h-auto p-2">
+            <TabsTrigger value="widgets" data-testid="tab-widgets" className="flex-col h-16 gap-1">
+              <Code className="h-5 w-5" />
+              <span className="text-xs">Available Widgets</span>
+            </TabsTrigger>
+            <TabsTrigger value="customize" data-testid="tab-customize" className="flex-col h-16 gap-1">
+              <Palette className="h-5 w-5" />
+              <span className="text-xs">Customize</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" data-testid="tab-widget-analytics" className="flex-col h-16 gap-1">
+              <Monitor className="h-5 w-5" />
+              <span className="text-xs">Analytics</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Desktop Tab Navigation */}
+        <div className="hidden md:block">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="widgets" data-testid="tab-widgets">
+              <Code className="h-4 w-4 mr-2" />
+              Available Widgets
+            </TabsTrigger>
+            <TabsTrigger value="customize" data-testid="tab-customize">
+              <Palette className="h-4 w-4 mr-2" />
+              Customize
+            </TabsTrigger>
+            <TabsTrigger value="analytics" data-testid="tab-widget-analytics">
+              <Monitor className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="widgets" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
