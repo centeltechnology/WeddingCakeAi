@@ -79,6 +79,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Domain Configuration API
+  // Baker-specific domain configuration
+  app.put('/api/bakers/:bakerId/domain', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const { subdomain, customDomain } = req.body;
+      
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Validate subdomain format
+      if (subdomain && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomain)) {
+        return res.status(400).json({ 
+          error: 'Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.' 
+        });
+      }
+
+      // Check if subdomain is already taken by another baker
+      if (subdomain) {
+        const bakers = await storage.getBakers();
+        const existingBaker = bakers.find(b => 
+          b.id !== bakerId && 
+          (b.subdomain === subdomain || b.customDomain === subdomain)
+        );
+        if (existingBaker) {
+          return res.status(409).json({ error: 'Subdomain already taken' });
+        }
+      }
+
+      // Update baker domain settings
+      const updates: any = {};
+      if (subdomain !== undefined) updates.subdomain = subdomain || null;
+      if (customDomain !== undefined) updates.customDomain = customDomain || null;
+
+      const updatedBaker = await storage.updateBaker(bakerId, updates);
+      
+      res.json({
+        success: true,
+        baker: updatedBaker,
+        message: subdomain ? 
+          `Subdomain updated to ${subdomain}.bakewise.com` : 
+          'Custom domain configuration updated'
+      });
+    } catch (error) {
+      console.error('Error updating baker domain configuration:', error);
+      res.status(500).json({ error: 'Failed to update domain configuration' });
+    }
+  });
+
+  app.get('/api/bakers/:bakerId/domain', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      res.json({
+        subdomain: baker.subdomain || null,
+        customDomain: baker.customDomain || null,
+        isActive: true, // Simplified for now
+        sslStatus: 'secured',
+        propagationStatus: 'complete'
+      });
+    } catch (error) {
+      console.error('Error fetching baker domain configuration:', error);
+      res.status(500).json({ error: 'Failed to fetch domain configuration' });
+    }
+  });
+
+  // Keep the tenant endpoint for backward compatibility but with better error handling
   app.put('/api/tenant/domain', async (req, res) => {
     try {
       const { subdomain, customDomain } = req.body;

@@ -71,12 +71,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     }
   });
 
-  // Fetch tenant information for domain settings
-  const { data: tenantData } = useQuery({
-    queryKey: ['/api/tenant/info'],
+  // Fetch baker domain configuration
+  const { data: domainConfig } = useQuery({
+    queryKey: ['/api/bakers', bakerId, 'domain'],
     queryFn: async () => {
-      const response = await fetch('/api/tenant/info');
-      if (!response.ok) throw new Error('Failed to fetch tenant');
+      const response = await fetch(`/api/bakers/${bakerId}/domain`);
+      if (!response.ok) return { subdomain: null, customDomain: null, isActive: false };
       return response.json();
     }
   });
@@ -114,7 +114,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   // Subdomain save mutation
   const saveSubdomainMutation = useMutation({
     mutationFn: async (subdomain: string) => {
-      const response = await fetch('/api/tenant/domain', {
+      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subdomain })
@@ -130,7 +130,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         title: "Subdomain Updated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
       setSubdomainInput("");
     },
     onError: (error: Error) => {
@@ -145,7 +145,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   // Custom domain save mutation
   const saveCustomDomainMutation = useMutation({
     mutationFn: async (customDomain: string) => {
-      const response = await fetch('/api/tenant/domain', {
+      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customDomain })
@@ -161,7 +161,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         title: "Custom Domain Updated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
       setCustomDomainInput("");
     },
     onError: (error: Error) => {
@@ -873,25 +873,37 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       <div>
                         <p className="font-medium text-green-800">Active Domain</p>
                         <p className="text-sm text-green-600">
-                          {tenant?.customDomain || (tenant?.subdomain ? `${tenant.subdomain}.bakewise.com` : 'No domain configured')}
+                          {domainConfig?.customDomain || 
+                           (domainConfig?.subdomain ? `${domainConfig.subdomain}.bakewise.com` : 
+                            'No domain configured')}
                         </p>
                       </div>
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      <Badge className={domainConfig?.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {domainConfig?.isActive ? 'Active' : 'Not Configured'}
+                      </Badge>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                      <div className="p-3 bg-white rounded-lg border border-green-200">
-                        <p className="text-sm text-green-600">SSL Certificate</p>
-                        <p className="font-semibold text-green-800">✓ Secured</p>
+                    {domainConfig?.isActive && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div className="p-3 bg-white rounded-lg border border-green-200">
+                          <p className="text-sm text-green-600">SSL Certificate</p>
+                          <p className="font-semibold text-green-800">
+                            {domainConfig?.sslStatus === 'secured' ? '✓ Secured' : '⏳ Pending'}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-white rounded-lg border border-green-200">
+                          <p className="text-sm text-green-600">Status</p>
+                          <p className="font-semibold text-green-800">
+                            {domainConfig?.isActive ? '✓ Active' : '⏳ Pending'}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-white rounded-lg border border-green-200">
+                          <p className="text-sm text-green-600">Propagation</p>
+                          <p className="font-semibold text-green-800">
+                            {domainConfig?.propagationStatus === 'complete' ? '✓ Complete' : '⏳ In Progress'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-3 bg-white rounded-lg border border-green-200">
-                        <p className="text-sm text-green-600">Status</p>
-                        <p className="font-semibold text-green-800">✓ Active</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-lg border border-green-200">
-                        <p className="text-sm text-green-600">Propagation</p>
-                        <p className="font-semibold text-green-800">✓ Complete</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
