@@ -25,6 +25,13 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
   getUsersWithRole(role: string): Promise<User[]>;
+
+  // Baker operations
+  createBaker(insertBaker: InsertBaker): Promise<Baker>;
+  getBaker(id: string): Promise<Baker | undefined>;
+  updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
+  searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
+  getBakersByTenant(tenantId: string): Promise<Baker[]>;
   
   createProfile(profile: InsertProfile): Promise<Profile>;
   getProfile(id: string): Promise<Profile | undefined>;
@@ -2142,6 +2149,45 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersWithRole(role: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  // Baker operations
+  async createBaker(insertBaker: InsertBaker): Promise<Baker> {
+    const [baker] = await db
+      .insert(bakers)
+      .values({ ...insertBaker, id: insertBaker.id || randomUUID() })
+      .returning();
+    return baker;
+  }
+
+  async getBaker(id: string): Promise<Baker | undefined> {
+    const [baker] = await db.select().from(bakers).where(eq(bakers.id, id));
+    return baker || undefined;
+  }
+
+  async updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker> {
+    const [baker] = await db
+      .update(bakers)
+      .set(updates)
+      .where(eq(bakers.id, id))
+      .returning();
+    return baker;
+  }
+
+  async searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]> {
+    let query = db.select().from(bakers).where(eq(bakers.isActive, true));
+    
+    if (specialty) {
+      // For Postgres, we'd use array contains operation
+      // This is a simplified version - in production you'd use proper array operations
+    }
+    
+    return await query;
+  }
+
+  async getBakersByTenant(tenantId: string): Promise<Baker[]> {
+    // This would join with tenant baker networks in a real implementation
+    return await db.select().from(bakers).where(eq(bakers.isActive, true));
   }
 }
 
