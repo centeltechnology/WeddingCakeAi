@@ -24,15 +24,16 @@ export function PWAInstallPrompt() {
       }
     }
 
-    // Show prompt after a delay if installable and not dismissed
-    if (isInstallable && !hasBeenDismissed) {
+    // Always show for testing - remove the installable requirement temporarily
+    if (!hasBeenDismissed) {
       const timer = setTimeout(() => {
         setShowPrompt(true);
-      }, 5000); // Show after 5 seconds
+        console.log('PWA Install Prompt: Showing prompt for testing');
+      }, 3000); // Show after 3 seconds for testing
 
       return () => clearTimeout(timer);
     }
-  }, [isInstallable, hasBeenDismissed]);
+  }, [hasBeenDismissed]); // Removed isInstallable dependency for testing
 
   const handleInstall = async () => {
     const success = await installApp();
