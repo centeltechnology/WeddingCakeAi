@@ -128,19 +128,25 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Tiers:</span>
-                <span className="ml-2 font-medium">{config.tiers}</span>
+                <span className="ml-2 font-medium">{config.totalTiers}</span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Shape:</span>
-                <span className="ml-2 font-medium capitalize">{config.shape}</span>
+                <span className="text-gray-500 dark:text-gray-400">Sizes:</span>
+                <span className="ml-2 font-medium">
+                  {config.tiers.map(tier => `${tier.size}"`).join(', ')}
+                </span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Flavor:</span>
-                <span className="ml-2 font-medium capitalize">{config.cakeFlavor.replace('-', ' ')}</span>
+                <span className="text-gray-500 dark:text-gray-400">Flavors:</span>
+                <span className="ml-2 font-medium capitalize">
+                  {config.tiers.map(tier => tier.flavor.replace('-', ' ')).join(', ')}
+                </span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Filling:</span>
-                <span className="ml-2 font-medium capitalize">{config.filling.replace('-', ' ')}</span>
+                <span className="text-gray-500 dark:text-gray-400">Shapes:</span>
+                <span className="ml-2 font-medium capitalize">
+                  {config.tiers.map(tier => tier.shape).join(', ')}
+                </span>
               </div>
             </div>
             {Object.values(config.decorations).some(Boolean) && (
