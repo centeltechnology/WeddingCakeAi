@@ -20,7 +20,12 @@ import {
   Download,
   Edit,
   Signature,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  Heart,
+  Building2,
+  Cake,
+  FileText
 } from 'lucide-react';
 
 interface ContractManagerProps {
@@ -321,16 +326,155 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <Edit className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Contract Templates</h3>
-              <p className="text-muted-foreground mb-4">
-                Create reusable contract templates with standard terms and conditions.
+          {/* Legal Warning */}
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="text-lg text-yellow-800">Important Legal Notice</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-yellow-700">
+                These contract templates are provided for general guidance only and should not be considered legal advice. 
+                <strong> We strongly recommend consulting with a qualified attorney</strong> to review and customize any contract 
+                before use to ensure it complies with local laws and adequately protects your business interests.
               </p>
-              <Badge variant="secondary">Coming Soon</Badge>
             </CardContent>
           </Card>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium">Contract Templates</h3>
+              <p className="text-sm text-muted-foreground">Choose from pre-built templates or create custom ones</p>
+            </div>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Wedding Cake Contract Template */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Heart className="h-5 w-5 text-rose-500 mr-2" />
+                  Wedding Cake Contract
+                </CardTitle>
+                <CardDescription>Standard contract for wedding cake orders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Payment Terms:</span>
+                    <span className="text-muted-foreground">50% deposit, 50% final</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Cancellation:</span>
+                    <span className="text-muted-foreground">7 days notice</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Delivery:</span>
+                    <span className="text-muted-foreground">Setup included</span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 mt-4">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Preview
+                  </Button>
+                  <Button size="sm" className="flex-1">
+                    Use Template
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Corporate Event Contract Template */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="h-5 w-5 text-blue-500 mr-2" />
+                  Corporate Event Contract
+                </CardTitle>
+                <CardDescription>Professional contract for corporate orders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Payment Terms:</span>
+                    <span className="text-muted-foreground">Net 30 days</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Cancellation:</span>
+                    <span className="text-muted-foreground">14 days notice</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Delivery:</span>
+                    <span className="text-muted-foreground">Business hours only</span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 mt-4">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Preview
+                  </Button>
+                  <Button size="sm" className="flex-1">
+                    Use Template
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Standard Cake Order Contract Template */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Cake className="h-5 w-5 text-purple-500 mr-2" />
+                  Standard Cake Order
+                </CardTitle>
+                <CardDescription>Basic contract for regular cake orders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Payment Terms:</span>
+                    <span className="text-muted-foreground">Full payment on order</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Cancellation:</span>
+                    <span className="text-muted-foreground">48 hours notice</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Pickup:</span>
+                    <span className="text-muted-foreground">Customer pickup</span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 mt-4">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Preview
+                  </Button>
+                  <Button size="sm" className="flex-1">
+                    Use Template
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Custom Template */}
+            <Card className="border-2 border-dashed border-muted-foreground/25">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-medium mb-2">Create Custom Template</h3>
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Build your own contract template with custom terms
+                </p>
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Template
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="signatures" className="space-y-4">
