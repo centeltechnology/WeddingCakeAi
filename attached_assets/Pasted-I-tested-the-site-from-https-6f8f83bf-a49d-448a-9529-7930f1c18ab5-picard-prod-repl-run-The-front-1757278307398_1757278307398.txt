@@ -1,0 +1,107 @@
+I tested the site from https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/. The front end of the site seems to work fine
+
+1. I still can't create an account.
+2. The preview pane doesn't work so I can test backend features. 
+3. When I click the button under Real Implementation. I get the error:
+6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+index-DsUJXqjS.js:707  GET https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/api/bakers/70c29a5d-72f3-443f-8c39-c2ced5210f05 500 (Internal Server Error)
+queryFn @ index-DsUJXqjS.js:707
+a @ index-DsUJXqjS.js:48
+y @ index-DsUJXqjS.js:48
+start @ index-DsUJXqjS.js:48
+fetch @ index-DsUJXqjS.js:48
+tm @ index-DsUJXqjS.js:48
+onSubscribe @ index-DsUJXqjS.js:48
+subscribe @ index-DsUJXqjS.js:48
+(anonymous) @ index-DsUJXqjS.js:48
+SA @ index-DsUJXqjS.js:38
+ev @ index-DsUJXqjS.js:40
+Ah @ index-DsUJXqjS.js:40
+M_ @ index-DsUJXqjS.js:40
+Yc @ index-DsUJXqjS.js:38
+b9 @ index-DsUJXqjS.js:40
+yd @ index-DsUJXqjS.js:40
+nP @ index-DsUJXqjS.js:40
+P @ index-DsUJXqjS.js:25
+L @ index-DsUJXqjS.js:25
+index-DsUJXqjS.js:707  GET https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/api/bakers/70c29a5d-72f3-443f-8c39-c2ced5210f05/domain 500 (Internal Server Error)
+queryFn @ index-DsUJXqjS.js:707
+a @ index-DsUJXqjS.js:48
+y @ index-DsUJXqjS.js:48
+start @ index-DsUJXqjS.js:48
+fetch @ index-DsUJXqjS.js:48
+tm @ index-DsUJXqjS.js:48
+onSubscribe @ index-DsUJXqjS.js:48
+subscribe @ index-DsUJXqjS.js:48
+(anonymous) @ index-DsUJXqjS.js:48
+SA @ index-DsUJXqjS.js:38
+ev @ index-DsUJXqjS.js:40
+Ah @ index-DsUJXqjS.js:40
+M_ @ index-DsUJXqjS.js:40
+Yc @ index-DsUJXqjS.js:38
+b9 @ index-DsUJXqjS.js:40
+yd @ index-DsUJXqjS.js:40
+nP @ index-DsUJXqjS.js:40
+P @ index-DsUJXqjS.js:25
+L @ index-DsUJXqjS.js:25
+index-DsUJXqjS.js:707  GET https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/api/bakers/70c29a5d-72f3-443f-8c39-c2ced5210f05/leads 500 (Internal Server Error)
+queryFn @ index-DsUJXqjS.js:707
+a @ index-DsUJXqjS.js:48
+y @ index-DsUJXqjS.js:48
+start @ index-DsUJXqjS.js:48
+fetch @ index-DsUJXqjS.js:48
+tm @ index-DsUJXqjS.js:48
+onSubscribe @ index-DsUJXqjS.js:48
+subscribe @ index-DsUJXqjS.js:48
+(anonymous) @ index-DsUJXqjS.js:48
+SA @ index-DsUJXqjS.js:38
+ev @ index-DsUJXqjS.js:40
+Ah @ index-DsUJXqjS.js:40
+M_ @ index-DsUJXqjS.js:40
+Yc @ index-DsUJXqjS.js:38
+b9 @ index-DsUJXqjS.js:40
+yd @ index-DsUJXqjS.js:40
+nP @ index-DsUJXqjS.js:40
+P @ index-DsUJXqjS.js:25
+L @ index-DsUJXqjS.js:25
+index-DsUJXqjS.js:48  POST https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/api/bakers 400 (Bad Request)
+fi @ index-DsUJXqjS.js:48
+mutationFn @ index-DsUJXqjS.js:532
+fn @ index-DsUJXqjS.js:48
+y @ index-DsUJXqjS.js:48
+start @ index-DsUJXqjS.js:48
+execute @ index-DsUJXqjS.js:48
+await in execute
+mutate @ index-DsUJXqjS.js:48
+(anonymous) @ index-DsUJXqjS.js:48
+o @ index-DsUJXqjS.js:532
+UO @ index-DsUJXqjS.js:37
+zO @ index-DsUJXqjS.js:37
+$O @ index-DsUJXqjS.js:37
+o_ @ index-DsUJXqjS.js:37
+dA @ index-DsUJXqjS.js:37
+(anonymous) @ index-DsUJXqjS.js:37
+fN @ index-DsUJXqjS.js:40
+R8 @ index-DsUJXqjS.js:37
+F2 @ index-DsUJXqjS.js:37
+zj @ index-DsUJXqjS.js:37
+nM @ index-DsUJXqjS.js:37
+index-DsUJXqjS.js:48  GET https://6f8f83bf-a49d-448a-9529-7930f1c18ab5.picard.prod.repl.run/api/bakers/70c29a5d-72f3-443f-8c39-c2ced5210f05 500 (Internal Server Error)
+(anonymous) @ index-DsUJXqjS.js:48
+a @ index-DsUJXqjS.js:48
+y @ index-DsUJXqjS.js:48
+start @ index-DsUJXqjS.js:48
+fetch @ index-DsUJXqjS.js:48
+tm @ index-DsUJXqjS.js:48
+onSubscribe @ index-DsUJXqjS.js:48
+subscribe @ index-DsUJXqjS.js:48
+(anonymous) @ index-DsUJXqjS.js:48
+SA @ index-DsUJXqjS.js:38
+ev @ index-DsUJXqjS.js:40
+Ah @ index-DsUJXqjS.js:40
+b9 @ index-DsUJXqjS.js:40
+yd @ index-DsUJXqjS.js:40
+M_ @ index-DsUJXqjS.js:40
+Yc @ index-DsUJXqjS.js:38
+(anonymous) @ index-DsUJXqjS.js:40
+

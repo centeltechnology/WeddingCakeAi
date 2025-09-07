@@ -144,6 +144,9 @@ export const bakers = pgTable("bakers", {
   portfolio: text("portfolio").array(),
   subscriptionPlan: text("subscription_plan").default('free'), // free, pro, plus
   isActive: boolean("is_active").default(true),
+  // Domain configuration fields
+  subdomain: varchar("subdomain"),
+  customDomain: varchar("custom_domain"),
   // Stripe Connect fields
   stripeConnectAccountId: varchar("stripe_connect_account_id"),
   stripeAccountStatus: varchar("stripe_account_status").default('not_started'), // not_started, pending, complete, restricted
