@@ -184,7 +184,10 @@ export const messages = pgTable("messages", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true });
 export const insertEstimateSchema = createInsertSchema(estimates).omit({ id: true, createdAt: true });
-export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, createdAt: true });
+export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, createdAt: true }).extend({
+  name: z.string().min(1, "Bakery name is required"),
+  email: z.string().email("Valid email is required")
+});
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 
