@@ -50,7 +50,7 @@ function Router() {
         {(params) => <BakerDashboard bakerId={params.id} />}
       </Route>
       <Route path="/admin">
-        {() => <BakerDashboard bakerId="baker-1" />}
+        {() => <BakerDashboard bakerId="70c29a5d-72f3-443f-8c39-c2ced5210f05" />}
       </Route>
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
       <Route path="/super-admin-login" component={SuperAdminLogin} />
@@ -62,7 +62,7 @@ function Router() {
       <Route path="/baker/:bakerId/calculator">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
-      <Route path="/calculator" component={() => <CakeCalculator bakerId="baker-1" />} />
+      <Route path="/calculator" component={() => <CakeCalculator bakerId="70c29a5d-72f3-443f-8c39-c2ced5210f05" />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/cookies" component={Cookies} />
