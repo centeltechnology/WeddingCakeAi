@@ -81,6 +81,117 @@ interface SystemMetric {
   trend: 'up' | 'down' | 'stable';
 }
 
+// Password Change Form Component
+function PasswordChangeForm() {
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const response = await apiRequest('POST', '/api/super-admin/change-password', data);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: "Password updated successfully",
+        variant: "default",
+      });
+      // Clear form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error", 
+        description: "New password and confirmation don't match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "New password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword,
+      newPassword
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="current-password">Current Password</Label>
+        <Input
+          id="current-password"
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          data-testid="input-current-password"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="new-password">New Password</Label>
+        <Input
+          id="new-password"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          data-testid="input-new-password"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirm-password">Confirm New Password</Label>
+        <Input
+          id="confirm-password"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          data-testid="input-confirm-password"
+        />
+      </div>
+      <Button 
+        type="submit" 
+        disabled={changePasswordMutation.isPending}
+        data-testid="button-change-password"
+      >
+        {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
+      </Button>
+    </form>
+  );
+}
+
 export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -183,7 +294,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" data-testid="tab-overview">
               <BarChart3 className="h-4 w-4 mr-2" />
               Overview
@@ -633,6 +744,17 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       Reset to Defaults
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Password Change Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Security</CardTitle>
+                  <CardDescription>Change your super admin password</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PasswordChangeForm />
                 </CardContent>
               </Card>
             </div>

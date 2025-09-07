@@ -2468,6 +2468,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change super admin password
+  app.post('/api/super-admin/change-password', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Current password and new password are required' 
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'New password must be at least 6 characters long' 
+        });
+      }
+
+      // Get current user from token
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isCurrentPasswordValid) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Current password is incorrect' 
+        });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password in database
+      await storage.updateUser(user.id, {
+        password: hashedNewPassword,
+        updatedAt: new Date()
+      });
+
+      res.json({
+        success: true,
+        message: 'Password updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Password change error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
