@@ -82,32 +82,15 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
     }
   });
 
-  const paymentPlans: PaymentPlan[] = [
-    {
-      id: 'plan-1',
-      contractId: 'contract-1',
-      customerName: 'Emily Thompson',
-      totalAmount: '1386.56',
-      depositAmount: '693.28',
-      finalAmount: '693.28',
-      depositPaid: true,
-      finalPaid: false,
-      depositDueDate: '2024-08-01',
-      finalDueDate: '2024-09-08'
-    },
-    {
-      id: 'plan-2',
-      contractId: 'contract-2',
-      customerName: 'Jessica Martinez',
-      totalAmount: '1250.00',
-      depositAmount: '625.00',
-      finalAmount: '625.00',
-      depositPaid: false,
-      finalPaid: false,
-      depositDueDate: '2024-12-01',
-      finalDueDate: '2024-11-23'
+  // Fetch payment plans from API
+  const { data: paymentPlans = [] } = useQuery<PaymentPlan[]>({
+    queryKey: ['/api/bakers', bakerId, 'payment-plans'],
+    queryFn: async () => {
+      const response = await fetch(`/api/bakers/${bakerId}/payment-plans`);
+      if (!response.ok) throw new Error('Failed to fetch payment plans');
+      return response.json();
     }
-  ];
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -356,7 +339,18 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
         </TabsContent>
 
         <TabsContent value="plans" className="space-y-4">
-          {paymentPlans.map((plan) => {
+          {paymentPlans.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Payment Plans Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Payment plans will appear here when you create contracts with installment options.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            paymentPlans.map((plan) => {
             const depositProgress = plan.depositPaid ? 100 : 0;
             const finalProgress = plan.finalPaid ? 100 : 0;
             const overallProgress = (depositProgress + finalProgress) / 2;
@@ -431,7 +425,8 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
                 </CardContent>
               </Card>
             );
-          })}
+          })
+          )}
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
