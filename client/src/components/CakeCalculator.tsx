@@ -863,7 +863,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">Preferred Contact Method</Label>
                     <Select
                       value={customerInfo.contactPreference}
-                      onValueChange={(contactPreference) => setCustomerInfo({...customerInfo, contactPreference: contactPreference as 'email' | 'phone'})}
+                      onValueChange={(value) => setCustomerInfo({...customerInfo, contactPreference: value as 'email' | 'phone'})}
                     >
                       <SelectTrigger className="bg-white border-gray-200" data-testid="select-contact-preference">
                         <SelectValue />
@@ -1025,15 +1025,15 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
       />
 
       {/* Social Media Footer */}
-      {baker?.socialMedia && Object.values(baker.socialMedia).some(Boolean) && (
+      {baker && (baker as any).socialMedia && Object.values((baker as any).socialMedia).some(Boolean) && (
         <div className="mt-12 border-t border-rose-200 pt-8">
           <div className="max-w-5xl mx-auto px-6 lg:px-8">
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Follow Us</h3>
               <div className="flex justify-center space-x-6">
-                {baker.socialMedia.instagram && (
+                {(baker as any).socialMedia.instagram && (
                   <a
-                    href={`https://instagram.com/${baker.socialMedia.instagram.replace('@', '')}`}
+                    href={`https://instagram.com/${(baker as any).socialMedia.instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-pink-500 transition-colors"
@@ -1045,9 +1045,9 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     </svg>
                   </a>
                 )}
-                {baker.socialMedia.facebook && (
+                {(baker as any).socialMedia.facebook && (
                   <a
-                    href={baker.socialMedia.facebook.startsWith('http') ? baker.socialMedia.facebook : `https://${baker.socialMedia.facebook}`}
+                    href={(baker as any).socialMedia.facebook.startsWith('http') ? (baker as any).socialMedia.facebook : `https://${(baker as any).socialMedia.facebook}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-blue-600 transition-colors"
@@ -1059,9 +1059,9 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     </svg>
                   </a>
                 )}
-                {baker.socialMedia.tiktok && (
+                {(baker as any).socialMedia.tiktok && (
                   <a
-                    href={`https://tiktok.com/@${baker.socialMedia.tiktok.replace('@', '')}`}
+                    href={`https://tiktok.com/@${(baker as any).socialMedia.tiktok.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-black transition-colors"
@@ -1073,9 +1073,9 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     </svg>
                   </a>
                 )}
-                {baker.socialMedia.pinterest && (
+                {(baker as any).socialMedia.pinterest && (
                   <a
-                    href={baker.socialMedia.pinterest.startsWith('http') ? baker.socialMedia.pinterest : `https://${baker.socialMedia.pinterest}`}
+                    href={(baker as any).socialMedia.pinterest.startsWith('http') ? (baker as any).socialMedia.pinterest : `https://${(baker as any).socialMedia.pinterest}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-red-600 transition-colors"
@@ -1087,9 +1087,9 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
                     </svg>
                   </a>
                 )}
-                {baker.socialMedia.website && (
+                {(baker as any).socialMedia.website && (
                   <a
-                    href={baker.socialMedia.website.startsWith('http') ? baker.socialMedia.website : `https://${baker.socialMedia.website}`}
+                    href={(baker as any).socialMedia.website.startsWith('http') ? (baker as any).socialMedia.website : `https://${(baker as any).socialMedia.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-gray-900 transition-colors"
