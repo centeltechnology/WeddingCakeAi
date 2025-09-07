@@ -91,7 +91,9 @@ const stats = [
 export default function Testimonials() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true,
-    align: 'start'
+    align: 'start',
+    skipSnaps: false,
+    dragFree: false
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
@@ -132,15 +134,24 @@ export default function Testimonials() {
     emblaApi.on('select', onSelect);
   }, [emblaApi, onInit, onSelect]);
 
-  // Auto-play functionality
+  // Auto-play functionality - disabled for debugging
   useEffect(() => {
     if (!emblaApi) return;
 
+    console.log("Embla API initialized, starting autoplay");
     const autoplay = setInterval(() => {
-      emblaApi.scrollNext();
-    }, 6000); // Auto-slide every 6 seconds
+      console.log("Auto-scrolling to next");
+      if (emblaApi.canScrollNext()) {
+        emblaApi.scrollNext();
+      } else {
+        emblaApi.scrollTo(0);
+      }
+    }, 4000); // Auto-slide every 4 seconds
 
-    return () => clearInterval(autoplay);
+    return () => {
+      console.log("Clearing autoplay interval");
+      clearInterval(autoplay);
+    };
   }, [emblaApi]);
 
   return (
