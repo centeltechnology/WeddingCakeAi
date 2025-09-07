@@ -64,14 +64,16 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   });
 
   // Fetch tenant information for domain settings
-  const { data: tenant } = useQuery({
-    queryKey: ['/api/tenant'],
+  const { data: tenantData } = useQuery({
+    queryKey: ['/api/tenant/info'],
     queryFn: async () => {
-      const response = await fetch('/api/tenant');
+      const response = await fetch('/api/tenant/info');
       if (!response.ok) throw new Error('Failed to fetch tenant');
       return response.json();
     }
   });
+  
+  const tenant = tenantData?.tenant;
 
   const { data: leads, isLoading: leadsLoading } = useQuery<Lead[]>({
     queryKey: ['/api/bakers', bakerId, 'leads'],
@@ -120,7 +122,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         title: "Subdomain Updated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/tenant'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] });
       setSubdomainInput("");
     },
     onError: (error: Error) => {
@@ -151,7 +153,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         title: "Custom Domain Updated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/tenant'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] });
       setCustomDomainInput("");
     },
     onError: (error: Error) => {
