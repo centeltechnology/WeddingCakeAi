@@ -65,13 +65,26 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
       return response.json();
     },
     onSuccess: (data) => {
-      // Redirect to Stripe onboarding
-      window.location.href = data.onboardingUrl;
+      // Add a small delay and smooth redirect to prevent page jumping
+      toast({
+        title: 'Redirecting to Stripe',
+        description: 'Setting up your payment account...',
+      });
+      
+      // Use a timeout to ensure the state is properly set before redirect
+      setTimeout(() => {
+        if (data.onboardingUrl) {
+          window.location.href = data.onboardingUrl;
+        } else {
+          throw new Error('No onboarding URL received');
+        }
+      }, 500);
     },
     onError: (error: any) => {
+      console.error('Stripe onboarding error:', error);
       toast({
-        title: 'Onboarding Error',
-        description: error.message,
+        title: 'Setup Failed',
+        description: error.message || 'Failed to start account setup. Please try again.',
         variant: 'destructive',
       });
       setIsStartingOnboarding(false);
@@ -79,6 +92,10 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   });
 
   const handleStartOnboarding = () => {
+    if (isStartingOnboarding || startOnboardingMutation.isPending) {
+      return; // Prevent double clicks
+    }
+    
     setIsStartingOnboarding(true);
     startOnboardingMutation.mutate();
   };
@@ -150,18 +167,18 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
           <Button 
             onClick={handleStartOnboarding}
             disabled={isStartingOnboarding || startOnboardingMutation.isPending}
-            className="w-full"
+            className="w-full bg-primary hover:bg-primary/90"
             data-testid="button-start-onboarding"
           >
             {isStartingOnboarding || startOnboardingMutation.isPending ? (
               <>
                 <Clock className="w-4 h-4 mr-2 animate-spin" />
-                Starting Setup...
+                Setting Up Account...
               </>
             ) : (
               <>
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Complete Account Setup
+                Set Up Payment Account
               </>
             )}
           </Button>
@@ -208,18 +225,18 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
             <Button 
               onClick={handleStartOnboarding}
               disabled={isStartingOnboarding || startOnboardingMutation.isPending}
-              className="w-full"
-              data-testid="button-start-onboarding"
+              className="w-full bg-primary hover:bg-primary/90"
+              data-testid="button-start-onboarding-main"
             >
               {isStartingOnboarding || startOnboardingMutation.isPending ? (
                 <>
                   <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Starting Setup...
+                  Setting Up Account...
                 </>
               ) : (
                 <>
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Complete Account Setup
+                  Set Up Payment Account
                 </>
               )}
             </Button>
