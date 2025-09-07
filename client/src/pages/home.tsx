@@ -204,8 +204,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Testimonials Carousel */}
-      <Testimonials />
+      {/* Testimonials Section - Temporarily disabled */}
+      <div className="py-16 bg-gradient-to-b from-background to-muted/30">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-serif font-bold mb-4">Trusted by Thousands of Couples</h2>
+          <p className="text-lg text-muted-foreground">Join the couples who found their perfect wedding cake through Bakewise</p>
+        </div>
+      </div>
       
       <Footer />
     </div>
