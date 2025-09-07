@@ -1543,6 +1543,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { size: "12-inch", servings: 56, basePrice: 155, costToMake: 75, profitMargin: 52 },
           { size: "14-inch", servings: 78, basePrice: 195, costToMake: 100, profitMargin: 49 }
         ],
+        shapes: [
+          { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
+          { id: "heart", name: "Heart", baseUpcharge: 15, costToMake: 8, profitMargin: 47 },
+          { id: "square", name: "Square", baseUpcharge: 10, costToMake: 5, profitMargin: 50 }
+        ],
         flavors: [
           { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false },
           { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false },

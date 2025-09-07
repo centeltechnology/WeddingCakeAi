@@ -20,7 +20,8 @@ import {
   Cake,
   Sparkles,
   Percent,
-  MapPin
+  MapPin,
+  Heart
 } from 'lucide-react';
 
 interface PricingManagerProps {
@@ -43,6 +44,14 @@ interface FlavorPricing {
   isPremium: boolean;
 }
 
+interface ShapePricing {
+  id: string;
+  name: string;
+  baseUpcharge: number;
+  costToMake: number;
+  profitMargin: number;
+}
+
 interface DecorationPricing {
   id: string;
   name: string;
@@ -57,6 +66,7 @@ interface BakerPricingConfig {
   id?: string;
   bakerId: string;
   cakeSizes: CakeSizePricing[];
+  shapes?: ShapePricing[];
   flavors: FlavorPricing[];
   decorations: DecorationPricing[];
   taxRate: number;
@@ -182,6 +192,21 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
     setHasChanges(true);
   };
 
+  const updateShape = (index: number, updates: Partial<ShapePricing>) => {
+    const newShapes = [...(pricing.shapes || [])];
+    newShapes[index] = { ...newShapes[index], ...updates };
+    
+    // Auto-calculate profit margin if upcharge or cost changes
+    if (updates.baseUpcharge !== undefined || updates.costToMake !== undefined) {
+      const upcharge = updates.baseUpcharge !== undefined ? updates.baseUpcharge : newShapes[index].baseUpcharge;
+      const cost = updates.costToMake !== undefined ? updates.costToMake : newShapes[index].costToMake;
+      newShapes[index].profitMargin = upcharge > 0 ? Math.round(((upcharge - cost) / upcharge) * 100) : 0;
+    }
+    
+    setPricing({ ...pricing, shapes: newShapes });
+    setHasChanges(true);
+  };
+
   const updateDecoration = (index: number, updates: Partial<DecorationPricing>) => {
     const newDecorations = [...pricing.decorations];
     newDecorations[index] = { ...newDecorations[index], ...updates };
@@ -279,10 +304,14 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="cakes" data-testid="tab-cake-pricing">
             <Cake className="h-4 w-4 mr-2" />
             Cake Sizes
+          </TabsTrigger>
+          <TabsTrigger value="shapes" data-testid="tab-shapes-pricing">
+            <Heart className="h-4 w-4 mr-2" />
+            Shapes
           </TabsTrigger>
           <TabsTrigger value="flavors" data-testid="tab-flavor-pricing">
             <Sparkles className="h-4 w-4 mr-2" />
@@ -351,6 +380,64 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                         variant={size.profitMargin >= 50 ? "default" : size.profitMargin >= 30 ? "secondary" : "destructive"}
                       >
                         {size.profitMargin}%
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Shapes Tab */}
+        <TabsContent value="shapes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Shape Pricing</CardTitle>
+              <CardDescription>
+                Set upcharges for different cake shapes. Round is typically the base shape.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
+                  <div>Shape Name</div>
+                  <div>Upcharge</div>
+                  <div>Cost to Make</div>
+                  <div>Profit</div>
+                  <div>Margin</div>
+                </div>
+                {(pricing.shapes || []).map((shape, index) => (
+                  <div key={shape.id} className="grid grid-cols-5 gap-4 items-center">
+                    <div className="font-medium">{shape.name}</div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={shape.baseUpcharge}
+                        onChange={(e) => updateShape(index, { baseUpcharge: parseFloat(e.target.value) || 0 })}
+                        className="w-20"
+                        data-testid={`input-shape-upcharge-${shape.id}`}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={shape.costToMake}
+                        onChange={(e) => updateShape(index, { costToMake: parseFloat(e.target.value) || 0 })}
+                        className="w-20"
+                        data-testid={`input-shape-cost-${shape.id}`}
+                      />
+                    </div>
+                    <div className="text-green-600 font-medium">
+                      ${(shape.baseUpcharge - shape.costToMake).toFixed(2)}
+                    </div>
+                    <div>
+                      <Badge 
+                        variant={shape.profitMargin >= 50 ? "default" : shape.profitMargin >= 30 ? "secondary" : "destructive"}
+                      >
+                        {shape.profitMargin}%
                       </Badge>
                     </div>
                   </div>
