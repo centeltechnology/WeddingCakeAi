@@ -1308,6 +1308,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Baker Authentication
+  app.post('/api/baker/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email and password are required' 
+        });
+      }
+
+      // Find baker by email (in real app, this would query the database)
+      // For demo purposes, we'll check against hardcoded credentials
+      const validEmail = 'admin@sweetdreamsbakery.com';
+      const validPassword = 'demo123';
+      
+      if (email !== validEmail || password !== validPassword) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid email or password' 
+        });
+      }
+
+      // Create session token (in production, use proper JWT or session management)
+      const sessionToken = Buffer.from(`baker:70c29a5d-72f3-443f-8c39-c2ced5210f05:${Date.now()}`).toString('base64');
+      
+      res.json({
+        success: true,
+        token: sessionToken,
+        baker: {
+          id: '70c29a5d-72f3-443f-8c39-c2ced5210f05',
+          name: 'Sweet Dreams Bakery',
+          email: email
+        }
+      });
+    } catch (error) {
+      console.error('Baker login error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
   // Customer Portal Authentication
   app.post('/api/customer/login', async (req, res) => {
     try {

@@ -230,7 +230,7 @@ export function NavigationHeader() {
 
                     <div className="border-t border-pink-100 pt-4 space-y-3">
                       <Link 
-                        href="/admin" 
+                        href="/baker-login" 
                         className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                         data-testid="mobile-nav-baker-login"
