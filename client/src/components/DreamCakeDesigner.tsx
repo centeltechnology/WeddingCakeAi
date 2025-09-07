@@ -44,10 +44,13 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
     if (config.decorations.goldAccents) decorations.push("gold leaf accents");
     if (config.decorations.customTopper) decorations.push("custom cake topper");
 
-    const complexityLevel = config.tiers >= 3 ? "elaborate multi-tiered" : 
-                           config.tiers === 2 ? "elegant two-tiered" : "single-tier";
+    // Create tier description with exact number
+    const tierNumbers = ['single', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+    const tierDescription = config.tiers === 1 ? 'single-tier' : 
+                           config.tiers <= 8 ? `${tierNumbers[config.tiers - 1]}-tier` : 
+                           `${config.tiers}-tier`;
 
-    return `A stunning professional wedding cake photograph featuring a ${complexityLevel} ${config.shape} cake with ${config.cakeFlavor.replace('-', ' ')} cake and ${config.filling.replace('-', ' ')} filling. ${decorations.length > 0 ? `Beautifully decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Special features: ${config.specialRequests}.` : ''} Shot in a professional photography studio with perfect lighting, white backdrop, photorealistic, high resolution 4K, award-winning food photography, elegant and luxurious presentation, masterpiece quality.`;
+    return `A stunning professional wedding cake photograph featuring a ${tierDescription} ${config.shape} cake with ${config.cakeFlavor.replace('-', ' ')} cake and ${config.filling.replace('-', ' ')} filling. The cake has exactly ${config.tiers} ${config.tiers === 1 ? 'tier' : 'tiers'} stacked vertically from largest at bottom to smallest at top. ${decorations.length > 0 ? `Beautifully decorated with ${decorations.join(', ')}.` : ''} ${config.specialRequests ? `Special features: ${config.specialRequests}.` : ''} Shot in a professional photography studio with perfect lighting, white backdrop, photorealistic, high resolution 4K, award-winning food photography, elegant and luxurious presentation, masterpiece quality.`;
   };
 
   const handleGenerateImage = async () => {
