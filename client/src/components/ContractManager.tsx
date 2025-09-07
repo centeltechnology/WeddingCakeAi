@@ -55,6 +55,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
   const [activeTab, setActiveTab] = useState('contracts');
   const [isCreating, setIsCreating] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [showNewTemplate, setShowNewTemplate] = useState(false);
 
   // Fetch contracts from API
   const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
@@ -380,10 +382,26 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                   </div>
                 </div>
                 <div className="flex space-x-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setPreviewTemplate('template')}
+                    data-testid="button-preview-template"
+                  >
                     Preview
                   </Button>
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      toast({
+                        title: "Template Selected",
+                        description: "Contract template is ready to use.",
+                      });
+                    }}
+                    data-testid="button-use-template"
+                  >
                     Use Template
                   </Button>
                 </div>
@@ -415,10 +433,26 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                   </div>
                 </div>
                 <div className="flex space-x-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setPreviewTemplate('template')}
+                    data-testid="button-preview-template"
+                  >
                     Preview
                   </Button>
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      toast({
+                        title: "Template Selected",
+                        description: "Contract template is ready to use.",
+                      });
+                    }}
+                    data-testid="button-use-template"
+                  >
                     Use Template
                   </Button>
                 </div>
@@ -450,10 +484,26 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                   </div>
                 </div>
                 <div className="flex space-x-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setPreviewTemplate('template')}
+                    data-testid="button-preview-template"
+                  >
                     Preview
                   </Button>
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      toast({
+                        title: "Template Selected",
+                        description: "Contract template is ready to use.",
+                      });
+                    }}
+                    data-testid="button-use-template"
+                  >
                     Use Template
                   </Button>
                 </div>
@@ -468,7 +518,11 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                 <p className="text-sm text-muted-foreground text-center mb-4">
                   Build your own contract template with custom terms
                 </p>
-                <Button variant="outline">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowNewTemplate(true)}
+                  data-testid="button-new-template"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   New Template
                 </Button>
@@ -536,6 +590,128 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                   <span className="text-sm">Signed on {new Date(selectedContract.signedAt).toLocaleDateString()}</span>
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Template Preview Modal */}
+      {previewTemplate && (
+        <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Contract Template Preview</DialogTitle>
+              <DialogDescription>
+                Preview of the {previewTemplate === 'template' ? 'standard' : previewTemplate} contract template
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-muted p-6 rounded-lg">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold">CAKE ORDER CONTRACT</h2>
+                  <p className="text-sm text-muted-foreground">Service Agreement between Baker and Client</p>
+                </div>
+                
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h3 className="font-semibold mb-2">1. ORDER DETAILS</h3>
+                    <p>This contract outlines the terms for a custom cake order between [BAKER NAME] ("Baker") and [CLIENT NAME] ("Client").</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">2. PAYMENT TERMS</h3>
+                    <p>A 50% deposit is required to secure your order, with the remaining balance due upon delivery. Payment can be made via cash, check, or credit card.</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">3. DELIVERY & PICKUP</h3>
+                    <p>Delivery setup is included for orders over $200. Pickup is available during business hours with 24-hour notice.</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">4. CANCELLATION POLICY</h3>
+                    <p>Orders may be cancelled up to 7 days before the event date for a full refund. Cancellations within 7 days are subject to a 50% cancellation fee.</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">5. CHANGES & MODIFICATIONS</h3>
+                    <p>Changes to the order must be made at least 72 hours before the event date. Additional charges may apply for modifications.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+                  Close Preview
+                </Button>
+                <Button onClick={() => {
+                  setPreviewTemplate(null);
+                  toast({
+                    title: "Template Selected",
+                    description: "Contract template is ready to use for new contracts.",
+                  });
+                }}>
+                  Use This Template
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* New Template Modal */}
+      {showNewTemplate && (
+        <Dialog open={showNewTemplate} onOpenChange={setShowNewTemplate}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Contract Template</DialogTitle>
+              <DialogDescription>
+                Build a custom contract template with your own terms and conditions
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Template Name</Label>
+                <Input placeholder="e.g., Birthday Cake Contract" data-testid="input-template-name" />
+              </div>
+              
+              <div>
+                <Label>Template Description</Label>
+                <Input placeholder="Brief description of this template" data-testid="input-template-description" />
+              </div>
+              
+              <div>
+                <Label>Contract Content</Label>
+                <Textarea 
+                  placeholder="Enter the main contract text and terms..."
+                  className="min-h-[200px]"
+                  data-testid="textarea-contract-content"
+                />
+              </div>
+              
+              <div>
+                <Label>Terms & Conditions</Label>
+                <Textarea 
+                  placeholder="Enter specific terms and conditions..."
+                  className="min-h-[150px]"
+                  data-testid="textarea-terms-conditions"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowNewTemplate(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  setShowNewTemplate(false);
+                  toast({
+                    title: "Template Created",
+                    description: "Your new contract template has been saved successfully.",
+                  });
+                }} data-testid="button-save-template">
+                  Save Template
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

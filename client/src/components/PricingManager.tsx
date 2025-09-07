@@ -153,12 +153,23 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
   // Fetch current pricing configuration
   const { data: existingPricing, isLoading } = useQuery<BakerPricingConfig>({
     queryKey: [`/api/bakers/${bakerId}/pricing`],
-    onSuccess: (data) => {
-      if (data) {
-        setPricing(data);
-      }
-    }
+    queryFn: async () => {
+      const response = await fetch(`/api/bakers/${bakerId}/pricing`);
+      if (!response.ok) throw new Error('Failed to fetch pricing');
+      return response.json();
+    },
+    enabled: !!bakerId
   });
+
+  // Update pricing when data is loaded
+  useEffect(() => {
+    if (existingPricing) {
+      setPricing({
+        ...existingPricing,
+        shapes: existingPricing.shapes || DEFAULT_SHAPES // Ensure shapes are available
+      });
+    }
+  }, [existingPricing]);
 
   // Save pricing configuration
   const savePricingMutation = useMutation({
@@ -171,7 +182,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
         description: "Your pricing configuration has been saved successfully.",
       });
       setHasChanges(false);
-      queryClient.invalidateQueries([`/api/bakers/${bakerId}/pricing`]);
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/pricing`] });
     },
     onError: () => {
       toast({
