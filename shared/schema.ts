@@ -143,7 +143,7 @@ export const bakers = pgTable("bakers", {
   specialties: text("specialties").array(),
   description: text("description"),
   portfolio: text("portfolio").array(),
-  subscriptionPlan: text("subscription_plan").default('free'), // free, pro, plus
+  subscriptionPlan: text("subscription_plan").default('starter'), // starter, professional, enterprise
   isActive: boolean("is_active").default(true),
   // Domain configuration fields
   subdomain: varchar("subdomain"),
@@ -155,6 +155,7 @@ export const bakers = pgTable("bakers", {
   stripeAccountType: varchar("stripe_account_type").default('express'), // express, standard
   // Billing-related fields for self-service billing
   stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
   subscriptionStatus: varchar("subscription_status").default('active'), // active, trialing, past_due, cancelled
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),

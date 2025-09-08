@@ -513,7 +513,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       };
       
-      const baker = await storage.createBaker(bakerWithHashedPassword);
+      // Create Stripe customer for all bakers
+      const customer = await stripe.customers.create({
+        email: bakerData.email,
+        name: bakerData.name,
+        metadata: { 
+          bakerEmail: bakerData.email,
+          plan: bakerData.subscriptionPlan || 'starter'
+        }
+      });
+
+      // Add Stripe customer ID to baker data
+      const bakerWithStripe = {
+        ...bakerWithHashedPassword,
+        stripeCustomerId: customer.id,
+        subscriptionStatus: 'active'
+      };
+
+      // Create Stripe subscription for paid plans with 14-day trial
+      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter') {
+        const priceIds = {
+          professional: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
+          enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE
+        };
+
+        const priceId = priceIds[bakerData.subscriptionPlan as keyof typeof priceIds];
+        if (priceId) {
+          try {
+            const subscription = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{ price: priceId }],
+              trial_period_days: 14,
+              metadata: {
+                bakerId: bakerData.email, // Use email as temporary ID since we don't have baker.id yet
+                plan: bakerData.subscriptionPlan
+              }
+            });
+
+            bakerWithStripe.stripeSubscriptionId = subscription.id;
+            bakerWithStripe.subscriptionStatus = 'trialing';
+            bakerWithStripe.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+          } catch (stripeError) {
+            console.error('Error creating Stripe subscription:', stripeError);
+            // Continue with account creation even if subscription fails
+          }
+        }
+      }
+      
+      const baker = await storage.createBaker(bakerWithStripe);
       
       // Also create a baker profile
       await storage.createBakerProfile({
@@ -2840,48 +2887,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const plans = [
         {
-          id: 'free',
-          name: 'Free',
+          id: 'starter',
+          name: 'Starter (Free)',
           price: 0,
           interval: 'month',
           features: [
-            'Basic profile listing',
-            '3 leads per month',
-            'Standard placement in search',
-            'Basic contact information'
+            'Basic CRM (up to 50 customers)',
+            '10 quotes per month',
+            'Basic templates',
+            'Email support',
+            'Standard branding'
           ]
         },
         {
-          id: 'pro',
-          name: 'Pro',
+          id: 'professional',
+          name: 'Professional',
           price: 79,
           interval: 'month',
           recommended: true,
-          stripePriceId: process.env.STRIPE_PRO_PRICE_ID,
+          stripePriceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
           features: [
-            'Full profile with photos',
-            'Unlimited leads',
-            'Priority placement in search',
-            'Portfolio & reviews',
-            'Advanced analytics',
-            'Customer messaging'
+            'Unlimited customers & quotes',
+            'Advanced CRM & pipeline tracking',
+            'Contract management & e-signatures',
+            'Payment processing & deposits',
+            'Custom branding & subdomain',
+            'Priority support',
+            'Analytics dashboard'
           ]
         },
         {
-          id: 'plus',
-          name: 'Plus',
+          id: 'enterprise',
+          name: 'Enterprise',
           price: 149,
           interval: 'month',
-          stripePriceId: process.env.STRIPE_PLUS_PRICE_ID,
+          stripePriceId: process.env.STRIPE_PRICE_ID_ENTERPRISE,
           features: [
-            'Everything in Pro',
-            'Boosted placement (top 3)',
-            'Lead concierge service',
-            'Calendar booking integration',
+            'Everything in Professional',
+            'Multi-location support',
+            'Team collaboration tools',
+            'Advanced analytics & reporting',
+            'White-label customization',
+            'Custom domain support',
             'Dedicated account manager',
-            'Custom branding options',
-            'Priority customer support',
-            'Advanced reporting suite'
+            'Phone support'
           ]
         }
       ];
@@ -2904,7 +2953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle downgrade to free plan
-      if (planId === 'free') {
+      if (planId === 'starter') {
         await storage.updateBaker(bakerId, {
           subscriptionPlan: 'free',
           subscriptionStatus: 'active',
@@ -2916,8 +2965,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle upgrade/change to paid plan
       const plans = {
-        pro: { priceId: process.env.STRIPE_PRO_PRICE_ID || 'price_1S4uJTGkNbK3EWafOW8B5406', price: 79 },
-        plus: { priceId: process.env.STRIPE_PLUS_PRICE_ID || 'price_1S4uKUGkNbK3EWafpsyXvjPA', price: 149 }
+        professional: { priceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL, price: 79 },
+        enterprise: { priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE, price: 149 }
       };
 
       const selectedPlan = plans[planId as keyof typeof plans];
