@@ -449,6 +449,75 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
     },
   });
 
+  // Quick Action Mutations
+  const quickSuspendMutation = useMutation({
+    mutationFn: async (tenantId: string) => {
+      const response = await apiRequest('POST', '/api/super-admin/quick-actions/tenant/suspend', { tenantId });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      toast({
+        title: "Success",
+        description: "Tenant suspended successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to suspend tenant",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const quickActivateMutation = useMutation({
+    mutationFn: async (tenantId: string) => {
+      const response = await apiRequest('POST', '/api/super-admin/quick-actions/tenant/activate', { tenantId });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      toast({
+        title: "Success", 
+        description: "Tenant activated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to activate tenant",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const exportDataMutation = useMutation({
+    mutationFn: async (exportConfig: { exportType: string; format: string }) => {
+      const response = await apiRequest('POST', '/api/super-admin/data-export', exportConfig);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Export Started",
+        description: `Data export job created. Job ID: ${data.id}`,
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/data-exports'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start data export",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateTenantMutation = useMutation({
     mutationFn: async ({ tenantId, updates }: { tenantId: string; updates: Partial<TenantSummary> }) => {
       const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}`, updates);
@@ -571,6 +640,66 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
       variant: "default",
     });
     // In a real app, this would open an add tenant modal
+  };
+
+  // Quick Action Handlers
+  const handleQuickSuspendTenant = () => {
+    if (tenants && tenants.length > 0) {
+      const activeTenant = tenants.find((t: any) => t.status === 'active');
+      if (activeTenant) {
+        quickSuspendMutation.mutate(activeTenant.id);
+      } else {
+        toast({
+          title: "No Active Tenants",
+          description: "There are no active tenants to suspend.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "No Tenants Found",
+        description: "There are no tenants available.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQuickActivateTenant = () => {
+    if (tenants && tenants.length > 0) {
+      const suspendedTenant = tenants.find((t: any) => t.status === 'suspended');
+      if (suspendedTenant) {
+        quickActivateMutation.mutate(suspendedTenant.id);
+      } else {
+        toast({
+          title: "No Suspended Tenants",
+          description: "There are no suspended tenants to activate.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "No Tenants Found",
+        description: "There are no tenants available.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendAnnouncement = () => {
+    toast({
+      title: "Announcement Feature",
+      description: "System announcement feature will be available in the Announcements tab.",
+      variant: "default",
+    });
+    // This would normally open a modal to create announcements
+  };
+
+  const handleExportData = () => {
+    const exportConfig = {
+      exportType: 'platform_data',
+      format: 'csv'
+    };
+    exportDataMutation.mutate(exportConfig);
   };
 
   if (statsLoading) {
@@ -787,21 +916,44 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-create-tenant">
-                        <Building2 className="h-4 w-4 mr-2" />
-                        Create New Tenant
+                      <Button 
+                        className="w-full justify-start" 
+                        variant="outline" 
+                        onClick={handleQuickSuspendTenant}
+                        disabled={quickSuspendMutation.isPending}
+                        data-testid="button-quick-suspend-tenant"
+                      >
+                        <Lock className="h-4 w-4 mr-2" />
+                        {quickSuspendMutation.isPending ? 'Suspending...' : 'Quick Suspend Tenant'}
                       </Button>
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-send-announcement">
+                      <Button 
+                        className="w-full justify-start" 
+                        variant="outline"
+                        onClick={handleQuickActivateTenant}
+                        disabled={quickActivateMutation.isPending}
+                        data-testid="button-quick-activate-tenant"
+                      >
+                        <Unlock className="h-4 w-4 mr-2" />
+                        {quickActivateMutation.isPending ? 'Activating...' : 'Quick Activate Tenant'}
+                      </Button>
+                      <Button 
+                        className="w-full justify-start" 
+                        variant="outline"
+                        onClick={handleSendAnnouncement}
+                        data-testid="button-send-announcement"
+                      >
                         <Bell className="h-4 w-4 mr-2" />
                         Send Platform Announcement
                       </Button>
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-export-data">
+                      <Button 
+                        className="w-full justify-start" 
+                        variant="outline"
+                        onClick={handleExportData}
+                        disabled={exportDataMutation.isPending}
+                        data-testid="button-export-data"
+                      >
                         <Database className="h-4 w-4 mr-2" />
-                        Export Platform Data
-                      </Button>
-                      <Button className="w-full justify-start" variant="outline" data-testid="button-system-maintenance">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Schedule Maintenance
+                        {exportDataMutation.isPending ? 'Exporting...' : 'Export Platform Data'}
                       </Button>
                     </div>
                   </CardContent>
