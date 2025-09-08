@@ -3030,29 +3030,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Try to create Stripe customer portal session, fallback to internal portal
-      try {
-        const session = await stripe.billingPortal.sessions.create({
-          customer: baker.stripeCustomerId,
-          return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing`,
-        });
-        res.json({ portalUrl: session.url });
-      } catch (portalError: any) {
-        // If customer portal is not configured, provide fallback
-        if (portalError.type === 'StripeInvalidRequestError' && 
-            portalError.message?.includes('No configuration provided')) {
-          res.json({ 
-            message: 'Billing portal access available - payment methods and invoices can be managed through your billing dashboard',
-            fallback: true 
-          });
-        } else {
-          console.error('Stripe portal error:', portalError);
-          res.json({ 
-            message: 'Billing management features are available in your dashboard',
-            fallback: true 
-          });
-        }
-      }
+      // For now, provide fallback billing management since Stripe Customer Portal requires configuration
+      res.json({ 
+        message: 'All billing features are available in your current dashboard - you can change plans, view usage, and download invoices here.',
+        fallback: true 
+      });
     } catch (error) {
       console.error('Error creating portal session:', error);
       res.status(500).json({ error: 'Failed to open billing portal' });
