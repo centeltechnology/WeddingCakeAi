@@ -74,6 +74,103 @@ function calculateTrialStatus(baker: any) {
   };
 }
 
+// Feature access control middleware
+async function checkFeatureAccess(req: any, res: any, next: any, feature: string) {
+  try {
+    const bakerId = req.params.bakerId || req.body.bakerId;
+    if (!bakerId) {
+      return res.status(400).json({ error: 'Baker ID required' });
+    }
+
+    const baker = await storage.getBaker(bakerId);
+    if (!baker) {
+      return res.status(404).json({ error: 'Baker not found' });
+    }
+
+    const plan = baker.subscriptionPlan || 'starter';
+    const hasAccess = checkPlanFeatureAccess(plan, feature, baker);
+
+    if (!hasAccess.allowed) {
+      return res.status(403).json({
+        error: 'Feature not available',
+        code: 'UPGRADE_REQUIRED',
+        message: hasAccess.message,
+        requiredPlan: hasAccess.requiredPlan,
+        currentPlan: plan
+      });
+    }
+
+    req.baker = baker;
+    next();
+  } catch (error) {
+    console.error('Feature access check error:', error);
+    res.status(500).json({ error: 'Access check failed' });
+  }
+}
+
+// Check if a plan has access to a specific feature
+function checkPlanFeatureAccess(plan: string, feature: string, baker: any) {
+  const now = new Date();
+  const isTrialExpired = baker.subscriptionStatus === 'trialing' && 
+    baker.currentPeriodEnd && new Date(baker.currentPeriodEnd) < now;
+
+  // If trial expired, only allow basic features
+  if (isTrialExpired) {
+    const basicFeatures = ['portfolio_view', 'profile_view', 'calculator_basic'];
+    if (!basicFeatures.includes(feature)) {
+      return {
+        allowed: false,
+        message: 'Your trial has expired. Upgrade to continue using premium features.',
+        requiredPlan: 'starter'
+      };
+    }
+  }
+
+  switch (feature) {
+    case 'unlimited_leads':
+      return plan !== 'starter' ? 
+        { allowed: true } : 
+        { allowed: false, message: 'Upgrade to Professional for unlimited leads', requiredPlan: 'professional' };
+        
+    case 'advanced_analytics':
+      return plan === 'enterprise' ? 
+        { allowed: true } : 
+        { allowed: false, message: 'Advanced analytics available in Enterprise plan', requiredPlan: 'enterprise' };
+        
+    case 'custom_branding':
+      return plan !== 'starter' ? 
+        { allowed: true } : 
+        { allowed: false, message: 'Custom branding available in Professional and Enterprise plans', requiredPlan: 'professional' };
+        
+    case 'api_access':
+      return plan === 'enterprise' ? 
+        { allowed: true } : 
+        { allowed: false, message: 'API access available in Enterprise plan only', requiredPlan: 'enterprise' };
+        
+    case 'portfolio_management':
+      // Check portfolio limits for starter plan
+      if (plan === 'starter') {
+        const currentCount = (baker.portfolio || []).length;
+        if (currentCount >= 5) {
+          return { allowed: false, message: 'Starter plan allows up to 5 portfolio images. Upgrade to Professional for unlimited.', requiredPlan: 'professional' };
+        }
+      }
+      return { allowed: true };
+
+    case 'lead_creation':
+      // Basic lead creation allowed for all plans, but with limits
+      return { allowed: true };
+
+    case 'portfolio_unlimited':
+      return plan !== 'starter' ? 
+        { allowed: true } : 
+        { allowed: false, message: 'Unlimited portfolio images available in Professional and Enterprise plans', requiredPlan: 'professional' };
+
+    default:
+      return { allowed: true }; // Allow access to basic features by default
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve PWA manifest
   app.get('/manifest.json', (req, res) => {
@@ -685,7 +782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Portfolio management routes
-  app.post("/api/bakers/:id/portfolio", async (req, res) => {
+  app.post("/api/bakers/:id/portfolio", (req, res, next) => checkFeatureAccess(req, res, next, 'portfolio_management'), async (req, res) => {
     try {
       const { portfolioImageURL } = req.body;
       if (!portfolioImageURL) {
@@ -738,7 +835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lead management routes
-  app.post("/api/leads", async (req, res) => {
+  app.post("/api/leads", (req, res, next) => checkFeatureAccess(req, res, next, 'lead_creation'), async (req, res) => {
     try {
       const leadData = insertLeadSchema.parse(req.body);
       const lead = await storage.createLead(leadData);
@@ -1182,7 +1279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get("/api/bakers/:bakerId/analytics", async (req, res) => {
+  app.get("/api/bakers/:bakerId/analytics", (req, res, next) => checkFeatureAccess(req, res, next, 'advanced_analytics'), async (req, res) => {
     try {
       const { startDate, endDate, metric } = req.query;
       

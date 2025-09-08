@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Image as ImageIcon, X, Eye } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useUpgradePrompt } from '@/hooks/useUpgradePrompt';
+import { parseSubscriptionError } from '@/lib/subscriptionUtils';
 import type { UploadResult } from "@uppy/core";
 import type { Baker } from "@shared/schema";
 
@@ -16,6 +18,7 @@ interface PortfolioUploaderProps {
 export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { showUpgradePrompt, UpgradePromptComponent } = useUpgradePrompt();
 
   const { data: baker, isLoading } = useQuery<Baker>({
     queryKey: ['/api/bakers', bakerId],
@@ -43,7 +46,21 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
         description: "Your portfolio image has been added successfully!",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Portfolio upload error:', error);
+      
+      // Check if it's a subscription error
+      const subscriptionError = parseSubscriptionError(error);
+      if (subscriptionError) {
+        showUpgradePrompt(
+          error, 
+          'portfolio_management', 
+          'Portfolio Limit Reached'
+        );
+        return;
+      }
+
+      // Show generic error for other failures
       toast({
         title: "Upload Failed",
         description: "Failed to update portfolio. Please try again.",
@@ -109,6 +126,8 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   return (
     <div className="space-y-6">
+      {/* Upgrade Prompt */}
+      <UpgradePromptComponent />
       <Card className="border-0 shadow-xl bg-gradient-to-br from-gray-100 to-gray-200">
         <CardHeader>
           <div className="flex items-center justify-between">
