@@ -24,6 +24,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   getUsersWithRole(role: string): Promise<User[]>;
 
   // Baker operations
@@ -323,6 +324,14 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...updates };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const existing = this.users.get(id);
+    if (!existing) {
+      throw new Error("User not found");
+    }
+    this.users.delete(id);
   }
 
   async getUsersWithRole(role: string): Promise<User[]> {

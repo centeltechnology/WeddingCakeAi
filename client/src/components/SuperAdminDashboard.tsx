@@ -166,10 +166,10 @@ function EditUserModal({
   onClose,
   onSave 
 }: {
-  user: UserSummary | null;
+  user: PlatformUser | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updates: Partial<UserSummary>) => void;
+  onSave: (updates: Partial<PlatformUser>) => void;
 }) {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -354,7 +354,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingTenant, setEditingTenant] = useState<TenantSummary | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserSummary | null>(null);
+  const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
   const [showUserEditModal, setShowUserEditModal] = useState(false);
 
   // Fetch platform statistics
@@ -378,8 +378,31 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   });
 
   // User mutations
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('DELETE', `/api/super-admin/users/${userId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: Partial<UserSummary> }) => {
+    mutationFn: async ({ userId, updates }: { userId: string; updates: Partial<PlatformUser> }) => {
       const response = await apiRequest('PATCH', `/api/super-admin/users/${userId}`, updates);
       return response;
     },
@@ -523,18 +546,22 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   };
 
   // User action handlers
-  const handleEditUser = (user: UserSummary) => {
+  const handleEditUser = (user: PlatformUser) => {
     setEditingUser(user);
     setShowUserEditModal(true);
   };
 
-  const handleSaveUser = (updates: Partial<UserSummary>) => {
+  const handleSaveUser = (updates: Partial<PlatformUser>) => {
     if (editingUser) {
       updateUserMutation.mutate({
         userId: editingUser.id,
         updates
       });
     }
+  };
+
+  const handleDeleteUser = (user: PlatformUser) => {
+    deleteUserMutation.mutate(user.id);
   };
 
   const handleAddTenant = () => {
@@ -976,6 +1003,18 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            {user.role !== 'super_admin' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={deleteUserMutation.isPending}
+                                data-testid={`button-delete-user-${user.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}

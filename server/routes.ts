@@ -1753,22 +1753,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Super Admin API Routes (deprecated - use protected versions)
-  app.get('/api/super-admin/stats', async (req, res) => {
-    res.status(401).json({ error: 'Authentication required. Use protected endpoint.' });
-  });
-
-  app.get('/api/super-admin/tenants', async (req, res) => {
-    res.status(401).json({ error: 'Authentication required. Use protected endpoint.' });
-  });
-
-  app.get('/api/super-admin/users', async (req, res) => {
-    res.status(401).json({ error: 'Authentication required. Use protected endpoint.' });
-  });
-
-  app.get('/api/super-admin/system-metrics', async (req, res) => {
-    res.status(401).json({ error: 'Authentication required. Use protected endpoint.' });
-  });
 
   // Baker Pricing Configuration API
   app.get('/api/bakers/:bakerId/pricing', async (req, res) => {
@@ -2913,6 +2897,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: 'Internal server error' 
       });
+    }
+  });
+
+  // Delete user (Super Admin only)
+  app.delete('/api/super-admin/users/:userId', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+
+      // Prevent deletion of super admin users
+      if (user.role === 'super_admin') {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Cannot delete super admin users' 
+        });
+      }
+
+      await storage.deleteUser(userId);
+
+      res.json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to delete user' 
+      });
+    }
+  });
+
+  // Get all users (Super Admin only)
+  app.get('/api/super-admin/users', verifySuperAdminToken, async (req, res) => {
+    try {
+      // Get all users regardless of role
+      const allUsers = await storage.getUsersWithRole('');
+      
+      // Format user data for super admin view
+      const users = allUsers.map(user => ({
+        id: user.id,
+        name: user.username || user.email || 'Unknown',
+        email: user.email,
+        role: user.role || 'user',
+        status: user.isActive ? 'active' : 'suspended',
+        lastLogin: user.lastLoginAt?.toISOString() || null,
+        createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        tenantId: 'default', // For multi-tenant support later
+        tenantName: 'Default'
+      }));
+      
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
     }
   });
 
