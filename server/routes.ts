@@ -2963,6 +2963,441 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Change super admin password
+  // Enhanced Super Admin Features - Quick Actions
+  app.post('/api/super-admin/quick-actions/tenant/suspend', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { tenantId } = req.body;
+      if (!tenantId) {
+        return res.status(400).json({ message: 'Tenant ID is required' });
+      }
+
+      const tenant = await storage.updateTenant(tenantId, { status: 'suspended' });
+      
+      // Log the action
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'tenant_suspended',
+        resourceType: 'tenant',
+        resourceId: tenantId,
+        metadata: { tenantName: tenant.name },
+        ipAddress: req.ip
+      });
+
+      res.json({ success: true, tenant });
+    } catch (error) {
+      console.error('Error suspending tenant:', error);
+      res.status(500).json({ message: 'Failed to suspend tenant' });
+    }
+  });
+
+  app.post('/api/super-admin/quick-actions/tenant/activate', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { tenantId } = req.body;
+      const tenant = await storage.updateTenant(tenantId, { status: 'active' });
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'tenant_activated',
+        resourceType: 'tenant',
+        resourceId: tenantId,
+        metadata: { tenantName: tenant.name },
+        ipAddress: req.ip
+      });
+
+      res.json({ success: true, tenant });
+    } catch (error) {
+      console.error('Error activating tenant:', error);
+      res.status(500).json({ message: 'Failed to activate tenant' });
+    }
+  });
+
+  app.post('/api/super-admin/quick-actions/user/toggle-status', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { isActive: !user.isActive });
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: user.isActive ? 'user_deactivated' : 'user_activated',
+        resourceType: 'user',
+        resourceId: userId,
+        metadata: { username: user.username },
+        ipAddress: req.ip
+      });
+
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      res.status(500).json({ message: 'Failed to toggle user status' });
+    }
+  });
+
+  app.post('/api/super-admin/quick-actions/user/reset-password', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+
+      await storage.updateUser(userId, { password: hashedPassword });
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'password_reset',
+        resourceType: 'user',
+        resourceId: userId,
+        metadata: { resetBy: 'super_admin' },
+        ipAddress: req.ip
+      });
+
+      res.json({ success: true, tempPassword });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
+  // Audit & Activity Logs
+  app.get('/api/super-admin/audit-logs', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { page = 1, limit = 50, userId, action } = req.query;
+      const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+      
+      let logs;
+      if (userId) {
+        logs = await storage.getAuditLogsByUser(userId as string);
+        logs = logs.slice(offset, offset + parseInt(limit as string));
+      } else {
+        logs = await storage.getAuditLogs(parseInt(limit as string), offset);
+      }
+      
+      if (action) {
+        logs = logs.filter(log => log.action === action);
+      }
+
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+      res.status(500).json({ message: 'Failed to fetch audit logs' });
+    }
+  });
+
+  // System Health Dashboard
+  app.get('/api/super-admin/system-health', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const metrics = await storage.getLatestSystemHealthMetrics();
+      const systemStatus = {
+        status: 'healthy',
+        uptime: process.uptime(),
+        memoryUsage: process.memoryUsage(),
+        timestamp: new Date()
+      };
+      
+      res.json({ systemStatus, metrics });
+    } catch (error) {
+      console.error('Error fetching system health:', error);
+      res.status(500).json({ message: 'Failed to fetch system health data' });
+    }
+  });
+
+  app.get('/api/super-admin/system-metrics', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const metrics = await storage.getLatestSystemHealthMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching system metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch system metrics' });
+    }
+  });
+
+  app.post('/api/super-admin/system-health/metric', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { metricName, value, unit, metadata } = req.body;
+      
+      const metric = await storage.createSystemHealthMetric({
+        metricName,
+        value: parseFloat(value),
+        unit: unit || '',
+        status: value > 90 ? 'critical' : value > 70 ? 'warning' : 'healthy',
+        metadata: metadata || {}
+      });
+      
+      res.json(metric);
+    } catch (error) {
+      console.error('Error creating health metric:', error);
+      res.status(500).json({ message: 'Failed to create health metric' });
+    }
+  });
+
+  // Data Export & Analytics
+  app.post('/api/super-admin/data-export', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { exportType, format, dateRange, filters } = req.body;
+      
+      const job = await storage.createDataExportJob({
+        requestedById: req.user.userId,
+        exportType,
+        format: format || 'csv',
+        status: 'pending',
+        parameters: {
+          dateRange: dateRange || {},
+          filters: filters || {}
+        },
+        progress: 0
+      });
+      
+      // Simulate export processing
+      setTimeout(async () => {
+        try {
+          await storage.updateDataExportJob(job.id, {
+            status: 'processing',
+            progress: 50
+          });
+          
+          setTimeout(async () => {
+            await storage.updateDataExportJob(job.id, {
+              status: 'completed',
+              progress: 100,
+              downloadUrl: `/exports/${job.id}.${format}`,
+              fileSize: Math.floor(Math.random() * 1000000)
+            });
+          }, 3000);
+        } catch (error) {
+          await storage.updateDataExportJob(job.id, {
+            status: 'failed',
+            error: 'Processing failed'
+          });
+        }
+      }, 1000);
+      
+      res.json(job);
+    } catch (error) {
+      console.error('Error creating export job:', error);
+      res.status(500).json({ message: 'Failed to create export job' });
+    }
+  });
+
+  app.get('/api/super-admin/data-exports', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { userId } = req.query;
+      const jobs = await storage.getDataExportJobs(userId as string);
+      res.json(jobs);
+    } catch (error) {
+      console.error('Error fetching export jobs:', error);
+      res.status(500).json({ message: 'Failed to fetch export jobs' });
+    }
+  });
+
+  // Communication Tools - System Announcements
+  app.get('/api/super-admin/announcements', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { active } = req.query;
+      const isActive = active === 'true' ? true : active === 'false' ? false : undefined;
+      const announcements = await storage.getSystemAnnouncements(isActive);
+      res.json(announcements);
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      res.status(500).json({ message: 'Failed to fetch announcements' });
+    }
+  });
+
+  app.post('/api/super-admin/announcements', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { title, message, type, priority, targetAudience, expiresAt } = req.body;
+      
+      const announcement = await storage.createSystemAnnouncement({
+        title,
+        message,
+        type: type || 'info',
+        priority: priority || 'normal',
+        targetAudience: targetAudience || 'all',
+        isActive: true,
+        createdById: req.user.userId,
+        expiresAt: expiresAt ? new Date(expiresAt) : null
+      });
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'announcement_created',
+        resourceType: 'announcement',
+        resourceId: announcement.id,
+        metadata: { title, type },
+        ipAddress: req.ip
+      });
+      
+      res.json(announcement);
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      res.status(500).json({ message: 'Failed to create announcement' });
+    }
+  });
+
+  app.put('/api/super-admin/announcements/:id', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const announcement = await storage.updateSystemAnnouncement(id, updates);
+      if (!announcement) {
+        return res.status(404).json({ message: 'Announcement not found' });
+      }
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'announcement_updated',
+        resourceType: 'announcement',
+        resourceId: id,
+        metadata: updates,
+        ipAddress: req.ip
+      });
+      
+      res.json(announcement);
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      res.status(500).json({ message: 'Failed to update announcement' });
+    }
+  });
+
+  app.delete('/api/super-admin/announcements/:id', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteSystemAnnouncement(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Announcement not found' });
+      }
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'announcement_deleted',
+        resourceType: 'announcement',
+        resourceId: id,
+        metadata: {},
+        ipAddress: req.ip
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      res.status(500).json({ message: 'Failed to delete announcement' });
+    }
+  });
+
+  // Maintenance Schedule
+  app.get('/api/super-admin/maintenance', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const schedules = await storage.getMaintenanceSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error('Error fetching maintenance schedules:', error);
+      res.status(500).json({ message: 'Failed to fetch maintenance schedules' });
+    }
+  });
+
+  app.post('/api/super-admin/maintenance', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { title, description, type, scheduledStart, scheduledEnd, affectedServices, notifyUsers } = req.body;
+      
+      const schedule = await storage.createMaintenanceSchedule({
+        title,
+        description,
+        type,
+        status: 'scheduled',
+        scheduledStart: new Date(scheduledStart),
+        scheduledEnd: new Date(scheduledEnd),
+        affectedServices: affectedServices || [],
+        notifyUsers: notifyUsers ?? true,
+        createdById: req.user.userId
+      });
+      
+      await storage.createAuditLog({
+        userId: req.user.userId,
+        action: 'maintenance_scheduled',
+        resourceType: 'maintenance',
+        resourceId: schedule.id,
+        metadata: { title, type, scheduledStart },
+        ipAddress: req.ip
+      });
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error('Error creating maintenance schedule:', error);
+      res.status(500).json({ message: 'Failed to create maintenance schedule' });
+    }
+  });
+
+  app.put('/api/super-admin/maintenance/:id', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const schedule = await storage.updateMaintenanceSchedule(id, updates);
+      if (!schedule) {
+        return res.status(404).json({ message: 'Maintenance schedule not found' });
+      }
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error('Error updating maintenance schedule:', error);
+      res.status(500).json({ message: 'Failed to update maintenance schedule' });
+    }
+  });
+
+  // Advanced User Management - Bulk Actions
+  app.post('/api/super-admin/users/bulk-action', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { userIds, action, data } = req.body;
+      const results = [];
+      
+      for (const userId of userIds) {
+        try {
+          let result;
+          switch (action) {
+            case 'activate':
+              result = await storage.updateUser(userId, { isActive: true });
+              break;
+            case 'deactivate':
+              result = await storage.updateUser(userId, { isActive: false });
+              break;
+            case 'change_role':
+              result = await storage.updateUser(userId, { role: data.role });
+              break;
+            case 'reset_password':
+              const tempPassword = Math.random().toString(36).slice(-8);
+              const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+              result = await storage.updateUser(userId, { password: hashedPassword });
+              result.tempPassword = tempPassword;
+              break;
+            default:
+              throw new Error(`Unknown action: ${action}`);
+          }
+          
+          await storage.createAuditLog({
+            userId: req.user.userId,
+            action: `bulk_${action}`,
+            resourceType: 'user',
+            resourceId: userId,
+            metadata: { action, ...data },
+            ipAddress: req.ip
+          });
+          
+          results.push({ userId, success: true, result });
+        } catch (error) {
+          results.push({ userId, success: false, error: error.message });
+        }
+      }
+      
+      res.json({ results });
+    } catch (error) {
+      console.error('Error performing bulk user action:', error);
+      res.status(500).json({ message: 'Failed to perform bulk user action' });
+    }
+  });
+
   app.post('/api/super-admin/change-password', verifySuperAdminToken, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
