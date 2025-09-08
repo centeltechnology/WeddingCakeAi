@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useTenant } from './TenantBrandProvider';
-import { ChefHat, Settings, Home, BarChart3, Sparkles, Star, Info, CreditCard, UserPlus, Menu, X } from 'lucide-react';
+import { ChefHat, Settings, Home, BarChart3, Sparkles, Star, Info, CreditCard, UserPlus, Menu, X, HelpCircle } from 'lucide-react';
 
 export function NavigationHeader() {
   const [location] = useLocation();
@@ -97,6 +97,19 @@ export function NavigationHeader() {
                   <span>Pricing</span>
                 </Link>
               </Button>
+              
+              <Button
+                variant={location === '/help' ? 'default' : 'ghost'}
+                size="sm"
+                asChild
+                className={location === '/help' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                data-testid="nav-support"
+              >
+                <Link href="/help">
+                  <HelpCircle className="h-4 w-4 mr-1" />
+                  <span>Support</span>
+                </Link>
+              </Button>
 
               <Button
                 variant="outline"
@@ -126,18 +139,33 @@ export function NavigationHeader() {
           )}
 
           {tenant ? (
-            <Button
-              variant={location === '/admin' ? 'default' : 'ghost'}
-              size="sm"
-              asChild
-              className={location === '/admin' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
-              data-testid="nav-my-bakery"
-            >
-              <Link href="/admin" className="flex items-center space-x-2">
-                <BarChart3 className="h-4 w-4" />
-                <span>My Bakery</span>
-              </Link>
-            </Button>
+            <>
+              <Button
+                variant={location === '/admin' ? 'default' : 'ghost'}
+                size="sm"
+                asChild
+                className={location === '/admin' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                data-testid="nav-my-bakery"
+              >
+                <Link href="/admin" className="flex items-center space-x-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>My Bakery</span>
+                </Link>
+              </Button>
+              
+              <Button
+                variant={location === '/help' ? 'default' : 'ghost'}
+                size="sm"
+                asChild
+                className={location === '/help' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                data-testid="nav-baker-support"
+              >
+                <Link href="/help" className="flex items-center space-x-2">
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Support</span>
+                </Link>
+              </Button>
+            </>
           ) : (
             <Button
               variant="outline"
@@ -227,6 +255,20 @@ export function NavigationHeader() {
                       <CreditCard className="h-5 w-5" />
                       <span className="font-medium">Pricing</span>
                     </Link>
+                    
+                    <Link 
+                      href="/help" 
+                      className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        location === '/help' 
+                          ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white' 
+                          : 'hover:bg-pink-50 text-gray-700 hover:text-pink-700'
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid="mobile-nav-support"
+                    >
+                      <HelpCircle className="h-5 w-5" />
+                      <span className="font-medium">Support</span>
+                    </Link>
 
                     <div className="border-t border-pink-100 pt-4 space-y-3">
                       <Link 
@@ -266,6 +308,20 @@ export function NavigationHeader() {
                     >
                       <BarChart3 className="h-5 w-5" />
                       <span className="font-medium">My Bakery</span>
+                    </Link>
+                    
+                    <Link 
+                      href="/help" 
+                      className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        location === '/help' 
+                          ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white' 
+                          : 'hover:bg-pink-50 text-gray-700 hover:text-pink-700'
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid="mobile-nav-baker-support"
+                    >
+                      <HelpCircle className="h-5 w-5" />
+                      <span className="font-medium">Support</span>
                     </Link>
                   </>
                 )}

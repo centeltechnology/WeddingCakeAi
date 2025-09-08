@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Search, MessageSquare, FileText, CreditCard, Users, Settings, ChefHat, Calendar } from "lucide-react";
+import { Search, MessageSquare, FileText, CreditCard, Users, Settings, ChefHat, Calendar, TrendingUp } from "lucide-react";
 
 export default function Help() {
   return (
@@ -120,19 +120,41 @@ export default function Help() {
                     </Card>
                   </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Managing Customer Communications</h4>
-                      <p className="text-sm text-gray-600">Best practices for professional customer interactions</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/customer-communications">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Managing Customer Communications</h4>
+                        <p className="text-sm text-gray-600">Best practices for professional customer interactions</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Payment Processing</h4>
-                      <p className="text-sm text-gray-600">Understanding deposits, payments, and billing</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/payment-processing">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Payment Processing</h4>
+                        <p className="text-sm text-gray-600">Understanding deposits, payments, and billing</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  
+                  <Link href="/help/analytics-and-insights">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Analytics & Business Insights</h4>
+                        <p className="text-sm text-gray-600">Understanding your dashboard metrics and growing your business</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  
+                  <Link href="/help/marketing-your-bakery">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Marketing Your Bakery</h4>
+                        <p className="text-sm text-gray-600">Strategies for attracting customers and building your brand</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </div>
               </div>
 
@@ -152,26 +174,147 @@ export default function Help() {
                     </Card>
                   </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Understanding Quotes & Contracts</h4>
-                      <p className="text-sm text-gray-600">What to expect in the ordering process</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/quotes-and-contracts">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Understanding Quotes & Contracts</h4>
+                        <p className="text-sm text-gray-600">What to expect in the ordering process</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Dietary Restrictions & Allergies</h4>
-                      <p className="text-sm text-gray-600">How to communicate special dietary needs</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/dietary-restrictions">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Dietary Restrictions & Allergies</h4>
+                        <p className="text-sm text-gray-600">How to communicate special dietary needs</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                   
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold text-gray-800">Event Planning Tips</h4>
-                      <p className="text-sm text-gray-600">Making your special occasion perfect</p>
-                    </CardContent>
-                  </Card>
+                  <Link href="/help/event-planning-tips">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Event Planning Tips</h4>
+                        <p className="text-sm text-gray-600">Making your special occasion perfect</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  
+                  <Link href="/help/payment-safety">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Payment Safety & Security</h4>
+                        <p className="text-sm text-gray-600">How your payments and data are protected</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  
+                  <Link href="/help/reviews-and-feedback">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-gray-800">Reviews & Feedback</h4>
+                        <p className="text-sm text-gray-600">How to leave reviews and provide feedback</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Help Topics */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-8">Additional Resources</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Platform Features */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Settings className="h-5 w-5 mr-2 text-purple-600" />
+                  Platform Features
+                </h3>
+                <div className="space-y-2">
+                  <Link href="/help/account-setup">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Account Setup & Profile Management
+                    </div>
+                  </Link>
+                  <Link href="/help/subscription-plans">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Subscription Plans & Billing
+                    </div>
+                  </Link>
+                  <Link href="/help/mobile-app">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Mobile App Features
+                    </div>
+                  </Link>
+                  <Link href="/help/notifications">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Notification Settings
+                    </div>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Business Growth */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                  Business Growth
+                </h3>
+                <div className="space-y-2">
+                  <Link href="/help/seo-optimization">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      SEO & Online Visibility
+                    </div>
+                  </Link>
+                  <Link href="/help/social-media">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Social Media Integration
+                    </div>
+                  </Link>
+                  <Link href="/help/customer-retention">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Customer Retention Strategies
+                    </div>
+                  </Link>
+                  <Link href="/help/pricing-strategies">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Pricing & Profitability
+                    </div>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Technical Support */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2 text-blue-600" />
+                  Technical Support
+                </h3>
+                <div className="space-y-2">
+                  <Link href="/help/troubleshooting">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Common Issues & Solutions
+                    </div>
+                  </Link>
+                  <Link href="/help/browser-compatibility">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Browser & Device Compatibility
+                    </div>
+                  </Link>
+                  <Link href="/help/data-privacy">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      Privacy & Data Protection
+                    </div>
+                  </Link>
+                  <Link href="/help/api-integration">
+                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                      API & Third-party Integrations
+                    </div>
+                  </Link>
                 </div>
               </div>
             </div>

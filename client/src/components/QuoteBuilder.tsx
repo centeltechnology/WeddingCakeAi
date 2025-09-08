@@ -172,6 +172,118 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
     }
   };
 
+  // Create default template function
+  const createDefaultTemplate = (type: 'wedding' | 'birthday' | 'corporate' | 'cupcakes') => {
+    const templateData = {
+      bakerId,
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Cake Template`,
+      description: getTemplateDescription(type),
+      basePrice: getTemplateBasePrice(type),
+      pricePerServing: getTemplatePricePerServing(type),
+      minimumOrder: getTemplateMinimumOrder(type),
+      pricingModel: 'per_serving',
+      isActive: true,
+      categoryTags: [type, 'cake'],
+      flavorOptions: getTemplateFlavors(type),
+      sizeOptions: getTemplateSizes(type),
+      decorationOptions: getTemplateDecorations(type)
+    };
+
+    createTemplateMutation.mutate(templateData);
+  };
+
+  const getTemplateDescription = (type: string) => {
+    switch (type) {
+      case 'wedding': return 'Beautiful multi-tier wedding cakes with elegant decorations and premium flavors';
+      case 'birthday': return 'Fun and colorful birthday cakes perfect for any celebration';
+      case 'corporate': return 'Professional cakes for corporate events, meetings, and office celebrations';
+      case 'cupcakes': return 'Delicious cupcakes perfect for parties, events, or individual treats';
+      default: return 'Custom cake template';
+    }
+  };
+
+  const getTemplateBasePrice = (type: string) => {
+    switch (type) {
+      case 'wedding': return '300.00';
+      case 'birthday': return '75.00';
+      case 'corporate': return '150.00';
+      case 'cupcakes': return '36.00';
+      default: return '100.00';
+    }
+  };
+
+  const getTemplatePricePerServing = (type: string) => {
+    switch (type) {
+      case 'wedding': return '8.50';
+      case 'birthday': return '4.50';
+      case 'corporate': return '5.00';
+      case 'cupcakes': return '3.00';
+      default: return '5.00';
+    }
+  };
+
+  const getTemplateMinimumOrder = (type: string) => {
+    switch (type) {
+      case 'wedding': return '300.00';
+      case 'birthday': return '50.00';
+      case 'corporate': return '100.00';
+      case 'cupcakes': return '24.00';
+      default: return '75.00';
+    }
+  };
+
+  const getTemplateFlavors = (type: string) => {
+    const common = ['vanilla', 'chocolate', 'strawberry'];
+    switch (type) {
+      case 'wedding': return [...common, 'red-velvet', 'lemon', 'carrot', 'funfetti'];
+      case 'birthday': return [...common, 'funfetti', 'cookies-and-cream', 'birthday-cake'];
+      case 'corporate': return [...common, 'lemon', 'carrot'];
+      case 'cupcakes': return [...common, 'red-velvet', 'funfetti', 'lemon', 'chocolate-chip'];
+      default: return common;
+    }
+  };
+
+  const getTemplateSizes = (type: string) => {
+    switch (type) {
+      case 'wedding': return ['2-tier', '3-tier', '4-tier', '5-tier'];
+      case 'birthday': return ['6-inch', '8-inch', '10-inch', '12-inch'];
+      case 'corporate': return ['quarter-sheet', 'half-sheet', 'full-sheet'];
+      case 'cupcakes': return ['dozen', '2-dozen', '3-dozen', '4-dozen'];
+      default: return ['6-inch', '8-inch', '10-inch'];
+    }
+  };
+
+  const getTemplateDecorations = (type: string) => {
+    switch (type) {
+      case 'wedding': return ['fresh-flowers', 'buttercream-roses', 'fondant-details', 'gold-accents'];
+      case 'birthday': return ['buttercream-decorations', 'sprinkles', 'themed-toppers', 'writing'];
+      case 'corporate': return ['logo-decoration', 'simple-borders', 'company-colors'];
+      case 'cupcakes': return ['buttercream-swirls', 'sprinkles', 'fondant-toppers', 'themed-decorations'];
+      default: return ['buttercream-decorations', 'simple-borders'];
+    }
+  };
+
+  // Create template mutation
+  const createTemplateMutation = useMutation({
+    mutationFn: async (templateData: any) => {
+      return apiRequest('POST', '/api/quote-templates', templateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/quote-templates'] });
+      toast({
+        title: "Template Created",
+        description: "Your template has been created successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create template. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const generatePDF = (quote: Quote) => {
     const customer = customers.find(c => c.id === quote.customerId);
     const pdf = new jsPDF();
@@ -432,15 +544,24 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                 <p className="text-muted-foreground mb-4">
                   Create reusable templates to speed up your quote process. Start with your most common cake types and pricing.
                 </p>
-                <Button onClick={() => {
-                  toast({
-                    title: "Template Builder",
-                    description: "Template creation feature coming soon! For now, duplicate your best quotes to reuse them.",
-                  });
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button onClick={() => createDefaultTemplate('wedding')} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Wedding Cake Template
+                  </Button>
+                  <Button onClick={() => createDefaultTemplate('birthday')} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Birthday Cake Template
+                  </Button>
+                  <Button onClick={() => createDefaultTemplate('corporate')} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Corporate Event Template
+                  </Button>
+                  <Button onClick={() => createDefaultTemplate('cupcakes')} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Cupcakes Template
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -461,11 +582,11 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                   <CardContent className="space-y-3">
                     <div className="flex items-center text-sm text-muted-foreground">
                       <DollarSign className="h-4 w-4 mr-2" />
-                      ${template.defaultPrice || '0.00'} base price
+                      ${template.basePrice || '0.00'} base price
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Users className="h-4 w-4 mr-2" />
-                      {template.items?.length || 0} line items
+                      {template.tiers?.length || 1} pricing tier{template.tiers?.length !== 1 ? 's' : ''}
                     </div>
                     
                     <div className="flex space-x-2 pt-2">
