@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Check, Palette } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Check, Palette, Eye } from "lucide-react";
 
 export interface CalculatorTheme {
   id: string;
@@ -198,19 +199,117 @@ export default function CalculatorThemeSelector({ selectedTheme, onThemeChange }
                   </div>
                 </div>
 
-                {/* Preview/Select Button */}
-                <Button 
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm" 
-                  className="w-full mt-3"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleThemeSelect(theme.id);
-                  }}
-                  data-testid={`select-theme-${theme.id}`}
-                >
-                  {isSelected ? 'Selected' : isPreviewing ? 'Preview' : 'Select Theme'}
-                </Button>
+                {/* Preview and Select Buttons */}
+                <div className="flex gap-2 mt-3">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        size="sm" 
+                        className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`preview-theme-${theme.id}`}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Preview
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Preview: {theme.name}</DialogTitle>
+                        <DialogDescription>{theme.description}</DialogDescription>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        {/* Large theme preview */}
+                        <div 
+                          className="w-full h-32 rounded-lg border-4 relative overflow-hidden mb-4"
+                          style={{
+                            background: theme.colors.gradient,
+                            borderColor: theme.colors.border
+                          }}
+                        >
+                          <div 
+                            className="absolute inset-4 rounded-lg p-4"
+                            style={{ backgroundColor: theme.colors.card }}
+                          >
+                            <div className="flex items-center gap-2 mb-3">
+                              <div 
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: theme.colors.primary }}
+                              />
+                              <div 
+                                className="w-20 h-3 rounded"
+                                style={{ backgroundColor: theme.colors.secondary }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <div 
+                                className="w-32 h-2 rounded"
+                                style={{ backgroundColor: theme.colors.border }}
+                              />
+                              <div 
+                                className="w-24 h-2 rounded"
+                                style={{ backgroundColor: theme.colors.border }}
+                              />
+                              <div 
+                                className="w-28 h-2 rounded"
+                                style={{ backgroundColor: theme.colors.border }}
+                              />
+                            </div>
+                            <div 
+                              className="absolute bottom-2 right-2 w-12 h-6 rounded text-xs flex items-center justify-center text-white"
+                              style={{ backgroundColor: theme.colors.accent }}
+                            >
+                              Button
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Color palette */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Color Palette</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-8 h-8 rounded-full border"
+                                style={{ backgroundColor: theme.colors.primary }}
+                              />
+                              <span className="text-sm">Primary</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-8 h-8 rounded-full border"
+                                style={{ backgroundColor: theme.colors.accent }}
+                              />
+                              <span className="text-sm">Accent</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-8 h-8 rounded-full border"
+                                style={{ backgroundColor: theme.colors.secondary }}
+                              />
+                              <span className="text-sm">Secondary</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Button 
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm" 
+                    className={`flex-1 ${isSelected ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeSelect(theme.id);
+                    }}
+                    data-testid={`select-theme-${theme.id}`}
+                  >
+                    <Check className="w-3 h-3 mr-1" />
+                    {isSelected ? 'Selected' : 'Select'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );

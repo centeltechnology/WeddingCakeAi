@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +23,8 @@ import {
   CheckCircle,
   Download,
   Eye,
-  LogOut
+  LogOut,
+  PenTool
 } from 'lucide-react';
 import type { Customer, Quote, Transaction } from '@shared/schema';
 
@@ -39,6 +42,7 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
+  const [acceptanceDialog, setAcceptanceDialog] = useState({ open: false, quoteId: '', acknowledged: false, signature: '' });
 
   // Fetch customer profile
   const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
@@ -348,10 +352,110 @@ export default function CustomerPortal({ customerId }: CustomerPortalProps) {
                                 Download PDF
                               </Button>
                               {quote.status === 'sent' && (
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700" data-testid={`button-approve-quote-${quote.id}`}>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Approve Quote
-                                </Button>
+                                <Dialog 
+                                  open={acceptanceDialog.open && acceptanceDialog.quoteId === quote.id} 
+                                  onOpenChange={(open) => {
+                                    if (!open) {
+                                      setAcceptanceDialog({ open: false, quoteId: '', acknowledged: false, signature: '' });
+                                    }
+                                  }}
+                                >
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      className="bg-green-600 hover:bg-green-700" 
+                                      onClick={() => setAcceptanceDialog({ open: true, quoteId: quote.id, acknowledged: false, signature: '' })}
+                                      data-testid={`button-accept-quote-${quote.id}`}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Accept Quote
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle>Accept Quote</DialogTitle>
+                                      <DialogDescription>
+                                        Please review and accept the quote to proceed with payment.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      {/* Quote Summary */}
+                                      <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h4 className="font-medium mb-2">{quote.title}</h4>
+                                        <div className="flex justify-between text-sm">
+                                          <span>Total Amount:</span>
+                                          <span className="font-medium">${quote.total}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                          <span>Deposit Required:</span>
+                                          <span className="font-medium">${quote.depositAmount || (quote.total * 0.5).toFixed(2)}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Acknowledgment Checkbox */}
+                                      <div className="flex items-start space-x-2">
+                                        <Checkbox 
+                                          id="acknowledge"
+                                          checked={acceptanceDialog.acknowledged}
+                                          onCheckedChange={(checked) => 
+                                            setAcceptanceDialog(prev => ({ ...prev, acknowledged: !!checked }))
+                                          }
+                                          className="mt-1"
+                                        />
+                                        <Label htmlFor="acknowledge" className="text-sm leading-tight">
+                                          I acknowledge and accept the terms of this quote, including the pricing, 
+                                          delivery date, and payment schedule outlined above.
+                                        </Label>
+                                      </div>
+
+                                      {/* Digital Signature */}
+                                      <div className="space-y-2">
+                                        <Label htmlFor="signature">Digital Signature (Type your full name or initials)</Label>
+                                        <Input
+                                          id="signature"
+                                          placeholder="Enter your name or initials"
+                                          value={acceptanceDialog.signature}
+                                          onChange={(e) => 
+                                            setAcceptanceDialog(prev => ({ ...prev, signature: e.target.value }))
+                                          }
+                                          className="font-serif text-lg"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                          By typing your name above, you are providing your electronic signature.
+                                        </p>
+                                      </div>
+
+                                      {/* Action Buttons */}
+                                      <div className="flex space-x-2 pt-4">
+                                        <Button 
+                                          variant="outline" 
+                                          onClick={() => setAcceptanceDialog({ open: false, quoteId: '', acknowledged: false, signature: '' })}
+                                          className="flex-1"
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button 
+                                          disabled={!acceptanceDialog.acknowledged || !acceptanceDialog.signature.trim()}
+                                          onClick={() => {
+                                            toast({
+                                              title: "Quote Accepted!",
+                                              description: "Redirecting to payment for your deposit...",
+                                            });
+                                            // Here you would redirect to payment processing
+                                            // For now, we'll simulate it
+                                            setTimeout(() => {
+                                              window.location.href = `/payment?quote=${quote.id}&amount=${quote.depositAmount || (quote.total * 0.5).toFixed(2)}`;
+                                            }, 1500);
+                                          }}
+                                          className="flex-1 bg-green-600 hover:bg-green-700"
+                                        >
+                                          <CreditCard className="h-4 w-4 mr-2" />
+                                          Pay Deposit
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
                               )}
                             </div>
                           </CardContent>
