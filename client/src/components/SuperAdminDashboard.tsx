@@ -1394,7 +1394,6 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                         )}
                       </div>
                     )}
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1646,7 +1645,6 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       )}
                     </div>
                   )}
-                  </div>
                 </CardContent>
               </Card>
 
