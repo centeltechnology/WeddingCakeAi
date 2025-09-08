@@ -424,16 +424,78 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <Calculator className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Quote Templates</h3>
-              <p className="text-muted-foreground mb-4">
-                Create reusable templates to speed up your quote process.
-              </p>
-              <Badge variant="secondary">Coming Soon</Badge>
-            </CardContent>
-          </Card>
+          {templates.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Calculator className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Templates Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create reusable templates to speed up your quote process. Start with your most common cake types and pricing.
+                </p>
+                <Button onClick={() => {
+                  toast({
+                    title: "Template Builder",
+                    description: "Template creation feature coming soon! For now, duplicate your best quotes to reuse them.",
+                  });
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map((template) => (
+                <Card key={template.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <CardDescription>
+                          {template.description || 'No description'}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="outline">Template</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      ${template.defaultPrice || '0.00'} base price
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Users className="h-4 w-4 mr-2" />
+                      {template.items?.length || 0} line items
+                    </div>
+                    
+                    <div className="flex space-x-2 pt-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        // Use template to create new quote
+                        setNewQuote({
+                          ...newQuote,
+                          templateId: template.id,
+                          title: template.name
+                        });
+                        setIsCreating(true);
+                      }}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Use Template
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        toast({
+                          title: "Template Editor",
+                          description: "Template editing feature coming soon!",
+                        });
+                      }}>
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

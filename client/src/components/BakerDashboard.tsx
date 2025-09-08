@@ -703,8 +703,42 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                                 <SelectItem value="quoted">Quoted</SelectItem>
                                 <SelectItem value="booked">Booked</SelectItem>
                                 <SelectItem value="declined">Declined</SelectItem>
+                                <SelectItem value="archived">Archived</SelectItem>
                               </SelectContent>
                             </Select>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                handleStatusChange(lead.id, 'archived');
+                                toast({
+                                  title: "Lead Archived",
+                                  description: "Lead moved to archived status",
+                                });
+                              }}
+                              className="text-orange-600 hover:text-orange-700"
+                              data-testid={`button-archive-${lead.id}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
+                                  updateLeadMutation.mutate({ leadId: lead.id, updates: { deleted: true } });
+                                  toast({
+                                    title: "Lead Deleted",
+                                    description: "Lead has been permanently deleted",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                              data-testid={`button-delete-${lead.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
 

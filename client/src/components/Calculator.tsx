@@ -513,7 +513,18 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
             {/* DreamCake Designer Section */}
             <div className="pt-6 border-t border-border">
               <Button
-                onClick={() => setIsDreamCakeDesignerOpen(true)}
+                onClick={() => {
+                  // Check if required fields are filled
+                  if (!config.eventDate || config.guestCount <= 0 || !config.cakeFlavor) {
+                    toast({
+                      title: "Please Complete Cake Details",
+                      description: "Add event date, guest count, and cake flavor before visualizing your cake.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  setIsDreamCakeDesignerOpen(true);
+                }}
                 className="calculator-primary-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-visualize-cake"
               >

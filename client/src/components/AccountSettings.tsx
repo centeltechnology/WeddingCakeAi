@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { BillingDashboard } from '@/components/BillingDashboard';
+import CalculatorThemeSelector from '@/components/CalculatorThemeSelector';
+import { useCalculatorTheme } from '@/hooks/useCalculatorTheme';
 import {
   User,
   Mail,
@@ -28,7 +30,8 @@ import {
   Save,
   X,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Palette
 } from 'lucide-react';
 
 interface AccountSettingsProps {
@@ -98,6 +101,7 @@ interface TeamMember {
 export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTheme } = useCalculatorTheme();
   const [editingProfile, setEditingProfile] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'viewer' as const });
 
@@ -261,10 +265,14 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="h-4 w-4 mr-2" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="themes" data-testid="tab-themes">
+            <Palette className="h-4 w-4 mr-2" />
+            Themes
           </TabsTrigger>
           <TabsTrigger value="subscription" data-testid="tab-subscription">
             <CreditCard className="h-4 w-4 mr-2" />
@@ -474,6 +482,41 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Themes Tab */}
+        <TabsContent value="themes">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-primary" />
+                Calculator Themes
+              </CardTitle>
+              <CardDescription>
+                Customize how your calculator appears to customers on your website
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <CalculatorThemeSelector 
+                  selectedTheme={currentTheme.id}
+                  onThemeChange={(themeId) => {
+                    toast({
+                      title: "Theme Updated",
+                      description: `Switched to ${currentTheme.name} theme`,
+                    });
+                  }}
+                />
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-800 mb-2">💡 Using Your Custom Theme</h4>
+                  <p className="text-sm text-blue-700">
+                    Your selected theme will automatically apply to all calculator widgets embedded on your website. 
+                    Customers will see your calculator with your chosen colors and styling.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Subscription Tab */}

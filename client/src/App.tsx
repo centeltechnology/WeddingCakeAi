@@ -86,7 +86,6 @@ function Router() {
       <Route path="/help/quote-templates" component={QuoteTemplates} />
       <Route path="/help/custom-cake-ordering" component={CustomCakeOrdering} />
       <Route path="/billing" component={Billing} />
-      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

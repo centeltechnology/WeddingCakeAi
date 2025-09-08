@@ -212,14 +212,14 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 border rounded-lg">
-                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold">
+                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold shadow-md">
                     1
                   </div>
-                  <h4 className="font-medium mb-1">Choose Widget</h4>
-                  <p className="text-sm text-muted-foreground">Select the widget that fits your needs</p>
+                  <h4 className="font-medium mb-1 text-gray-900 dark:text-gray-100">Choose Widget</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Select the widget that fits your needs</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold">
+                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold shadow-md">
                     2
                   </div>
                   <h4 className="font-medium mb-1">Copy Code</h4>
