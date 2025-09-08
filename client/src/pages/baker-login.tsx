@@ -57,8 +57,8 @@ export default function BakerLogin() {
           description: `Welcome back, ${result.baker.name}!`,
         });
 
-        // Redirect to baker dashboard
-        setLocation("/admin");
+        // Redirect to baker dashboard using the baker's ID
+        setLocation(`/baker/${result.baker.id}/dashboard`);
       } else {
         setError(result.message || "Invalid email or password");
       }
