@@ -505,7 +505,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bakers", async (req, res) => {
     try {
       const bakerData = insertBakerSchema.parse(req.body);
-      const baker = await storage.createBaker(bakerData);
+      
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(bakerData.password, 10);
+      const bakerWithHashedPassword = {
+        ...bakerData,
+        password: hashedPassword
+      };
+      
+      const baker = await storage.createBaker(bakerWithHashedPassword);
       
       // Also create a baker profile
       await storage.createBakerProfile({
@@ -522,7 +530,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dietaryOptions: null
       });
       
-      res.status(201).json(baker);
+      // Don't return the password in the response
+      const { password, ...bakerResponse } = baker;
+      res.status(201).json(bakerResponse);
     } catch (error: any) {
       console.error("Error creating baker:", error);
       res.status(400).json({ message: error.message });
