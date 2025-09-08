@@ -169,16 +169,6 @@ export default function BakerLogin() {
           </CardContent>
         </Card>
 
-        {/* Demo Credentials */}
-        <Card className="border border-blue-200 bg-blue-50/50">
-          <CardContent className="pt-6">
-            <h3 className="font-medium text-blue-800 mb-2">Demo Credentials</h3>
-            <div className="space-y-1 text-sm text-blue-700">
-              <p><strong>Email:</strong> admin@sweetdreamsbakery.com</p>
-              <p><strong>Password:</strong> demo123</p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Back to Home */}
         <div className="text-center">
