@@ -82,7 +82,12 @@ const plans: Plan[] = [
   }
 ];
 
-export default function Plans() {
+interface PlansProps {
+  bakerId?: string;
+  onPlanChange?: (planId: 'free' | 'pro' | 'plus') => void;
+}
+
+export default function Plans({ bakerId, onPlanChange }: PlansProps) {
   const [activePlan, setActivePlan] = useState<'free' | 'pro' | 'plus'>('free');
 
   useEffect(() => {
@@ -94,13 +99,39 @@ export default function Plans() {
     }
   }, []);
 
-  const handlePlanSelect = (planId: 'free' | 'pro' | 'plus', stripeLink?: string) => {
-    if (stripeLink && !DEMO_MODE) {
+  const handlePlanSelect = async (planId: 'free' | 'pro' | 'plus', stripeLink?: string) => {
+    if (!DEMO_MODE && bakerId) {
+      // Use server-side plan change endpoint for authenticated bakers
+      try {
+        const response = await fetch(`/api/bakers/${bakerId}/billing/change-plan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ planId }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.checkoutUrl) {
+          // Redirect to Stripe Checkout
+          window.location.href = data.checkoutUrl;
+        } else if (data.success) {
+          // Plan changed successfully (e.g., downgrade to free)
+          setActivePlan(planId);
+          onPlanChange?.(planId);
+        }
+      } catch (error) {
+        console.error('Error changing plan:', error);
+      }
+    } else if (stripeLink && !DEMO_MODE) {
+      // Fallback to direct Stripe links for non-authenticated users
       window.open(stripeLink, '_blank');
     } else {
-      // Demo mode
+      // Demo mode or no bakerId
       setActivePlan(planId);
       localStorage.setItem('bakerPlan', planId);
+      onPlanChange?.(planId);
     }
   };
 
