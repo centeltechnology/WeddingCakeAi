@@ -3004,10 +3004,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/bakers/:bakerId/billing/portal', async (req, res) => {
     try {
       const { bakerId } = req.params;
-      const baker = await storage.getBaker(bakerId);
+      let baker = await storage.getBaker(bakerId);
       
-      if (!baker?.stripeCustomerId) {
-        return res.status(404).json({ error: 'No billing account found' });
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // If baker doesn't have a Stripe customer ID, create one
+      if (!baker.stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: baker.email,
+          name: baker.businessName || baker.name,
+          metadata: {
+            bakerId: baker.id,
+            tenantId: baker.tenantId || 'default'
+          }
+        });
+
+        // Update baker with new customer ID
+        baker = await storage.updateBaker(baker.id, { stripeCustomerId: customer.id });
       }
 
       // Create Stripe customer portal session

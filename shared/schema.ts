@@ -152,6 +152,14 @@ export const bakers = pgTable("bakers", {
   stripeAccountStatus: varchar("stripe_account_status").default('not_started'), // not_started, pending, complete, restricted
   stripeOnboardingCompleted: boolean("stripe_onboarding_completed").default(false),
   stripeAccountType: varchar("stripe_account_type").default('express'), // express, standard
+  // Billing-related fields for self-service billing
+  stripeCustomerId: varchar("stripe_customer_id"),
+  subscriptionStatus: varchar("subscription_status").default('active'), // active, trialing, past_due, cancelled
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  businessName: text("business_name"), // For Stripe customer creation
+  tenantId: varchar("tenant_id"), // For multi-tenant support
   // Social media handles
   socialMedia: json("social_media").$type<{
     instagram?: string;
@@ -161,6 +169,7 @@ export const bakers = pgTable("bakers", {
     website?: string;
   }>(),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const leads = pgTable("leads", {

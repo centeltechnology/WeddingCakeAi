@@ -257,6 +257,7 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
           <div className="flex flex-wrap gap-3">
             <Button 
               onClick={() => setShowPlanOptions(true)}
+              className="bg-rose-500 hover:bg-rose-600 text-white"
               data-testid="button-change-plan"
             >
               <Star className="h-4 w-4 mr-2" />
