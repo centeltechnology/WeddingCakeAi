@@ -212,8 +212,25 @@ export class MemStorage implements IStorage {
   private invoices: Map<string, Invoice>;
 
   private initializeSuperAdminUser() {
-    // Note: Super admin user is now stored in database
-    // This method is kept for potential future MemStorage usage
+    // Create default super admin user for development
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    
+    const adminId = randomUUID();
+    const adminUser: User = {
+      id: adminId,
+      username: 'admin',
+      email: 'admin@bakewise.com',
+      password: hashedPassword,
+      role: 'super_admin',
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.users.set(adminId, adminUser);
+    console.log('✅ Default super admin created: username=admin, password=admin123');
   }
 
   constructor() {
