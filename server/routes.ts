@@ -1438,15 +1438,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Logout endpoint
-  app.post('/api/logout', async (req, res) => {
+  // Logout endpoint - handle both GET and POST
+  const logoutHandler = async (req: any, res: any) => {
     // For token-based auth, logout is handled client-side by removing the token
-    // This endpoint exists to provide a consistent API response
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  });
+    // Redirect to login page after logout
+    res.redirect('/baker-login');
+  };
+
+  app.get('/api/logout', logoutHandler);
+  app.post('/api/logout', logoutHandler);
 
   // Customer Portal Authentication
   app.post('/api/customer/login', async (req, res) => {
