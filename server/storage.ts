@@ -13,7 +13,11 @@ import {
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
-  paymentPlans, paymentSchedule, invoices
+  paymentPlans, paymentSchedule, invoices,
+  auditLogs, systemAnnouncements, systemHealthMetrics, dataExportJobs, maintenanceSchedule,
+  type AuditLog, type InsertAuditLog, type SystemAnnouncement, type InsertSystemAnnouncement,
+  type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
+  type MaintenanceSchedule, type InsertMaintenanceSchedule
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -171,6 +175,35 @@ export interface IStorage {
   getInvoicesByBaker(bakerId: string): Promise<Invoice[]>;
   getInvoicesByCustomer(customerId: string): Promise<Invoice[]>;
   updateInvoice(id: string, updates: Partial<InsertInvoice>): Promise<Invoice>;
+
+  // Super Admin methods
+  
+  // Audit log methods
+  createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(limit?: number, offset?: number): Promise<AuditLog[]>;
+  getAuditLogsByUser(userId: string): Promise<AuditLog[]>;
+  
+  // System announcement methods
+  createSystemAnnouncement(announcement: InsertSystemAnnouncement): Promise<SystemAnnouncement>;
+  getSystemAnnouncements(isActive?: boolean): Promise<SystemAnnouncement[]>;
+  updateSystemAnnouncement(id: string, updates: Partial<InsertSystemAnnouncement>): Promise<SystemAnnouncement | undefined>;
+  deleteSystemAnnouncement(id: string): Promise<boolean>;
+  
+  // System health metrics methods
+  createSystemHealthMetric(metric: InsertSystemHealthMetric): Promise<SystemHealthMetric>;
+  getLatestSystemHealthMetrics(): Promise<SystemHealthMetric[]>;
+  getSystemHealthMetricsByName(name: string, limit?: number): Promise<SystemHealthMetric[]>;
+  
+  // Data export job methods
+  createDataExportJob(job: InsertDataExportJob): Promise<DataExportJob>;
+  getDataExportJobs(userId?: string): Promise<DataExportJob[]>;
+  updateDataExportJob(id: string, updates: Partial<InsertDataExportJob>): Promise<DataExportJob | undefined>;
+  
+  // Maintenance schedule methods
+  createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule>;
+  getMaintenanceSchedules(): Promise<MaintenanceSchedule[]>;
+  updateMaintenanceSchedule(id: string, updates: Partial<InsertMaintenanceSchedule>): Promise<MaintenanceSchedule | undefined>;
+  deleteMaintenanceSchedule(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -210,6 +243,13 @@ export class MemStorage implements IStorage {
   private paymentPlans: Map<string, PaymentPlan>;
   private paymentSchedule: Map<string, PaymentSchedule>;
   private invoices: Map<string, Invoice>;
+  
+  // Super Admin storage
+  private auditLogs: Map<string, AuditLog>;
+  private systemAnnouncements: Map<string, SystemAnnouncement>;
+  private systemHealthMetrics: Map<string, SystemHealthMetric>;
+  private dataExportJobs: Map<string, DataExportJob>;
+  private maintenanceSchedules: Map<string, MaintenanceSchedule>;
 
   private initializeSuperAdminUser() {
     // Create default super admin user for development
@@ -270,6 +310,13 @@ export class MemStorage implements IStorage {
     this.paymentPlans = new Map();
     this.paymentSchedule = new Map();
     this.invoices = new Map();
+    
+    // Super Admin storage
+    this.auditLogs = new Map();
+    this.systemAnnouncements = new Map();
+    this.systemHealthMetrics = new Map();
+    this.dataExportJobs = new Map();
+    this.maintenanceSchedules = new Map();
     
     // Initialize with sample data
     this.initializeSuperAdminUser();
@@ -2257,6 +2304,172 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bakerProfiles.id, id))
       .returning();
     return profile || undefined;
+  }
+
+  // Super Admin methods implementation
+
+  // Audit log methods
+  async createAuditLog(insertAuditLog: InsertAuditLog): Promise<AuditLog> {
+    const [auditLog] = await db
+      .insert(auditLogs)
+      .values({ ...insertAuditLog, id: randomUUID() })
+      .returning();
+    return auditLog;
+  }
+
+  async getAuditLogs(limit: number = 100, offset: number = 0): Promise<AuditLog[]> {
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .orderBy(sql`${auditLogs.createdAt} DESC`)
+      .limit(limit)
+      .offset(offset);
+    return logs;
+  }
+
+  async getAuditLogsByUser(userId: string): Promise<AuditLog[]> {
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.userId, userId))
+      .orderBy(sql`${auditLogs.createdAt} DESC`);
+    return logs;
+  }
+
+  // System announcement methods
+  async createSystemAnnouncement(insertAnnouncement: InsertSystemAnnouncement): Promise<SystemAnnouncement> {
+    const [announcement] = await db
+      .insert(systemAnnouncements)
+      .values({ ...insertAnnouncement, id: randomUUID() })
+      .returning();
+    return announcement;
+  }
+
+  async getSystemAnnouncements(isActive?: boolean): Promise<SystemAnnouncement[]> {
+    let query = db.select().from(systemAnnouncements);
+    
+    if (isActive !== undefined) {
+      query = query.where(eq(systemAnnouncements.isActive, isActive));
+    }
+    
+    const announcements = await query.orderBy(sql`${systemAnnouncements.createdAt} DESC`);
+    return announcements.filter(a => !a.expiresAt || a.expiresAt > new Date());
+  }
+
+  async updateSystemAnnouncement(id: string, updates: Partial<InsertSystemAnnouncement>): Promise<SystemAnnouncement | undefined> {
+    const [updated] = await db
+      .update(systemAnnouncements)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(systemAnnouncements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteSystemAnnouncement(id: string): Promise<boolean> {
+    const result = await db.delete(systemAnnouncements).where(eq(systemAnnouncements.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // System health metrics methods
+  async createSystemHealthMetric(insertMetric: InsertSystemHealthMetric): Promise<SystemHealthMetric> {
+    const [metric] = await db
+      .insert(systemHealthMetrics)
+      .values({ ...insertMetric, id: randomUUID() })
+      .returning();
+    return metric;
+  }
+
+  async getLatestSystemHealthMetrics(): Promise<SystemHealthMetric[]> {
+    // Get the latest metric for each unique metric name
+    const metrics = await db
+      .select()
+      .from(systemHealthMetrics)
+      .orderBy(sql`${systemHealthMetrics.recordedAt} DESC`);
+    
+    // Group by metric name and take the latest one
+    const latestMetrics = new Map<string, SystemHealthMetric>();
+    metrics.forEach(metric => {
+      if (!latestMetrics.has(metric.metricName)) {
+        latestMetrics.set(metric.metricName, metric);
+      }
+    });
+    
+    return Array.from(latestMetrics.values());
+  }
+
+  async getSystemHealthMetricsByName(name: string, limit: number = 50): Promise<SystemHealthMetric[]> {
+    const metrics = await db
+      .select()
+      .from(systemHealthMetrics)
+      .where(eq(systemHealthMetrics.metricName, name))
+      .orderBy(sql`${systemHealthMetrics.recordedAt} DESC`)
+      .limit(limit);
+    return metrics;
+  }
+
+  // Data export job methods
+  async createDataExportJob(insertJob: InsertDataExportJob): Promise<DataExportJob> {
+    const [job] = await db
+      .insert(dataExportJobs)
+      .values({ ...insertJob, id: randomUUID() })
+      .returning();
+    return job;
+  }
+
+  async getDataExportJobs(userId?: string): Promise<DataExportJob[]> {
+    let query = db.select().from(dataExportJobs);
+    
+    if (userId) {
+      query = query.where(eq(dataExportJobs.requestedById, userId));
+    }
+    
+    const jobs = await query.orderBy(sql`${dataExportJobs.createdAt} DESC`);
+    return jobs;
+  }
+
+  async updateDataExportJob(id: string, updates: Partial<InsertDataExportJob>): Promise<DataExportJob | undefined> {
+    const updateData = { ...updates };
+    if (updates.status === 'completed' || updates.status === 'failed') {
+      updateData.completedAt = new Date();
+    }
+    
+    const [updated] = await db
+      .update(dataExportJobs)
+      .set(updateData)
+      .where(eq(dataExportJobs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Maintenance schedule methods
+  async createMaintenanceSchedule(insertSchedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const [schedule] = await db
+      .insert(maintenanceSchedule)
+      .values({ ...insertSchedule, id: randomUUID() })
+      .returning();
+    return schedule;
+  }
+
+  async getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    const schedules = await db
+      .select()
+      .from(maintenanceSchedule)
+      .orderBy(maintenanceSchedule.scheduledStart);
+    return schedules;
+  }
+
+  async updateMaintenanceSchedule(id: string, updates: Partial<InsertMaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
+    const [updated] = await db
+      .update(maintenanceSchedule)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(maintenanceSchedule.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteMaintenanceSchedule(id: string): Promise<boolean> {
+    const result = await db.delete(maintenanceSchedule).where(eq(maintenanceSchedule.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

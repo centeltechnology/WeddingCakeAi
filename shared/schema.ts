@@ -742,3 +742,88 @@ export type PaymentSchedule = typeof paymentSchedule.$inferSelect;
 export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+
+// Super Admin feature tables
+
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  username: text("username"),
+  action: text("action").notNull(), // CREATE, UPDATE, DELETE, LOGIN, etc.
+  resource: text("resource").notNull(), // user, tenant, baker, etc.
+  resourceId: varchar("resource_id"),
+  details: json("details").$type<Record<string, any>>().default({}),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemAnnouncements = pgTable("system_announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").default('info'), // info, warning, critical, maintenance
+  targetAudience: text("target_audience").default('all'), // all, tenants, bakers, admins
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"),
+  createdById: varchar("created_by_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const systemHealthMetrics = pgTable("system_health_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  metricName: text("metric_name").notNull(),
+  metricValue: decimal("metric_value", { precision: 10, scale: 2 }),
+  unit: text("unit"), // percentage, ms, count, etc.
+  status: text("status").default('healthy'), // healthy, warning, critical
+  threshold: decimal("threshold", { precision: 10, scale: 2 }),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+});
+
+export const dataExportJobs = pgTable("data_export_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobType: text("job_type").notNull(), // users, tenants, analytics, full_platform
+  parameters: json("parameters").$type<Record<string, any>>().default({}),
+  status: text("status").default('pending'), // pending, processing, completed, failed
+  fileUrl: text("file_url"),
+  totalRecords: integer("total_records"),
+  processedRecords: integer("processed_records").default(0),
+  errorMessage: text("error_message"),
+  requestedById: varchar("requested_by_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const maintenanceSchedule = pgTable("maintenance_schedule", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  scheduledStart: timestamp("scheduled_start").notNull(),
+  scheduledEnd: timestamp("scheduled_end").notNull(),
+  status: text("status").default('scheduled'), // scheduled, in_progress, completed, cancelled
+  impactLevel: text("impact_level").default('low'), // low, medium, high, critical
+  affectedSystems: json("affected_systems").$type<string[]>().default([]),
+  scheduledById: varchar("scheduled_by_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Super Admin schemas
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export const insertSystemAnnouncementSchema = createInsertSchema(systemAnnouncements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSystemHealthMetricSchema = createInsertSchema(systemHealthMetrics).omit({ id: true, recordedAt: true });
+export const insertDataExportJobSchema = createInsertSchema(dataExportJobs).omit({ id: true, createdAt: true, completedAt: true });
+export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedule).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Super Admin types
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type SystemAnnouncement = typeof systemAnnouncements.$inferSelect;
+export type InsertSystemAnnouncement = z.infer<typeof insertSystemAnnouncementSchema>;
+export type SystemHealthMetric = typeof systemHealthMetrics.$inferSelect;
+export type InsertSystemHealthMetric = z.infer<typeof insertSystemHealthMetricSchema>;
+export type DataExportJob = typeof dataExportJobs.$inferSelect;
+export type InsertDataExportJob = z.infer<typeof insertDataExportJobSchema>;
+export type MaintenanceSchedule = typeof maintenanceSchedule.$inferSelect;
+export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
