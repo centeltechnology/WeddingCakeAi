@@ -457,5 +457,202 @@ Bakewise Team`,
 
 <p>Best regards,<br><strong>Bakewise Team</strong></p>
 </div>`
+  }),
+
+  // Trial and Subscription Lifecycle Email Templates
+  trialWelcome: (bakerName: string, trialEndDate: string) => ({
+    subject: `🎉 Welcome to Bakewise! Your 14-day trial has started`,
+    htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #fef7f0 0%, #fdf2f8 100%); border-radius: 12px; overflow: hidden;">
+<div style="background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); padding: 40px 30px; text-align: center;">
+  <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to Bakewise! 🎂</h1>
+  <p style="color: #fef7f0; margin: 10px 0 0 0; font-size: 18px;">Your premium trial is now active</p>
+</div>
+
+<div style="padding: 40px 30px;">
+  <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
+  
+  <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+    Welcome to Bakewise! We're thrilled to have you join our community of successful cake decorators and bakeries. Your <strong>14-day premium trial</strong> has started, giving you full access to all our powerful tools.
+  </p>
+
+  <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
+    <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 18px;">🚀 What's Included in Your Trial:</h3>
+    <ul style="color: #166534; margin: 0; padding-left: 20px; line-height: 1.8;">
+      <li><strong>Unlimited Leads:</strong> Connect with as many customers as you want</li>
+      <li><strong>Advanced Analytics:</strong> Track your business performance in real-time</li>
+      <li><strong>Unlimited Portfolio Images:</strong> Showcase all your beautiful creations</li>
+      <li><strong>Custom Branding:</strong> Make your presence truly yours</li>
+      <li><strong>Priority Support:</strong> Get help when you need it most</li>
+    </ul>
+  </div>
+
+  <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 20px; margin: 30px 0; border-radius: 8px;">
+    <p style="color: #92400e; margin: 0; font-size: 16px; text-align: center;">
+      ⏰ <strong>Your trial expires on ${new Date(trialEndDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}</strong>
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 40px 0;">
+    <a href="https://bakewise.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+      Start Building Your Business →
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
+    Need help getting started? Reply to this email or check out our <a href="https://bakewise.app/help" style="color: #f97316;">getting started guide</a>.
+  </p>
+</div>
+</div>`,
+    textPart: `Welcome to Bakewise, ${bakerName}! Your 14-day premium trial has started and expires on ${new Date(trialEndDate).toLocaleDateString()}. During your trial, you have access to unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Get started at https://bakewise.app/dashboard`
+  }),
+
+  trialExpirationWarning: (bakerName: string, daysLeft: number, trialEndDate: string) => {
+    const urgency = daysLeft <= 1 ? 'urgent' : daysLeft <= 3 ? 'warning' : 'info';
+    const emoji = urgency === 'urgent' ? '🚨' : urgency === 'warning' ? '⏰' : '⏳';
+    const color = urgency === 'urgent' ? '#dc2626' : urgency === 'warning' ? '#d97706' : '#0369a1';
+    
+    return {
+      subject: `${emoji} ${daysLeft === 0 ? 'Your trial ends today!' : daysLeft === 1 ? 'Your trial ends tomorrow!' : `${daysLeft} days left in your trial`}`,
+      htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+<div style="background: ${color}; padding: 30px; text-align: center;">
+  <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">
+    ${emoji} Trial Expiration Notice
+  </h1>
+</div>
+
+<div style="padding: 40px 30px;">
+  <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
+  
+  <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <p style="color: #991b1b; margin: 0; font-size: 16px; text-align: center; font-weight: 600;">
+      ${daysLeft === 0 ? 'Your Bakewise trial expires today!' : 
+        daysLeft === 1 ? 'Your Bakewise trial expires tomorrow!' : 
+        `Your Bakewise trial expires in ${daysLeft} days`}
+    </p>
+    <p style="color: #7f1d1d; margin: 10px 0 0 0; font-size: 14px; text-align: center;">
+      Trial ends: ${new Date(trialEndDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}
+    </p>
+  </div>
+
+  <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 20px 0;">
+    ${daysLeft === 0 ? 
+      'Don\'t lose access to your premium features! Upgrade now to continue growing your cake business with unlimited leads, advanced analytics, and priority support.' :
+      `We hope you\'re loving Bakewise! To continue using all premium features like unlimited leads, advanced analytics, and custom branding, upgrade before your trial expires.`}
+  </p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://bakewise.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
+      Upgrade Now →
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
+    Questions? Reply to this email or visit our <a href="https://bakewise.app/help" style="color: #f97316;">help center</a>.
+  </p>
+</div>
+</div>`,
+      textPart: `Hi ${bakerName}, your Bakewise trial ${daysLeft === 0 ? 'expires today' : `expires in ${daysLeft} days`} on ${new Date(trialEndDate).toLocaleDateString()}. Upgrade now at https://bakewise.app/billing to continue using premium features.`
+    };
+  },
+
+  trialExpired: (bakerName: string) => ({
+    subject: `😟 Your Bakewise trial has expired - Upgrade to continue`,
+    htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+<div style="background: #dc2626; padding: 30px; text-align: center;">
+  <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">
+    ⚠️ Trial Expired
+  </h1>
+</div>
+
+<div style="padding: 40px 30px;">
+  <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
+  
+  <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+    Your Bakewise premium trial has expired, but don't worry - your account is still active! However, you now have limited access to premium features.
+  </p>
+
+  <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 16px;">🚫 Limited Access:</h3>
+    <ul style="color: #7f1d1d; margin: 0; padding-left: 20px; line-height: 1.6;">
+      <li>Lead generation is limited</li>
+      <li>Portfolio limited to 5 images</li>
+      <li>Basic analytics only</li>
+      <li>Standard support</li>
+    </ul>
+  </div>
+
+  <div style="background: #f0fdf4; border: 1px solid #22c55e; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 16px;">🎉 Upgrade to Unlock:</h3>
+    <ul style="color: #166534; margin: 0; padding-left: 20px; line-height: 1.6;">
+      <li>Unlimited lead generation</li>
+      <li>Unlimited portfolio images</li>
+      <li>Advanced analytics & insights</li>
+      <li>Custom branding options</li>
+      <li>Priority support</li>
+    </ul>
+  </div>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://bakewise.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+      Upgrade Now - Starting at $29/month →
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
+    Still have questions? <a href="https://bakewise.app/contact" style="color: #f97316;">Contact our team</a> - we're here to help!
+  </p>
+</div>
+</div>`,
+    textPart: `Hi ${bakerName}, your Bakewise trial has expired. You now have limited access to features. Upgrade at https://bakewise.app/billing starting at $29/month to unlock unlimited leads, portfolio images, advanced analytics, and more.`
+  }),
+
+  subscriptionSuccess: (bakerName: string, planName: string) => ({
+    subject: `🎉 Welcome to ${planName}! Your subscription is active`,
+    htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; overflow: hidden;">
+<div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 30px; text-align: center;">
+  <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">🎉 Subscription Active!</h1>
+  <p style="color: #dcfce7; margin: 10px 0 0 0; font-size: 18px;">Welcome to ${planName}</p>
+</div>
+
+<div style="padding: 40px 30px;">
+  <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
+  
+  <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+    Congratulations! Your <strong>${planName}</strong> subscription is now active. You have full access to all premium features to grow your cake business.
+  </p>
+
+  <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
+    <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 18px;">✨ You now have access to:</h3>
+    <ul style="color: #166534; margin: 0; padding-left: 20px; line-height: 1.8;">
+      <li><strong>Unlimited Leads:</strong> Connect with unlimited customers</li>
+      <li><strong>Advanced Analytics:</strong> Detailed business insights</li>
+      <li><strong>Unlimited Portfolio:</strong> Showcase all your creations</li>
+      <li><strong>Custom Branding:</strong> Make your presence unique</li>
+      <li><strong>Priority Support:</strong> Get help when you need it</li>
+    </ul>
+  </div>
+
+  <div style="text-align: center; margin: 40px 0;">
+    <a href="https://bakewise.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+      Access Your Dashboard →
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
+    Thank you for choosing Bakewise! We're excited to help you grow your business.
+  </p>
+</div>
+</div>`,
+    textPart: `Hi ${bakerName}, congratulations! Your ${planName} subscription is now active with unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Access your dashboard at https://bakewise.app/dashboard`
   })
 };
