@@ -1657,16 +1657,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { bakerId } = req.params;
       
-      // Mock account data - in real app, fetch from database
+      // Fetch real baker data from database
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
       const account = {
         id: bakerId,
-        businessName: 'Sweet Dreams Bakery',
-        ownerName: 'Sarah Johnson',
-        email: 'sarah@sweetdreamsbakery.com',
-        phone: '(555) 123-4567',
+        businessName: baker.name,
+        ownerName: baker.name, // Use baker name as owner name
+        email: baker.email,
+        phone: baker.phone || '(555) 123-4567',
         address: {
           street: '123 Main Street',
-          city: 'San Francisco',
+          city: baker.address || 'San Francisco',
           state: 'CA',
           zipCode: '94102'
         },
@@ -1730,25 +1735,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { bakerId } = req.params;
       
-      // Mock team data - in real app, fetch from database
+      // Fetch real baker data to create team with actual owner
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
       const team = [
         {
-          id: 'member-1',
-          name: 'Sarah Johnson',
-          email: 'sarah@sweetdreamsbakery.com',
+          id: 'owner-1',
+          name: baker.name,
+          email: baker.email,
           role: 'owner',
           status: 'active',
-          joinedAt: '2024-01-15T10:00:00Z',
+          joinedAt: baker.createdAt?.toISOString() || new Date().toISOString(),
           lastActive: new Date().toISOString()
-        },
-        {
-          id: 'member-2',
-          name: 'Mike Chen',
-          email: 'mike@sweetdreamsbakery.com',
-          role: 'admin',
-          status: 'active',
-          joinedAt: '2024-02-01T14:30:00Z',
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
         }
       ];
 
@@ -2081,37 +2082,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Team Management API Routes
   app.get('/api/teams/:bakerId/members', async (req, res) => {
     try {
-      // Mock team members for demo
+      const { bakerId } = req.params;
+      
+      // Fetch real baker data to create team with actual owner
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
       const members = [
         {
-          id: 'member-1',
-          name: 'Sarah Johnson',
-          email: 'sarah@sweetdreams.com',
+          id: `owner-${bakerId}`,
+          name: baker.name,
+          email: baker.email,
           role: 'owner',
           status: 'active',
-          invitedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          invitedAt: baker.createdAt?.toISOString() || new Date().toISOString(),
+          lastActive: new Date().toISOString(),
           permissions: ['*']
-        },
-        {
-          id: 'member-2',
-          name: 'Mike Chen',
-          email: 'mike@sweetdreams.com',
-          role: 'admin',
-          status: 'active',
-          invitedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActive: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          permissions: ['team.manage', 'quotes.manage', 'customers.manage', 'analytics.view', 'settings.manage']
-        },
-        {
-          id: 'member-3',
-          name: 'Emma Wilson',
-          email: 'emma@sweetdreams.com',
-          role: 'editor',
-          status: 'active',
-          invitedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          permissions: ['quotes.create', 'quotes.edit', 'customers.manage', 'analytics.view']
         }
       ];
       res.json(members);
