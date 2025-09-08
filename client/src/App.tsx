@@ -28,6 +28,27 @@ import Settings from "@/pages/Settings";
 import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
+import QuotesAndContracts from "@/pages/help/quotes-and-contracts";
+import DietaryRestrictions from "@/pages/help/dietary-restrictions";
+import EventPlanningTips from "@/pages/help/event-planning-tips";
+import PaymentProcessing from "@/pages/help/payment-processing";
+import CustomerCommunications from "@/pages/help/customer-communications";
+import AnalyticsAndInsights from "@/pages/help/analytics-and-insights";
+import MarketingYourBakery from "@/pages/help/marketing-your-bakery";
+import PaymentSafety from "@/pages/help/payment-safety";
+import ReviewsAndFeedback from "@/pages/help/reviews-and-feedback";
+import AccountSetup from "@/pages/help/account-setup";
+import SubscriptionPlans from "@/pages/help/subscription-plans";
+import MobileApp from "@/pages/help/mobile-app";
+import Notifications from "@/pages/help/notifications";
+import Troubleshooting from "@/pages/help/troubleshooting";
+import BrowserCompatibility from "@/pages/help/browser-compatibility";
+import DataPrivacy from "@/pages/help/data-privacy";
+import ApiIntegration from "@/pages/help/api-integration";
+import SeoOptimization from "@/pages/help/seo-optimization";
+import SocialMedia from "@/pages/help/social-media";
+import CustomerRetention from "@/pages/help/customer-retention";
+import PricingStrategies from "@/pages/help/pricing-strategies";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import BakerLogin from "@/pages/baker-login";
@@ -85,6 +106,27 @@ function Router() {
       <Route path="/help/subdomain-setup" component={SubdomainSetup} />
       <Route path="/help/quote-templates" component={QuoteTemplates} />
       <Route path="/help/custom-cake-ordering" component={CustomCakeOrdering} />
+      <Route path="/help/quotes-and-contracts" component={QuotesAndContracts} />
+      <Route path="/help/dietary-restrictions" component={DietaryRestrictions} />
+      <Route path="/help/event-planning-tips" component={EventPlanningTips} />
+      <Route path="/help/payment-processing" component={PaymentProcessing} />
+      <Route path="/help/customer-communications" component={CustomerCommunications} />
+      <Route path="/help/analytics-and-insights" component={AnalyticsAndInsights} />
+      <Route path="/help/marketing-your-bakery" component={MarketingYourBakery} />
+      <Route path="/help/payment-safety" component={PaymentSafety} />
+      <Route path="/help/reviews-and-feedback" component={ReviewsAndFeedback} />
+      <Route path="/help/account-setup" component={AccountSetup} />
+      <Route path="/help/subscription-plans" component={SubscriptionPlans} />
+      <Route path="/help/mobile-app" component={MobileApp} />
+      <Route path="/help/notifications" component={Notifications} />
+      <Route path="/help/troubleshooting" component={Troubleshooting} />
+      <Route path="/help/browser-compatibility" component={BrowserCompatibility} />
+      <Route path="/help/data-privacy" component={DataPrivacy} />
+      <Route path="/help/api-integration" component={ApiIntegration} />
+      <Route path="/help/seo-optimization" component={SeoOptimization} />
+      <Route path="/help/social-media" component={SocialMedia} />
+      <Route path="/help/customer-retention" component={CustomerRetention} />
+      <Route path="/help/pricing-strategies" component={PricingStrategies} />
       <Route path="/settings" component={Settings} />
       <Route path="/billing" component={Billing} />
       <Route component={NotFound} />

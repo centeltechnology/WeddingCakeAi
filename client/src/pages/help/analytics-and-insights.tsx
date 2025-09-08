@@ -73,7 +73,7 @@ export default function AnalyticsAndInsights() {
                         <p className="font-medium text-green-800">Growing Business Signs</p>
                         <ul className="text-green-700 space-y-1 mt-1">
                           <li>• Increasing monthly revenue trends</li>
-                          <li>• Higher conversion rates (>25%)</li>
+                          <li>• Higher conversion rates (&gt;25%)</li>
                           <li>• Growing repeat customer percentage</li>
                           <li>• Shorter quote-to-order cycle times</li>
                         </ul>
