@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DreamCakeDesigner } from "@/components/DreamCakeDesigner";
 import SocialShare from "@/components/SocialShare";
+import { useCalculatorTheme } from "@/hooks/useCalculatorTheme";
 
 interface CakeConfiguration {
   eventDate: string;
@@ -34,8 +35,14 @@ interface CakeConfiguration {
   specialRequests: string;
 }
 
-export default function Calculator() {
+interface CalculatorProps {
+  themeId?: string;
+}
+
+export default function Calculator({ themeId = 'classic-elegance' }: CalculatorProps) {
   const { toast } = useToast();
+  const { currentTheme, setTheme } = useCalculatorTheme(themeId);
+  
   const [config, setConfig] = useState<CakeConfiguration>({
     eventDate: '',
     guestCount: 75,
@@ -134,8 +141,18 @@ export default function Calculator() {
     generatePDF(config, pricing);
   };
 
+  // Apply theme when themeId prop changes
+  useEffect(() => {
+    setTheme(themeId);
+  }, [themeId, setTheme]);
+
   return (
-    <div className="calculator-grid bg-gradient-to-br from-rose-50 via-white to-pink-50 min-h-screen">
+    <div 
+      className="calculator-grid min-h-screen"
+      style={{ background: `var(--calc-background)` }}
+      data-calculator-theme={currentTheme.id}
+      data-testid="calculator-container"
+    >
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
@@ -144,12 +161,12 @@ export default function Calculator() {
       
       {/* Calculator Form Section */}
       <div className="space-y-8 relative z-10">
-        <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
+        <Card className="calculator-card backdrop-blur-sm shadow-2xl">
           <CardContent className="p-8">
-            <div className="flex items-center space-x-3 mb-8">
+            <div className="calculator-header flex items-center space-x-3 mb-8 p-4 rounded-lg">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-rose-400 to-pink-400 rounded-2xl blur-lg opacity-30"></div>
-                <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg relative">
+                <div className="absolute inset-0 theme-gradient rounded-2xl blur-lg opacity-30"></div>
+                <div className="calculator-icon w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg relative">
                   <Cake className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -172,6 +189,7 @@ export default function Calculator() {
                   type="date"
                   value={config.eventDate}
                   onChange={(e) => updateConfig({ eventDate: e.target.value })}
+                  className="calculator-input"
                   data-testid="input-event-date"
                 />
               </div>
@@ -183,6 +201,7 @@ export default function Calculator() {
                   placeholder="75"
                   value={config.guestCount}
                   onChange={(e) => updateConfig({ guestCount: parseInt(e.target.value) || 0 })}
+                  className="calculator-input"
                   data-testid="input-guest-count"
                 />
               </div>
@@ -200,7 +219,7 @@ export default function Calculator() {
                 <div>
                   <Label htmlFor="tiers">Number of Tiers</Label>
                   <Select value={config.tiers.toString()} onValueChange={(value) => updateConfig({ tiers: parseInt(value) })}>
-                    <SelectTrigger data-testid="select-tiers">
+                    <SelectTrigger className="calculator-select" data-testid="select-tiers">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -214,7 +233,7 @@ export default function Calculator() {
                 <div>
                   <Label htmlFor="baseSize">Base Tier Size</Label>
                   <Select value={config.baseSize.toString()} onValueChange={(value) => updateConfig({ baseSize: parseInt(value) })}>
-                    <SelectTrigger data-testid="select-base-size">
+                    <SelectTrigger className="calculator-select" data-testid="select-base-size">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -435,19 +454,19 @@ export default function Calculator() {
             </div>
 
             {/* Total */}
-            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl mb-8 border border-primary/20 shadow-lg">
+            <div className="pricing-display p-6 rounded-2xl mb-8 shadow-lg">
               <div className="flex justify-between items-center">
                 <div>
-                  <span className="text-xl font-serif font-bold text-foreground">Total Estimate</span>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <span className="text-xl font-serif font-bold">Total Estimate</span>
+                  <p className="text-sm opacity-90 mt-1">
                     Serves approximately {config.guestCount} guests
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-4xl font-bold text-foreground drop-shadow-sm" data-testid="text-total">
+                  <span className="text-4xl font-bold drop-shadow-sm" data-testid="text-total">
                     ${pricing.total.toFixed(2)}
                   </span>
-                  <div className="text-sm text-muted-foreground font-medium">
+                  <div className="text-sm opacity-90 font-medium">
                     ${(pricing.total / config.guestCount).toFixed(2)} per guest
                   </div>
                 </div>
@@ -458,7 +477,7 @@ export default function Calculator() {
             <div className="space-y-4">
               <Button
                 onClick={handleGeneratePDF}
-                className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                className="calculator-primary-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-generate-pdf"
               >
                 <FileText className="w-5 h-5 mr-3" />
@@ -466,7 +485,7 @@ export default function Calculator() {
               </Button>
               <Button
                 onClick={handlePrint}
-                className="w-full h-12 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                className="calculator-secondary-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-print-estimate"
               >
                 <Printer className="w-5 h-5 mr-3" />
@@ -474,7 +493,7 @@ export default function Calculator() {
               </Button>
               <Button
                 onClick={handleSaveEstimate}
-                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                className="calculator-accent-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 disabled={saveEstimateMutation.isPending}
                 data-testid="button-save-estimate"
               >
@@ -495,7 +514,7 @@ export default function Calculator() {
             <div className="pt-6 border-t border-border">
               <Button
                 onClick={() => setIsDreamCakeDesignerOpen(true)}
-                className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                className="calculator-primary-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                 data-testid="button-visualize-cake"
               >
                 <Sparkles className="w-5 h-5 mr-3" />

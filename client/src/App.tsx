@@ -24,6 +24,7 @@ import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
 import AcceptableUse from "@/pages/acceptable-use";
 import Help from "@/pages/help";
+import Settings from "@/pages/Settings";
 import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/help/quote-templates" component={QuoteTemplates} />
       <Route path="/help/custom-cake-ordering" component={CustomCakeOrdering} />
       <Route path="/billing" component={Billing} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

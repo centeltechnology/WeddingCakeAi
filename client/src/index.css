@@ -49,6 +49,15 @@
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --gradient-primary: linear-gradient(135deg, hsl(340, 55%, 65%), hsl(320, 50%, 70%));
   --gradient-background: linear-gradient(135deg, hsl(350, 40%, 97%), hsl(340, 30%, 94%));
+
+  /* Calculator Theme Variables - Default to Classic Elegance */
+  --calc-primary: hsl(340, 55%, 65%);
+  --calc-secondary: hsl(320, 20%, 90%);
+  --calc-accent: hsl(45, 85%, 70%);
+  --calc-background: hsl(350, 40%, 97%);
+  --calc-card: hsl(350, 40%, 95%);
+  --calc-border: hsl(320, 15%, 85%);
+  --calc-gradient: linear-gradient(135deg, hsl(340, 55%, 65%), hsl(45, 85%, 70%));
 }
 
 .dark {
@@ -121,6 +130,94 @@
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 2rem;
+}
+
+/* Calculator Theme Styles */
+[data-calculator-theme] {
+  /* Use theme-specific variables for calculator styling */
+  --primary: var(--calc-primary);
+  --secondary: var(--calc-secondary);
+  --accent: var(--calc-accent);
+  --background: var(--calc-background);
+  --card: var(--calc-card);
+  --border: var(--calc-border);
+  --gradient-primary: var(--calc-gradient);
+}
+
+/* Themed calculator header */
+[data-calculator-theme] .calculator-header {
+  background: var(--calc-gradient);
+  border-color: var(--calc-border);
+}
+
+[data-calculator-theme] .calculator-icon {
+  background: var(--calc-accent);
+}
+
+/* Themed form elements */
+[data-calculator-theme] .calculator-card {
+  background-color: var(--calc-card);
+  border-color: var(--calc-border);
+}
+
+[data-calculator-theme] .calculator-input,
+[data-calculator-theme] .calculator-select,
+[data-calculator-theme] .calculator-textarea {
+  border-color: var(--calc-border);
+  background-color: var(--calc-background);
+}
+
+[data-calculator-theme] .calculator-input:focus,
+[data-calculator-theme] .calculator-select:focus,
+[data-calculator-theme] .calculator-textarea:focus {
+  border-color: var(--calc-primary);
+  box-shadow: 0 0 0 1px var(--calc-primary);
+}
+
+/* Themed buttons */
+[data-calculator-theme] .calculator-primary-btn {
+  background: var(--calc-gradient);
+  border: none;
+  color: white;
+}
+
+[data-calculator-theme] .calculator-primary-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+[data-calculator-theme] .calculator-secondary-btn {
+  background-color: var(--calc-secondary);
+  color: var(--calc-primary);
+  border: 1px solid var(--calc-border);
+}
+
+[data-calculator-theme] .calculator-accent-btn {
+  background-color: var(--calc-accent);
+  color: white;
+  border: none;
+}
+
+/* Themed pricing display */
+[data-calculator-theme] .pricing-display {
+  background: var(--calc-gradient);
+  color: white;
+  border-radius: 12px;
+}
+
+[data-calculator-theme] .pricing-item {
+  background-color: var(--calc-card);
+  color: var(--calc-primary);
+  border: 1px solid var(--calc-border);
+}
+
+/* Themed decorative elements */
+[data-calculator-theme] .theme-accent {
+  color: var(--calc-accent);
+}
+
+[data-calculator-theme] .theme-gradient {
+  background: var(--calc-gradient);
 }
 
 @media (max-width: 1024px) {
