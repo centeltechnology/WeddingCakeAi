@@ -3253,11 +3253,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // For now, provide fallback billing management since Stripe Customer Portal requires configuration
-      res.json({ 
-        message: 'All billing features are available in your current dashboard - you can change plans, view usage, and download invoices here.',
-        fallback: true 
-      });
+      // Create Stripe Customer Portal session
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: baker.stripeCustomerId!,
+          return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing`,
+        });
+
+        res.json({ portalUrl: session.url });
+      } catch (portalError) {
+        console.error('Error creating portal session:', portalError);
+        // Fallback to in-app billing management
+        res.json({ 
+          message: 'All billing features are available in your current dashboard - you can change plans, view usage, and download invoices here.',
+          fallback: true 
+        });
+      }
     } catch (error) {
       console.error('Error creating portal session:', error);
       res.status(500).json({ error: 'Failed to open billing portal' });
