@@ -34,7 +34,8 @@ import {
   Bell,
   Lock,
   Unlock,
-  LogOut
+  LogOut,
+  RotateCcw
 } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
