@@ -133,6 +133,7 @@ export const bakers = pgTable("bakers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   email: text("email").notNull(),
+  password: text("password").notNull(),
   phone: text("phone"),
   address: text("address"),
   latitude: decimal("latitude"),
@@ -201,9 +202,10 @@ export const messages = pgTable("messages", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true });
 export const insertEstimateSchema = createInsertSchema(estimates).omit({ id: true, createdAt: true });
-export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, createdAt: true }).extend({
+export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, createdAt: true, updatedAt: true }).extend({
   name: z.string().min(1, "Bakery name is required"),
-  email: z.string().email("Valid email is required")
+  email: z.string().email("Valid email is required"),
+  password: z.string().min(8, "Password must be at least 8 characters")
 });
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
