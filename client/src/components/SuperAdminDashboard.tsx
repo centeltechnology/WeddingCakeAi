@@ -755,37 +755,45 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           {/* Mobile Tab Navigation */}
           <div className="lg:hidden">
-            <TabsList className="grid w-full grid-cols-2 gap-2 h-auto p-2">
+            <TabsList className="grid w-full grid-cols-4 gap-1 h-auto p-2">
               <TabsTrigger value="overview" data-testid="tab-overview" className="flex-col h-16 gap-1">
-                <BarChart3 className="h-5 w-5" />
+                <BarChart3 className="h-4 w-4" />
                 <span className="text-xs">Overview</span>
               </TabsTrigger>
               <TabsTrigger value="tenants" data-testid="tab-tenants" className="flex-col h-16 gap-1">
-                <Building2 className="h-5 w-5" />
+                <Building2 className="h-4 w-4" />
                 <span className="text-xs">Tenants</span>
               </TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users" className="flex-col h-16 gap-1">
-                <Users className="h-5 w-5" />
+                <Users className="h-4 w-4" />
                 <span className="text-xs">Users</span>
               </TabsTrigger>
               <TabsTrigger value="system" data-testid="tab-system" className="flex-col h-16 gap-1">
-                <Server className="h-5 w-5" />
+                <Server className="h-4 w-4" />
                 <span className="text-xs">System</span>
               </TabsTrigger>
-              <TabsTrigger value="settings" data-testid="tab-settings" className="flex-col h-16 gap-1">
-                <Settings className="h-5 w-5" />
-                <span className="text-xs">Settings</span>
-              </TabsTrigger>
               <TabsTrigger value="security" data-testid="tab-security" className="flex-col h-16 gap-1">
-                <Shield className="h-5 w-5" />
+                <Shield className="h-4 w-4" />
                 <span className="text-xs">Security</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-col h-16 gap-1">
+                <Database className="h-4 w-4" />
+                <span className="text-xs">Analytics</span>
+              </TabsTrigger>
+              <TabsTrigger value="communication" data-testid="tab-communication" className="flex-col h-16 gap-1">
+                <Bell className="h-4 w-4" />
+                <span className="text-xs">Comms</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings" className="flex-col h-16 gap-1">
+                <Settings className="h-4 w-4" />
+                <span className="text-xs">Settings</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* Desktop Tab Navigation */}
           <div className="hidden lg:block">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="overview" data-testid="tab-overview">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Overview
@@ -802,13 +810,21 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                 <Server className="h-4 w-4 mr-2" />
                 System
               </TabsTrigger>
-              <TabsTrigger value="settings" data-testid="tab-settings">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </TabsTrigger>
               <TabsTrigger value="security" data-testid="tab-security">
                 <Shield className="h-4 w-4 mr-2" />
                 Security
+              </TabsTrigger>
+              <TabsTrigger value="analytics" data-testid="tab-analytics">
+                <Database className="h-4 w-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="communication" data-testid="tab-communication">
+                <Bell className="h-4 w-4 mr-2" />
+                Communication
+              </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1234,6 +1250,307 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
             </div>
           </TabsContent>
 
+          {/* Security Tab - Audit Logs and Security Features */}
+          <TabsContent value="security">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audit & Activity Logs</CardTitle>
+                  <CardDescription>Track all administrative actions and system changes</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <Input
+                        placeholder="Search audit logs..."
+                        className="flex-1"
+                        data-testid="input-search-audit-logs"
+                      />
+                      <Button variant="outline" data-testid="button-filter-audit-logs">
+                        <Search className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {[1,2,3,4,5].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Activity className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Tenant status changed</p>
+                              <p className="text-sm text-muted-foreground">admin suspended tenant ID: bakery-{i}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">2 minutes ago</p>
+                            <Badge variant="outline" className="text-xs">Admin Action</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security Settings</CardTitle>
+                    <CardDescription>Configure platform security policies</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Two-Factor Authentication</Label>
+                      <Button variant="outline" size="sm" data-testid="toggle-2fa">
+                        <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                        Disabled
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Login Rate Limiting</Label>
+                      <Button variant="outline" size="sm" data-testid="toggle-rate-limiting">
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        Enabled
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Session Timeout (minutes)</Label>
+                      <Input type="number" defaultValue="60" className="w-20" data-testid="input-session-timeout" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Change Password</CardTitle>
+                    <CardDescription>Update your super admin password</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PasswordChangeForm />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab - Data Export and Analytics */}
+          <TabsContent value="analytics">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data Export & Analytics</CardTitle>
+                  <CardDescription>Export platform data and generate reports</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Quick Exports</h3>
+                      <div className="space-y-2">
+                        <Button 
+                          className="w-full justify-start" 
+                          variant="outline"
+                          onClick={() => handleExportData()}
+                          disabled={exportDataMutation.isPending}
+                          data-testid="button-export-all-data"
+                        >
+                          <Database className="h-4 w-4 mr-2" />
+                          {exportDataMutation.isPending ? 'Exporting...' : 'Export All Platform Data'}
+                        </Button>
+                        <Button className="w-full justify-start" variant="outline" data-testid="button-export-tenants">
+                          <Building2 className="h-4 w-4 mr-2" />
+                          Export Tenant Data
+                        </Button>
+                        <Button className="w-full justify-start" variant="outline" data-testid="button-export-users">
+                          <Users className="h-4 w-4 mr-2" />
+                          Export User Data
+                        </Button>
+                        <Button className="w-full justify-start" variant="outline" data-testid="button-export-billing">
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          Export Billing Data
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Analytics Reports</h3>
+                      <div className="space-y-3">
+                        <Card className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Monthly Growth Report</p>
+                              <p className="text-sm text-muted-foreground">User and tenant growth metrics</p>
+                            </div>
+                            <Button variant="outline" size="sm" data-testid="button-generate-growth-report">
+                              Generate
+                            </Button>
+                          </div>
+                        </Card>
+                        <Card className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Revenue Analytics</p>
+                              <p className="text-sm text-muted-foreground">Subscription and payment trends</p>
+                            </div>
+                            <Button variant="outline" size="sm" data-testid="button-generate-revenue-report">
+                              Generate
+                            </Button>
+                          </div>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Export History</CardTitle>
+                  <CardDescription>Recent data export jobs and their status</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[1,2,3].map((i) => (
+                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Platform Data Export #{i}</p>
+                            <p className="text-sm text-muted-foreground">CSV format • 2.4 MB</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="text-green-600">Completed</Badge>
+                          <Button variant="outline" size="sm" data-testid={`button-download-export-${i}`}>
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Communication Tab - Announcements and Email Templates */}
+          <TabsContent value="communication">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>System Announcements</CardTitle>
+                      <CardDescription>Manage platform-wide announcements and notifications</CardDescription>
+                    </div>
+                    <Button data-testid="button-create-announcement">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Create Announcement
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[1,2,3].map((i) => (
+                      <Card key={i} className="p-4 border-l-4 border-l-blue-500">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge variant={i === 1 ? "default" : "secondary"}>
+                                {i === 1 ? "Active" : "Scheduled"}
+                              </Badge>
+                              <Badge variant="outline">
+                                {i === 1 ? "Maintenance" : i === 2 ? "Feature" : "Important"}
+                              </Badge>
+                            </div>
+                            <h3 className="font-medium">Scheduled maintenance on Sunday</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              The platform will undergo routine maintenance from 2:00 AM to 4:00 AM UTC.
+                            </p>
+                            <div className="flex items-center text-xs text-muted-foreground mt-2">
+                              <span>Created {i} day{i > 1 ? 's' : ''} ago</span>
+                              <span className="mx-2">•</span>
+                              <span>Expires in {7-i} days</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm" data-testid={`button-edit-announcement-${i}`}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" data-testid={`button-delete-announcement-${i}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Email Templates</CardTitle>
+                    <CardDescription>Manage automated email templates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {['Welcome Email', 'Trial Expiring', 'Payment Failed', 'Account Suspended'].map((template, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{template}</p>
+                              <p className="text-sm text-muted-foreground">Last updated 2 days ago</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" data-testid={`button-edit-template-${i}`}>
+                            Edit
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Broadcast Settings</CardTitle>
+                    <CardDescription>Configure notification delivery preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Email Notifications</Label>
+                      <Button variant="outline" size="sm" data-testid="toggle-email-notifications">
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        Enabled
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>In-App Notifications</Label>
+                      <Button variant="outline" size="sm" data-testid="toggle-inapp-notifications">
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        Enabled
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>SMS Notifications</Label>
+                      <Button variant="outline" size="sm" data-testid="toggle-sms-notifications">
+                        <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                        Disabled
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings">
             <div className="space-y-6">
@@ -1310,11 +1627,28 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
               {/* Password Change Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Account Security</CardTitle>
-                  <CardDescription>Change your super admin password</CardDescription>
+                  <CardTitle>Backup and Recovery</CardTitle>
+                  <CardDescription>Database backup and restore operations</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <PasswordChangeForm />
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Automatic Backups</Label>
+                      <p className="text-sm text-muted-foreground">Daily backups at 2:00 AM UTC</p>
+                    </div>
+                    <Button variant="outline" size="sm" data-testid="toggle-auto-backups">
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                      Enabled
+                    </Button>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" data-testid="button-create-backup">
+                      Create Manual Backup
+                    </Button>
+                    <Button variant="outline" data-testid="button-view-backups">
+                      View All Backups
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
