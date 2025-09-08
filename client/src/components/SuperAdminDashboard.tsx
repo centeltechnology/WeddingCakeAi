@@ -1106,12 +1106,16 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>User Management</CardTitle>
-                      <CardDescription>Manage all users across the platform</CardDescription>
+                      <CardTitle>Advanced User Management</CardTitle>
+                      <CardDescription>Manage all users with bulk operations and role management</CardDescription>
                     </div>
                     <div className="flex space-x-2">
                       <Button variant="outline" data-testid="button-export-users">
                         Export Users
+                      </Button>
+                      <Button variant="outline" data-testid="button-bulk-actions">
+                        <Users className="h-4 w-4 mr-2" />
+                        Bulk Actions
                       </Button>
                       <Button data-testid="button-add-user">
                         <Users className="h-4 w-4 mr-2" />
@@ -1121,16 +1125,66 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-6">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search users by name, email, or tenant..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                        data-testid="input-search-users"
-                      />
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search users by name, email, or tenant..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-search-users"
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" data-testid="filter-active-users">
+                          Active
+                        </Button>
+                        <Button variant="outline" size="sm" data-testid="filter-suspended-users">
+                          Suspended
+                        </Button>
+                        <Button variant="outline" size="sm" data-testid="filter-admin-users">
+                          Admins
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Bulk Actions Bar */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300"
+                              data-testid="checkbox-select-all-users"
+                            />
+                            <Label className="text-sm">Select All Users</Label>
+                          </div>
+                          <Badge variant="outline" className="bg-white">
+                            0 users selected
+                          </Badge>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" data-testid="button-bulk-activate">
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Activate Selected
+                          </Button>
+                          <Button variant="outline" size="sm" data-testid="button-bulk-suspend">
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Suspend Selected
+                          </Button>
+                          <Button variant="outline" size="sm" data-testid="button-bulk-change-role">
+                            <Crown className="h-4 w-4 mr-2" />
+                            Change Role
+                          </Button>
+                          <Button variant="outline" size="sm" data-testid="button-bulk-reset-passwords">
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset Passwords
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1144,18 +1198,36 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       {filteredUsers.map((user) => (
                         <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                           <div className="flex items-center space-x-4">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300"
+                              data-testid={`checkbox-select-user-${user.id}`}
+                            />
                             <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-green-400 rounded-full flex items-center justify-center text-white font-bold text-sm">
                               {user.name.charAt(0)}
                             </div>
                             <div>
-                              <p className="font-medium">{user.name}</p>
+                              <div className="flex items-center space-x-2">
+                                <p className="font-medium">{user.name}</p>
+                                {user.role === 'super_admin' && (
+                                  <Badge variant="outline" className="bg-purple-100 text-purple-800 text-xs">
+                                    <Crown className="h-3 w-3 mr-1" />
+                                    Super Admin
+                                  </Badge>
+                                )}
+                                {user.role === 'admin' && (
+                                  <Badge variant="outline" className="bg-blue-100 text-blue-800 text-xs">
+                                    Admin
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">{user.email}</p>
                               <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                                 <span>{user.tenantName}</span>
                                 <span>•</span>
-                                <span>{user.role}</span>
+                                <span>Role: {user.role}</span>
                                 <span>•</span>
-                                <span>Last login: {user.lastLogin}</span>
+                                <span>Last login: {user.lastLogin || 'Never'}</span>
                               </div>
                             </div>
                           </div>
