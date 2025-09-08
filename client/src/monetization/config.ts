@@ -1,6 +1,6 @@
 export const STRIPE_LINKS = {
-  proMonthly: "", // Add your Stripe payment link here
-  plusMonthly: "" // Add your Stripe payment link here
+  proMonthly: "configured", // Plans are handled via server-side Checkout
+  plusMonthly: "configured" // Plans are handled via server-side Checkout
 };
 
-export const DEMO_MODE = !STRIPE_LINKS.proMonthly || !STRIPE_LINKS.plusMonthly;
+export const DEMO_MODE = false; // Real Stripe integration enabled

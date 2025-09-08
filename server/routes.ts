@@ -2911,8 +2911,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle upgrade/change to paid plan
       const plans = {
-        pro: { priceId: process.env.STRIPE_PRO_PRICE_ID, price: 79 },
-        plus: { priceId: process.env.STRIPE_PLUS_PRICE_ID, price: 149 }
+        pro: { priceId: process.env.STRIPE_PRO_PRICE_ID || 'price_1S4uJTGkNbK3EWafOW8B5406', price: 79 },
+        plus: { priceId: process.env.STRIPE_PLUS_PRICE_ID || 'price_1S4uKUGkNbK3EWafpsyXvjPA', price: 149 }
       };
 
       const selectedPlan = plans[planId as keyof typeof plans];
