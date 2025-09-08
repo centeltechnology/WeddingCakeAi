@@ -1351,12 +1351,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Find baker by email (in real app, this would query the database)
-      // For demo purposes, we'll check against hardcoded credentials
-      const validEmail = 'admin@sweetdreamsbakery.com';
-      const validPassword = 'demo123';
+      // Find baker by email in the database
+      const baker = await storage.getBakerByEmail(email);
       
-      if (email !== validEmail || password !== validPassword) {
+      if (!baker) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid email or password' 
+        });
+      }
+
+      // Verify password using bcrypt
+      const isValidPassword = await bcrypt.compare(password, baker.password);
+      
+      if (!isValidPassword) {
         return res.status(401).json({ 
           success: false, 
           message: 'Invalid email or password' 
@@ -1364,16 +1372,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create session token (in production, use proper JWT or session management)
-      const sessionToken = Buffer.from(`baker:70c29a5d-72f3-443f-8c39-c2ced5210f05:${Date.now()}`).toString('base64');
+      const sessionToken = Buffer.from(`baker:${baker.id}:${Date.now()}`).toString('base64');
+      
+      // Don't return the password in the response
+      const { password: _, ...bakerResponse } = baker;
       
       res.json({
         success: true,
         token: sessionToken,
-        baker: {
-          id: '70c29a5d-72f3-443f-8c39-c2ced5210f05',
-          name: 'Sweet Dreams Bakery',
-          email: email
-        }
+        baker: bakerResponse
       });
     } catch (error) {
       console.error('Baker login error:', error);

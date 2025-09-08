@@ -29,6 +29,7 @@ export interface IStorage {
   // Baker operations
   getBakers(): Promise<Baker[]>;
   getBaker(id: string): Promise<Baker | undefined>;
+  getBakerByEmail(email: string): Promise<Baker | undefined>;
   createBaker(insertBaker: InsertBaker): Promise<Baker>;
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
@@ -439,6 +440,10 @@ export class MemStorage implements IStorage {
 
   async getBaker(id: string): Promise<Baker | undefined> {
     return this.bakers.get(id);
+  }
+
+  async getBakerByEmail(email: string): Promise<Baker | undefined> {
+    return Array.from(this.bakers.values()).find(baker => baker.email === email);
   }
 
   async createBaker(insertBaker: InsertBaker): Promise<Baker> {
@@ -1727,6 +1732,11 @@ export class DatabaseStorage implements IStorage {
 
   async getBaker(id: string): Promise<Baker | undefined> {
     const [baker] = await db.select().from(bakers).where(eq(bakers.id, id));
+    return baker || undefined;
+  }
+
+  async getBakerByEmail(email: string): Promise<Baker | undefined> {
+    const [baker] = await db.select().from(bakers).where(eq(bakers.email, email));
     return baker || undefined;
   }
 
