@@ -3046,7 +3046,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fallback: true 
           });
         } else {
-          throw portalError;
+          console.error('Stripe portal error:', portalError);
+          res.json({ 
+            message: 'Billing management features are available in your dashboard',
+            fallback: true 
+          });
         }
       }
     } catch (error) {
