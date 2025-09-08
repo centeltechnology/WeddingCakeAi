@@ -30,6 +30,7 @@ import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import BakerLogin from "@/pages/baker-login";
+import Billing from "@/pages/billing";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/help/subdomain-setup" component={SubdomainSetup} />
       <Route path="/help/quote-templates" component={QuoteTemplates} />
       <Route path="/help/custom-cake-ordering" component={CustomCakeOrdering} />
+      <Route path="/billing" component={Billing} />
       <Route component={NotFound} />
     </Switch>
   );
