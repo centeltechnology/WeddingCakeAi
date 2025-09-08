@@ -222,15 +222,15 @@ export function EmbeddableWidget({ bakerId }: EmbeddableWidgetProps) {
                   <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold shadow-md">
                     2
                   </div>
-                  <h4 className="font-medium mb-1">Copy Code</h4>
-                  <p className="text-sm text-muted-foreground">Copy the embed code to your clipboard</p>
+                  <h4 className="font-medium mb-1 text-gray-900 dark:text-gray-100">Copy Code</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Copy the embed code to your clipboard</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold">
+                  <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold shadow-md">
                     3
                   </div>
-                  <h4 className="font-medium mb-1">Paste & Publish</h4>
-                  <p className="text-sm text-muted-foreground">Paste the code into your website HTML</p>
+                  <h4 className="font-medium mb-1 text-gray-900 dark:text-gray-100">Paste & Publish</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Paste the code into your website HTML</p>
                 </div>
               </div>
               
