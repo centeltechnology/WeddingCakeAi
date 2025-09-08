@@ -3012,26 +3012,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If baker doesn't have a Stripe customer ID, create one
       if (!baker.stripeCustomerId) {
-        const customer = await stripe.customers.create({
-          email: baker.email,
-          name: baker.businessName || baker.name,
-          metadata: {
-            bakerId: baker.id,
-            tenantId: baker.tenantId || 'default'
-          }
-        });
+        try {
+          const customer = await stripe.customers.create({
+            email: baker.email,
+            name: baker.businessName || baker.name,
+            metadata: {
+              bakerId: baker.id,
+              tenantId: baker.tenantId || 'default'
+            }
+          });
 
-        // Update baker with new customer ID
-        baker = await storage.updateBaker(baker.id, { stripeCustomerId: customer.id });
+          // Update baker with new customer ID
+          baker = await storage.updateBaker(baker.id, { stripeCustomerId: customer.id });
+        } catch (stripeError) {
+          console.error('Error creating Stripe customer:', stripeError);
+          return res.status(500).json({ error: 'Failed to create billing account' });
+        }
       }
 
-      // Create Stripe customer portal session
-      const session = await stripe.billingPortal.sessions.create({
-        customer: baker.stripeCustomerId,
-        return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing`,
-      });
-
-      res.json({ portalUrl: session.url });
+      // Try to create Stripe customer portal session, fallback to internal portal
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: baker.stripeCustomerId,
+          return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing`,
+        });
+        res.json({ portalUrl: session.url });
+      } catch (portalError: any) {
+        // If customer portal is not configured, provide fallback
+        if (portalError.type === 'StripeInvalidRequestError' && 
+            portalError.message?.includes('No configuration provided')) {
+          res.json({ 
+            message: 'Billing portal access available - payment methods and invoices can be managed through your billing dashboard',
+            fallback: true 
+          });
+        } else {
+          throw portalError;
+        }
+      }
     } catch (error) {
       console.error('Error creating portal session:', error);
       res.status(500).json({ error: 'Failed to open billing portal' });

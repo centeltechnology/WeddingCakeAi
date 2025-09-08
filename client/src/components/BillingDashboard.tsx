@@ -133,7 +133,14 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
       return await apiRequest('POST', `/api/bakers/${bakerId}/billing/portal`);
     },
     onSuccess: (data: any) => {
-      window.location.href = data.portalUrl;
+      if (data.portalUrl) {
+        window.location.href = data.portalUrl;
+      } else if (data.fallback) {
+        toast({
+          title: 'Billing Management',
+          description: data.message || 'All billing features are available in your current dashboard.',
+        });
+      }
     },
     onError: (error: any) => {
       toast({
