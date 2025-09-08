@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { NavigationHeader } from "@/components/NavigationHeader";
+import { Footer } from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Settings as SettingsIcon, Calculator as CalculatorIcon, Eye, Save } from "lucide-react";
+import { Settings as SettingsIcon, Calculator as CalculatorIcon, Eye, Save, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import CalculatorThemeSelector from "@/components/CalculatorThemeSelector";
 import Calculator from "@/components/Calculator";
 import { useCalculatorTheme } from "@/hooks/useCalculatorTheme";
@@ -32,7 +36,22 @@ export default function Settings() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-gray-50">
+      <SEOHead 
+        title="Calculator Settings - Bakewise"
+        description="Customize your calculator themes and appearance settings"
+      />
+      <NavigationHeader />
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center">
@@ -177,6 +196,8 @@ export default function Settings() {
           </Card>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }
