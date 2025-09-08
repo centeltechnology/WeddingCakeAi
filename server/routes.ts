@@ -552,7 +552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             bakerWithStripe.stripeSubscriptionId = subscription.id;
             bakerWithStripe.subscriptionStatus = 'trialing';
-            bakerWithStripe.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+            if (subscription.current_period_end) {
+              bakerWithStripe.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+            }
           } catch (stripeError) {
             console.error('Error creating Stripe subscription:', stripeError);
             // Continue with account creation even if subscription fails
