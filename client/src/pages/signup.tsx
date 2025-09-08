@@ -87,6 +87,8 @@ export default function Signup() {
     bakeryName: '',
     ownerName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     city: '',
     selectedPlan: 'professional'
@@ -97,6 +99,7 @@ export default function Signup() {
       const response = await apiRequest('POST', '/api/bakers', {
         name: data.bakeryName,
         email: data.email,
+        password: data.password,
         phone: data.phone || null,
         address: data.city || null,
         subscriptionPlan: data.selectedPlan,
@@ -136,10 +139,28 @@ export default function Signup() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.bakeryName || !formData.ownerName || !formData.email) {
+    if (!formData.bakeryName || !formData.ownerName || !formData.email || !formData.password || !formData.confirmPassword) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please check and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (formData.password.length < 8) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 8 characters long.",
         variant: "destructive",
       });
       return;
@@ -315,6 +336,33 @@ export default function Signup() {
                     placeholder="(555) 123-4567"
                     value={formData.phone}
                     onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="Re-enter your password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
