@@ -59,7 +59,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    window.location.href = '/api/logout';
+    // Clear any stored authentication tokens
+    localStorage.removeItem('bakerToken');
+    localStorage.removeItem('authToken');
+    
+    // Redirect to login page
+    window.location.href = '/baker-login';
   };
 
   const { data: baker } = useQuery<Baker>({

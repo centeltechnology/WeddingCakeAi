@@ -1441,7 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout endpoint - handle both GET and POST
   const logoutHandler = async (req: any, res: any) => {
     // For token-based auth, logout is handled client-side by removing the token
-    // Redirect to login page after logout
+    // Redirect to client-side login page 
     res.redirect('/baker-login');
   };
 
