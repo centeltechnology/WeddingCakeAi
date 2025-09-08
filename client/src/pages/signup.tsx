@@ -30,14 +30,14 @@ const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: '$29',
-    monthly: 'per month',
+    price: 'FREE',
+    monthly: 'forever',
     description: 'Perfect for getting started',
     icon: <BadgeCheck className="w-8 h-8 text-blue-600" />,
     features: [
-      'Basic CRM (up to 50 customers)',
-      '10 quotes per month',
-      'Basic templates',
+      'Basic CRM (up to 10 customers)',
+      '3 quotes per month',
+      'Basic calculator themes',
       'Email support',
       'Standard branding'
     ]
@@ -284,7 +284,8 @@ export default function Signup() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Get Started Today</CardTitle>
               <CardDescription className="text-gray-600">
-                Fill out the form below to create your Bakewise account
+                Fill out the form below to create your Bakewise account.<br/>
+                <span className="text-rose-600 font-medium">Professional and Enterprise plans include a 14-day free trial!</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -383,7 +384,8 @@ export default function Signup() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-700">{plans.find(p => p.id === formData.selectedPlan)?.name}</span>
                   <span className="font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                    {plans.find(p => p.id === formData.selectedPlan)?.price}/month
+                    {plans.find(p => p.id === formData.selectedPlan)?.price}
+                    {formData.selectedPlan !== 'starter' && '/month'}
                   </span>
                 </div>
               </div>
@@ -394,11 +396,15 @@ export default function Signup() {
                 className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg transition-all duration-300" 
                 size="lg"
               >
-                {signupMutation.isPending ? "Creating Account..." : "Start Your 14-Day Free Trial"}
+                {signupMutation.isPending ? "Creating Account..." : 
+                 formData.selectedPlan === 'starter' ? "Create Free Account" : "Start Your 14-Day Free Trial"}
               </Button>
               
                 <p className="text-xs text-gray-500 text-center">
-                  No credit card required. Cancel anytime. 
+                  {formData.selectedPlan === 'starter' 
+                    ? "Free account - no credit card required." 
+                    : "14-day trial - no credit card required. Cancel anytime."
+                  } <br/>
                   By signing up, you agree to our Terms of Service and Privacy Policy.
                 </p>
               </form>
