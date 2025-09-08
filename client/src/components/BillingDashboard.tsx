@@ -19,7 +19,9 @@ import {
   AlertCircle,
   CheckCircle,
   Star,
-  BarChart3
+  BarChart3,
+  Clock,
+  Zap
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -32,6 +34,12 @@ interface BillingInfo {
   cancelAtPeriodEnd?: boolean;
   stripeCustomerId?: string;
   nextInvoiceAmount?: number;
+  // Trial expiration data
+  isTrialing?: boolean;
+  trialEndsAt?: string;
+  daysLeftInTrial?: number;
+  trialExpiringSoon?: boolean;
+  trialWarningLevel?: 'none' | 'info' | 'warning' | 'urgent' | 'expired';
   usage?: {
     leads: number;
     leadsLimit: number;
@@ -153,8 +161,9 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
 
   const getPlanBadgeColor = (plan: string) => {
     switch (plan.toLowerCase()) {
-      case 'pro': return 'bg-purple-100 text-purple-800';
-      case 'plus': return 'bg-orange-100 text-orange-800';
+      case 'professional': return 'bg-purple-100 text-purple-800';
+      case 'enterprise': return 'bg-orange-100 text-orange-800';
+      case 'starter': return 'bg-green-100 text-green-800';
       default: return 'bg-blue-100 text-blue-800';
     }
   };
@@ -167,6 +176,62 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
       case 'cancelled': return 'bg-gray-100 text-gray-800';
       default: return 'bg-yellow-100 text-yellow-800';
     }
+  };
+
+  // Helper function to get trial warning styling
+  const getTrialWarningStyle = (warningLevel: string) => {
+    switch (warningLevel) {
+      case 'urgent':
+        return {
+          containerClass: 'border-red-200 bg-red-50',
+          iconClass: 'text-red-600',
+          textClass: 'text-red-800',
+          buttonClass: 'bg-red-600 hover:bg-red-700'
+        };
+      case 'warning':
+        return {
+          containerClass: 'border-yellow-200 bg-yellow-50',
+          iconClass: 'text-yellow-600',
+          textClass: 'text-yellow-800',
+          buttonClass: 'bg-yellow-600 hover:bg-yellow-700'
+        };
+      case 'info':
+        return {
+          containerClass: 'border-blue-200 bg-blue-50',
+          iconClass: 'text-blue-600',
+          textClass: 'text-blue-800',
+          buttonClass: 'bg-blue-600 hover:bg-blue-700'
+        };
+      case 'expired':
+        return {
+          containerClass: 'border-red-300 bg-red-100',
+          iconClass: 'text-red-700',
+          textClass: 'text-red-900',
+          buttonClass: 'bg-red-700 hover:bg-red-800'
+        };
+      default:
+        return {
+          containerClass: 'border-gray-200 bg-gray-50',
+          iconClass: 'text-gray-600',
+          textClass: 'text-gray-800',
+          buttonClass: 'bg-gray-600 hover:bg-gray-700'
+        };
+    }
+  };
+
+  const getTrialWarningMessage = (daysLeft: number, warningLevel: string) => {
+    if (warningLevel === 'expired') {
+      return 'Your trial has expired. Upgrade now to continue using premium features.';
+    } else if (daysLeft === 0) {
+      return 'Your trial ends today! Upgrade now to avoid service interruption.';
+    } else if (daysLeft === 1) {
+      return 'Your trial ends tomorrow. Upgrade now to continue using premium features.';
+    } else if (daysLeft <= 3) {
+      return `Your trial ends in ${daysLeft} days. Consider upgrading to avoid service interruption.`;
+    } else if (daysLeft <= 7) {
+      return `Your trial ends in ${daysLeft} days. Take your time to explore all features.`;
+    }
+    return `You have ${daysLeft} days left in your trial.`;
   };
 
   if (isLoading) {
@@ -184,6 +249,40 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Trial Warning Alert */}
+      {billingInfo?.isTrialing && billingInfo?.trialExpiringSoon && (
+        <Alert className={getTrialWarningStyle(billingInfo.trialWarningLevel || 'info').containerClass}>
+          <div className="flex items-start space-x-3">
+            <Clock className={`h-5 w-5 mt-0.5 ${getTrialWarningStyle(billingInfo.trialWarningLevel || 'info').iconClass}`} />
+            <div className="flex-1">
+              <AlertDescription className={`${getTrialWarningStyle(billingInfo.trialWarningLevel || 'info').textClass} font-medium`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">
+                      {billingInfo.trialWarningLevel === 'expired' ? '⚠️ Trial Expired' : 
+                       billingInfo.daysLeftInTrial === 0 ? '🚨 Trial Ends Today' :
+                       billingInfo.daysLeftInTrial === 1 ? '⏰ Trial Ends Tomorrow' :
+                       `⏳ ${billingInfo.daysLeftInTrial} Days Left in Trial`}
+                    </div>
+                    <p className="text-sm mt-1">
+                      {getTrialWarningMessage(billingInfo.daysLeftInTrial || 0, billingInfo.trialWarningLevel || 'info')}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowPlanOptions(true)}
+                    className={`${getTrialWarningStyle(billingInfo.trialWarningLevel || 'info').buttonClass} text-white ml-4`}
+                    data-testid="button-upgrade-from-trial"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Upgrade Now
+                  </Button>
+                </div>
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {/* Current Plan Overview */}
       <Card>
         <CardHeader>

@@ -15,6 +15,7 @@ import Stripe from "stripe";
 import Replicate from "replicate";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -26,6 +27,52 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
+
+// Trial expiration calculation helper function
+function calculateTrialStatus(baker: any) {
+  const now = new Date();
+  const isTrialing = baker.subscriptionStatus === 'trialing';
+  const trialEndsAt = baker.currentPeriodEnd ? new Date(baker.currentPeriodEnd) : null;
+  
+  if (!isTrialing || !trialEndsAt) {
+    return {
+      isTrialing: false,
+      trialEndsAt: null,
+      daysLeftInTrial: 0,
+      trialExpiringSoon: false,
+      trialWarningLevel: 'none'
+    };
+  }
+  
+  const daysLeft = differenceInDays(trialEndsAt, now);
+  const trialExpired = isAfter(now, trialEndsAt);
+  
+  // Determine warning level based on days remaining
+  let warningLevel = 'none';
+  let expiringSoon = false;
+  
+  if (trialExpired) {
+    warningLevel = 'expired';
+    expiringSoon = true;
+  } else if (daysLeft <= 1) {
+    warningLevel = 'urgent'; // Red warning - 1 day or less
+    expiringSoon = true;
+  } else if (daysLeft <= 3) {
+    warningLevel = 'warning'; // Yellow warning - 2-3 days
+    expiringSoon = true;
+  } else if (daysLeft <= 7) {
+    warningLevel = 'info'; // Blue info - 4-7 days  
+    expiringSoon = true;
+  }
+  
+  return {
+    isTrialing: true,
+    trialEndsAt: trialEndsAt.toISOString(),
+    daysLeftInTrial: Math.max(0, daysLeft),
+    trialExpiringSoon: expiringSoon,
+    trialWarningLevel: warningLevel
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve PWA manifest
@@ -2842,14 +2889,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get current plan details
-      const currentPlan = baker.subscriptionPlan || 'free';
+      const currentPlan = baker.subscriptionPlan || 'starter';
+      const subscriptionStatus = baker.subscriptionStatus || 'active';
+      
+      // Calculate trial expiration information
+      const trialInfo = calculateTrialStatus(baker);
+      
       const billingInfo = {
         subscriptionPlan: currentPlan,
-        subscriptionStatus: baker.subscriptionStatus || 'active',
+        subscriptionStatus: subscriptionStatus,
         currentPeriodStart: baker.currentPeriodStart,
         currentPeriodEnd: baker.currentPeriodEnd,
         cancelAtPeriodEnd: baker.cancelAtPeriodEnd || false,
         stripeCustomerId: baker.stripeCustomerId,
+        // Trial expiration data
+        isTrialing: trialInfo.isTrialing,
+        trialEndsAt: trialInfo.trialEndsAt,
+        daysLeftInTrial: trialInfo.daysLeftInTrial,
+        trialExpiringSoon: trialInfo.trialExpiringSoon,
+        trialWarningLevel: trialInfo.trialWarningLevel, // 'none', 'info', 'warning', 'urgent'
         usage: {
           leads: await storage.getLeadCountForBaker(bakerId, 'current_month'),
           leadsLimit: getLeadsLimit(currentPlan),
