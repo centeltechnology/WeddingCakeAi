@@ -513,22 +513,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       };
       
-      // Create Stripe customer for all bakers
-      const customer = await stripe.customers.create({
-        email: bakerData.email,
-        name: bakerData.name,
-        metadata: { 
-          bakerEmail: bakerData.email,
-          plan: bakerData.subscriptionPlan || 'starter'
-        }
-      });
-
-      // Add Stripe customer ID to baker data
-      const bakerWithStripe = {
+      // Initialize baker data
+      let bakerWithStripe = {
         ...bakerWithHashedPassword,
-        stripeCustomerId: customer.id,
         subscriptionStatus: 'active'
       };
+
+      // Only create Stripe customer for paid plans or if specifically requested
+      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter') {
+        try {
+          const customer = await stripe.customers.create({
+            email: bakerData.email,
+            name: bakerData.name,
+            metadata: { 
+              bakerEmail: bakerData.email,
+              plan: bakerData.subscriptionPlan || 'starter'
+            }
+          });
+
+          bakerWithStripe.stripeCustomerId = customer.id;
+        } catch (stripeError) {
+          console.error('Error creating Stripe customer:', stripeError);
+          // Continue with account creation for free plans
+          if (bakerData.subscriptionPlan !== 'starter') {
+            throw new Error('Unable to set up paid subscription. Please try again later.');
+          }
+        }
+      }
 
       // Create Stripe subscription for paid plans with 14-day trial
       if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter') {
