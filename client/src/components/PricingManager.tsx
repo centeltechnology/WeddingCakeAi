@@ -371,7 +371,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <div>Your Price</div>
                   <div>Cost to Make</div>
                   <div>Profit</div>
-                  <div>Margin</div>
+                  <div className="text-gray-900 font-medium">Margin</div>
                 </div>
                 {pricing.cakeSizes.map((size, index) => (
                   <div key={size.size} className="grid grid-cols-6 gap-4 items-center">
@@ -428,7 +428,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <div>Upcharge</div>
                   <div>Cost to Make</div>
                   <div>Profit</div>
-                  <div>Margin</div>
+                  <div className="text-gray-900 font-medium">Margin</div>
                 </div>
                 {(pricing.shapes || []).map((shape, index) => (
                   <div key={shape.id} className="grid grid-cols-5 gap-4 items-center">
