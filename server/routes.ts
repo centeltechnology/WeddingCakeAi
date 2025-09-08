@@ -16,6 +16,7 @@ import Replicate from "replicate";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
+import { EmailAutomationService } from "./emailAutomation";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -3282,6 +3283,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       default: return 0;
     }
   }
+
+  // ===== ADMIN/TESTING ENDPOINTS FOR SUBSCRIPTION LIFECYCLE =====
+  
+  // Manually trigger all subscription lifecycle checks (for testing)
+  app.post('/api/admin/subscriptions/run-automation', async (req, res) => {
+    try {
+      console.log('Manual trigger: Running subscription lifecycle automation...');
+      const result = await EmailAutomationService.runAutomationChecks();
+      
+      res.json({
+        success: true,
+        message: 'Subscription lifecycle automation completed',
+        results: result
+      });
+    } catch (error) {
+      console.error('Error running subscription automation:', error);
+      res.status(500).json({ 
+        error: 'Failed to run subscription automation',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Send trial welcome email to specific baker (for testing)
+  app.post('/api/admin/subscriptions/send-welcome/:bakerId', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const success = await EmailAutomationService.sendTrialWelcomeEmail(bakerId);
+      
+      res.json({
+        success,
+        message: success ? 'Welcome email sent successfully' : 'Failed to send welcome email'
+      });
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      res.status(500).json({ 
+        error: 'Failed to send welcome email',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Send subscription success email to specific baker (for testing)
+  app.post('/api/admin/subscriptions/send-success/:bakerId', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const { planName = 'Professional' } = req.body;
+      const success = await EmailAutomationService.sendSubscriptionSuccessEmail(bakerId, planName);
+      
+      res.json({
+        success,
+        message: success ? 'Success email sent successfully' : 'Failed to send success email'
+      });
+    } catch (error) {
+      console.error('Error sending success email:', error);
+      res.status(500).json({ 
+        error: 'Failed to send success email',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get subscription lifecycle status overview (for monitoring)
+  app.get('/api/admin/subscriptions/status', async (req, res) => {
+    try {
+      const bakers = await storage.getBakers();
+      const now = new Date();
+      
+      const stats = {
+        total: bakers.length,
+        active: bakers.filter(b => b.subscriptionStatus === 'active').length,
+        trialing: bakers.filter(b => b.subscriptionStatus === 'trialing').length,
+        cancelled: bakers.filter(b => b.subscriptionStatus === 'cancelled').length,
+        trialExpiring: 0,
+        trialExpired: 0
+      };
+
+      const trialDetails: any[] = [];
+
+      bakers.forEach(baker => {
+        if (baker.subscriptionStatus === 'trialing' && baker.currentPeriodEnd) {
+          const trialEndDate = new Date(baker.currentPeriodEnd);
+          const daysLeft = differenceInDays(trialEndDate, now);
+          const expired = isAfter(now, trialEndDate);
+
+          if (expired) {
+            stats.trialExpired++;
+          } else if (daysLeft <= 7) {
+            stats.trialExpiring++;
+          }
+
+          trialDetails.push({
+            bakerId: baker.id,
+            bakerName: baker.name,
+            email: baker.email,
+            trialEndDate: baker.currentPeriodEnd,
+            daysLeft: Math.max(0, daysLeft),
+            expired,
+            warningLevel: expired ? 'expired' : 
+                         daysLeft <= 1 ? 'urgent' : 
+                         daysLeft <= 3 ? 'warning' : 
+                         daysLeft <= 7 ? 'info' : 'none'
+          });
+        }
+      });
+
+      res.json({
+        stats,
+        trialDetails: trialDetails.sort((a, b) => a.daysLeft - b.daysLeft)
+      });
+    } catch (error) {
+      console.error('Error getting subscription status:', error);
+      res.status(500).json({ 
+        error: 'Failed to get subscription status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
