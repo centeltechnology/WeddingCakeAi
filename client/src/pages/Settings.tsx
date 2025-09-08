@@ -52,8 +52,9 @@ export default function Settings() {
             </Button>
           </Link>
         </div>
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
+        
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center">
             <SettingsIcon className="w-5 h-5 text-white" />
           </div>
@@ -66,7 +67,7 @@ export default function Settings() {
             </p>
           </div>
         </div>
-      </div>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Theme Selector */}
@@ -195,6 +196,7 @@ export default function Settings() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
       
       <Footer />
