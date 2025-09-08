@@ -358,6 +358,22 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
   const [showUserEditModal, setShowUserEditModal] = useState(false);
 
+  // API Queries for new tabs
+  const { data: auditLogs = [], isLoading: auditLogsLoading } = useQuery({
+    queryKey: ['/api/super-admin/audit-logs'],
+    enabled: activeTab === 'security'
+  });
+
+  const { data: dataExports = [], isLoading: dataExportsLoading } = useQuery({
+    queryKey: ['/api/super-admin/data-exports'],
+    enabled: activeTab === 'analytics'
+  });
+
+  const { data: announcements = [], isLoading: announcementsLoading } = useQuery({
+    queryKey: ['/api/super-admin/announcements'],
+    enabled: activeTab === 'communication'
+  });
+
   // Fetch platform statistics
   const { data: platformStats, isLoading: statsLoading } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -1345,24 +1361,39 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       </Button>
                     </div>
                     
-                    <div className="space-y-3">
-                      {[1,2,3,4,5].map((i) => (
-                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Activity className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Tenant status changed</p>
-                              <p className="text-sm text-muted-foreground">admin suspended tenant ID: bakery-{i}</p>
-                            </div>
+                    {auditLogsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                        <p className="mt-2 text-muted-foreground">Loading audit logs...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {auditLogs.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground">No audit logs found</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">2 minutes ago</p>
-                            <Badge variant="outline" className="text-xs">Admin Action</Badge>
-                          </div>
-                        </div>
-                      ))}
+                        ) : (
+                          auditLogs.map((log: any) => (
+                            <div key={log.id} className="flex items-center justify-between p-4 border rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Activity className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{log.action}</p>
+                                  <p className="text-sm text-muted-foreground">{log.details || log.metadata}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium">{new Date(log.createdAt).toLocaleString()}</p>
+                                <Badge variant="outline" className="text-xs">{log.resourceType || 'System'}</Badge>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                     </div>
                   </div>
                 </CardContent>
@@ -1484,27 +1515,56 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                   <CardDescription>Recent data export jobs and their status</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {[1,2,3].map((i) => (
-                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Platform Data Export #{i}</p>
-                            <p className="text-sm text-muted-foreground">CSV format • 2.4 MB</p>
-                          </div>
+                  {dataExportsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <p className="mt-2 text-muted-foreground">Loading export history...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {dataExports.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                          <p className="text-muted-foreground">No export jobs found</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-green-600">Completed</Badge>
-                          <Button variant="outline" size="sm" data-testid={`button-download-export-${i}`}>
-                            Download
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ) : (
+                        dataExports.map((exportJob: any) => (
+                          <div key={exportJob.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                exportJob.status === 'completed' ? 'bg-green-100' : 
+                                exportJob.status === 'failed' ? 'bg-red-100' : 'bg-yellow-100'
+                              }`}>
+                                <CheckCircle className={`h-4 w-4 ${
+                                  exportJob.status === 'completed' ? 'text-green-600' : 
+                                  exportJob.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
+                                }`} />
+                              </div>
+                              <div>
+                                <p className="font-medium">{exportJob.type || 'Platform Data Export'}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {exportJob.format || 'CSV'} format • {exportJob.fileSize ? `${(exportJob.fileSize / 1024 / 1024).toFixed(1)} MB` : 'Processing...'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="outline" className={`text-xs ${
+                                exportJob.status === 'completed' ? 'text-green-600' : 
+                                exportJob.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
+                              }`}>
+                                {exportJob.status || 'Processing'}
+                              </Badge>
+                              {exportJob.status === 'completed' && exportJob.downloadUrl && (
+                                <Button variant="outline" size="sm" data-testid={`button-download-export-${exportJob.id}`}>
+                                  Download
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1527,40 +1587,65 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {[1,2,3].map((i) => (
-                      <Card key={i} className="p-4 border-l-4 border-l-blue-500">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge variant={i === 1 ? "default" : "secondary"}>
-                                {i === 1 ? "Active" : "Scheduled"}
-                              </Badge>
-                              <Badge variant="outline">
-                                {i === 1 ? "Maintenance" : i === 2 ? "Feature" : "Important"}
-                              </Badge>
-                            </div>
-                            <h3 className="font-medium">Scheduled maintenance on Sunday</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              The platform will undergo routine maintenance from 2:00 AM to 4:00 AM UTC.
-                            </p>
-                            <div className="flex items-center text-xs text-muted-foreground mt-2">
-                              <span>Created {i} day{i > 1 ? 's' : ''} ago</span>
-                              <span className="mx-2">•</span>
-                              <span>Expires in {7-i} days</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" data-testid={`button-edit-announcement-${i}`}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" data-testid={`button-delete-announcement-${i}`}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                  {announcementsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <p className="mt-2 text-muted-foreground">Loading announcements...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {announcements.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                          <p className="text-muted-foreground">No announcements found</p>
+                          <p className="text-sm text-muted-foreground mt-1">Create your first announcement to communicate with platform users</p>
                         </div>
-                      </Card>
-                    ))}
+                      ) : (
+                        announcements.map((announcement: any) => (
+                          <Card key={announcement.id} className="p-4 border-l-4 border-l-blue-500">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Badge variant={announcement.isActive ? "default" : "secondary"}>
+                                    {announcement.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {announcement.type || 'Info'}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    {announcement.priority || 'Normal'}
+                                  </Badge>
+                                </div>
+                                <h3 className="font-medium">{announcement.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {announcement.message}
+                                </p>
+                                <div className="flex items-center text-xs text-muted-foreground mt-2">
+                                  <span>Created {new Date(announcement.createdAt).toLocaleDateString()}</span>
+                                  <span className="mx-2">•</span>
+                                  <span>Target: {announcement.targetAudience || 'All users'}</span>
+                                  {announcement.expiresAt && (
+                                    <>
+                                      <span className="mx-2">•</span>
+                                      <span>Expires {new Date(announcement.expiresAt).toLocaleDateString()}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button variant="ghost" size="sm" data-testid={`button-edit-announcement-${announcement.id}`}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" data-testid={`button-delete-announcement-${announcement.id}`}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  )}
                   </div>
                 </CardContent>
               </Card>
