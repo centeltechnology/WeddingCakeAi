@@ -81,6 +81,13 @@ function Router() {
           </BakerAuthWrapper>
         )}
       </Route>
+      <Route path="/dashboard/:id">
+        {(params) => (
+          <BakerAuthWrapper bakerId={params.id}>
+            <BakerDashboard bakerId={params.id} />
+          </BakerAuthWrapper>
+        )}
+      </Route>
       <Route path="/admin">
         {() => (
           <BakerAuthWrapper bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8">
