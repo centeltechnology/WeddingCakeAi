@@ -389,7 +389,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountId: connectAccountId 
       });
     } catch (error: any) {
-      console.error('Error creating Stripe Connect account:', error);
+      // Log detailed error information for debugging
+      console.error('STRIPE CONNECT ERROR:', {
+        message: error.message,
+        type: error.type,
+        code: error.code,
+        statusCode: error.statusCode,
+        requestId: error.requestId,
+        bakerId: bakerId
+      });
       
       // Handle specific Stripe verification errors
       if (error.code === 'invalid_request_error' && error.message?.includes('verify your identity')) {
@@ -401,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle platform profile configuration error
-      if (error.message?.includes('platform-profile')) {
+      if (error.message?.includes('platform-profile') || error.message?.includes('losses')) {
         return res.status(400).json({ 
           error: 'Platform Configuration Required',
           message: 'Stripe Connect platform needs additional configuration. Please contact support for assistance with payment setup.',
@@ -409,17 +417,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Handle other Stripe errors
-      if (error.type === 'StripeInvalidRequestError') {
+      // Handle invalid redirect URL errors
+      if (error.message?.includes('redirect_uri') || error.message?.includes('return_url')) {
         return res.status(400).json({ 
-          error: 'Stripe Setup Error',
-          message: error.message || 'There was an issue with your Stripe account setup. Please check your Stripe account settings.'
+          error: 'Configuration Error',
+          message: 'There is a configuration issue with the payment setup. Please contact support.',
+          supportMessage: 'Domain or redirect URL configuration needs to be updated.'
         });
       }
       
+      // Handle other Stripe errors with more specific messaging
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({ 
+          error: 'Stripe Setup Error',
+          message: `Stripe configuration issue: ${error.message}. Please contact support if this persists.`,
+          details: error.code || 'unknown_error'
+        });
+      }
+      
+      // Generic fallback
       res.status(500).json({ 
         error: 'Failed to create Stripe Connect account',
-        message: 'An unexpected error occurred. Please try again or contact support.'
+        message: 'An unexpected error occurred. Please try again or contact support.',
+        details: error.message
       });
     }
   });
