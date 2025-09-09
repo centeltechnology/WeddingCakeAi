@@ -649,8 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public marketplace route - no tenant restriction
   app.get("/api/bakers/public", async (req, res) => {
     try {
-      const allBakers = await storage.getAllBakers();
-      const activeBakers = allBakers.filter(baker => baker.isActive);
+      const activeBakers = await storage.getBakers();
       
       // Remove sensitive information for public view
       const publicBakers = activeBakers.map(baker => ({

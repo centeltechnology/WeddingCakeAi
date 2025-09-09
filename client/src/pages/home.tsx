@@ -5,7 +5,7 @@ import { useTenant } from "@/components/TenantBrandProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ChefHat, Users, FileText, CreditCard, Globe, Sparkles, Heart, Zap, ArrowRight, Star } from "lucide-react";
+import { ChefHat, Users, FileText, CreditCard, Globe, Sparkles, Heart, Zap, ArrowRight, Star, Calendar } from "lucide-react";
 
 export default function Home() {
   const { tenant, branding } = useTenant();
@@ -45,8 +45,8 @@ export default function Home() {
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-4xl mx-auto leading-relaxed">
-              The complete business platform designed for cake decorators, bakeries, and specialty dessert vendors. 
-              <span className="text-pink-600 font-medium"> Manage customers, create stunning quotes, handle contracts, and get paid</span>
+              The complete marketplace and business platform for cake decorators and bakeries. 
+              <span className="text-pink-600 font-medium">Connect with customers through our public marketplace, manage bookings with advanced scheduling, create quotes, and handle contracts</span>
               —all in one deliciously simple platform.
             </p>
             
@@ -58,9 +58,9 @@ export default function Home() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-6 text-lg font-semibold" data-testid="button-see-demo">
-                <Link href="/demo-tenant">
-                  See It In Action
+              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-6 text-lg font-semibold" data-testid="button-explore-marketplace">
+                <Link href="/marketplace">
+                  Explore Marketplace
                 </Link>
               </Button>
             </div>
@@ -97,42 +97,42 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+            {/* Marketplace Discovery Card */}
+            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-marketplace">
+              <CardHeader className="pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <Globe className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Public Marketplace</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600 leading-relaxed">Get discovered by customers through our public marketplace with portfolio showcases and booking integration</CardDescription>
+              </CardContent>
+            </Card>
+            
+            {/* Advanced Booking Card */}
+            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-booking-system">
+              <CardHeader className="pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <Calendar className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Smart Booking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600 leading-relaxed">Let customers book consultations directly with intelligent scheduling, availability management, and automated reminders</CardDescription>
+              </CardContent>
+            </Card>
+            
             {/* Smart CRM Card */}
             <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-smart-crm">
               <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
                   <Users className="h-8 w-8 text-white" />
                 </div>
                 <CardTitle className="text-xl font-semibold text-gray-900">Smart CRM</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-gray-600 leading-relaxed">Keep track of all your sweet customers, wedding dates, preferences, and order history in one place</CardDescription>
-              </CardContent>
-            </Card>
-            
-            {/* Quote Builder Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-quote-builder">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <FileText className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Quote Builder</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Create beautiful, professional quotes with templates, pricing tiers, and stunning visuals that wow your clients</CardDescription>
-              </CardContent>
-            </Card>
-            
-            {/* Digital Contracts Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-digital-contracts">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <FileText className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Digital Contracts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Generate contracts, collect e-signatures, and manage terms—all automated so you can focus on baking</CardDescription>
               </CardContent>
             </Card>
             

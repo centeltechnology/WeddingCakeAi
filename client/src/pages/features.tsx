@@ -53,8 +53,8 @@ export default function Features() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-4xl mx-auto leading-relaxed">
-            From AI-powered cake visualization to seamless payment processing, 
-            <span className="text-pink-600 font-medium"> discover the complete toolkit</span> that helps bakers grow their business.
+            From public marketplace discovery to advanced booking management, 
+            <span className="text-pink-600 font-medium"> discover the complete toolkit</span> that helps bakers grow their business and get found by customers.
           </p>
         </div>
       </div>
@@ -72,6 +72,32 @@ export default function Features() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+            {/* Public Marketplace Card */}
+            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-marketplace-discovery">
+              <CardHeader className="pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <Globe className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Marketplace Discovery</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600 leading-relaxed">Get found by customers through our public marketplace with portfolio showcases, reviews, and direct booking</CardDescription>
+              </CardContent>
+            </Card>
+            
+            {/* Advanced Booking Card */}
+            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-advanced-booking">
+              <CardHeader className="pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <Calendar className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Advanced Booking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600 leading-relaxed">3-step booking process with availability management, customer info collection, and automated confirmations</CardDescription>
+              </CardContent>
+            </Card>
+            
             {/* Smart CRM Card */}
             <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="feature-smart-crm">
               <CardHeader className="pb-4">
@@ -183,8 +209,98 @@ export default function Features() {
         </div>
       </div>
 
-      {/* AI & Advanced Features */}
+      {/* Marketplace & Booking Features */}
       <div className="relative py-16 bg-white/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Get Found & Get Booked
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Connect with customers through our marketplace and streamline your booking process.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
+            <Card className="border-0 bg-white/70 backdrop-blur-md shadow-2xl overflow-hidden" data-testid="feature-marketplace-discovery">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5"></div>
+              <CardHeader className="pb-6 relative">
+                <div className="w-16 h-16 mb-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Globe className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-serif font-bold text-gray-900 mb-2">Public Marketplace</CardTitle>
+                <CardDescription className="text-lg text-gray-600">
+                  Get discovered by customers actively searching for cake artists
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  Your business gets featured in our public marketplace where customers can browse portfolios, 
+                  read reviews, filter by specialty and location, and book consultations directly.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Searchable portfolio showcase</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Location-based discovery</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Integrated booking system</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Customer reviews & ratings</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-white/70 backdrop-blur-md shadow-2xl overflow-hidden" data-testid="feature-advanced-booking">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5"></div>
+              <CardHeader className="pb-6 relative">
+                <div className="w-16 h-16 mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Calendar className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-serif font-bold text-gray-900 mb-2">Advanced Booking System</CardTitle>
+                <CardDescription className="text-lg text-gray-600">
+                  3-step consultation booking with intelligent scheduling
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  Customers can book consultations through a seamless 3-step process: select date/time, 
+                  provide details, and confirm. You manage availability and get all the information you need.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Real-time availability calendar</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Customer info collection</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Event details & requirements</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    <span className="text-gray-700">Automated confirmations</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* AI & Advanced Features */}
+      <div className="relative py-16 bg-gradient-to-br from-purple-50/50 to-pink-50/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
