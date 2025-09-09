@@ -22,14 +22,77 @@ export default function Marketplace() {
     queryKey: ["/api/bakers/public"],
   });
 
+  // Enhanced location matching with aliases and area coverage
+  const getLocationMatches = (searchLocation: string, bakerAddress: string | undefined) => {
+    if (!searchLocation || !bakerAddress) return !searchLocation;
+    
+    const search = searchLocation.toLowerCase();
+    const address = bakerAddress.toLowerCase();
+    
+    // Direct match
+    if (address.includes(search)) return true;
+    
+    // City aliases and area coverage
+    const locationAliases: Record<string, string[]> = {
+      'nyc': ['new york', 'manhattan', 'brooklyn', 'queens', 'bronx', 'staten island'],
+      'new york city': ['new york', 'manhattan', 'brooklyn', 'queens', 'bronx'],
+      'la': ['los angeles', 'hollywood', 'beverly hills', 'santa monica'],
+      'los angeles': ['hollywood', 'beverly hills', 'west hollywood', 'santa monica'],
+      'sf': ['san francisco', 'south bay', 'bay area'],
+      'san francisco': ['south bay', 'bay area', 'peninsula'],
+      'chicago': ['cook county', 'chicagoland'],
+      'miami': ['south beach', 'coral gables', 'miami beach'],
+      'seattle': ['bellevue', 'redmond', 'tacoma'],
+      'boston': ['cambridge', 'somerville', 'brookline'],
+      'philadelphia': ['philly'],
+      'philly': ['philadelphia']
+    };
+    
+    // Check if search term has aliases that match the address
+    const searchAliases = locationAliases[search] || [];
+    if (searchAliases.some(alias => address.includes(alias))) return true;
+    
+    // Check reverse - if address contains a term that has the search as an alias
+    for (const [key, aliases] of Object.entries(locationAliases)) {
+      if (address.includes(key) && aliases.includes(search)) return true;
+    }
+    
+    // State matching
+    const stateAbbreviations: Record<string, string> = {
+      'california': 'ca', 'texas': 'tx', 'florida': 'fl', 'new york': 'ny',
+      'illinois': 'il', 'pennsylvania': 'pa', 'ohio': 'oh', 'georgia': 'ga',
+      'michigan': 'mi', 'north carolina': 'nc', 'new jersey': 'nj', 'virginia': 'va',
+      'washington': 'wa', 'arizona': 'az', 'massachusetts': 'ma', 'tennessee': 'tn',
+      'indiana': 'in', 'missouri': 'mo', 'maryland': 'md', 'wisconsin': 'wi',
+      'colorado': 'co', 'minnesota': 'mn', 'south carolina': 'sc', 'alabama': 'al',
+      'louisiana': 'la', 'kentucky': 'ky', 'oregon': 'or', 'oklahoma': 'ok',
+      'connecticut': 'ct', 'utah': 'ut', 'iowa': 'ia', 'nevada': 'nv',
+      'arkansas': 'ar', 'mississippi': 'ms', 'kansas': 'ks', 'new mexico': 'nm',
+      'nebraska': 'ne', 'idaho': 'id', 'west virginia': 'wv', 'hawaii': 'hi',
+      'new hampshire': 'nh', 'maine': 'me', 'montana': 'mt', 'rhode island': 'ri',
+      'delaware': 'de', 'south dakota': 'sd', 'north dakota': 'nd', 'alaska': 'ak',
+      'vermont': 'vt', 'wyoming': 'wy'
+    };
+    
+    // Check state name to abbreviation
+    const stateAbbrev = stateAbbreviations[search];
+    if (stateAbbrev && address.includes(` ${stateAbbrev}`)) return true;
+    
+    // Check abbreviation to state name
+    for (const [stateName, abbrev] of Object.entries(stateAbbreviations)) {
+      if (search === abbrev && address.includes(stateName)) return true;
+    }
+    
+    return false;
+  };
+
   const filteredBakers = bakers.filter((baker: Baker) => {
     const matchesSearch = 
       baker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       baker.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       baker.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesLocation = !locationFilter || 
-      baker.address?.toLowerCase().includes(locationFilter.toLowerCase());
+    const matchesLocation = getLocationMatches(locationFilter, baker.address);
     
     const matchesSpecialty = !specialtyFilter || specialtyFilter === "all" ||
       baker.specialties?.some(specialty => 
@@ -100,7 +163,7 @@ export default function Marketplace() {
             <div className="relative">
               <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Location (city, zip)"
+                placeholder="Location (NYC, California, 90210)"
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
                 className="pl-10"
