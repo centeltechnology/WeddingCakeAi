@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, Phone, Globe, Instagram, Facebook, Filter, Search, Locate, Loader2 } from "lucide-react";
+import { MapPin, Star, Phone, Globe, Instagram, Facebook, Filter, Search, Locate, Loader2, Map, Grid3X3 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import MarketplaceMap from "@/components/MarketplaceMap";
 import type { Baker } from "@shared/schema";
 
 export default function Marketplace() {
@@ -18,8 +19,9 @@ export default function Marketplace() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
-  const { data: bakers = [], isLoading } = useQuery({
+  const { data: bakers = [], isLoading } = useQuery<Baker[]>({
     queryKey: ["/api/bakers/public"],
   });
 
@@ -296,15 +298,52 @@ export default function Marketplace() {
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="mb-6">
+        {/* Results Count and View Toggle */}
+        <div className="mb-6 flex justify-between items-center">
           <p className="text-gray-600">
             {isLoading ? "Loading..." : `${sortedBakers.length} baker${sortedBakers.length !== 1 ? 's' : ''} found`}
           </p>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="flex items-center space-x-1"
+              data-testid="button-grid-view"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span>Grid</span>
+            </Button>
+            <Button
+              variant={viewMode === 'map' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('map')}
+              className="flex items-center space-x-1"
+              data-testid="button-map-view"
+            >
+              <Map className="h-4 w-4" />
+              <span>Map</span>
+            </Button>
+          </div>
         </div>
 
+        {/* Map View */}
+        {viewMode === 'map' && (
+          <div className="mb-8">
+            <MarketplaceMap 
+              bakers={sortedBakers}
+              onBakerSelect={(baker) => {
+                // Scroll to baker card or open profile
+                console.log('Selected baker:', baker.name);
+              }}
+            />
+          </div>
+        )}
+
         {/* Baker Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedBakers.map((baker: Baker) => (
             <Card key={baker.id} className="hover:shadow-xl transition-shadow duration-300 overflow-hidden" data-testid={`card-baker-${baker.id}`}>
               {/* Portfolio Image */}
@@ -413,7 +452,8 @@ export default function Marketplace() {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* No Results */}
         {!isLoading && sortedBakers.length === 0 && (
