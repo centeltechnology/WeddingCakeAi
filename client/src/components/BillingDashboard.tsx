@@ -448,8 +448,15 @@ export function BillingDashboard({ bakerId }: { bakerId: string }) {
                   </ul>
 
                   <Button
-                    className="w-full"
-                    variant={billingInfo?.subscriptionPlan === plan.id ? 'secondary' : 'default'}
+                    className={`w-full font-semibold transition-all duration-300 ${
+                      billingInfo?.subscriptionPlan === plan.id
+                        ? 'bg-gray-100 text-gray-700 cursor-default hover:bg-gray-100'
+                        : plan.id === 'free'
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : plan.recommended
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl'
+                        : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md hover:shadow-lg'
+                    }`}
                     disabled={billingInfo?.subscriptionPlan === plan.id || changePlanMutation.isPending}
                     onClick={() => changePlanMutation.mutate({ planId: plan.id })}
                     data-testid={`button-select-plan-${plan.id}`}

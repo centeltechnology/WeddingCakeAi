@@ -3642,50 +3642,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const plans = [
         {
-          id: 'starter',
-          name: 'Starter (Free)',
+          id: 'free',
+          name: 'Free',
           price: 0,
-          interval: 'month',
+          interval: 'forever',
           features: [
-            'Basic CRM (up to 50 customers)',
-            '10 quotes per month',
-            'Basic templates',
-            'Email support',
-            'Standard branding'
+            'Basic profile listing',
+            '3 leads per month',
+            'Standard placement in search',
+            'Basic contact information'
           ]
         },
         {
           id: 'professional',
           name: 'Professional',
-          price: 79,
+          price: 19,
           interval: 'month',
           recommended: true,
           stripePriceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
           features: [
-            'Unlimited customers & quotes',
-            'Advanced CRM & pipeline tracking',
-            'Contract management & e-signatures',
-            'Payment processing & deposits',
-            'Custom branding & subdomain',
-            'Priority support',
-            'Analytics dashboard'
+            'Unlimited leads & customers',
+            'Full portfolio with unlimited photos',
+            'Custom domain support',
+            'Professional quote templates',
+            'Contract management',
+            'Payment processing integration',
+            'Email automation',
+            'Basic analytics'
           ]
         },
         {
-          id: 'enterprise',
-          name: 'Enterprise',
-          price: 149,
+          id: 'plus',
+          name: 'Plus',
+          price: 39,
           interval: 'month',
           stripePriceId: process.env.STRIPE_PRICE_ID_ENTERPRISE,
           features: [
             'Everything in Professional',
-            'Multi-location support',
-            'Team collaboration tools',
+            'Priority marketplace placement',
             'Advanced analytics & reporting',
-            'White-label customization',
-            'Custom domain support',
-            'Dedicated account manager',
-            'Phone support'
+            'White-label branding options',
+            'API access for integrations',
+            'Multiple team member accounts',
+            'Priority customer support',
+            'Advanced automation features'
           ]
         }
       ];
@@ -3708,7 +3708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle downgrade to free plan
-      if (planId === 'starter') {
+      if (planId === 'free') {
         await storage.updateBaker(bakerId, {
           subscriptionPlan: 'free',
           subscriptionStatus: 'active',
@@ -3720,8 +3720,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle upgrade/change to paid plan
       const plans = {
-        professional: { priceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL, price: 79 },
-        enterprise: { priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE, price: 149 }
+        professional: { priceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL, price: 19 },
+        plus: { priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE, price: 39 }
       };
 
       const selectedPlan = plans[planId as keyof typeof plans];
