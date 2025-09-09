@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,11 @@ import {
   Globe,
   LogOut,
   Menu,
-  X
+  X,
+  Save,
+  MapPin,
+  Trash2,
+  Star
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +61,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [subdomainInput, setSubdomainInput] = useState("");
   const [customDomainInput, setCustomDomainInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [aboutText, setAboutText] = useState("");
 
   const handleLogout = () => {
     // Clear any stored authentication tokens
@@ -135,6 +140,33 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
       setSubdomainInput("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // About section update mutation
+  const updateAboutMutation = useMutation({
+    mutationFn: async (description: string) => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ description })
+      });
+      if (!response.ok) throw new Error('Failed to update about section');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      toast({
+        title: "About Section Updated",
+        description: "Your about section has been updated successfully!",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -260,6 +292,13 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     plus: { leads: -1, portfolio: -1 }  // unlimited
   };
 
+  // Initialize aboutText when baker data loads
+  useEffect(() => {
+    if (baker?.description) {
+      setAboutText(baker.description);
+    }
+  }, [baker?.description]);
+
   if (!baker) {
     return (
       <div className="text-center py-8">
@@ -301,6 +340,27 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               }`}>
                 {subscriptionPlan.toUpperCase()} Plan
               </Badge>
+              <Button
+                onClick={() => {
+                  const subdomain = domainConfig?.subdomain;
+                  const customDomain = domainConfig?.customDomain;
+                  let previewUrl = 'https://bakewiseapp.com/marketplace';
+                  
+                  if (customDomain) {
+                    previewUrl = `https://${customDomain}`;
+                  } else if (subdomain) {
+                    previewUrl = `https://${subdomain}.bakewiseapp.com`;
+                  }
+                  
+                  window.open(previewUrl, '_blank');
+                }}
+                size="sm"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                data-testid="button-preview"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Preview Page
+              </Button>
               <Button
                 onClick={handleLogout}
                 variant="ghost"
@@ -460,10 +520,14 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       <Tabs defaultValue="leads" className="space-y-6">
         {/* Mobile Tab Navigation */}
         <div className="lg:hidden mb-6">
-          <TabsList className="grid w-full grid-cols-3 gap-1 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
             <TabsTrigger value="leads" className="flex-col h-20 gap-2 text-xs">
               <Users className="w-5 h-5" />
               <span>Leads</span>
+            </TabsTrigger>
+            <TabsTrigger value="about" className="flex-col h-20 gap-2 text-xs">
+              <User className="w-5 h-5" />
+              <span>About</span>
             </TabsTrigger>
             <TabsTrigger value="quotes" className="flex-col h-20 gap-2 text-xs">
               <FileText className="w-5 h-5" />
@@ -560,6 +624,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             </CardHeader>
             <CardContent className="space-y-1">
               <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="about" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
+                  <User className="w-4 h-4 mr-2" />
+                  About
+                </TabsTrigger>
                 <TabsTrigger value="portfolio" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <Upload className="w-4 h-4 mr-2" />
                   Portfolio
@@ -594,6 +662,71 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             </CardContent>
           </Card>
         </div>
+
+        <TabsContent value="about">
+          <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
+            <CardHeader className="border-b border-rose-100/50">
+              <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">About Your Business</h3>
+              <p className="text-gray-600 mt-2">
+                Write a compelling description of your business that will appear on your public page. Tell potential customers about your specialties, experience, and what makes your cakes special.
+              </p>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="about-textarea" className="text-sm font-medium text-gray-700">
+                  Business Description
+                </label>
+                <textarea
+                  id="about-textarea"
+                  value={aboutText}
+                  onChange={(e) => setAboutText(e.target.value)}
+                  placeholder="Tell customers about your business, specialties, and what makes your cakes unique..."
+                  className="w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:border-rose-500 focus:ring-rose-500 resize-vertical"
+                  data-testid="textarea-about"
+                />
+                <p className="text-sm text-gray-500">
+                  {aboutText.length}/500 characters
+                </p>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <User className="w-4 h-4" />
+                  <span>This will appear on your public profile</span>
+                </div>
+                <Button
+                  onClick={() => updateAboutMutation.mutate(aboutText)}
+                  disabled={updateAboutMutation.isPending || aboutText === baker?.description}
+                  className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+                  data-testid="button-save-about"
+                >
+                  {updateAboutMutation.isPending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save About
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {/* Preview Section */}
+              {aboutText && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-rose-500">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview
+                  </h4>
+                  <p className="text-gray-600 text-sm leading-relaxed">{aboutText}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="leads">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
