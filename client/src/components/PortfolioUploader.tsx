@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useUpgradePrompt } from '@/hooks/useUpgradePrompt';
 import { parseSubscriptionError } from '@/lib/subscriptionUtils';
-import type { UploadResult } from "@uppy/core";
+// Removed Uppy imports
 import type { Baker } from "@shared/schema";
 
 interface PortfolioUploaderProps {
@@ -31,12 +31,21 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   const updatePortfolioMutation = useMutation({
     mutationFn: async (portfolioImageURL: string) => {
+      // Get CSRF token from meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
       const response = await fetch(`/api/bakers/${bakerId}/portfolio`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
         body: JSON.stringify({ portfolioImageURL })
       });
-      if (!response.ok) throw new Error('Failed to update portfolio');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to update portfolio' }));
+        throw new Error(errorData.error || 'Failed to update portfolio');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -71,12 +80,21 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   const removePortfolioMutation = useMutation({
     mutationFn: async (imageUrl: string) => {
+      // Get CSRF token from meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
       const response = await fetch(`/api/bakers/${bakerId}/portfolio`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
         body: JSON.stringify({ portfolioImageURL: imageUrl })
       });
-      if (!response.ok) throw new Error('Failed to remove portfolio image');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to remove portfolio image' }));
+        throw new Error(errorData.error || 'Failed to remove portfolio image');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -89,11 +107,20 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
   });
 
   const handleGetUploadParameters = async () => {
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
     const response = await fetch('/api/objects/upload', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken || ''
+      }
     });
-    if (!response.ok) throw new Error('Failed to get upload URL');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to get upload URL' }));
+      throw new Error(errorData.error || 'Failed to get upload URL');
+    }
     const { uploadURL } = await response.json();
     return {
       method: 'PUT' as const,
@@ -101,7 +128,7 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
     };
   };
 
-  const handleComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleComplete = (result: { successful: Array<{ uploadURL: string }> }) => {
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL as string;
       updatePortfolioMutation.mutate(uploadURL);

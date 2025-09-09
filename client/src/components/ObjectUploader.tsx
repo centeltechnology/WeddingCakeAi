@@ -1,11 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { ReactNode } from "react";
-import Uppy from "@uppy/core";
-import { DashboardModal } from "@uppy/react";
-// Note: Uppy CSS imports removed to avoid build issues
-import AwsS3 from "@uppy/aws-s3";
-import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
@@ -14,41 +12,11 @@ interface ObjectUploaderProps {
     method: "PUT";
     url: string;
   }>;
-  onComplete?: (
-    result: UploadResult<Record<string, unknown>, Record<string, unknown>>
-  ) => void;
+  onComplete?: (result: { successful: Array<{ uploadURL: string }> }) => void;
   buttonClassName?: string;
   children: ReactNode;
 }
 
-/**
- * A file upload component that renders as a button and provides a modal interface for
- * file management.
- * 
- * Features:
- * - Renders as a customizable button that opens a file upload modal
- * - Provides a modal interface for:
- *   - File selection
- *   - File preview
- *   - Upload progress tracking
- *   - Upload status display
- * 
- * The component uses Uppy under the hood to handle all file upload functionality.
- * All file management features are automatically handled by the Uppy dashboard modal.
- * 
- * @param props - Component props
- * @param props.maxNumberOfFiles - Maximum number of files allowed to be uploaded
- *   (default: 1)
- * @param props.maxFileSize - Maximum file size in bytes (default: 10MB)
- * @param props.onGetUploadParameters - Function to get upload parameters (method and URL).
- *   Typically used to fetch a presigned URL from the backend server for direct-to-S3
- *   uploads.
- * @param props.onComplete - Callback function called when upload is complete. Typically
- *   used to make post-upload API calls to update server state and set object ACL
- *   policies.
- * @param props.buttonClassName - Optional CSS class name for the button
- * @param props.children - Content to be rendered inside the button
- */
 export function ObjectUploader({
   maxNumberOfFiles = 1,
   maxFileSize = 10485760, // 10MB default
@@ -58,35 +26,214 @@ export function ObjectUploader({
   children,
 }: ObjectUploaderProps) {
   const [showModal, setShowModal] = useState(false);
-  const [uppy] = useState(() =>
-    new Uppy({
-      restrictions: {
-        maxNumberOfFiles,
-        maxFileSize,
-      },
-      autoProceed: false,
-    })
-      .use(AwsS3, {
-        shouldUseMultipart: false,
-        getUploadParameters: onGetUploadParameters,
-      })
-      .on("complete", (result) => {
-        onComplete?.(result);
-      })
-  );
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Validate file count
+    if (files.length > maxNumberOfFiles) {
+      setErrorMessage(`Maximum ${maxNumberOfFiles} file${maxNumberOfFiles > 1 ? 's' : ''} allowed`);
+      return;
+    }
+
+    // Validate file size
+    for (const file of files) {
+      if (file.size > maxFileSize) {
+        setErrorMessage(`File size must be less than ${Math.round(maxFileSize / 1024 / 1024)}MB`);
+        return;
+      }
+      
+      // Validate file type (images only)
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Only image files are allowed');
+        return;
+      }
+    }
+
+    setSelectedFiles(files);
+    setErrorMessage('');
+    setUploadStatus('idle');
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadStatus('idle');
+
+    try {
+      const uploadResults = [];
+      
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        
+        // Get upload parameters
+        const { method, url } = await onGetUploadParameters();
+        
+        // Upload file
+        const uploadResponse = await fetch(url, {
+          method,
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        uploadResults.push({ uploadURL: url });
+        setUploadProgress(((i + 1) / selectedFiles.length) * 100);
+      }
+
+      setUploadStatus('success');
+      setUploading(false);
+      
+      // Notify completion
+      if (onComplete) {
+        onComplete({ successful: uploadResults });
+      }
+
+      // Close modal after short delay
+      setTimeout(() => {
+        setShowModal(false);
+        setSelectedFiles([]);
+        setUploadProgress(0);
+        setUploadStatus('idle');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
+      setUploading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowModal(false);
+    setSelectedFiles([]);
+    setUploadProgress(0);
+    setUploadStatus('idle');
+    setErrorMessage('');
+    setUploading(false);
+  };
 
   return (
-    <div>
-      <Button onClick={() => setShowModal(true)} className={buttonClassName}>
+    <>
+      <Button onClick={() => setShowModal(true)} className={buttonClassName} disabled={uploading}>
         {children}
       </Button>
 
-      <DashboardModal
-        uppy={uppy}
-        open={showModal}
-        onRequestClose={() => setShowModal(false)}
-        proudlyDisplayPoweredByUppy={false}
-      />
-    </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Images</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* File Input */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple={maxNumberOfFiles > 1}
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={uploading}
+              />
+              
+              {selectedFiles.length === 0 ? (
+                <div>
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    Choose Images
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Max {maxNumberOfFiles} file{maxNumberOfFiles > 1 ? 's' : ''}, {Math.round(maxFileSize / 1024 / 1024)}MB each
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500">{Math.round(file.size / 1024)}KB</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {!uploading && (
+                    <div className="flex space-x-2 mt-4">
+                      <Button onClick={handleUpload} className="flex-1">
+                        Upload
+                      </Button>
+                      <Button variant="outline" onClick={() => setSelectedFiles([])}>
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Upload Progress */}
+            {uploading && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Progress value={uploadProgress} className="flex-1" />
+                  <span className="text-sm text-gray-500">{Math.round(uploadProgress)}%</span>
+                </div>
+                <p className="text-sm text-gray-600">Uploading...</p>
+              </div>
+            )}
+
+            {/* Upload Status */}
+            {uploadStatus === 'success' && (
+              <div className="flex items-center space-x-2 text-green-600">
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-sm">Upload successful!</span>
+              </div>
+            )}
+
+            {uploadStatus === 'error' && (
+              <div className="flex items-center space-x-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">{errorMessage}</span>
+              </div>
+            )}
+
+            {errorMessage && uploadStatus === 'idle' && (
+              <div className="flex items-center space-x-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">{errorMessage}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleCancel} disabled={uploading}>
+              {uploading ? 'Uploading...' : 'Cancel'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
