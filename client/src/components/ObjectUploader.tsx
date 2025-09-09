@@ -167,11 +167,11 @@ export function ObjectUploader({
                   <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <Button
                     type="button"
-                    variant="outline"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
+                    className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold border-0"
                   >
-                    Choose Images
+                    📁 Choose Images
                   </Button>
                   <p className="text-sm text-gray-500 mt-2">
                     Max {maxNumberOfFiles} file{maxNumberOfFiles > 1 ? 's' : ''}, {Math.round(maxFileSize / 1024 / 1024)}MB each
@@ -190,8 +190,11 @@ export function ObjectUploader({
                   
                   {!uploading && (
                     <div className="flex space-x-2 mt-4">
-                      <Button onClick={handleUpload} className="flex-1">
-                        Upload
+                      <Button 
+                        onClick={handleUpload} 
+                        className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold border-0"
+                      >
+                        📸 Upload
                       </Button>
                       <Button variant="outline" onClick={() => setSelectedFiles([])}>
                         Clear
