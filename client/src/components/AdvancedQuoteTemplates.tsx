@@ -248,6 +248,13 @@ export function AdvancedQuoteTemplates({ bakerId }: AdvancedQuoteTemplatesProps)
             </Select>
           </div>
 
+          {/* Templates Count */}
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">
+              {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
+
           {/* Templates Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTemplates.map((template: QuoteTemplate) => (
@@ -377,7 +384,10 @@ export function AdvancedQuoteTemplates({ bakerId }: AdvancedQuoteTemplatesProps)
             <TemplateEditor
               template={selectedTemplate}
               isCreating={isCreating}
-              onSave={(data) => createTemplateMutation.mutate(data)}
+              onSave={(data) => {
+                setActiveTab('list');
+                createTemplateMutation.mutate(data);
+              }}
               onCancel={() => {
                 setSelectedTemplate(null);
                 setActiveTab('list');

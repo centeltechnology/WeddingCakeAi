@@ -256,7 +256,7 @@ export default function Marketplace() {
                       </Button>
                     </Link>
                     <Link href={`/baker/${baker.id}/calculator`}>
-                      <Button size="sm" data-testid={`button-get-quote-${baker.id}`}>
+                      <Button size="sm" className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200" data-testid={`button-get-quote-${baker.id}`}>
                         Get Quote
                       </Button>
                     </Link>

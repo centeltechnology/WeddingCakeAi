@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!connectAccountId) {
         const account = await stripe.accounts.create({
           type: 'express',
-          country: 'US',
+          country: baker.country || 'US', // Default to US but allow override
           email: baker.email,
           business_profile: {
             name: baker.name,
