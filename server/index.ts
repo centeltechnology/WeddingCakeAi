@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import ConnectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
@@ -94,6 +96,26 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
     res.status(500).send('Webhook processing failed');
   }
 });
+
+// Session configuration - MUST come before other middleware that depends on sessions
+const PgSession = ConnectPgSimple(session);
+app.use(session({
+  store: new PgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    tableName: 'sessions',
+    ttl: 7 * 24 * 60 * 60 // 1 week in seconds
+  }),
+  secret: process.env.SESSION_SECRET || 'fallback_session_secret_for_development_only',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+    sameSite: 'lax'
+  }
+}));
 
 // NOW set up body parsing for all other routes
 app.use(express.json());
