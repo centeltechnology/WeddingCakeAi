@@ -191,8 +191,8 @@ export default function Plans({ bakerId, onPlanChange }: PlansProps) {
                   plan.id === 'free'
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                     : plan.highlighted
-                    ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white shadow-md hover:shadow-lg'
+                    ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl'
+                    : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold shadow-md hover:shadow-lg'
                 }`}
                 onClick={() => handlePlanSelect(plan.id, plan.stripeLink)}
                 data-testid={`button-select-${plan.id}`}
