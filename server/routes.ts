@@ -400,6 +400,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Handle platform profile configuration error
+      if (error.message?.includes('platform-profile')) {
+        return res.status(400).json({ 
+          error: 'Platform Configuration Required',
+          message: 'Stripe Connect platform needs additional configuration. Please contact support for assistance with payment setup.',
+          supportMessage: 'This is a platform-level configuration that our team needs to complete.'
+        });
+      }
+      
       // Handle other Stripe errors
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ 

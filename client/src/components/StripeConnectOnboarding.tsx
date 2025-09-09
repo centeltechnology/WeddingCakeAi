@@ -169,8 +169,17 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              You need to complete your Stripe account setup to receive payments. 
-              This is a secure process managed by Stripe to verify your business information.
+              {(error as any)?.supportMessage ? (
+                <>
+                  <strong>Platform Configuration Needed:</strong><br/>
+                  {(error as any)?.supportMessage} Please contact our support team for assistance.
+                </>
+              ) : (
+                <>
+                  You need to complete your Stripe account setup to receive payments. 
+                  This is a secure process managed by Stripe to verify your business information.
+                </>
+              )}
             </AlertDescription>
           </Alert>
 
