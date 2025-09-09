@@ -79,7 +79,7 @@ function calculateTrialStatus(baker: any) {
 // Feature access control middleware
 async function checkFeatureAccess(req: any, res: any, next: any, feature: string) {
   try {
-    const bakerId = req.params.bakerId || req.body.bakerId;
+    const bakerId = req.params.id || req.params.bakerId || req.body.bakerId;
     if (!bakerId) {
       return res.status(400).json({ error: 'Baker ID required' });
     }
@@ -821,9 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Portfolio management routes
   app.post("/api/bakers/:id/portfolio", (req, res, next) => checkFeatureAccess(req, res, next, 'portfolio_management'), async (req, res) => {
     try {
-      console.log('Portfolio request body:', req.body);
       const { portfolioImageURL } = req.body;
-      console.log('Extracted portfolioImageURL:', portfolioImageURL);
       if (!portfolioImageURL) {
         return res.status(400).json({ error: "portfolioImageURL is required" });
       }
