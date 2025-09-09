@@ -83,8 +83,8 @@ function Router() {
       </Route>
       <Route path="/admin">
         {() => (
-          <BakerAuthWrapper bakerId="70c29a5d-72f3-443f-8c39-c2ced5210f05">
-            <BakerDashboard bakerId="70c29a5d-72f3-443f-8c39-c2ced5210f05" />
+          <BakerAuthWrapper bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8">
+            <BakerDashboard bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />
           </BakerAuthWrapper>
         )}
       </Route>
@@ -99,7 +99,7 @@ function Router() {
       <Route path="/baker/:bakerId/calculator">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
-      <Route path="/calculator" component={() => <CakeCalculator bakerId="70c29a5d-72f3-443f-8c39-c2ced5210f05" />} />
+      <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/cookies" component={Cookies} />
