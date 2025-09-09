@@ -32,6 +32,9 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   const queryClient = useQueryClient();
   const [isStartingOnboarding, setIsStartingOnboarding] = useState(false);
 
+  // Debug log to ensure bakerId is available
+  console.log('StripeConnectOnboarding rendered with bakerId:', bakerId);
+
   // Fetch Stripe Connect account status
   const { data: accountStatus, isLoading, error } = useQuery<ConnectAccountStatus>({
     queryKey: ['/api/bakers', bakerId, 'stripe-connect', 'status'],
@@ -112,7 +115,10 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   });
 
   const handleStartOnboarding = () => {
+    console.log('🔧 Button clicked! BakerId:', bakerId, 'Starting onboarding...');
+    
     if (isStartingOnboarding || startOnboardingMutation.isPending) {
+      console.log('🔧 Blocked - already in progress');
       return; // Prevent double clicks
     }
     
