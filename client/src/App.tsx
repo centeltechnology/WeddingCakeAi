@@ -49,6 +49,7 @@ import SeoOptimization from "@/pages/help/seo-optimization";
 import SocialMedia from "@/pages/help/social-media";
 import CustomerRetention from "@/pages/help/customer-retention";
 import PricingStrategies from "@/pages/help/pricing-strategies";
+import Marketplace from "@/pages/marketplace";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import BakerLogin from "@/pages/baker-login";
@@ -127,6 +128,7 @@ function Router() {
       <Route path="/help/social-media" component={SocialMedia} />
       <Route path="/help/customer-retention" component={CustomerRetention} />
       <Route path="/help/pricing-strategies" component={PricingStrategies} />
+      <Route path="/marketplace" component={Marketplace} />
       <Route path="/settings" component={Settings} />
       <Route path="/billing" component={Billing} />
       <Route component={NotFound} />

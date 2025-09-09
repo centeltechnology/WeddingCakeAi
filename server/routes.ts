@@ -646,6 +646,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public marketplace route - no tenant restriction
+  app.get("/api/bakers/public", async (req, res) => {
+    try {
+      const bakers = await storage.getPublicBakers();
+      
+      // Remove sensitive information for public view
+      const publicBakers = bakers.map(baker => ({
+        id: baker.id,
+        name: baker.name,
+        businessName: baker.businessName,
+        description: baker.description,
+        address: baker.address,
+        rating: baker.rating,
+        priceRange: baker.priceRange,
+        specialties: baker.specialties,
+        portfolio: baker.portfolio,
+        phone: baker.phone,
+        socialMedia: baker.socialMedia,
+        subdomain: baker.subdomain
+      }));
+      
+      res.json(publicBakers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Create new baker (signup)
   app.post("/api/bakers", async (req, res) => {
     try {

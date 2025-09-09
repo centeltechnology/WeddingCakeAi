@@ -73,6 +73,19 @@ export function NavigationHeader() {
               </Button>
               
               <Button
+                variant={location === '/marketplace' ? 'default' : 'ghost'}
+                size="sm"
+                asChild
+                className={location === '/marketplace' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                data-testid="nav-marketplace"
+              >
+                <Link href="/marketplace">
+                  <ChefHat className="h-4 w-4 mr-1" />
+                  <span>Find Bakers</span>
+                </Link>
+              </Button>
+              
+              <Button
                 variant={location === '/about' ? 'default' : 'ghost'}
                 size="sm"
                 asChild

@@ -39,6 +39,7 @@ export interface IStorage {
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   getBakersByTenant(tenantId: string): Promise<Baker[]>;
+  getPublicBakers(): Promise<Baker[]>;
 
   // Baker Profile operations
   createBakerProfile(insertProfile: InsertBakerProfile): Promise<BakerProfile>;
@@ -351,7 +352,132 @@ export class MemStorage implements IStorage {
   }
 
   private initializeBakers() {
-    // No demo data in production - clean slate for real bakers
+    // Sample marketplace bakers for demo
+    const sampleBakers = [
+      {
+        name: "Emma Thompson",
+        email: "emma@sweettraditions.com",
+        password: "hashedpass123",
+        businessName: "Sweet Traditions Bakery",
+        description: "Award-winning wedding cake designer specializing in elegant, timeless designs with a modern twist. Featured in Wedding Magazine 2023.",
+        address: "123 Main Street, Downtown City",
+        latitude: "40.7128",
+        longitude: "-74.0060",
+        rating: "4.9",
+        priceRange: "$$$",
+        specialties: ["Wedding Cakes", "Custom Designs", "Buttercream", "Fondant Specialist"],
+        portfolio: [
+          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500",
+          "https://images.unsplash.com/photo-1549895973-adb0d665e5b8?w=500"
+        ],
+        phone: "(555) 123-4567",
+        socialMedia: {
+          instagram: "sweettraditions",
+          facebook: "SweetTraditionsBakery",
+          website: "https://sweettraditions.com"
+        },
+        subscriptionPlan: "professional",
+        isActive: true
+      },
+      {
+        name: "Marcus Rodriguez",
+        email: "marcus@artisandelights.com",
+        password: "hashedpass123",
+        businessName: "Artisan Delights",
+        description: "Contemporary cake artist creating Instagram-worthy masterpieces. Specializing in unique flavors and stunning visual designs.",
+        address: "456 Baker Avenue, Midtown",
+        latitude: "40.7580",
+        longitude: "-73.9855",
+        rating: "4.8",
+        priceRange: "$$$$",
+        specialties: ["Custom Designs", "Wedding Cakes", "Gluten-Free", "Vegan Options"],
+        portfolio: [
+          "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=500",
+          "https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=500"
+        ],
+        phone: "(555) 987-6543",
+        socialMedia: {
+          instagram: "artisandelights",
+          website: "https://artisandelights.com"
+        },
+        subscriptionPlan: "enterprise",
+        isActive: true
+      },
+      {
+        name: "Sarah Chen",
+        email: "sarah@bloombakery.com",
+        password: "hashedpass123",
+        businessName: "Bloom Bakery",
+        description: "Boutique bakery focused on organic ingredients and beautiful floral decorations. Perfect for intimate garden weddings.",
+        address: "789 Garden Lane, Suburb Heights",
+        latitude: "40.6892",
+        longitude: "-74.0445",
+        rating: "4.7",
+        priceRange: "$$",
+        specialties: ["Wedding Cakes", "Birthday Cakes", "Organic", "Floral Designs"],
+        portfolio: [
+          "https://images.unsplash.com/photo-1464195244916-405fa0a82545?w=500",
+          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500"
+        ],
+        phone: "(555) 555-7890",
+        socialMedia: {
+          instagram: "bloombakery",
+          facebook: "BloomBakeryOfficial"
+        },
+        subscriptionPlan: "professional",
+        isActive: true
+      },
+      {
+        name: "David Park",
+        email: "david@sweetsensations.com",
+        password: "hashedpass123",
+        businessName: "Sweet Sensations",
+        description: "Modern cake studio creating bold, contemporary designs. Known for innovative flavor combinations and geometric patterns.",
+        address: "321 Creative District, Art Quarter",
+        latitude: "40.7831",
+        longitude: "-73.9712",
+        rating: "4.6",
+        priceRange: "$$$",
+        specialties: ["Custom Designs", "Corporate Events", "Modern Aesthetic", "Cupcakes"],
+        portfolio: [
+          "https://images.unsplash.com/photo-1549895973-adb0d665e5b8?w=500",
+          "https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=500"
+        ],
+        phone: "(555) 246-8135",
+        socialMedia: {
+          instagram: "sweetsensations",
+          website: "https://sweetsensations.com"
+        },
+        subscriptionPlan: "professional",
+        isActive: true
+      },
+      {
+        name: "Lisa Martinez",
+        email: "lisa@classicconfections.com",
+        password: "hashedpass123",
+        businessName: "Classic Confections",
+        description: "Traditional family bakery serving the community for over 20 years. Specializing in classic recipes and budget-friendly options.",
+        address: "654 Heritage Road, Old Town",
+        latitude: "40.6782",
+        longitude: "-73.9442",
+        rating: "4.5",
+        priceRange: "$",
+        specialties: ["Birthday Cakes", "Traditional Recipes", "Budget Friendly", "Family Events"],
+        portfolio: [
+          "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=500"
+        ],
+        phone: "(555) 369-2580",
+        socialMedia: {
+          facebook: "ClassicConfectionsFamily"
+        },
+        subscriptionPlan: "starter",
+        isActive: true
+      }
+    ];
+
+    sampleBakers.forEach(baker => {
+      this.createBaker(baker);
+    });
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -583,6 +709,10 @@ export class MemStorage implements IStorage {
       .filter(network => network.tenantId === tenantId && network.isApproved);
     const approvedBakerIds = new Set(tenantBakerNetworks.map(network => network.bakerId));
     return Array.from(this.bakers.values()).filter(b => approvedBakerIds.has(b.id) && b.isActive);
+  }
+
+  async getPublicBakers(): Promise<Baker[]> {
+    return Array.from(this.bakers.values()).filter(b => b.isActive);
   }
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
