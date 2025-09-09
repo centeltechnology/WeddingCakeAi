@@ -1,0 +1,48 @@
+sw.js:117 Bakewise SW: Serving API from cache: /api/tenant/info
+(index):1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+sw.js:175 Bakewise SW: Network failed for navigation, serving from cache
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/domain
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/leads
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/stripe-connect/status
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/transactions
+sw.js:117 Bakewise SW: Serving API from cache: /api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/payment-plans
+index-BqQPNB27.js:792  POST https://bakewiseapp.com/api/bakers/d88aaa2b-d588-4083-a314-a98be9e55a5c/stripe-connect/create-account 500 (Internal Server Error)
+mutationFn @ index-BqQPNB27.js:792
+fn @ index-BqQPNB27.js:48
+j @ index-BqQPNB27.js:48
+start @ index-BqQPNB27.js:48
+execute @ index-BqQPNB27.js:48
+await in execute
+mutate @ index-BqQPNB27.js:48
+(anonymous) @ index-BqQPNB27.js:48
+d @ index-BqQPNB27.js:792
+$7 @ index-BqQPNB27.js:37
+V7 @ index-BqQPNB27.js:37
+H7 @ index-BqQPNB27.js:37
+D5 @ index-BqQPNB27.js:37
+q6 @ index-BqQPNB27.js:37
+(anonymous) @ index-BqQPNB27.js:37
+Sw @ index-BqQPNB27.js:40
+h6 @ index-BqQPNB27.js:37
+Mb @ index-BqQPNB27.js:37
+ew @ index-BqQPNB27.js:37
+lM @ index-BqQPNB27.js:37
+index-BqQPNB27.js:792 Stripe onboarding error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+onError @ index-BqQPNB27.js:792
+execute @ index-BqQPNB27.js:48
+await in execute
+mutate @ index-BqQPNB27.js:48
+(anonymous) @ index-BqQPNB27.js:48
+d @ index-BqQPNB27.js:792
+$7 @ index-BqQPNB27.js:37
+V7 @ index-BqQPNB27.js:37
+H7 @ index-BqQPNB27.js:37
+D5 @ index-BqQPNB27.js:37
+q6 @ index-BqQPNB27.js:37
+(anonymous) @ index-BqQPNB27.js:37
+Sw @ index-BqQPNB27.js:40
+h6 @ index-BqQPNB27.js:37
+Mb @ index-BqQPNB27.js:37
+ew @ index-BqQPNB27.js:37
+lM @ index-BqQPNB27.js:37

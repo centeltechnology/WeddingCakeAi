@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         code: error.code,
         statusCode: error.statusCode,
         requestId: error.requestId,
-        bakerId: bakerId
+        bakerId: req.params.bakerId
       });
       
       // Handle specific Stripe verification errors
