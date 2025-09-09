@@ -2,14 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
-import { csrfProtection } from "./csrf";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Add CSRF protection middleware
-app.use(csrfProtection);
 
 app.use((req, res, next) => {
   const start = Date.now();
