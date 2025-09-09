@@ -162,40 +162,40 @@ export default function Home() {
                 <Globe className="h-10 w-10 text-white" />
               </div>
               <CardTitle className="text-3xl md:text-4xl font-serif font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                White-Label Magic
+                Your Professional Website
               </CardTitle>
               <CardDescription className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Embed your quote builder anywhere with your own branding and watch your conversions soar
+                Get a beautiful, branded website that generates leads for your cake business - no existing website required
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center relative">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-white" />
+                    <Globe className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Branded widgets for your website</span>
+                  <span className="text-gray-800 font-medium">Professional website instantly</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                     <Heart className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Custom colors and styling</span>
+                  <span className="text-gray-800 font-medium">Generate leads 24/7</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <Zap className="h-6 w-6 text-white" />
+                    <Sparkles className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Instant quote generation</span>
+                  <span className="text-gray-800 font-medium">Your brand, your domain</span>
                 </div>
               </div>
               <p className="text-lg text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Let your customers get instant quotes right from your website, 
-                all while maintaining your unique brand identity and professional appearance.
+                Perfect for home and cottage bakers who need a professional online presence. 
+                Get a complete website with quote builder, booking system, and payment processing - all with your own branding and custom domain.
               </p>
-              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-3" data-testid="button-widget-demo">
+              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-3" data-testid="button-see-demo">
                 <Link href="/demo-tenant">
-                  See Widget Demo
+                  See Live Demo
                 </Link>
               </Button>
             </CardContent>
