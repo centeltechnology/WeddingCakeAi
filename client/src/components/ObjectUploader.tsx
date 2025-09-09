@@ -97,6 +97,9 @@ export function ObjectUploader({
         const pathPart = urlParts.split('/').slice(-2).join('/'); // Get "uploads/{uuid}"
         const accessURL = `/objects/${pathPart}`;
         
+        console.log('Original upload URL:', url);
+        console.log('Extracted access URL:', accessURL);
+        
         uploadResults.push({ uploadURL: accessURL });
         setUploadProgress(((i + 1) / selectedFiles.length) * 100);
       }
