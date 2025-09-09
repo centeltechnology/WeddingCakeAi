@@ -172,6 +172,17 @@ function checkPlanFeatureAccess(plan: string, feature: string, baker: any) {
   }
 }
 
+// Helper function to resolve baker by ID or slug
+async function resolveBaker(identifier: string): Promise<Baker | undefined> {
+  const { isUUID } = await import("./utils");
+  
+  if (isUUID(identifier)) {
+    return await storage.getBaker(identifier);
+  } else {
+    return await storage.getBakerBySlug(identifier);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve PWA manifest
   app.get('/manifest.json', (req, res) => {
@@ -805,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bakers/:id", async (req, res) => {
     try {
-      const baker = await storage.getBaker(req.params.id);
+      const baker = await resolveBaker(req.params.id);
       if (!baker) {
         return res.status(404).json({ message: "Baker not found" });
       }
@@ -1394,7 +1405,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bakers/:bakerId/profile", async (req, res) => {
     try {
-      const profile = await storage.getBakerProfileByBakerId(req.params.bakerId);
+      // First resolve the baker to get the actual ID
+      const baker = await resolveBaker(req.params.bakerId);
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      
+      const profile = await storage.getBakerProfileByBakerId(baker.id);
       if (!profile) {
         return res.status(404).json({ message: "Baker profile not found" });
       }

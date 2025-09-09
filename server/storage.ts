@@ -662,9 +662,18 @@ export class MemStorage implements IStorage {
 
   async createBaker(insertBaker: InsertBaker): Promise<Baker> {
     const id = randomUUID();
+    
+    // Generate unique slug from baker name
+    let slug: string | null = null;
+    if (insertBaker.name) {
+      const { generateUniqueSlug } = require("./utils");
+      slug = await generateUniqueSlug(insertBaker.name, (s: string) => this.checkSlugExists(s));
+    }
+    
     const baker: Baker = { 
       ...insertBaker, 
       id, 
+      slug,
       createdAt: new Date(),
       phone: insertBaker.phone || null,
       address: insertBaker.address || null,
@@ -728,6 +737,14 @@ export class MemStorage implements IStorage {
 
   async getPublicBakers(): Promise<Baker[]> {
     return Array.from(this.bakers.values()).filter(b => b.isActive);
+  }
+
+  async getBakerBySlug(slug: string): Promise<Baker | undefined> {
+    return Array.from(this.bakers.values()).find(b => b.slug === slug);
+  }
+
+  async checkSlugExists(slug: string): Promise<boolean> {
+    return Array.from(this.bakers.values()).some(b => b.slug === slug);
   }
 
   // Consultation methods
