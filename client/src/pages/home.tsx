@@ -194,9 +194,9 @@ export default function Home() {
                 Get a complete website with quote builder, booking system, and payment processing - all with your own branding and custom domain.
               </p>
               <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-3" data-testid="button-see-demo">
-                <Link href="/demo-tenant">
+                <a href="/calculator" target="_blank" rel="noopener noreferrer">
                   See Live Demo
-                </Link>
+                </a>
               </Button>
             </CardContent>
           </Card>
