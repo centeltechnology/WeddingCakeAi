@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe Connect Onboarding Endpoints
   app.post('/api/bakers/:bakerId/stripe-connect/create-account', async (req, res) => {
     try {
-      const { bakerId } = req.params;
+      const bakerId = req.params.bakerId;
       const baker = await storage.getBaker(bakerId);
       
       if (!baker) {
