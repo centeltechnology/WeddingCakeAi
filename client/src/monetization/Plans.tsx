@@ -43,41 +43,41 @@ const plans: Plan[] = [
   },
   {
     id: 'pro',
-    name: 'Pro',
-    price: '$79',
+    name: 'Professional',
+    price: '$19',
     monthly: 'per month',
-    description: 'For growing bakeries',
+    description: 'Perfect for growing cottage bakers',
     icon: <Crown className="w-8 h-8 text-purple-600" />,
     highlighted: true,
     stripeLink: STRIPE_LINKS.proMonthly,
     features: [
-      { text: 'Full profile with photos', included: true },
-      { text: 'Unlimited leads', included: true },
-      { text: 'Priority placement in search', included: true },
-      { text: 'Portfolio & reviews import', included: true },
-      { text: 'Advanced analytics', included: true },
-      { text: 'Customer messaging', included: true },
-      { text: 'Boosted placement', included: false },
-      { text: 'Lead concierge service', included: false }
+      { text: 'Unlimited leads & customers', included: true },
+      { text: 'Full portfolio with unlimited photos', included: true },
+      { text: 'Custom domain support', included: true },
+      { text: 'Professional quote templates', included: true },
+      { text: 'Contract management', included: true },
+      { text: 'Payment processing integration', included: true },
+      { text: 'Email automation', included: true },
+      { text: 'Basic analytics', included: true }
     ]
   },
   {
     id: 'plus',
     name: 'Plus',
-    price: '$149',
+    price: '$39',
     monthly: 'per month',
-    description: 'For established bakeries',
+    description: 'For established bakeries scaling up',
     icon: <Rocket className="w-8 h-8 text-orange-600" />,
     stripeLink: STRIPE_LINKS.plusMonthly,
     features: [
-      { text: 'Everything in Pro', included: true },
-      { text: 'Boosted placement (top 3)', included: true },
-      { text: 'Lead concierge service', included: true },
-      { text: 'Calendar booking integration', included: true },
-      { text: 'Dedicated account manager', included: true },
-      { text: 'Custom branding options', included: true },
+      { text: 'Everything in Professional', included: true },
+      { text: 'Priority marketplace placement', included: true },
+      { text: 'Advanced analytics & reporting', included: true },
+      { text: 'White-label branding options', included: true },
+      { text: 'API access for integrations', included: true },
+      { text: 'Multiple team member accounts', included: true },
       { text: 'Priority customer support', included: true },
-      { text: 'Advanced reporting suite', included: true }
+      { text: 'Advanced automation features', included: true }
     ]
   }
 ];
