@@ -31,6 +31,7 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   const updatePortfolioMutation = useMutation({
     mutationFn: async (portfolioImageURL: string) => {
+      console.log('Sending portfolio request with URL:', portfolioImageURL);
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
       const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/portfolio`, {
         method: 'POST',
@@ -114,8 +115,10 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
   };
 
   const handleComplete = (result: { successful: Array<{ uploadURL: string }> }) => {
+    console.log('Portfolio upload complete result:', result);
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL as string;
+      console.log('About to send portfolio URL:', uploadURL);
       updatePortfolioMutation.mutate(uploadURL);
     }
   };
