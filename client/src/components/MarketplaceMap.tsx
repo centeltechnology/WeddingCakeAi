@@ -78,7 +78,7 @@ export default function MarketplaceMap({ bakers, className = '', onBakerSelect }
             </div>` : ''}
             ${baker.priceRange ? `<p class="text-sm text-green-600 font-medium">${baker.priceRange}</p>` : ''}
             <button 
-              onclick="window.selectBaker('${baker.id}')" 
+              onclick="window.selectBaker('${baker.slug || baker.id}')" 
               class="mt-2 px-3 py-1 bg-pink-600 text-white text-xs rounded hover:bg-pink-700 transition-colors"
             >
               View Profile
@@ -106,8 +106,8 @@ export default function MarketplaceMap({ bakers, className = '', onBakerSelect }
     }
 
     // Global function for popup button clicks
-    (window as any).selectBaker = (bakerId: string) => {
-      const baker = bakers.find(b => b.id === bakerId);
+    (window as any).selectBaker = (bakerIdentifier: string) => {
+      const baker = bakers.find(b => b.slug === bakerIdentifier || b.id === bakerIdentifier);
       if (baker && onBakerSelect) {
         onBakerSelect(baker);
       }

@@ -437,7 +437,7 @@ export default function Marketplace() {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <Link href={`/baker/${baker.id}/profile`}>
+                    <Link href={`/baker/${baker.slug || baker.id}/profile`}>
                       <Button size="sm" variant="outline" data-testid={`button-view-profile-${baker.id}`}>
                         View Profile
                       </Button>
