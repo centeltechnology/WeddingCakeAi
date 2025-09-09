@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, Phone, Globe, Instagram, Facebook, Filter, Search } from "lucide-react";
+import { MapPin, Star, Phone, Globe, Instagram, Facebook, Filter, Search, Locate, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import type { Baker } from "@shared/schema";
@@ -17,6 +17,7 @@ export default function Marketplace() {
   const [specialtyFilter, setSpecialtyFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const { data: bakers = [], isLoading } = useQuery({
     queryKey: ["/api/bakers/public"],
@@ -84,6 +85,75 @@ export default function Marketplace() {
     }
     
     return false;
+  };
+
+  const handleAutoLocation = async () => {
+    setIsGettingLocation(true);
+    
+    try {
+      // Get user's current position
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 10000,
+          enableHighAccuracy: true
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      
+      // Use Nominatim to reverse geocode
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
+        {
+          headers: {
+            'User-Agent': 'Bakewise-Marketplace/1.0 (contact@bakewise.com)'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Geocoding failed');
+      }
+      
+      const data = await response.json();
+      
+      // Extract city or town name
+      const city = data.address?.city || 
+                  data.address?.town || 
+                  data.address?.village || 
+                  data.address?.county ||
+                  data.address?.state;
+      
+      if (city) {
+        setLocationFilter(city);
+      } else {
+        throw new Error('Could not determine city from location');
+      }
+      
+    } catch (error) {
+      console.error('Auto-location failed:', error);
+      
+      let errorMessage = 'Unable to get your location. ';
+      if (error instanceof GeolocationPositionError) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Please allow location access and try again.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'Location request timed out.';
+            break;
+        }
+      } else {
+        errorMessage += 'Please try typing your location manually.';
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsGettingLocation(false);
+    }
   };
 
   const filteredBakers = bakers.filter((baker: Baker) => {
@@ -166,9 +236,24 @@ export default function Marketplace() {
                 placeholder="Location (NYC, California, 90210)"
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
                 data-testid="input-location-filter"
               />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAutoLocation}
+                disabled={isGettingLocation}
+                className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-pink-50"
+                title="Use my location"
+                data-testid="button-auto-location"
+              >
+                {isGettingLocation ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-pink-600" />
+                ) : (
+                  <Locate className="h-4 w-4 text-pink-600" />
+                )}
+              </Button>
             </div>
             
             <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
