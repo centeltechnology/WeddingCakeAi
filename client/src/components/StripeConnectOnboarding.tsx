@@ -84,7 +84,14 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
       console.error('Stripe onboarding error:', error);
       
       // Handle specific error types with better user feedback
-      if (error.message?.includes('Stripe Account Verification Required')) {
+      if (error.message?.includes('Platform Configuration Required')) {
+        toast({
+          title: 'Platform Setup Needed',
+          description: 'Payment processing needs additional configuration. Please contact support for assistance.',
+          variant: 'destructive',
+          duration: 8000,
+        });
+      } else if (error.message?.includes('Stripe Account Verification Required')) {
         toast({
           title: 'Account Verification Required',
           description: 'Please verify your Stripe account identity before setting up payments.',
@@ -98,13 +105,14 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
               Verify Account
             </Button>
           ),
-          duration: 10000, // Show longer for important action
+          duration: 10000,
         });
       } else {
         toast({
           title: 'Setup Failed',
-          description: error.message || 'Failed to start account setup. Please try again.',
+          description: `${error.message || 'Failed to start account setup.'} Please try again or contact support if the issue persists.`,
           variant: 'destructive',
+          duration: 8000,
         });
       }
       setIsStartingOnboarding(false);
