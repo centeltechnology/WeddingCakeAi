@@ -183,7 +183,7 @@ export default function BakerLogin() {
         <div className="text-center text-xs text-gray-500 max-w-sm mx-auto">
           <p>
             Your login credentials are securely encrypted. Need help accessing your account? 
-            Contact support at support@bakewise.com
+            Contact support at support@bakewiseapp.com
           </p>
         </div>
       </div>

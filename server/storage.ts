@@ -270,7 +270,7 @@ export class MemStorage implements IStorage {
     const adminUser: User = {
       id: adminId,
       username: 'admin',
-      email: 'admin@bakewise.com',
+      email: 'admin@bakewiseapp.com',
       password: hashedPassword,
       role: 'super_admin',
       isActive: true,

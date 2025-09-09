@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         baker: updatedBaker,
         message: subdomain ? 
-          `Subdomain updated to ${subdomain}.bakewise.com` : 
+          `Subdomain updated to ${subdomain}.bakewiseapp.com` : 
           'Custom domain configuration updated'
       });
     } catch (error) {
@@ -338,7 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         tenant: updatedTenant,
         message: subdomain ? 
-          `Subdomain updated to ${subdomain}.bakewise.com` : 
+          `Subdomain updated to ${subdomain}.bakewiseapp.com` : 
           'Custom domain configuration updated'
       });
     } catch (error) {
@@ -492,9 +492,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         available,
         subdomain: subdomain,
-        url: available ? `${subdomain}.bakewise.com` : null,
+        url: available ? `${subdomain}.bakewiseapp.com` : null,
         message: available ? 
-          `${subdomain}.bakewise.com is available!` : 
+          `${subdomain}.bakewiseapp.com is available!` : 
           'This subdomain is already taken'
       });
     } catch (error) {

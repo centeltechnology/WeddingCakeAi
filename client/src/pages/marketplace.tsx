@@ -108,7 +108,7 @@ export default function Marketplace() {
         `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
         {
           headers: {
-            'User-Agent': 'Bakewise-Marketplace/1.0 (contact@bakewise.com)'
+            'User-Agent': 'Bakewise-Marketplace/1.0 (contact@bakewiseapp.com)'
           }
         }
       );

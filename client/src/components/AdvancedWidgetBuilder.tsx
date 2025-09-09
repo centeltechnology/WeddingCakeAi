@@ -318,7 +318,7 @@ export function AdvancedWidgetBuilder({ bakerId }: AdvancedWidgetBuilderProps) {
     if (!selectedWidget) return '';
     
     return `<iframe 
-  src="https://${bakerId}.bakewise.com/widget/${selectedWidget.id}" 
+  src="https://${bakerId}.bakewiseapp.com/widget/${selectedWidget.id}" 
   width="${selectedWidget.dimensions.responsive ? '100%' : selectedWidget.dimensions.width}" 
   height="${selectedWidget.dimensions.height}" 
   frameborder="0"
@@ -886,13 +886,13 @@ export function AdvancedWidgetBuilder({ bakerId }: AdvancedWidgetBuilderProps) {
                       <Label>Widget URL</Label>
                       <div className="flex space-x-2">
                         <Input
-                          value={`https://${bakerId}.bakewise.com/widget/${selectedWidget.id}`}
+                          value={`https://${bakerId}.bakewiseapp.com/widget/${selectedWidget.id}`}
                           readOnly
                           className="font-mono text-sm"
                         />
                         <Button
                           variant="outline"
-                          onClick={() => window.open(`https://${bakerId}.bakewise.com/widget/${selectedWidget.id}`, '_blank')}
+                          onClick={() => window.open(`https://${bakerId}.bakewiseapp.com/widget/${selectedWidget.id}`, '_blank')}
                           data-testid="button-open-widget-url"
                         >
                           <ExternalLink className="h-4 w-4" />

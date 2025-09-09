@@ -43,7 +43,7 @@ export default function Help() {
                 <Button 
                   className="bg-blue-600 hover:bg-blue-700" 
                   data-testid="button-contact-support"
-                  onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Bakewise Support Request'}
+                  onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Bakewise Support Request'}
                 >
                   Send Message
                 </Button>
@@ -82,7 +82,7 @@ export default function Help() {
                   variant="outline" 
                   className="border-purple-600 text-purple-700 hover:bg-purple-50" 
                   data-testid="button-account-help"
-                  onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Account Help Request&body=Please describe your account issue:'}
+                  onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Account Help Request&body=Please describe your account issue:'}
                 >
                   Get Help
                 </Button>
@@ -106,7 +106,7 @@ export default function Help() {
                     <Card className="hover:shadow-md transition-shadow cursor-pointer">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-800">Setting Up Your Subdomain</h4>
-                        <p className="text-sm text-gray-600">Learn how to claim your professional bakewise.com subdomain</p>
+                        <p className="text-sm text-gray-600">Learn how to claim your professional bakewiseapp.com subdomain</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -366,7 +366,7 @@ export default function Help() {
                 size="lg" 
                 className="bg-pink-600 hover:bg-pink-700" 
                 data-testid="button-email-support"
-                onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Support Request&body=Hi Bakewise Team,%0A%0APlease describe how we can help you:'}
+                onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Support Request&body=Hi Bakewise Team,%0A%0APlease describe how we can help you:'}
               >
                 Email Support
               </Button>
