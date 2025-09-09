@@ -17,6 +17,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
+import { getCSRFToken } from "./csrf";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -198,6 +199,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
   app.use(injectTenantBranding);
+
+  // CSRF token endpoint
+  app.get('/api/csrf-token', (req, res) => {
+    const token = getCSRFToken(req);
+    res.json({ csrfToken: token });
+  });
   
   // Tenant management routes (admin only)
   app.post("/api/admin/tenants", async (req, res) => {

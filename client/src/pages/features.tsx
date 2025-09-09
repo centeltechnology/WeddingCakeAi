@@ -391,31 +391,31 @@ export default function Features() {
                 <Globe className="h-10 w-10 text-white" />
               </div>
               <CardTitle className="text-3xl md:text-4xl font-serif font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                White-Label Embedding
+                Your Own Professional Landing Page
               </CardTitle>
               <CardDescription className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Seamlessly integrate our calculator into your existing website with your complete branding
+                Get a beautiful, branded website that generates leads for your cake business - no existing website required
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center relative">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-white" />
+                    <Globe className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Custom branding & colors</span>
+                  <span className="text-gray-800 font-medium">Professional website instantly</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                     <Heart className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Seamless website integration</span>
+                  <span className="text-gray-800 font-medium">Generate leads 24/7</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <Zap className="h-6 w-6 text-white" />
+                    <Sparkles className="h-6 w-6 text-white" />
                   </div>
-                  <span className="text-gray-800 font-medium">Instant quote generation</span>
+                  <span className="text-gray-800 font-medium">Your brand, your domain</span>
                 </div>
               </div>
               
