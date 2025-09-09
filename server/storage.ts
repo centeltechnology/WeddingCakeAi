@@ -2,15 +2,15 @@ import {
   type User, type InsertUser, type Profile, type InsertProfile, type Estimate, type InsertEstimate, 
   type Baker, type InsertBaker, type Lead, type InsertLead, type Message, type InsertMessage,
   type Review, type InsertReview, type Transaction, type InsertTransaction, 
-  type Availability, type InsertAvailability, type Analytics, type InsertAnalytics, 
-  type BakerProfile, type InsertBakerProfile,
+  type Availability, type InsertAvailability, type Consultation, type InsertConsultation,
+  type Analytics, type InsertAnalytics, type BakerProfile, type InsertBakerProfile,
   type Tenant, type InsertTenant, type TenantConfiguration, type InsertTenantConfiguration,
   type TenantBakerNetwork, type InsertTenantBakerNetwork, type TenantRevenueSharing, type InsertTenantRevenueSharing,
   type Customer, type InsertCustomer, type CustomerNote, type InsertCustomerNote,
   type QuoteTemplate, type InsertQuoteTemplate, type Quote, type InsertQuote, type QuoteItem, type InsertQuoteItem,
   type ContractTemplate, type InsertContractTemplate, type Contract, type InsertContract, type ContractSignature, type InsertContractSignature,
   type PaymentPlan, type InsertPaymentPlan, type PaymentSchedule, type InsertPaymentSchedule, type Invoice, type InsertInvoice,
-  users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, analytics, bakerProfiles,
+  users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
   paymentPlans, paymentSchedule, invoices,
@@ -74,6 +74,14 @@ export interface IStorage {
   // Review methods
   createReview(review: InsertReview): Promise<Review>;
   getReviewsByBakerId(bakerId: string): Promise<Review[]>;
+  
+  // Consultation methods
+  createConsultation(consultation: InsertConsultation): Promise<Consultation>;
+  getConsultation(id: string): Promise<Consultation | undefined>;
+  getConsultationsByBaker(bakerId: string): Promise<Consultation[]>;
+  updateConsultation(id: string, updates: Partial<InsertConsultation>): Promise<Consultation | undefined>;
+  cancelConsultation(id: string, reason: string): Promise<Consultation | undefined>;
+  getUpcomingConsultations(bakerId: string): Promise<Consultation[]>;
   getReviewById(id: string): Promise<Review | undefined>;
   updateReviewVerification(id: string, isVerified: boolean): Promise<Review | undefined>;
 
@@ -217,6 +225,7 @@ export class MemStorage implements IStorage {
   private reviews: Map<string, Review>;
   private transactions: Map<string, Transaction>;
   private availability: Map<string, Availability>;
+  private consultations: Map<string, Consultation>;
   private analytics: Map<string, Analytics>;
   private bakerProfiles: Map<string, BakerProfile>;
   
@@ -284,6 +293,7 @@ export class MemStorage implements IStorage {
     this.reviews = new Map();
     this.transactions = new Map();
     this.availability = new Map();
+    this.consultations = new Map();
     this.analytics = new Map();
     this.bakerProfiles = new Map();
     
@@ -478,6 +488,9 @@ export class MemStorage implements IStorage {
     sampleBakers.forEach(baker => {
       this.createBaker(baker);
     });
+    
+    // Add sample availability for the first 3 bakers
+    this.initializeSampleAvailability();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -713,6 +726,123 @@ export class MemStorage implements IStorage {
 
   async getPublicBakers(): Promise<Baker[]> {
     return Array.from(this.bakers.values()).filter(b => b.isActive);
+  }
+
+  // Consultation methods
+  async createConsultation(insertConsultation: InsertConsultation): Promise<Consultation> {
+    const id = randomUUID();
+    const consultation: Consultation = {
+      ...insertConsultation,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      consultationFee: insertConsultation.consultationFee || null,
+      depositAmount: insertConsultation.depositAmount || null,
+      notes: insertConsultation.notes || null,
+      eventType: insertConsultation.eventType || null,
+      eventDate: insertConsultation.eventDate || null,
+      guestCount: insertConsultation.guestCount || null,
+      budget: insertConsultation.budget || null,
+      dietaryRestrictions: insertConsultation.dietaryRestrictions || null,
+      stripePaymentIntentId: insertConsultation.stripePaymentIntentId || null,
+      rescheduleReason: insertConsultation.rescheduleReason || null,
+      cancelReason: insertConsultation.cancelReason || null
+    };
+    this.consultations.set(id, consultation);
+    return consultation;
+  }
+
+  async getConsultation(id: string): Promise<Consultation | undefined> {
+    return this.consultations.get(id);
+  }
+
+  async getConsultationsByBaker(bakerId: string): Promise<Consultation[]> {
+    return Array.from(this.consultations.values()).filter(c => c.bakerId === bakerId);
+  }
+
+  async updateConsultation(id: string, updates: Partial<InsertConsultation>): Promise<Consultation | undefined> {
+    const existing = this.consultations.get(id);
+    if (!existing) {
+      return undefined;
+    }
+    const updated: Consultation = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.consultations.set(id, updated);
+    return updated;
+  }
+
+  async cancelConsultation(id: string, reason: string): Promise<Consultation | undefined> {
+    const existing = this.consultations.get(id);
+    if (!existing) {
+      return undefined;
+    }
+    const updated: Consultation = {
+      ...existing,
+      status: 'cancelled',
+      cancelReason: reason,
+      updatedAt: new Date()
+    };
+    this.consultations.set(id, updated);
+    return updated;
+  }
+
+  async getUpcomingConsultations(bakerId: string): Promise<Consultation[]> {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    return Array.from(this.consultations.values()).filter(c => 
+      c.bakerId === bakerId && 
+      c.date >= todayStr && 
+      c.status !== 'cancelled' && 
+      c.status !== 'completed'
+    ).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  private initializeSampleAvailability() {
+    // Add sample availability for the first 3 bakers for the next 2 weeks
+    const bakerIds = Array.from(this.bakers.keys()).slice(0, 3);
+    const today = new Date();
+    
+    bakerIds.forEach((bakerId, index) => {
+      for (let i = 1; i <= 14; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Skip weekends for some variety
+        if (date.getDay() === 0 || date.getDay() === 6) continue;
+        
+        const timeSlots = [
+          { start: "09:00", end: "10:00", available: true },
+          { start: "10:30", end: "11:30", available: true },
+          { start: "13:00", end: "14:00", available: true },
+          { start: "14:30", end: "15:30", available: true },
+          { start: "16:00", end: "17:00", available: true }
+        ];
+        
+        // Make some slots unavailable for realism
+        if (Math.random() > 0.7) {
+          const randomSlot = Math.floor(Math.random() * timeSlots.length);
+          timeSlots[randomSlot].available = false;
+        }
+        
+        const availability = {
+          id: randomUUID(),
+          bakerId,
+          date: dateStr,
+          timeSlots: JSON.stringify(timeSlots),
+          isBlocked: false,
+          blockReason: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        this.availability.set(availability.id, availability);
+      }
+    });
   }
 
   async createLead(insertLead: InsertLead): Promise<Lead> {

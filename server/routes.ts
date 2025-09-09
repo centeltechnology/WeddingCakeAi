@@ -649,15 +649,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public marketplace route - no tenant restriction
   app.get("/api/bakers/public", async (req, res) => {
     try {
-      const bakers = await storage.getPublicBakers();
+      const allBakers = await storage.getAllBakers();
+      const activeBakers = allBakers.filter(baker => baker.isActive);
       
       // Remove sensitive information for public view
-      const publicBakers = bakers.map(baker => ({
+      const publicBakers = activeBakers.map(baker => ({
         id: baker.id,
         name: baker.name,
         businessName: baker.businessName,
         description: baker.description,
         address: baker.address,
+        city: baker.city,
+        state: baker.state,
         rating: baker.rating,
         priceRange: baker.priceRange,
         specialties: baker.specialties,
@@ -1301,6 +1304,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Availability not found" });
       }
       res.json(availability);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Consultation booking routes - PUBLIC ACCESS
+  app.post("/api/consultations", async (req, res) => {
+    try {
+      const consultationData = insertConsultationSchema.parse(req.body);
+      const consultation = await storage.createConsultation(consultationData);
+      
+      // Track analytics for consultation booking
+      await storage.trackAnalytics({
+        bakerId: consultation.bakerId,
+        metric: 'consultation_booked',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      res.status(201).json(consultation);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/consultations/:id", async (req, res) => {
+    try {
+      const consultation = await storage.getConsultation(req.params.id);
+      if (!consultation) {
+        return res.status(404).json({ message: "Consultation not found" });
+      }
+      res.json(consultation);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/consultations", async (req, res) => {
+    try {
+      const consultations = await storage.getConsultationsByBaker(req.params.bakerId);
+      res.json(consultations);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/bakers/:bakerId/consultations/upcoming", async (req, res) => {
+    try {
+      const consultations = await storage.getUpcomingConsultations(req.params.bakerId);
+      res.json(consultations);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/consultations/:id", async (req, res) => {
+    try {
+      const updates = insertConsultationSchema.partial().parse(req.body);
+      const consultation = await storage.updateConsultation(req.params.id, updates);
+      if (!consultation) {
+        return res.status(404).json({ message: "Consultation not found" });
+      }
+      res.json(consultation);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/consultations/:id/cancel", async (req, res) => {
+    try {
+      const { reason } = req.body;
+      const consultation = await storage.cancelConsultation(req.params.id, reason || "No reason provided");
+      if (!consultation) {
+        return res.status(404).json({ message: "Consultation not found" });
+      }
+      res.json(consultation);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }

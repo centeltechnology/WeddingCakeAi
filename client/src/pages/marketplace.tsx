@@ -14,8 +14,8 @@ import type { Baker } from "@shared/schema";
 export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState("");
-  const [priceFilter, setPriceFilter] = useState("");
+  const [specialtyFilter, setSpecialtyFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
 
   const { data: bakers = [], isLoading } = useQuery({
@@ -31,12 +31,12 @@ export default function Marketplace() {
     const matchesLocation = !locationFilter || 
       baker.address?.toLowerCase().includes(locationFilter.toLowerCase());
     
-    const matchesSpecialty = !specialtyFilter || 
+    const matchesSpecialty = !specialtyFilter || specialtyFilter === "all" ||
       baker.specialties?.some(specialty => 
         specialty.toLowerCase().includes(specialtyFilter.toLowerCase())
       );
     
-    const matchesPrice = !priceFilter || baker.priceRange === priceFilter;
+    const matchesPrice = !priceFilter || priceFilter === "all" || baker.priceRange === priceFilter;
 
     return matchesSearch && matchesLocation && matchesSpecialty && matchesPrice;
   });
@@ -113,7 +113,7 @@ export default function Marketplace() {
                 <SelectValue placeholder="Specialty" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Specialties</SelectItem>
+                <SelectItem value="all">All Specialties</SelectItem>
                 {specialties.map((specialty) => (
                   <SelectItem key={specialty} value={specialty}>
                     {specialty}
@@ -127,7 +127,7 @@ export default function Marketplace() {
                 <SelectValue placeholder="Price Range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Prices</SelectItem>
+                <SelectItem value="all">All Prices</SelectItem>
                 <SelectItem value="$">$ - Budget Friendly</SelectItem>
                 <SelectItem value="$$">$$ - Moderate</SelectItem>
                 <SelectItem value="$$$">$$$ - Premium</SelectItem>

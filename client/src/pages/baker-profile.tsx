@@ -13,6 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import type { Baker } from "@shared/schema";
+import { BookingCalendar } from "@/components/BookingCalendar";
 
 export default function BakerProfile() {
   const params = useParams();
@@ -339,6 +340,14 @@ export default function BakerProfile() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Booking Calendar */}
+            <BookingCalendar 
+              baker={baker} 
+              onBookingComplete={(consultationId) => {
+                console.log('Consultation booked:', consultationId);
+              }} 
+            />
+            
             {/* Quick Actions */}
             <Card>
               <CardHeader>
@@ -351,10 +360,6 @@ export default function BakerProfile() {
                     Get Price Quote
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full" data-testid="button-book-consultation-sidebar">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Book Consultation
-                </Button>
                 <Button variant="outline" className="w-full" data-testid="button-send-message">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Send Message

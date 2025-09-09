@@ -287,6 +287,36 @@ export const availability = pgTable("availability", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Consultation bookings
+export const consultations = pgTable("consultations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  date: date("date").notNull(),
+  timeSlot: varchar("time_slot").notNull(), // "09:00-10:00"
+  duration: integer("duration").default(60), // minutes
+  type: varchar("type").default("consultation"), // consultation, tasting, planning
+  status: varchar("status").default("pending"), // pending, confirmed, completed, cancelled, rescheduled
+  notes: text("notes"),
+  eventType: varchar("event_type"), // wedding, birthday, corporate, etc
+  eventDate: date("event_date"),
+  guestCount: integer("guest_count"),
+  budget: varchar("budget"),
+  dietaryRestrictions: text("dietary_restrictions"),
+  consultationFee: decimal("consultation_fee", { precision: 10, scale: 2 }),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  paymentStatus: varchar("payment_status").default("pending"), // pending, paid, refunded
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  rescheduleReason: text("reschedule_reason"),
+  cancelReason: text("cancel_reason"),
+  reminderSent: boolean("reminder_sent").default(false),
+  confirmationSent: boolean("confirmation_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Baker analytics tracking
 export const analytics = pgTable("analytics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -680,6 +710,7 @@ export const bakerProfiles = pgTable("baker_profiles", {
 export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAvailabilitySchema = createInsertSchema(availability).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertConsultationSchema = createInsertSchema(consultations).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
 export const insertBakerProfileSchema = createInsertSchema(bakerProfiles).omit({ id: true, createdAt: true, updatedAt: true });
 
@@ -708,6 +739,8 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Availability = typeof availability.$inferSelect;
 export type InsertAvailability = z.infer<typeof insertAvailabilitySchema>;
+export type Consultation = typeof consultations.$inferSelect;
+export type InsertConsultation = z.infer<typeof insertConsultationSchema>;
 export type Analytics = typeof analytics.$inferSelect;
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type BakerProfile = typeof bakerProfiles.$inferSelect;
