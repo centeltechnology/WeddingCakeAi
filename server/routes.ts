@@ -345,10 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/bakers/:bakerId/stripe-connect/create-account', async (req, res) => {
     try {
       const { bakerId } = req.params;
-      console.log('🔧 STRIPE CONNECT: Starting onboarding for bakerId:', bakerId);
-      
       const baker = await storage.getBaker(bakerId);
-      console.log('🔧 STRIPE CONNECT: Baker found:', baker ? { id: baker.id, email: baker.email, name: baker.name } : 'NOT FOUND');
       
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
@@ -392,14 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountId: connectAccountId 
       });
     } catch (error: any) {
-      console.error('🔧 STRIPE ERROR DETAILS:', {
-        message: error.message,
-        type: error.type,
-        code: error.code,
-        raw: error.raw,
-        statusCode: error.statusCode,
-        requestId: error.requestId
-      });
+      console.error('Error creating Stripe Connect account:', error);
       
       // Handle specific Stripe verification errors
       if (error.code === 'invalid_request_error' && error.message?.includes('verify your identity')) {
