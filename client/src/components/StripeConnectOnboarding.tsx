@@ -52,6 +52,7 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   // Start Stripe Connect onboarding
   const startOnboardingMutation = useMutation({
     mutationFn: async () => {
+      console.log('🔧 DEBUG: Making API call to:', `/api/bakers/${bakerId}/stripe-connect/create-account`);
       const response = await fetch(`/api/bakers/${bakerId}/stripe-connect/create-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -112,10 +113,16 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
   });
 
   const handleStartOnboarding = () => {
+    console.log('🔧 DEBUG: Button clicked, bakerId:', bakerId);
+    console.log('🔧 DEBUG: isStartingOnboarding:', isStartingOnboarding);
+    console.log('🔧 DEBUG: mutation isPending:', startOnboardingMutation.isPending);
+    
     if (isStartingOnboarding || startOnboardingMutation.isPending) {
+      console.log('🔧 DEBUG: Preventing double click - returning early');
       return; // Prevent double clicks
     }
     
+    console.log('🔧 DEBUG: Starting onboarding mutation...');
     setIsStartingOnboarding(true);
     startOnboardingMutation.mutate();
   };
