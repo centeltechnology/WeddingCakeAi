@@ -38,13 +38,12 @@ export default function SuperAdminLogin() {
     setError("");
 
     try {
-      const response = await fetch("/api/super-admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await import('@/lib/csrf').then(({ makeAuthenticatedRequest }) => 
+        makeAuthenticatedRequest("/api/super-admin/login", {
+          method: "POST",
+          body: JSON.stringify(data),
+        })
+      );
 
       const result = await response.json();
 

@@ -31,17 +31,12 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   const updatePortfolioMutation = useMutation({
     mutationFn: async (portfolioImageURL: string) => {
-      // Get CSRF token from meta tag
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch(`/api/bakers/${bakerId}/portfolio`, {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/portfolio`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        },
         body: JSON.stringify({ portfolioImageURL })
       });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to update portfolio' }));
         throw new Error(errorData.error || 'Failed to update portfolio');
@@ -80,17 +75,12 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
 
   const removePortfolioMutation = useMutation({
     mutationFn: async (imageUrl: string) => {
-      // Get CSRF token from meta tag
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch(`/api/bakers/${bakerId}/portfolio`, {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/portfolio`, {
         method: 'DELETE',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        },
         body: JSON.stringify({ portfolioImageURL: imageUrl })
       });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to remove portfolio image' }));
         throw new Error(errorData.error || 'Failed to remove portfolio image');
@@ -107,16 +97,11 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
   });
 
   const handleGetUploadParameters = async () => {
-    // Get CSRF token from meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    const response = await fetch('/api/objects/upload', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': csrfToken || ''
-      }
+    const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+    const response = await makeAuthenticatedRequest('/api/objects/upload', {
+      method: 'POST'
     });
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Failed to get upload URL' }));
       throw new Error(errorData.error || 'Failed to get upload URL');
