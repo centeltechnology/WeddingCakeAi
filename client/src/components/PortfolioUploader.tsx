@@ -171,10 +171,10 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
                 maxFileSize={5242880} // 5MB
                 onGetUploadParameters={handleGetUploadParameters}
                 onComplete={handleComplete}
-                buttonClassName="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold px-8 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                buttonClassName="w-full h-16 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg border-2 border-pink-400 hover:border-pink-300"
               >
-                <Upload className="w-5 h-5 mr-2 text-white" />
-                <span className="text-white font-semibold">Upload Image</span>
+                <Upload className="w-6 h-6 mr-3 text-white" />
+                <span className="text-white font-bold">📸 Upload Portfolio Image</span>
               </ObjectUploader>
               <p className="text-xs text-gray-800 mt-3 font-medium">
                 Supported formats: JPG, PNG (Max 5MB)
