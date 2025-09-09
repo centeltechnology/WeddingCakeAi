@@ -139,10 +139,10 @@ export default function Signup() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.bakeryName || !formData.ownerName || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.bakeryName || !formData.ownerName || !formData.email || !formData.password || !formData.confirmPassword || !formData.city) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Missing Information", 
+        description: "Please fill in all required fields including your business address.",
         variant: "destructive",
       });
       return;
@@ -369,14 +369,18 @@ export default function Signup() {
               </div>
               
               <div>
-                <Label htmlFor="city">City/Location</Label>
+                <Label htmlFor="city">Business Address *</Label>
                 <Input
                   id="city"
                   name="city"
-                  placeholder="San Francisco, CA"
+                  placeholder="Full business address (e.g., 123 Main St, San Francisco, CA 94102)"
                   value={formData.city}
                   onChange={handleInputChange}
+                  required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  This helps customers find you in the marketplace. Include city and state for best results.
+                </p>
               </div>
 
               <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-lg border border-rose-100">

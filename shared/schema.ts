@@ -135,7 +135,7 @@ export const bakers = pgTable("bakers", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   phone: text("phone"),
-  address: text("address"),
+  address: text("address").notNull(),
   latitude: decimal("latitude"),
   longitude: decimal("longitude"),
   rating: decimal("rating"),
