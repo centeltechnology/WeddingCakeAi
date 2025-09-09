@@ -124,11 +124,11 @@ export default function Plans({ bakerId, onPlanChange }: PlansProps) {
       } catch (error) {
         console.error('Error changing plan:', error);
       }
-    } else if (stripeLink && !DEMO_MODE) {
-      // Fallback to direct Stripe links for non-authenticated users
-      window.open(stripeLink, '_blank');
+    } else if (!DEMO_MODE && planId !== 'free') {
+      // For non-authenticated users wanting paid plans, redirect to signup
+      window.location.href = '/baker-signup';
     } else {
-      // Demo mode or no bakerId
+      // Demo mode, free plan, or fallback
       setActivePlan(planId);
       localStorage.setItem('bakerPlan', planId);
       onPlanChange?.(planId);
