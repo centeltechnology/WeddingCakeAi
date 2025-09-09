@@ -1228,73 +1228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature'] as string;
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!webhookSecret) {
-      console.error('Stripe webhook secret not configured');
-      return res.status(400).send('Webhook secret not configured');
-    }
-
-    let event;
-
-    try {
-      // Verify webhook signature
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    try {
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        
-        // Update transaction status
-        const transactions = await storage.getTransactionsByBakerId(paymentIntent.metadata.bakerId);
-        const transaction = transactions.find(t => t.stripePaymentIntentId === paymentIntent.id);
-        
-        if (transaction) {
-          await storage.updateTransactionStatus(transaction.id, 'completed');
-          
-          // If this was a deposit payment, update quote status
-          if (paymentIntent.metadata.type === 'deposit' && paymentIntent.metadata.quoteId) {
-            await storage.updateQuote(paymentIntent.metadata.quoteId, {
-              status: 'deposit_paid'
-            });
-          }
-          
-          // If this was a final payment, mark quote as fully paid
-          if (paymentIntent.metadata.type === 'final_payment' && paymentIntent.metadata.quoteId) {
-            await storage.updateQuote(paymentIntent.metadata.quoteId, {
-              status: 'paid'
-            });
-          }
-
-          // Send confirmation email (if email service is configured)
-          try {
-            const customer = await storage.getCustomer(paymentIntent.metadata.customerId);
-            if (customer) {
-              await sendEmail({
-                to: customer.email,
-                subject: 'Payment Confirmation',
-                text: `Dear ${customer.name},\n\nYour payment of $${(paymentIntent.amount / 100).toFixed(2)} has been successfully processed.\n\nDescription: ${paymentIntent.description}\n\nThank you for your business!`
-              });
-            }
-          } catch (emailError) {
-            console.error('Failed to send payment confirmation email:', emailError);
-            // Don't fail the webhook for email issues
-          }
-        }
-      }
-      
-      res.json({ received: true });
-    } catch (error: any) {
-      console.error('Webhook processing error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
+  // Webhook handler moved to server/index.ts to ensure proper middleware ordering
 
   app.get("/api/bakers/:bakerId/transactions", async (req, res) => {
     try {
