@@ -90,7 +90,14 @@ export function ObjectUploader({
           throw new Error('Failed to upload file');
         }
 
-        uploadResults.push({ uploadURL: url });
+        // Convert the upload URL to the accessible URL
+        // The upload URL is for a path like: /bucket/.../.private/uploads/{uuid}
+        // We need to extract the uploads/{uuid} part for the /objects/ endpoint
+        const urlParts = url.split('?')[0]; // Remove query parameters
+        const pathPart = urlParts.split('/').slice(-2).join('/'); // Get "uploads/{uuid}"
+        const accessURL = `/objects/${pathPart}`;
+        
+        uploadResults.push({ uploadURL: accessURL });
         setUploadProgress(((i + 1) / selectedFiles.length) * 100);
       }
 
