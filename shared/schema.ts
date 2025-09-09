@@ -132,6 +132,7 @@ export const estimates = pgTable("estimates", {
 export const bakers = pgTable("bakers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  slug: varchar("slug"),
   email: text("email").notNull(),
   password: text("password").notNull(),
   phone: text("phone"),

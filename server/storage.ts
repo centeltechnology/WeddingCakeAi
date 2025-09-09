@@ -34,12 +34,14 @@ export interface IStorage {
   // Baker operations
   getBakers(): Promise<Baker[]>;
   getBaker(id: string): Promise<Baker | undefined>;
+  getBakerBySlug(slug: string): Promise<Baker | undefined>;
   getBakerByEmail(email: string): Promise<Baker | undefined>;
   createBaker(insertBaker: InsertBaker): Promise<Baker>;
   updateBaker(id: string, updates: Partial<InsertBaker>): Promise<Baker>;
   searchBakers(location?: string, radius?: number, specialty?: string, tenantId?: string): Promise<Baker[]>;
   getBakersByTenant(tenantId: string): Promise<Baker[]>;
   getPublicBakers(): Promise<Baker[]>;
+  checkSlugExists(slug: string): Promise<boolean>;
 
   // Baker Profile operations
   createBakerProfile(insertProfile: InsertBakerProfile): Promise<BakerProfile>;
