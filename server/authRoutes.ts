@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import jwt from "jsonwebtoken";
-import { cleanStorage } from "./cleanStorage";
+import { databaseStorage } from "./databaseStorage";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_dev_secret_key_change_in_production';
 
@@ -20,7 +20,7 @@ export function setupAuthRoutes(app: Express) {
       const { username, email, password } = req.body;
 
       // Check if any super admin already exists
-      const existingUsers = await cleanStorage.getUsersWithRole('super_admin');
+      const existingUsers = await databaseStorage.getUsersWithRole('super_admin');
       if (existingUsers.length > 0) {
         return res.status(400).json({
           success: false,
@@ -44,7 +44,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Check if username already exists
-      const existingUser = await cleanStorage.getUserByUsername(username);
+      const existingUser = await databaseStorage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -53,8 +53,8 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Hash password and create user
-      const hashedPassword = await cleanStorage.hashPassword(password);
-      const user = await cleanStorage.createUser({
+      const hashedPassword = await databaseStorage.hashPassword(password);
+      const user = await databaseStorage.createUser({
         username,
         email,
         password: hashedPassword,
@@ -98,7 +98,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Find user
-      const user = await cleanStorage.getUserByUsername(username);
+      const user = await databaseStorage.getUserByUsername(username);
       if (!user || user.role !== 'super_admin') {
         return res.status(401).json({ 
           success: false, 
@@ -107,7 +107,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify password
-      const isValidPassword = await cleanStorage.verifyPassword(password, user.password);
+      const isValidPassword = await databaseStorage.verifyPassword(password, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ 
           success: false, 
@@ -123,7 +123,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Update last login
-      await cleanStorage.updateUserLastLogin(user.id);
+      await databaseStorage.updateUserLastLogin(user.id);
 
       // Create JWT token
       const token = createToken(user.id, user.username, user.role);
@@ -170,7 +170,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Check if email already exists
-      const existingBaker = await cleanStorage.getBakerByEmail(email);
+      const existingBaker = await databaseStorage.getBakerByEmail(email);
       if (existingBaker) {
         return res.status(400).json({
           success: false,
@@ -179,8 +179,8 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Hash password and create baker
-      const hashedPassword = await cleanStorage.hashPassword(password);
-      const baker = await cleanStorage.createBaker({
+      const hashedPassword = await databaseStorage.hashPassword(password);
+      const baker = await databaseStorage.createBaker({
         name,
         email,
         password: hashedPassword,
@@ -229,7 +229,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Find baker
-      const baker = await cleanStorage.getBakerByEmail(email);
+      const baker = await databaseStorage.getBakerByEmail(email);
       if (!baker) {
         return res.status(401).json({ 
           success: false, 
@@ -238,7 +238,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify password
-      const isValidPassword = await cleanStorage.verifyPassword(password, baker.password);
+      const isValidPassword = await databaseStorage.verifyPassword(password, baker.password);
       if (!isValidPassword) {
         return res.status(401).json({ 
           success: false, 
@@ -286,7 +286,7 @@ export function setupAuthRoutes(app: Express) {
       const { slug } = req.params;
       
       // Find baker by slug
-      const baker = await cleanStorage.getBakerBySlug(slug);
+      const baker = await databaseStorage.getBakerBySlug(slug);
       if (!baker) {
         return res.status(404).json({
           success: false,
