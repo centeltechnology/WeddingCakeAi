@@ -388,10 +388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create account link for onboarding
+      // Force HTTPS for production/live mode
+      const protocol = process.env.NODE_ENV === 'production' || !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? 'https' : req.protocol;
+      const host = req.get('host');
+      
       const accountLink = await stripe.accountLinks.create({
         account: connectAccountId,
-        refresh_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=payments&refresh=true`,
-        return_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=payments&success=true`,
+        refresh_url: `${protocol}://${host}/baker-dashboard?tab=payments&refresh=true`,
+        return_url: `${protocol}://${host}/baker-dashboard?tab=payments&success=true`,
         type: 'account_onboarding',
       });
 
