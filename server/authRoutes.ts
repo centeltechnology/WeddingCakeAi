@@ -618,6 +618,71 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
+  // Super Admin Password Reset (Requires current password)
+  app.post('/api/clean-auth/super-admin/reset-password', async (req, res) => {
+    try {
+      const { userId, currentPassword, newPassword } = req.body;
+
+      // Validate input
+      if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID, current password, and new password are required'
+        });
+      }
+
+      // Validate new password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password must be at least 8 characters long'
+        });
+      }
+
+      // Ensure current and new passwords are different
+      if (currentPassword === newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password must be different from current password'
+        });
+      }
+
+      // Find super admin user
+      const user = await databaseStorage.getUserById(userId);
+      if (!user || user.role !== 'super_admin') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid user or insufficient permissions'
+        });
+      }
+
+      // Verify current password
+      const isValidPassword = await databaseStorage.verifyPassword(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          message: 'Current password is incorrect'
+        });
+      }
+
+      // Hash new password and update
+      const hashedPassword = await databaseStorage.hashPassword(newPassword);
+      await databaseStorage.updateUserPassword(userId, hashedPassword);
+
+      res.json({
+        success: true,
+        message: 'Password updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during password reset'
+      });
+    }
+  });
+
   // Health check route
   app.get('/api/auth/health', (req, res) => {
     res.json({

@@ -753,6 +753,18 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
+                  window.location.href = '/super-admin/reset-password';
+                }}
+                data-testid="button-reset-password"
+                className="flex items-center space-x-2"
+              >
+                <Lock className="h-4 w-4" />
+                <span>Reset Password</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
                   localStorage.removeItem('superAdminToken');
                   window.location.href = '/super-admin/login';
                 }}

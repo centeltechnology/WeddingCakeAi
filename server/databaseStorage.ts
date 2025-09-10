@@ -50,6 +50,22 @@ export class DatabaseStorage {
       .where(eq(users.id, userId));
   }
 
+  async getUserById(userId: string) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return user;
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string) {
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
+  }
+
   // Baker methods
   async getBakerByVerificationToken(token: string) {
     const [baker] = await db

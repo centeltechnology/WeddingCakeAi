@@ -54,6 +54,7 @@ import Marketplace from "@/pages/marketplace";
 import BakerProfile from "@/pages/baker-profile";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
+import SuperAdminResetPassword from "@/pages/super-admin-reset-password";
 import BakerLogin from "@/pages/baker-login";
 import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
@@ -108,6 +109,7 @@ function Router() {
           <SuperAdminDashboard />
         </SuperAdminAuthWrapper>
       )} />
+      <Route path="/super-admin/reset-password" component={SuperAdminResetPassword} />
       <Route path="/baker/:bakerId/calculator">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
