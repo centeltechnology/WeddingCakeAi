@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -58,7 +59,6 @@ import Billing from "@/pages/billing";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import React, { useEffect } from "react";
 
 function Router() {
   return (
