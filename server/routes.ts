@@ -302,12 +302,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Baker not found' });
       }
 
+      // Determine if domain is actually active (has subdomain or custom domain configured)
+      const hasSubdomain = baker.subdomain && baker.subdomain.length > 0;
+      const hasCustomDomain = baker.customDomain && baker.customDomain.length > 0;
+      const isActive = hasSubdomain || hasCustomDomain;
+
       res.json({
         subdomain: baker.subdomain || null,
         customDomain: baker.customDomain || null,
-        isActive: true, // Simplified for now
-        sslStatus: 'secured',
-        propagationStatus: 'complete'
+        isActive: isActive,
+        sslStatus: isActive ? 'secured' : 'not_configured',
+        propagationStatus: isActive ? 'complete' : 'not_configured'
       });
     } catch (error) {
       console.error('Error fetching baker domain configuration:', error);
