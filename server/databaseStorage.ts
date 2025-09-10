@@ -191,6 +191,83 @@ export class DatabaseStorage {
     return expiry;
   }
 
+  // Password reset methods for users (super admin)
+  async createResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    // Invalidate any existing reset tokens by updating this user's reset fields
+    await db
+      .update(users)
+      .set({
+        resetTokenHash: tokenHash,
+        resetTokenExpiresAt: expiresAt,
+        resetTokenUsedAt: null, // Clear any previous usage
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async findUserByResetTokenHash(tokenHash: string) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.resetTokenHash, tokenHash))
+      .limit(1);
+    return user;
+  }
+
+  async consumeResetToken(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetTokenUsedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  isResetTokenValid(user: any): boolean {
+    // Check if token exists
+    if (!user.resetTokenHash) {
+      return false;
+    }
+
+    // Check if token is expired
+    if (!user.resetTokenExpiresAt || new Date() > new Date(user.resetTokenExpiresAt)) {
+      return false;
+    }
+
+    // Check if token was already used
+    if (user.resetTokenUsedAt) {
+      return false;
+    }
+
+    return true;
+  }
+
+  createResetTokenExpiry(): Date {
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 15); // 15 minutes from now for security
+    return expiry;
+  }
+
+  async getUserByEmailOrUsername(identifier: string) {
+    // Try by email first, then by username
+    const [userByEmail] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, identifier))
+      .limit(1);
+
+    if (userByEmail) {
+      return userByEmail;
+    }
+
+    const [userByUsername] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, identifier))
+      .limit(1);
+
+    return userByUsername;
+  }
+
 
   // Booking methods for simplified booking system
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {

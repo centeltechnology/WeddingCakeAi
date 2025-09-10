@@ -1,292 +1,332 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { NavigationHeader } from "@/components/NavigationHeader";
-import { Footer } from "@/components/Footer";
-import { Shield, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Shield, Lock, CheckCircle2, AlertCircle, ChefHat, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+
 export default function SuperAdminResetPassword() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
-  // Get user data from localStorage
-  const getUserData = () => {
-    const token = localStorage.getItem("superAdminToken");
-    const userStr = localStorage.getItem("superAdminUser");
-    if (!token || !userStr) {
-      return null;
-    }
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  };
+  const form = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one uppercase letter";
-    }
-    if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one lowercase letter";
-    }
-    if (!/[0-9]/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
-
-    // Get user data
-    const user = getUserData();
-    if (!user || !user.id) {
-      setError("You must be logged in to change your password");
-      setLocation("/super-admin-login");
+  // Extract token from URL query parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('token');
+    
+    if (!resetToken) {
+      setError("Invalid or missing reset token. Please request a new password reset.");
       return;
     }
+    
+    setToken(resetToken);
+  }, []);
 
-    // Validate new password
-    const passwordError = validatePassword(newPassword);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
-    // Check if passwords match
-    if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
-      return;
-    }
-
-    // Check if new password is different from current
-    if (currentPassword === newPassword) {
-      setError("New password must be different from current password");
+  const onSubmit = async (data: ResetPasswordForm) => {
+    if (!token) {
+      setError("Invalid or missing reset token. Please request a new password reset.");
       return;
     }
 
     setIsLoading(true);
+    setError("");
+    setSuccess(false);
 
     try {
-      const response = await fetch("/api/clean-auth/super-admin/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          currentPassword,
-          newPassword,
-        }),
-      });
+      const response = await import('@/lib/csrf').then(({ makeAuthenticatedRequest }) => 
+        makeAuthenticatedRequest("/api/clean-auth/super-admin/reset-password", {
+          method: "POST",
+          body: JSON.stringify({
+            token,
+            newPassword: data.newPassword,
+          }),
+        })
+      );
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to reset password");
+      if (response.ok && result.success) {
+        setSuccess(true);
+        form.reset();
+        
+        toast({
+          title: "Password reset successful",
+          description: "Your password has been updated. You can now log in with your new password.",
+        });
+
+        // Redirect to login page after 3 seconds
+        setTimeout(() => {
+          setLocation("/super-admin-login");
+        }, 3000);
+      } else {
+        setError(result.message || "An error occurred while resetting your password");
       }
-
-      setSuccess(true);
-      toast({
-        title: "Password Updated",
-        description: "Your password has been successfully updated.",
-      });
-
-      // Clear form
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-
-      // Redirect to super admin dashboard after 2 seconds
-      setTimeout(() => {
-        setLocation("/super-admin");
-      }, 2000);
-
-    } catch (error: any) {
-      setError(error.message || "An error occurred while resetting password");
-      toast({
-        title: "Error",
-        description: error.message || "Failed to reset password",
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      setError("An error occurred while resetting your password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const user = getUserData();
-  if (!user) {
+  // If no token or invalid token, show error state
+  if (!token && error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <NavigationHeader />
-        <div className="container max-w-lg mx-auto px-4 py-8">
-          <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20">
-            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <AlertDescription className="text-red-800 dark:text-red-200">
-              You must be logged in to access this page.
-            </AlertDescription>
-          </Alert>
-          <div className="mt-4 text-center">
-            <Button 
-              onClick={() => setLocation("/super-admin-login")}
-              data-testid="button-login"
-            >
-              Go to Login
-            </Button>
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <ChefHat className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Bakewise
+            </h1>
+            <p className="text-gray-600 mt-2">Super Admin Portal</p>
           </div>
+
+          {/* Error Card */}
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="text-center space-y-2">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Invalid Reset Link
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                This password reset link is invalid, expired, or has already been used.
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <Alert variant="destructive" data-testid="alert-token-error">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => setLocation("/super-admin-forgot-password")} 
+                  className="w-full h-11 bg-pink-600 hover:bg-pink-700"
+                  data-testid="button-request-new"
+                >
+                  Request New Reset Link
+                </Button>
+                
+                <Button 
+                  onClick={() => setLocation("/super-admin-login")} 
+                  variant="outline"
+                  className="w-full h-11"
+                  data-testid="button-back-login"
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <NavigationHeader />
-      
-      <div className="container max-w-lg mx-auto px-4 py-8">
-        <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <CardTitle className="text-2xl">Reset Password</CardTitle>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <ChefHat className="h-8 w-8 text-white" />
             </div>
-            <CardDescription>
-              Change your super admin password. For security, you must provide your current password.
+          </div>
+          <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Bakewise
+          </h1>
+          <p className="text-gray-600 mt-2">Super Admin Portal</p>
+        </div>
+
+        {/* Reset Password Form */}
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center">
+              <Shield className="h-12 w-12 text-pink-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Set New Password
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Enter your new password below. Make sure it's strong and secure.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {success && (
-              <Alert className="mb-6 border-green-200 bg-green-50 dark:bg-green-900/20">
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
-                  Password updated successfully! Redirecting to dashboard...
-                </AlertDescription>
-              </Alert>
-            )}
-
+          
+          <CardContent className="space-y-6">
             {error && (
-              <Alert className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <AlertDescription className="text-red-800 dark:text-red-200">
-                  {error}
+              <Alert variant="destructive" data-testid="alert-error">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="border-green-200 bg-green-50 text-green-800" data-testid="alert-success">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Password updated!</strong> Your password has been successfully reset. Redirecting to login page...
                 </AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
+                <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="current-password"
-                    type="password"
-                    placeholder="Enter your current password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                    disabled={isLoading || success}
-                    className="pl-10"
-                    data-testid="input-current-password"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="new-password"
-                    type="password"
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    disabled={isLoading || success}
-                    className="pl-10"
+                    {...form.register("newPassword")}
+                    className="h-11 pl-10 pr-10"
                     data-testid="input-new-password"
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-11 px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    data-testid="button-toggle-password"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Must be at least 8 characters with uppercase, lowercase, and numbers
-                </p>
+                {form.formState.errors.newPassword && (
+                  <p className="text-sm text-red-600" data-testid="error-new-password">
+                    {form.formState.errors.newPassword.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="confirm-password"
-                    type="password"
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={isLoading || success}
-                    className="pl-10"
+                    {...form.register("confirmPassword")}
+                    className="h-11 pl-10 pr-10"
                     data-testid="input-confirm-password"
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-11 px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    data-testid="button-toggle-confirm-password"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
                 </div>
+                {form.formState.errors.confirmPassword && (
+                  <p className="text-sm text-red-600" data-testid="error-confirm-password">
+                    {form.formState.errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
 
-              <div className="flex gap-3">
-                <Button
-                  type="submit"
-                  disabled={isLoading || success}
-                  className="flex-1"
-                  data-testid="button-reset-password"
-                >
-                  {isLoading ? "Updating..." : "Update Password"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLocation("/super-admin")}
-                  disabled={isLoading}
-                  data-testid="button-cancel"
-                >
-                  Cancel
-                </Button>
-              </div>
+              <Button 
+                type="submit" 
+                className="w-full h-11 bg-pink-600 hover:bg-pink-700" 
+                disabled={isLoading || success}
+                data-testid="button-reset-password"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating Password...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4 mr-2" />
+                    Update Password
+                  </>
+                )}
+              </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                Password Requirements:
-              </h3>
-              <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                <li>• At least 8 characters long</li>
-                <li>• Contains at least one uppercase letter (A-Z)</li>
-                <li>• Contains at least one lowercase letter (a-z)</li>
-                <li>• Contains at least one number (0-9)</li>
-                <li>• Must be different from your current password</li>
-              </ul>
+            <div className="pt-4 border-t border-gray-200">
+              <div className="text-center text-sm text-gray-600">
+                <p>Remember your password?</p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-pink-600 hover:text-pink-700" 
+                  onClick={() => setLocation("/super-admin-login")}
+                  data-testid="button-login"
+                >
+                  Sign in here
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Password Requirements */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center mt-0.5">
+                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+              </div>
+              <div className="flex-1 text-sm">
+                <p className="font-medium text-blue-900">Password Requirements</p>
+                <p className="mt-1 text-blue-700">
+                  Your password must be at least 8 characters long and contain a mix of letters, numbers, and symbols for security.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Footer />
     </div>
   );
 }

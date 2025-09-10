@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Eye, EyeOff, ChefHat } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -173,6 +173,17 @@ export default function SuperAdminLogin() {
                 )}
               </Button>
             </form>
+
+            <div className="pt-4 border-t border-gray-200">
+              <div className="text-center text-sm text-gray-600">
+                <p>Forgot your password?</p>
+                <Link href="/super-admin-forgot-password" data-testid="link-forgot-password">
+                  <Button variant="link" className="p-0 h-auto text-pink-600 hover:text-pink-700" data-testid="button-forgot-password">
+                    Reset it here
+                  </Button>
+                </Link>
+              </div>
+            </div>
 
             <div className="text-center text-sm text-gray-500">
               <p>Secure admin access to Bakewise platform</p>

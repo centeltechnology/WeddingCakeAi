@@ -54,6 +54,7 @@ import Marketplace from "@/pages/marketplace";
 import BakerProfile from "@/pages/baker-profile";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
+import SuperAdminForgotPassword from "@/pages/super-admin-forgot-password";
 import SuperAdminResetPassword from "@/pages/super-admin-reset-password";
 import BakerLogin from "@/pages/baker-login";
 import AuthTest from "@/pages/auth-test";
@@ -104,6 +105,7 @@ function Router() {
       <Route path="/auth-test" component={AuthTest} />
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
       <Route path="/super-admin-login" component={SuperAdminLogin} />
+      <Route path="/super-admin-forgot-password" component={SuperAdminForgotPassword} />
       <Route path="/super-admin" component={() => (
         <SuperAdminAuthWrapper>
           <SuperAdminDashboard />

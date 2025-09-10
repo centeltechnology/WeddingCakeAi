@@ -76,6 +76,9 @@ export const users = pgTable("users", {
   role: text("role").default('admin'), // 'super_admin', 'admin', 'baker'
   isActive: boolean("is_active").default(true),
   lastLoginAt: timestamp("last_login_at"),
+  resetTokenHash: text("reset_token_hash"), // Hashed password reset token
+  resetTokenExpiresAt: timestamp("reset_token_expires_at"), // Token expiry time
+  resetTokenUsedAt: timestamp("reset_token_used_at"), // When token was used
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

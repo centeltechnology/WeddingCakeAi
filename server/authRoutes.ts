@@ -182,6 +182,143 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
+  // Super Admin Password Reset
+  app.post('/api/clean-auth/super-admin/forgot-password', async (req, res) => {
+    try {
+      const { identifier } = req.body;
+      
+      if (!identifier) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username or email is required'
+        });
+      }
+
+      // Always return success to prevent user enumeration attacks
+      const successResponse = {
+        success: true,
+        message: 'If an account exists with that information, a password reset email has been sent.'
+      };
+
+      // Find user by email or username
+      const user = await databaseStorage.getUserByEmailOrUsername(identifier.trim());
+      
+      // Only process if user exists and is super admin
+      if (user && user.role === 'super_admin' && user.isActive) {
+        // Generate secure token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expiresAt = databaseStorage.createResetTokenExpiry();
+
+        // Store hashed token in database
+        await databaseStorage.createResetToken(user.id, tokenHash, expiresAt);
+
+        // Create reset URL
+        const resetUrl = `${req.protocol}://${req.get('host')}/super-admin/reset-password?token=${resetToken}`;
+
+        // Send password reset email
+        const emailTemplate = emailTemplates.superAdminPasswordReset(resetUrl);
+        const emailSent = await sendEmail({
+          to: user.email || user.username, // Use email if available, fallback to username
+          subject: emailTemplate.subject,
+          textPart: emailTemplate.textPart,
+          htmlPart: emailTemplate.htmlPart,
+        });
+
+        // In development, also log the reset URL for testing
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('🔐 Super Admin Password Reset URL (DEV ONLY):', resetUrl);
+          console.log('Reset token expires in 15 minutes');
+        }
+
+        if (!emailSent) {
+          console.error('Failed to send password reset email to:', user.email || user.username);
+        }
+      }
+
+      // Always return success response regardless of whether user was found
+      res.json(successResponse);
+
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'An error occurred while processing your request'
+      });
+    }
+  });
+
+  app.post('/api/clean-auth/super-admin/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token and new password are required'
+        });
+      }
+
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 8 characters long'
+        });
+      }
+
+      // Hash the provided token to compare with database
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Find user by token hash
+      const user = await databaseStorage.findUserByResetTokenHash(tokenHash);
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Validate user role and account status
+      if (user.role !== 'super_admin' || !user.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Check token validity (expiry and usage)
+      if (!databaseStorage.isResetTokenValid(user)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Hash the new password
+      const hashedPassword = await databaseStorage.hashPassword(newPassword);
+
+      // Update password and mark token as used
+      await databaseStorage.updateUserPassword(user.id, hashedPassword);
+      await databaseStorage.consumeResetToken(user.id);
+
+      console.log(`Super admin password reset completed for user: ${user.username}`);
+
+      res.json({
+        success: true,
+        message: 'Password has been reset successfully. You can now log in with your new password.'
+      });
+
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'An error occurred while resetting your password'
+      });
+    }
+  });
+
   // Baker Authentication
   app.post('/api/bakers/register', async (req, res) => {
     try {

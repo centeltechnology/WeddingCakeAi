@@ -703,5 +703,70 @@ Bakewise Team`,
 </div>
 </div>`,
     textPart: `Hi ${bakerName}, congratulations! Your ${planName} subscription is now active with unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Access your dashboard at https://bakewise.app/dashboard`
+  }),
+
+  superAdminPasswordReset: (resetUrl: string) => ({
+    subject: 'Reset your Bakewise Super Admin password',
+    textPart: `Password Reset Request
+
+You have requested to reset your Bakewise Super Admin password.
+
+Click here to reset your password: ${resetUrl}
+
+This link will expire in 15 minutes for security reasons.
+
+If you didn't request this password reset, you can safely ignore this email. Your password will not be changed unless you click the link above and set a new password.
+
+For security reasons:
+• This reset link can only be used once
+• The link expires in 15 minutes
+• You must set a new password immediately after clicking the link
+
+Best regards,
+The Bakewise Security Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">🔐 Password Reset Request</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+You have requested to reset your <strong>Bakewise Super Admin</strong> password.
+</p>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
+<p style="margin: 0; color: #7c2d12; font-weight: 600;">⚠️ Security Notice</p>
+<p style="margin: 10px 0 0 0; color: #7c2d12; font-size: 14px;">This reset link expires in <strong>15 minutes</strong> and can only be used <strong>once</strong>.</p>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${resetUrl}" style="background-color: #7c2d12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Reset My Password
+</a>
+</div>
+
+<div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 30px 0;">
+<h3 style="color: #7c2d12; margin-top: 0;">Security Guidelines:</h3>
+<ul style="color: #666; font-size: 14px; line-height: 1.5;">
+<li>This reset link can only be used once</li>
+<li>The link expires in 15 minutes for your security</li>
+<li>You must set a new password immediately after clicking the link</li>
+<li>Choose a strong password with at least 8 characters</li>
+</ul>
+</div>
+
+<p style="font-size: 14px; line-height: 1.5; color: #666; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+If the button doesn't work, you can copy and paste this link into your browser:<br>
+<a href="${resetUrl}" style="color: #7c2d12; word-break: break-all;">${resetUrl}</a>
+</p>
+
+<p style="font-size: 14px; color: #666;">
+<strong>Didn't request this?</strong> If you didn't request this password reset, you can safely ignore this email. Your password will not be changed unless you click the link above.
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Security Team</strong>
+</p>
+</div>`
   })
 };
