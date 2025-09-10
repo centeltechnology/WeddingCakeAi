@@ -93,6 +93,9 @@ export function setupAuthRoutes(app: Express) {
       });
 
       // Create JWT token  
+      if (!user.id) {
+        throw new Error('User ID is required for token creation');
+      }
       const token = createToken(user.id, username, user.role);
 
       res.json({
