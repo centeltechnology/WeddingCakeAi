@@ -95,9 +95,15 @@ export interface IStorage {
 
   // Availability methods
   createAvailability(availability: InsertAvailability): Promise<Availability>;
+  getAvailability(id: string): Promise<Availability | undefined>;
   getAvailabilityByBakerId(bakerId: string): Promise<Availability[]>;
   updateAvailability(id: string, updates: Partial<InsertAvailability>): Promise<Availability | undefined>;
   deleteAvailability(id: string): Promise<boolean>;
+
+  // Booking methods (simplified replacement for consultations)
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  getBookingsByBakerId(bakerId: string): Promise<Booking[]>;
+  updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking>;
 
   // Analytics methods
   trackAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
@@ -701,7 +707,29 @@ export class MemStorage implements IStorage {
       throw new Error(`Baker with id ${id} not found`);
     }
     
-    const updatedBaker: Baker = { ...baker, ...updates };
+    // Define whitelisted fields that can be safely updated
+    const whitelistedFields = [
+      'name', 'phone', 'address', 'latitude', 'longitude', 'description', 
+      'specialties', 'portfolio', 'subdomain', 'customDomain', 'paymentLinks',
+      'availability', 'socialMedia', 'priceRange', 'businessName'
+    ];
+    
+    // Filter updates to only include whitelisted fields
+    const safeUpdates: any = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (whitelistedFields.includes(key)) {
+        safeUpdates[key] = value;
+      } else {
+        console.warn(`Attempted to update restricted field: ${key}`);
+      }
+    }
+    
+    // Only proceed if there are safe updates
+    if (Object.keys(safeUpdates).length === 0) {
+      throw new Error('No valid fields provided for update');
+    }
+    
+    const updatedBaker: Baker = { ...baker, ...safeUpdates };
     this.bakers.set(id, updatedBaker);
     return updatedBaker;
   }
@@ -1042,6 +1070,10 @@ export class MemStorage implements IStorage {
     };
     this.availability.set(id, availability);
     return availability;
+  }
+
+  async getAvailability(id: string): Promise<Availability | undefined> {
+    return this.availability.get(id);
   }
 
   async getAvailabilityByBakerId(bakerId: string): Promise<Availability[]> {

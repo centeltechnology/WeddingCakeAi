@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { users, bakers } from "@shared/schema";
+import { users, bakers, bookings, type Booking, type InsertBooking } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { generateUniqueSlug } from "./utils";
 
@@ -122,6 +122,69 @@ export class DatabaseStorage {
 
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
+  }
+
+  async updateBaker(id: string, updates: Partial<any>) {
+    // Define whitelisted fields that can be safely updated
+    const whitelistedFields = [
+      'name', 'phone', 'address', 'latitude', 'longitude', 'description', 
+      'specialties', 'portfolio', 'subdomain', 'customDomain', 'paymentLinks',
+      'availability', 'socialMedia', 'priceRange', 'businessName'
+    ];
+    
+    // Filter updates to only include whitelisted fields
+    const safeUpdates: any = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (whitelistedFields.includes(key)) {
+        safeUpdates[key] = value;
+      } else {
+        console.warn(`Attempted to update restricted field: ${key}`);
+      }
+    }
+    
+    // Only proceed if there are safe updates
+    if (Object.keys(safeUpdates).length === 0) {
+      throw new Error('No valid fields provided for update');
+    }
+    
+    const [updatedBaker] = await db
+      .update(bakers)
+      .set(safeUpdates)
+      .where(eq(bakers.id, id))
+      .returning();
+    return updatedBaker;
+  }
+
+  async updateUserLastLogin(id: string) {
+    await db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  // Booking methods for simplified booking system
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const [booking] = await db
+      .insert(bookings)
+      .values(insertBooking)
+      .returning();
+    return booking;
+  }
+
+  async getBookingsByBakerId(bakerId: string): Promise<Booking[]> {
+    return await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.bakerId, bakerId));
+  }
+
+  async updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking> {
+    const [updatedBooking] = await db
+      .update(bookings)
+      .set(updates)
+      .where(eq(bookings.id, id))
+      .returning();
+    return updatedBooking;
   }
 }
 

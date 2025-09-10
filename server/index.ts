@@ -8,16 +8,24 @@ import { startEmailAutomationScheduler } from "./emailAutomation";
 
 const app = express();
 
-// Import stripe for webhook handler
+// Import stripe for webhook handler (optional for manual payment system)
 import Stripe from "stripe";
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+let stripe: Stripe | null = null;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('Stripe initialized for platform subscriptions');
+} else {
+  console.log('Stripe not configured - manual payment system only');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Stripe webhook endpoint MUST come BEFORE body parsing middleware
 // This ensures we get the raw body that Stripe requires for signature verification
 app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    return res.status(400).send('Stripe not configured');
+  }
+
   const sig = req.headers['stripe-signature'] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

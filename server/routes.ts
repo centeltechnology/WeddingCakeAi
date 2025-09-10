@@ -6,8 +6,10 @@ import { storage } from "./storage";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
-  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker
+  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
+  paymentLinksSchema
 } from "@shared/schema";
+import { authenticateJWT, authorizeBakerWithData, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -18,12 +20,17 @@ import jwt from "jsonwebtoken";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Stripe is optional for manual payment system
+let stripe: Stripe | null = null;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-08-27.basil",
+  });
+  console.log('Stripe initialized for platform subscriptions');
+} else {
+  console.log('Stripe not configured - manual payment system only');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-08-27.basil",
-});
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -352,130 +359,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe Connect Onboarding Endpoints
-  app.post('/api/bakers/:bakerId/stripe-connect/create-account', async (req, res) => {
+  // Payment Links Management Endpoints - SECURED  
+  app.get('/api/bakers/:bakerId/payment-links', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
-      const bakerId = req.params.bakerId;
-      const baker = await resolveBaker(bakerId);
+      // Baker data already loaded and verified by authorizeBakerWithData middleware
+      const baker = req.baker;
       
-      if (!baker) {
-        return res.status(404).json({ error: 'Baker not found' });
-      }
-
-      // Create Stripe Connect account if it doesn't exist
-      let connectAccountId = baker.stripeConnectAccountId;
-      
-      if (!connectAccountId) {
-        const account = await stripe.accounts.create({
-          type: 'express',
-          country: 'US', // Default to US - can be changed during onboarding
-          email: baker.email,
-          business_profile: {
-            name: baker.name,
-          },
-          metadata: {
-            bakerId: bakerId
-          }
-        });
-        
-        connectAccountId = account.id;
-        
-        // Update baker with Connect account ID
-        await storage.updateBaker(bakerId, {
-          stripeConnectAccountId: connectAccountId,
-          stripeAccountStatus: 'pending'
-        });
-      }
-
-      // Create account link for onboarding
-      // Force HTTPS for production/live mode
-      const protocol = process.env.NODE_ENV === 'production' || !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? 'https' : req.protocol;
-      const host = req.get('host');
-      
-      const accountLink = await stripe.accountLinks.create({
-        account: connectAccountId,
-        refresh_url: `${protocol}://${host}/baker-dashboard?tab=payments&refresh=true`,
-        return_url: `${protocol}://${host}/baker-dashboard?tab=payments&success=true`,
-        type: 'account_onboarding',
-      });
-
-      res.json({ 
-        onboardingUrl: accountLink.url,
-        accountId: connectAccountId 
-      });
+      res.json(baker.paymentLinks || {});
     } catch (error: any) {
-      // Log detailed error information for debugging
-      console.error('STRIPE CONNECT ERROR:', {
-        message: error.message,
-        type: error.type,
-        code: error.code,
-        statusCode: error.statusCode,
-        requestId: error.requestId,
-        bakerId: req.params.bakerId
-      });
-      
-      // Handle specific Stripe verification errors
-      if (error.code === 'invalid_request_error' && error.message?.includes('verify your identity')) {
-        return res.status(400).json({ 
-          error: 'Stripe Account Verification Required',
-          message: 'Your Stripe account needs identity verification to enable payments. Please verify your account in your Stripe Dashboard before setting up payment processing.',
-          verificationUrl: 'https://dashboard.stripe.com/connect/accounts/overview'
-        });
-      }
-      
-      // Handle platform profile configuration error
-      if (error.message?.includes('platform-profile') || error.message?.includes('losses') || error.message?.includes('platform configuration')) {
-        return res.status(400).json({ 
-          error: 'Platform Configuration Required',
-          message: 'The payment processing system requires additional setup. This is a one-time configuration that needs to be completed by the platform administrator.',
-          supportMessage: 'Please contact support to enable payment processing for your bakery.',
-          setupInstructions: 'The platform administrator needs to complete the Stripe Connect platform profile at https://dashboard.stripe.com/connect/accounts/overview'
-        });
-      }
-      
-      // Handle invalid redirect URL errors
-      if (error.message?.includes('redirect_uri') || error.message?.includes('return_url') || error.message?.includes('HTTPS')) {
-        // Try to recreate the account link with HTTPS forced
-        try {
-          const httpsAccountLink = await stripe.accountLinks.create({
-            account: connectAccountId,
-            refresh_url: `https://${host}/baker-dashboard?tab=payments&refresh=true`,
-            return_url: `https://${host}/baker-dashboard?tab=payments&success=true`,
-            type: 'account_onboarding',
-          });
-          
-          return res.json({ 
-            onboardingUrl: httpsAccountLink.url,
-            accountId: connectAccountId 
-          });
-        } catch (httpsError) {
-          return res.status(400).json({ 
-            error: 'Configuration Error',
-            message: 'There is a configuration issue with the payment setup. Please ensure you are accessing the site via HTTPS.',
-            supportMessage: 'Try accessing the site with https:// instead of http://'
-          });
-        }
-      }
-      
-      // Handle other Stripe errors with more specific messaging
-      if (error.type === 'StripeInvalidRequestError') {
-        return res.status(400).json({ 
-          error: 'Stripe Setup Error',
-          message: `Stripe configuration issue: ${error.message}. Please contact support if this persists.`,
-          details: error.code || 'unknown_error'
-        });
-      }
-      
-      // Generic fallback
-      res.status(500).json({ 
-        error: 'Failed to create Stripe Connect account',
-        message: 'An unexpected error occurred. Please try again or contact support.',
-        details: error.message
-      });
+      console.error('Error fetching payment links:', error);
+      res.status(500).json({ error: 'Failed to fetch payment links' });
     }
   });
 
-  app.get('/api/bakers/:bakerId/stripe-connect/status', async (req, res) => {
+  app.put('/api/bakers/:bakerId/payment-links', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { bakerId } = req.params;
+      
+      // Validate payment links using Zod schema
+      const validationResult = paymentLinksSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid payment links data',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+
+      const paymentLinks = validationResult.data;
+
+      // Securely update only the paymentLinks field
+      await storage.updateBaker(bakerId, { paymentLinks });
+      
+      res.json({ 
+        success: true, 
+        paymentLinks,
+        message: 'Payment links updated successfully' 
+      });
+    } catch (error: any) {
+      console.error('Error updating payment links:', error);
+      res.status(500).json({ error: 'Failed to update payment links' });
+    }
+  });
+
+  // Availability Management Endpoints
+  app.get('/api/bakers/:bakerId/availability', async (req, res) => {
     try {
       const { bakerId } = req.params;
       const baker = await resolveBaker(bakerId);
@@ -484,42 +414,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Baker not found' });
       }
 
-      if (!baker.stripeConnectAccountId) {
-        return res.json({ 
-          status: 'not_started',
-          onboardingCompleted: false 
-        });
-      }
-
-      // Check account status with Stripe
-      const account = await stripe.accounts.retrieve(baker.stripeConnectAccountId);
-      
-      const onboardingCompleted = account.details_submitted && 
-                                   account.charges_enabled && 
-                                   account.payouts_enabled;
-
-      // Update baker status if changed
-      const newStatus = onboardingCompleted ? 'complete' : 
-                        account.details_submitted ? 'pending' : 'not_started';
-      
-      if (baker.stripeAccountStatus !== newStatus || 
-          baker.stripeOnboardingCompleted !== onboardingCompleted) {
-        await storage.updateBaker(bakerId, {
-          stripeAccountStatus: newStatus,
-          stripeOnboardingCompleted: onboardingCompleted
-        });
-      }
-
-      res.json({
-        status: newStatus,
-        onboardingCompleted,
-        chargesEnabled: account.charges_enabled,
-        payoutsEnabled: account.payouts_enabled,
-        requirements: account.requirements
+      res.json(baker.availability || {
+        mode: 'template',
+        templateKey: 'mon-fri-9-5',
+        timeZone: 'America/New_York',
+        slotMinutes: 60,
+        minNoticeMinutes: 1440,
+        maxAdvanceDays: 60
       });
     } catch (error: any) {
-      console.error('Error checking Stripe Connect status:', error);
-      res.status(500).json({ error: 'Failed to check account status' });
+      console.error('Error fetching availability:', error);
+      res.status(500).json({ error: 'Failed to fetch availability' });
+    }
+  });
+
+  app.put('/api/bakers/:bakerId/availability', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const availability = req.body;
+      
+      const baker = await resolveBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Validate availability data
+      if (!availability.mode || !['template', 'custom'].includes(availability.mode)) {
+        return res.status(400).json({ error: 'Invalid availability mode' });
+      }
+
+      if (availability.mode === 'template' && !availability.templateKey) {
+        return res.status(400).json({ error: 'Template key required for template mode' });
+      }
+
+      if (availability.mode === 'custom' && (!availability.rules || !Array.isArray(availability.rules))) {
+        return res.status(400).json({ error: 'Rules required for custom mode' });
+      }
+
+      await storage.updateBaker(bakerId, { availability });
+      
+      res.json({ 
+        success: true, 
+        availability,
+        message: 'Availability updated successfully' 
+      });
+    } catch (error: any) {
+      console.error('Error updating availability:', error);
+      res.status(500).json({ error: 'Failed to update availability' });
+    }
+  });
+
+  // Bookings Management Endpoints
+  app.get('/api/bakers/:bakerId/bookings', async (req, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await resolveBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      const bookings = await storage.getBookingsByBakerId(bakerId);
+      res.json(bookings);
+    } catch (error: any) {
+      console.error('Error fetching bookings:', error);
+      res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+  });
+
+  app.post('/api/bookings', async (req, res) => {
+    try {
+      const booking = req.body;
+      
+      // Validate required fields
+      if (!booking.bakerId || !booking.customerName || !booking.customerEmail || !booking.startISO || !booking.endISO) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Check for time conflicts
+      const existingBookings = await storage.getBookingsByBakerId(booking.bakerId);
+      const startTime = new Date(booking.startISO);
+      const endTime = new Date(booking.endISO);
+      
+      const hasConflict = existingBookings.some(existing => {
+        if (existing.status === 'cancelled') return false;
+        
+        const existingStart = new Date(existing.startISO);
+        const existingEnd = new Date(existing.endISO);
+        
+        return startTime < existingEnd && endTime > existingStart;
+      });
+
+      if (hasConflict) {
+        return res.status(409).json({ error: 'Time slot already booked' });
+      }
+
+      const newBooking = await storage.createBooking(booking);
+      res.json(newBooking);
+    } catch (error: any) {
+      console.error('Error creating booking:', error);
+      res.status(500).json({ error: 'Failed to create booking' });
+    }
+  });
+
+  app.patch('/api/bookings/:bookingId', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const updates = req.body;
+      
+      const updatedBooking = await storage.updateBooking(bookingId, updates);
+      res.json(updatedBooking);
+    } catch (error: any) {
+      console.error('Error updating booking:', error);
+      res.status(500).json({ error: 'Failed to update booking' });
     }
   });
 
@@ -1282,24 +1289,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bakers/:bakerId/availability", async (req, res) => {
+  app.get("/api/bakers/:bakerId/availability", authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
-      const availability = await storage.getAvailabilityByBakerId(req.params.bakerId);
+      const { bakerId } = req.params;
+      const availability = await storage.getAvailabilityByBakerId(bakerId);
       res.json(availability);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.put("/api/availability/:id", async (req, res) => {
+  app.put("/api/availability/:id", authenticateJWT, async (req: AuthenticatedRequest, res) => {
     try {
+      const { id } = req.params;
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get the availability record to check ownership
+      const existingAvailability = await storage.getAvailability(id);
+      if (!existingAvailability) {
+        return res.status(404).json({ message: "Availability not found" });
+      }
+
+      // Check if user owns this availability record
+      if (user.role === 'baker' && user.userId !== existingAvailability.bakerId) {
+        return res.status(403).json({ 
+          error: 'Access forbidden',
+          message: 'You can only modify your own availability'
+        });
+      }
+
+      // Allow super_admin to modify any availability
+      if (user.role !== 'super_admin' && user.role !== 'baker') {
+        return res.status(403).json({ 
+          error: 'Access forbidden',
+          message: 'Insufficient permissions'
+        });
+      }
+
+      // Validate the updates
       const updates = insertAvailabilitySchema.partial().parse(req.body);
-      const availability = await storage.updateAvailability(req.params.id, updates);
+      
+      // Ensure bakerId cannot be changed
+      if ('bakerId' in updates && updates.bakerId !== existingAvailability.bakerId) {
+        return res.status(400).json({ 
+          error: 'Invalid update',
+          message: 'Cannot change availability ownership'
+        });
+      }
+
+      const availability = await storage.updateAvailability(id, updates);
       if (!availability) {
         return res.status(404).json({ message: "Availability not found" });
       }
+      
       res.json(availability);
     } catch (error: any) {
+      console.error('Error updating availability:', error);
       res.status(400).json({ message: error.message });
     }
   });

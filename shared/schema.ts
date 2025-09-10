@@ -149,11 +149,37 @@ export const bakers = pgTable("bakers", {
   // Domain configuration fields
   subdomain: varchar("subdomain"),
   customDomain: varchar("custom_domain"),
-  // Stripe Connect fields
+  // Payment Links (replacing Stripe Connect)
+  paymentLinks: json("payment_links").$type<{
+    zelle?: string;
+    paypal?: string;
+    cashapp?: string;
+    venmo?: string;
+    other?: { label: string; url: string }[];
+  }>().default({}),
+  // Simplified Availability System
+  availability: json("availability").$type<{
+    mode: 'template' | 'custom';
+    templateKey?: 'mon-fri-9-5' | 'tue-sat-10-6' | 'weekends-10-4' | 'custom';
+    rules?: { dayOfWeek: number; ranges: { start: string; end: string }[] }[];
+    exceptions?: { date: string; ranges?: { start: string; end: string }[] }[];
+    timeZone: string;
+    slotMinutes: number;
+    minNoticeMinutes: number;
+    maxAdvanceDays: number;
+  }>().default({
+    mode: 'template',
+    templateKey: 'mon-fri-9-5',
+    timeZone: 'America/New_York',
+    slotMinutes: 60,
+    minNoticeMinutes: 1440, // 24 hours
+    maxAdvanceDays: 60
+  }),
+  // Deprecated Stripe Connect fields (kept for migration safety)
   stripeConnectAccountId: varchar("stripe_connect_account_id"),
-  stripeAccountStatus: varchar("stripe_account_status").default('not_started'), // not_started, pending, complete, restricted
+  stripeAccountStatus: varchar("stripe_account_status").default('not_started'),
   stripeOnboardingCompleted: boolean("stripe_onboarding_completed").default(false),
-  stripeAccountType: varchar("stripe_account_type").default('express'), // express, standard
+  stripeAccountType: varchar("stripe_account_type").default('express'),
   // Billing-related fields for self-service billing
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
@@ -201,6 +227,22 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Simple bookings system (replacing complex availability/consultations)
+export const bookings = pgTable("bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  startISO: timestamp("start_iso").notNull(),
+  endISO: timestamp("end_iso").notNull(),
+  status: varchar("status").default('pending'), // pending, confirmed, cancelled
+  notes: text("notes"),
+  eventType: varchar("event_type"), // consultation, tasting, planning, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true });
 export const insertEstimateSchema = createInsertSchema(estimates).omit({ id: true, createdAt: true });
@@ -211,6 +253,7 @@ export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, cre
 });
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Multi-tenancy schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({ id: true, createdAt: true, updatedAt: true });
@@ -224,6 +267,7 @@ export type InsertEstimate = z.infer<typeof insertEstimateSchema>;
 export type InsertBaker = z.infer<typeof insertBakerSchema>;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;
 
 // Multi-tenancy types
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -237,6 +281,7 @@ export type Estimate = typeof estimates.$inferSelect;
 export type Baker = typeof bakers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+export type Booking = typeof bookings.$inferSelect;
 
 // Multi-tenancy types
 export type Tenant = typeof tenants.$inferSelect;
@@ -733,6 +778,23 @@ export const insertContractSignatureSchema = createInsertSchema(contractSignatur
 export const insertPaymentPlanSchema = createInsertSchema(paymentPlans).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedule).omit({ id: true, createdAt: true });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Payment Links validation schema
+export const paymentLinksSchema = z.object({
+  zelle: z.string().optional().refine(
+    (val) => !val || val.includes('@') || /^\+?[\d\s\-\(\)]+$/.test(val),
+    { message: 'Zelle must be a valid email or phone number' }
+  ),
+  paypal: z.string().url().optional().or(z.literal('')),
+  cashapp: z.string().url().optional().or(z.literal('')),
+  venmo: z.string().url().optional().or(z.literal('')),
+  other: z.array(z.object({
+    label: z.string().min(1, 'Label is required').max(50, 'Label must be 50 characters or less'),
+    url: z.string().url('Must be a valid URL')
+  })).optional().default([])
+}).strict();
+
+export type PaymentLinks = z.infer<typeof paymentLinksSchema>;
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;

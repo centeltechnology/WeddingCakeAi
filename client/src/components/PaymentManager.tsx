@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { StripeConnectOnboarding } from './StripeConnectOnboarding';
+import { PaymentLinksManager } from './PaymentLinksManager';
+import { AvailabilitySettings } from './AvailabilitySettings';
 import { 
   CreditCard, 
   Plus, 
@@ -59,7 +60,7 @@ interface PaymentPlan {
 
 export function PaymentManager({ bakerId }: PaymentManagerProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('account');
+  const [activeTab, setActiveTab] = useState('payment-info');
   const [isCreating, setIsCreating] = useState(false);
 
   // Fetch transactions/payments from API
@@ -179,66 +180,66 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
         </Dialog>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Updated for Manual Payment System */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Payment Links</CardTitle>
+            <Wallet className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${paymentStats.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All time revenue</p>
+            <div className="text-2xl font-bold text-blue-600">Ready</div>
+            <p className="text-xs text-muted-foreground">Manual payment system</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Availability</CardTitle>
+            <Calendar className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">${paymentStats.thisMonth.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Revenue this month</p>
+            <div className="text-2xl font-bold text-green-600">Set</div>
+            <p className="text-xs text-muted-foreground">Schedule configured</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium">Bookings</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">${paymentStats.pendingAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Awaiting payment</p>
+            <div className="text-2xl font-bold text-blue-600">0</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">Direct Pay</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{paymentStats.overdueCount}</div>
-            <p className="text-xs text-muted-foreground">Overdue payments</p>
+            <div className="text-2xl font-bold text-green-600">Active</div>
+            <p className="text-xs text-muted-foreground">You handle payments</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="account" data-testid="tab-account-setup">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Account Setup
+          <TabsTrigger value="payment-info" data-testid="tab-payment-info">
+            <Wallet className="h-4 w-4 mr-2" />
+            Payment Info
           </TabsTrigger>
-          <TabsTrigger value="payments" data-testid="tab-payments">
-            <Receipt className="h-4 w-4 mr-2" />
-            Invoices ({payments.length})
-          </TabsTrigger>
-          <TabsTrigger value="plans" data-testid="tab-payment-plans">
+          <TabsTrigger value="availability" data-testid="tab-availability">
             <Calendar className="h-4 w-4 mr-2" />
-            Payment Plans ({paymentPlans.length})
+            Availability
+          </TabsTrigger>
+          <TabsTrigger value="bookings" data-testid="tab-bookings">
+            <Clock className="h-4 w-4 mr-2" />
+            Bookings
           </TabsTrigger>
           <TabsTrigger value="analytics" data-testid="tab-payment-analytics">
             <TrendingUp className="h-4 w-4 mr-2" />
@@ -246,95 +247,104 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="account" className="space-y-4">
-          <StripeConnectOnboarding bakerId={bakerId} />
+        <TabsContent value="payment-info" className="space-y-4">
+          <PaymentLinksManager bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="availability" className="space-y-4">
+          <AvailabilitySettings bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="bookings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Customer Bookings
+              </CardTitle>
+              <CardDescription>
+                Manage consultation appointments and bookings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Booking Calendar</h3>
+                <p className="text-muted-foreground mb-4">
+                  Customer booking calendar with your availability settings.
+                </p>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
-          {payments.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Manual Payment Tracking
+              </CardTitle>
+              <CardDescription>
+                Track payments received through your payment links
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Receipt className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Manual Payment Records</h3>
+                <p className="text-muted-foreground mb-4">
+                  Since you handle payments directly, you can manually track them here for your records.
+                </p>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="plans" className="space-y-4">
+          {paymentPlans.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
-                <Receipt className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Invoices Yet</h3>
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Payment Plans Yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Create your first invoice to start getting paid.
+                  Payment plans will appear here when you create contracts with installment options.
                 </p>
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Invoice
-                </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {payments.map((payment) => (
-                <Card key={payment.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg flex items-center">
-                          {getStatusIcon(payment.status)}
-                          <span className="ml-2">{payment.invoiceNumber}</span>
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          {payment.customerName} • Due {new Date(payment.dueDate).toLocaleDateString()}
-                        </CardDescription>
-                      </div>
-                      <Badge className={getStatusColor(payment.status)}>
-                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                      </Badge>
+            paymentPlans.map((plan) => {
+            const depositProgress = plan.depositPaid ? 100 : 0;
+            const finalProgress = plan.finalPaid ? 100 : 0;
+            const overallProgress = (depositProgress + finalProgress) / 2;
+            
+            return (
+              <Card key={plan.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{plan.customerName}</CardTitle>
+                      <CardDescription>Payment Plan • Total: ${plan.totalAmount}</CardDescription>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Amount</Label>
-                        <p className="font-medium text-lg">${payment.amount}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Paid</Label>
-                        <p className="font-medium text-green-600">${payment.paidAmount}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Remaining</Label>
-                        <p className="font-medium text-red-600">${payment.remainingAmount}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Method</Label>
-                        <p className="font-medium">{payment.paymentMethod || 'Not paid'}</p>
-                      </div>
+                    <Badge variant={overallProgress === 100 ? "default" : "secondary"}>
+                      {overallProgress === 100 ? 'Complete' : 'In Progress'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <Label className="text-sm font-medium">Overall Progress</Label>
+                      <span className="text-sm text-muted-foreground">{overallProgress}%</span>
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      {payment.status === 'pending' && (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleSendInvoice(payment)}>
-                            <Send className="h-3 w-3 mr-1" />
-                            Send Reminder
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleProcessPayment(payment)}>
-                            <CreditCard className="h-3 w-3 mr-1" />
-                            Payment Link
-                          </Button>
-                        </>
-                      )}
-                      {payment.status === 'sent' && (
-                        <Button variant="outline" size="sm" onClick={() => handleProcessPayment(payment)}>
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          Process Payment
-                        </Button>
-                      )}
-                      {payment.status === 'overdue' && (
-                        <Button variant="destructive" size="sm" onClick={() => handleSendInvoice(payment)}>
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          Send Overdue Notice
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <Progress value={overallProgress} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
           )}
         </TabsContent>
 

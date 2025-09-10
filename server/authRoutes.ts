@@ -63,7 +63,7 @@ export function setupAuthRoutes(app: Express) {
       });
 
       // Create JWT token  
-      const token = createToken(user.id, username, user.role);
+      const token = createToken(user.id!, username, user.role);
 
       res.json({
         success: true,
