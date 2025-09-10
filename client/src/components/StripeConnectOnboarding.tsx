@@ -87,9 +87,18 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
       if (error.message?.includes('Platform Configuration Required')) {
         toast({
           title: 'Platform Setup Needed',
-          description: 'Payment processing needs additional configuration. Please contact support for assistance.',
+          description: 'The payment system requires initial setup by the platform administrator. This is a one-time configuration.',
           variant: 'destructive',
-          duration: 8000,
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open('mailto:support@bakewise.com?subject=Stripe Connect Setup Required', '_blank')}
+            >
+              Contact Support
+            </Button>
+          ),
+          duration: 10000,
         });
       } else if (error.message?.includes('Stripe Account Verification Required')) {
         toast({
@@ -103,6 +112,26 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
               onClick={() => window.open('https://dashboard.stripe.com/connect/accounts/overview', '_blank')}
             >
               Verify Account
+            </Button>
+          ),
+          duration: 10000,
+        });
+      } else if (error.message?.includes('HTTPS')) {
+        toast({
+          title: 'Secure Connection Required',
+          description: 'Please access this site using https:// instead of http:// to set up payments.',
+          variant: 'destructive',
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                const currentUrl = window.location.href;
+                const httpsUrl = currentUrl.replace('http://', 'https://');
+                window.location.href = httpsUrl;
+              }}
+            >
+              Switch to HTTPS
             </Button>
           ),
           duration: 10000,
