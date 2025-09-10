@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
-  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema
+  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker
 } from "@shared/schema";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";

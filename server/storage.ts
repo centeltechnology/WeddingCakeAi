@@ -2119,6 +2119,54 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(bakers);
   }
 
+  // Missing consultation methods
+  async createConsultation(insertConsultation: any): Promise<any> {
+    // TODO: Implement consultation creation with database
+    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  }
+
+  async getConsultation(id: string): Promise<any> {
+    // TODO: Implement consultation retrieval
+    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  }
+
+  async getConsultationsByBaker(bakerId: string): Promise<any[]> {
+    // TODO: Implement consultation listing by baker
+    return [];
+  }
+
+  async getUpcomingConsultations(bakerId: string): Promise<any[]> {
+    // TODO: Implement upcoming consultation retrieval
+    return [];
+  }
+
+  async updateConsultation(id: string, updates: any): Promise<any> {
+    // TODO: Implement consultation updates
+    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  }
+
+  async cancelConsultation(id: string, reason: string): Promise<any> {
+    // TODO: Implement consultation cancellation
+    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  }
+
+  // Missing customer search methods
+  async searchCustomers(bakerId: string, search: string): Promise<any[]> {
+    // TODO: Implement customer search functionality
+    return [];
+  }
+
+  async getCustomersByTenant(tenantId: string): Promise<any[]> {
+    // TODO: Implement customer retrieval by tenant
+    return [];
+  }
+
+  // Missing user deletion method
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
   // Stub implementations for remaining methods - can be expanded as needed
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const [lead] = await db
