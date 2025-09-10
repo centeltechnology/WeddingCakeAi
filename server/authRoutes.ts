@@ -15,7 +15,7 @@ function createToken(userId: string, username: string, role: string): string {
 
 export function setupAuthRoutes(app: Express) {
   // Super Admin Authentication
-  app.post('/api/super-admin/setup', async (req, res) => {
+  app.post('/api/clean-auth/super-admin/setup', async (req, res) => {
     try {
       const { username, email, password } = req.body;
 
@@ -86,7 +86,7 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
-  app.post('/api/super-admin/login', async (req, res) => {
+  app.post('/api/clean-auth/super-admin/login', async (req, res) => {
     try {
       const { username, password } = req.body;
       
