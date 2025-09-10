@@ -109,7 +109,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Contact Us</h2>
               <p className="text-gray-700 leading-relaxed">
-                For privacy-related questions or requests, contact us at <a href="mailto:privacy@bakewise.com" className="text-pink-600 hover:text-pink-800">privacy@bakewise.com</a>.
+                For privacy-related questions or requests, contact us at <a href="mailto:privacy@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">privacy@bakewiseapp.com</a>.
               </p>
             </section>
           </div>

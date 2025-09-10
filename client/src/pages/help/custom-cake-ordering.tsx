@@ -261,7 +261,7 @@ export default function CustomCakeOrdering() {
             <p className="text-gray-600 mb-4">Questions about ordering? We're here to help!</p>
             <Button 
               className="bg-pink-600 hover:bg-pink-700"
-              onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Custom Cake Ordering Help'}
+              onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Custom Cake Ordering Help'}
               data-testid="button-contact-ordering-support"
             >
               Contact Support

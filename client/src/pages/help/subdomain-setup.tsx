@@ -24,7 +24,7 @@ export default function SubdomainSetup() {
           <div className="mb-8">
             <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">Setting Up Your Professional Subdomain</h1>
             <p className="text-xl text-gray-600">
-              Create your branded bakewise.com subdomain to establish your professional online presence
+              Create your branded bakewiseapp.com subdomain to establish your professional online presence
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export default function SubdomainSetup() {
               <ul className="space-y-2 text-blue-800">
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
-                  Professional URL: yourbakery.bakewise.com
+                  Professional URL: yourbakery.bakewiseapp.com
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
@@ -102,7 +102,7 @@ export default function SubdomainSetup() {
                   </ul>
                 </div>
                 <p className="text-gray-600">
-                  <strong>Examples:</strong> sweetcakes.bakewise.com, rosebakery.bakewise.com, artisancakes.bakewise.com
+                  <strong>Examples:</strong> sweetcakes.bakewiseapp.com, rosebakery.bakewiseapp.com, artisancakes.bakewiseapp.com
                 </p>
               </CardContent>
             </Card>
@@ -196,7 +196,7 @@ export default function SubdomainSetup() {
             <p className="text-gray-600 mb-4">Need additional help with your subdomain setup?</p>
             <Button 
               className="bg-pink-600 hover:bg-pink-700"
-              onClick={() => window.location.href = 'mailto:support@bakewise.com?subject=Subdomain Setup Help'}
+              onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Subdomain Setup Help'}
               data-testid="button-contact-subdomain-support"
             >
               Contact Support

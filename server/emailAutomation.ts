@@ -23,7 +23,7 @@ export class EmailAutomationService {
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewise.co',
+        from: 'noreply@bakewiseapp.com',
         fromName: 'Bakewise Team',
         subject: template.subject,
         htmlPart: template.htmlPart,
@@ -87,7 +87,7 @@ export class EmailAutomationService {
         const success = await sendEmail({
           to: baker.email,
           toName: baker.name,
-          from: 'noreply@bakewise.co',
+          from: 'noreply@bakewiseapp.com',
           fromName: 'Bakewise Team',
           subject: template.subject,
           htmlPart: template.htmlPart,
@@ -140,7 +140,7 @@ export class EmailAutomationService {
         const success = await sendEmail({
           to: baker.email,
           toName: baker.name,
-          from: 'noreply@bakewise.co',
+          from: 'noreply@bakewiseapp.com',
           fromName: 'Bakewise Team',
           subject: template.subject,
           htmlPart: template.htmlPart,
@@ -174,7 +174,7 @@ export class EmailAutomationService {
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewise.co',
+        from: 'noreply@bakewiseapp.com',
         fromName: 'Bakewise Team',
         subject: template.subject,
         htmlPart: template.htmlPart,
@@ -298,7 +298,7 @@ export class EmailAutomationService {
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewise.co',
+        from: 'noreply@bakewiseapp.com',
         fromName: 'Bakewise Team',
         subject: template.subject,
         htmlPart: template.htmlPart,

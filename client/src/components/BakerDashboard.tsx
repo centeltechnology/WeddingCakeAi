@@ -984,9 +984,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                           onChange={(e) => setSubdomainInput(e.target.value.toLowerCase())}
                           data-testid="input-subdomain"
                         />
-                        <span className="text-sm text-gray-600">.bakewise.com</span>
+                        <span className="text-sm text-gray-600">.bakewiseapp.com</span>
                       </div>
-                      <p className="text-xs text-blue-600">This will be your professional URL: yourbakery.bakewise.com</p>
+                      <p className="text-xs text-blue-600">This will be your professional URL: yourbakery.bakewiseapp.com</p>
                     </div>
                     <Button 
                       className="w-full bg-blue-600 hover:bg-blue-700" 
@@ -1044,7 +1044,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                         <p className="font-medium text-green-800">Active Domain</p>
                         <p className="text-sm text-green-600">
                           {domainConfig?.customDomain || 
-                           (domainConfig?.subdomain ? `${domainConfig.subdomain}.bakewise.com` : 
+                           (domainConfig?.subdomain ? `${domainConfig.subdomain}.bakewiseapp.com` : 
                             'No domain configured')}
                         </p>
                       </div>

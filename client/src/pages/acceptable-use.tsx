@@ -99,7 +99,7 @@ export default function AcceptableUse() {
                 If you encounter violations of this policy, please report them immediately:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>Email: <a href="mailto:abuse@bakewise.com" className="text-pink-600 hover:text-pink-800">abuse@bakewise.com</a></li>
+                <li>Email: <a href="mailto:abuse@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">abuse@bakewiseapp.com</a></li>
                 <li>Use the "Report" function within the platform</li>
                 <li>Contact customer support for urgent safety concerns</li>
               </ul>
@@ -122,7 +122,7 @@ export default function AcceptableUse() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Appeals Process</h2>
               <p className="text-gray-700 leading-relaxed">
-                If you believe enforcement action was taken in error, you may appeal by emailing <a href="mailto:appeals@bakewise.com" className="text-pink-600 hover:text-pink-800">appeals@bakewise.com</a> within 30 days of the action. Include relevant evidence and a detailed explanation.
+                If you believe enforcement action was taken in error, you may appeal by emailing <a href="mailto:appeals@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">appeals@bakewiseapp.com</a> within 30 days of the action. Include relevant evidence and a detailed explanation.
               </p>
             </section>
 
@@ -136,7 +136,7 @@ export default function AcceptableUse() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Contact Information</h2>
               <p className="text-gray-700 leading-relaxed">
-                Questions about this policy? Contact us at <a href="mailto:legal@bakewise.com" className="text-pink-600 hover:text-pink-800">legal@bakewise.com</a>.
+                Questions about this policy? Contact us at <a href="mailto:legal@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">legal@bakewiseapp.com</a>.
               </p>
             </section>
           </div>

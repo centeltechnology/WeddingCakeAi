@@ -361,7 +361,7 @@ export default function ReviewsAndFeedback() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-800">
                       <div>
                         <p className="font-medium">Email Support</p>
-                        <p>support@bakewise.com</p>
+                        <p>support@bakewiseapp.com</p>
                       </div>
                       <div>
                         <p className="font-medium">In-App Feedback</p>

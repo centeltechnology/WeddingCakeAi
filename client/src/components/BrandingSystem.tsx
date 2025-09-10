@@ -220,7 +220,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
   };
 
   const copyEmbedCode = () => {
-    const embedCode = `<iframe src="${brandingConfig?.customDomain || `https://${tenantId}.bakewise.com`}/widget" width="400" height="600" frameborder="0"></iframe>`;
+    const embedCode = `<iframe src="${brandingConfig?.customDomain || `https://${tenantId}.bakewiseapp.com`}/widget" width="400" height="600" frameborder="0"></iframe>`;
     navigator.clipboard.writeText(embedCode);
     toast({
       title: "Embed code copied!",
@@ -605,7 +605,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                       <div className="font-mono bg-background p-2 rounded text-xs">
                         <div>Type: CNAME</div>
                         <div>Name: @</div>
-                        <div>Value: {tenantId}.bakewise.com</div>
+                        <div>Value: {tenantId}.bakewiseapp.com</div>
                       </div>
                     </div>
                   )}
@@ -616,14 +616,14 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                 <Label>Default URL</Label>
                 <div className="flex items-center space-x-2">
                   <Input
-                    value={`https://${tenantId}.bakewise.com`}
+                    value={`https://${tenantId}.bakewiseapp.com`}
                     readOnly
                     className="bg-muted"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(`https://${tenantId}.bakewise.com`, '_blank')}
+                    onClick={() => window.open(`https://${tenantId}.bakewiseapp.com`, '_blank')}
                     data-testid="button-open-default-url"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -865,14 +865,14 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                     <CardContent className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Input
-                          value={`${brandingConfig.customDomain || `https://${tenantId}.bakewise.com`}/widget`}
+                          value={`${brandingConfig.customDomain || `https://${tenantId}.bakewiseapp.com`}/widget`}
                           readOnly
                           className="font-mono text-sm"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`${brandingConfig.customDomain || `https://${tenantId}.bakewise.com`}/widget`, '_blank')}
+                          onClick={() => window.open(`${brandingConfig.customDomain || `https://${tenantId}.bakewiseapp.com`}/widget`, '_blank')}
                           data-testid="button-open-widget"
                         >
                           <ExternalLink className="h-4 w-4" />

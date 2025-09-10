@@ -1735,7 +1735,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                     </div>
                     <div className="space-y-2">
                       <Label>Support Email</Label>
-                      <Input defaultValue="support@bakewise.com" data-testid="input-support-email" />
+                      <Input defaultValue="support@bakewiseapp.com" data-testid="input-support-email" />
                     </div>
                     <div className="space-y-2">
                       <Label>Max Users per Tenant</Label>

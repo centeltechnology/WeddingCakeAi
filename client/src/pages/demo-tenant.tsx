@@ -196,7 +196,7 @@ export default function DemoTenant() {
                   </p>
                   <div className="space-y-2 text-sm">
                     <div className="bg-muted p-2 rounded font-mono">
-                      sweetdreams.bakewise.com
+                      sweetdreams.bakewiseapp.com
                     </div>
                     <div className="bg-muted p-2 rounded font-mono">
                       orders.sweetdreamsbakery.com

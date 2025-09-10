@@ -117,7 +117,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">10. Contact Information</h2>
               <p className="text-gray-700 leading-relaxed">
-                For questions about these Terms, please contact us at <a href="mailto:legal@bakewise.com" className="text-pink-600 hover:text-pink-800">legal@bakewise.com</a>.
+                For questions about these Terms, please contact us at <a href="mailto:legal@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">legal@bakewiseapp.com</a>.
               </p>
             </section>
           </div>
