@@ -96,7 +96,7 @@ export default function Signup() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest('POST', '/api/bakers', {
+      const response = await apiRequest('POST', '/api/bakers/register', {
         name: data.bakeryName,
         email: data.email,
         password: data.password,
@@ -115,9 +115,9 @@ export default function Signup() {
         description: "Your account has been created successfully. Redirecting to your dashboard...",
       });
       
-      // Redirect to baker dashboard
+      // Redirect to baker dashboard using SEO-friendly slug
       setTimeout(() => {
-        setLocation(`/baker/${baker.id}/dashboard`);
+        setLocation(`/baker/${baker.baker.slug}/dashboard`);
       }, 2000);
     },
     onError: (error: any) => {
