@@ -29,6 +29,20 @@ export default function AuthTest() {
     }
   };
 
+  const testBakerLoginWithCSRF = async () => {
+    try {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest('/api/bakers/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: bakerEmail, password: bakerPassword })
+      });
+      const data = await response.json();
+      setResults(prev => ({ ...prev, bakerCSRF: { status: response.status, data } }));
+    } catch (error) {
+      setResults(prev => ({ ...prev, bakerCSRF: { error: (error as Error).message } }));
+    }
+  };
+
   const testAdminLogin = async () => {
     try {
       const response = await fetch('/api/clean-auth/super-admin/login', {
@@ -86,12 +100,24 @@ export default function AuthTest() {
                 <Label>Password</Label>
                 <Input type="password" value={bakerPassword} onChange={(e) => setBakerPassword(e.target.value)} />
               </div>
-              <Button onClick={testBakerLogin} className="w-full">Test Baker Login</Button>
+              <Button onClick={testBakerLogin} className="w-full">Test Baker Login (Direct)</Button>
+              <Button onClick={testBakerLoginWithCSRF} className="w-full mt-2" variant="outline">Test Baker Login (CSRF)</Button>
               {results.baker && (
-                <Alert>
+                <Alert className="mt-2">
                   <AlertDescription>
+                    <strong>Direct Fetch:</strong>
                     <pre className="text-xs overflow-auto">
                       {JSON.stringify(results.baker, null, 2)}
+                    </pre>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {results.bakerCSRF && (
+                <Alert className="mt-2">
+                  <AlertDescription>
+                    <strong>CSRF Wrapper:</strong>
+                    <pre className="text-xs overflow-auto">
+                      {JSON.stringify(results.bakerCSRF, null, 2)}
                     </pre>
                   </AlertDescription>
                 </Alert>
