@@ -59,6 +59,7 @@ import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
+import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 
 function Router() {
@@ -75,11 +76,11 @@ function Router() {
       <Route path="/customer-portal/:id">
         {(params) => <CustomerPortal customerId={params.id} />}
       </Route>
-      <Route path="/baker/:id/dashboard">
+      <Route path="/baker/:slug/dashboard">
         {(params) => (
-          <BakerAuthWrapper bakerId={params.id}>
-            <BakerDashboard bakerId={params.id} />
-          </BakerAuthWrapper>
+          <BakerSlugWrapper slug={params.slug}>
+            <BakerDashboard />
+          </BakerSlugWrapper>
         )}
       </Route>
       <Route path="/dashboard/:id">

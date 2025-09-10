@@ -318,6 +318,42 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
+  // Get baker info by slug (for frontend routing)
+  app.get('/baker/:slug/info', async (req, res) => {
+    try {
+      const { slug } = req.params;
+      
+      // Find baker by slug
+      const baker = await databaseStorage.getBakerBySlug(slug);
+      if (!baker) {
+        return res.status(404).json({
+          success: false,
+          message: 'Baker not found'
+        });
+      }
+
+      // Return baker info (public data)
+      res.json({
+        success: true,
+        id: baker.id,
+        name: baker.name,
+        slug: baker.slug,
+        email: baker.email,
+        address: baker.address,
+        phone: baker.phone,
+        subscriptionPlan: baker.subscriptionPlan,
+        isActive: baker.isActive
+      });
+
+    } catch (error) {
+      console.error('Baker info error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
+
   // Health check route
   app.get('/api/auth/health', (req, res) => {
     res.json({
