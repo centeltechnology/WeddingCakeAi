@@ -192,6 +192,7 @@ export const bakers = pgTable("bakers", {
   // Email verification
   emailVerified: boolean("email_verified").default(false),
   verificationToken: varchar("verification_token"),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
   // Social media handles
   socialMedia: json("social_media").$type<{
     instagram?: string;

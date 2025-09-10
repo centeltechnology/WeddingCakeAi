@@ -1,8 +1,21 @@
 import type { Express } from "express";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { databaseStorage } from "./databaseStorage";
+import { sendEmail, emailTemplates } from "./emailService";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_dev_secret_key_change_in_production';
+// Harden JWT security - fail fast in production if JWT_SECRET is not set
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  
+  // In production, require a proper JWT secret to be set
+  if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
+    throw new Error('JWT_SECRET must be set to a strong secret (32+ characters) in production environment');
+  }
+  
+  // Allow fallback only in development
+  return secret || 'fallback_dev_secret_key_change_in_production_DO_NOT_USE_THIS_IN_PROD';
+})();
 
 // Helper to create JWT token
 function createToken(userId: string, username: string, role: string): string {
@@ -14,6 +27,23 @@ function createToken(userId: string, username: string, role: string): string {
 }
 
 export function setupAuthRoutes(app: Express) {
+  // TODO: SECURITY IMPROVEMENTS FOR PRODUCTION READINESS
+  // 1. Implement rate limiting on authentication endpoints to prevent brute force attacks
+  //    - Add express-rate-limit middleware with appropriate limits for login/register/resend
+  //    - Consider progressive delays for repeated failed attempts
+  // 2. Implement secure token hashing in database
+  //    - Hash verification tokens before storing in database 
+  //    - Use bcrypt or similar for verification token storage
+  // 3. Add session management and logout functionality
+  //    - Implement proper session invalidation
+  //    - Add token blacklisting for logout
+  // 4. Enhance password security
+  //    - Implement password strength validation
+  //    - Add password history to prevent reuse
+  // 5. Add login attempt monitoring and account lockout
+  //    - Track failed login attempts per account
+  //    - Implement temporary account lockout after multiple failures
+  
   // Super Admin Authentication
   app.post('/api/clean-auth/super-admin/setup', async (req, res) => {
     try {
@@ -178,6 +208,11 @@ export function setupAuthRoutes(app: Express) {
         });
       }
 
+      // Generate verification token with expiry
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpiry = databaseStorage.createVerificationTokenExpiry();
+      const verificationUrl = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
+
       // Hash password and create baker
       const hashedPassword = await databaseStorage.hashPassword(password);
       const baker = await databaseStorage.createBaker({
@@ -187,24 +222,39 @@ export function setupAuthRoutes(app: Express) {
         address,
         phone,
         isActive: true,
-        subscriptionPlan: 'starter'
+        subscriptionPlan: 'starter',
+        emailVerified: false,
+        verificationToken,
+        verificationTokenExpiry
       });
 
-      // Create JWT token
-      const token = createToken(baker.id, baker.email, 'baker');
+      // Send verification email
+      let emailSent = false;
+      try {
+        const emailTemplate = emailTemplates.emailVerification(name, verificationUrl);
+        emailSent = await sendEmail({
+          to: email,
+          toName: name,
+          subject: emailTemplate.subject,
+          textPart: emailTemplate.textPart,
+          htmlPart: emailTemplate.htmlPart
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Continue with registration even if email fails
+      }
 
       res.status(201).json({
         success: true,
-        message: 'Baker registered successfully',
-        token,
+        message: 'Baker registered successfully! Please check your email to verify your account.',
+        requiresVerification: true,
+        emailSent,
         baker: {
           id: baker.id,
           name: baker.name,
           slug: baker.slug,
           email: baker.email,
-          address: baker.address,
-          phone: baker.phone,
-          subscriptionPlan: baker.subscriptionPlan
+          emailVerified: baker.emailVerified
         }
       });
 
@@ -253,6 +303,15 @@ export function setupAuthRoutes(app: Express) {
         });
       }
 
+      // Check if email is verified
+      if (!baker.emailVerified) {
+        return res.status(401).json({
+          success: false,
+          message: 'Please verify your email address before logging in. Check your email for the verification link.',
+          requiresVerification: true
+        });
+      }
+
       // Create JWT token
       const token = createToken(baker.id, baker.email, 'baker');
 
@@ -276,6 +335,76 @@ export function setupAuthRoutes(app: Express) {
       res.status(500).json({
         success: false,
         message: 'Internal server error during login'
+      });
+    }
+  });
+
+  app.post('/api/bakers/resend-verification', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      // Validate input
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      // Find baker by email
+      const baker = await databaseStorage.getBakerByEmail(email);
+      if (!baker) {
+        return res.status(404).json({
+          success: false,
+          message: 'No account found with this email address'
+        });
+      }
+
+      // Check if already verified
+      if (baker.emailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is already verified'
+        });
+      }
+
+      // Generate new verification token and expiry
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpiry = databaseStorage.createVerificationTokenExpiry();
+      const verificationUrl = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
+
+      // Update baker with new token
+      await databaseStorage.updateBaker(baker.id, {
+        verificationToken,
+        verificationTokenExpiry
+      });
+
+      // Send verification email
+      let emailSent = false;
+      try {
+        const emailTemplate = emailTemplates.emailVerification(baker.name, verificationUrl);
+        emailSent = await sendEmail({
+          to: email,
+          toName: baker.name,
+          subject: emailTemplate.subject,
+          textPart: emailTemplate.textPart,
+          htmlPart: emailTemplate.htmlPart
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification email sent successfully',
+        emailSent
+      });
+
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while resending verification email'
       });
     }
   });
@@ -347,6 +476,138 @@ export function setupAuthRoutes(app: Express) {
 
     } catch (error) {
       console.error('Baker info error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
+
+  // Email verification endpoint
+  app.get('/verify-email', async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid verification token'
+        });
+      }
+
+      // Find baker by verification token
+      const baker = await databaseStorage.getBakerByVerificationToken(token);
+      if (!baker) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired verification token'
+        });
+      }
+
+      // Check if token has expired
+      if (databaseStorage.isVerificationTokenExpired(baker)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Verification token has expired. Please request a new verification email.',
+          requiresNewToken: true
+        });
+      }
+
+      if (baker.emailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already verified'
+        });
+      }
+
+      // Mark email as verified and clear verification token
+      await databaseStorage.updateBaker(baker.id, {
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      });
+
+      res.json({
+        success: true,
+        message: 'Email verified successfully! You can now log in to your account.',
+        baker: {
+          name: baker.name,
+          email: baker.email,
+          emailVerified: true
+        }
+      });
+
+    } catch (error) {
+      console.error('Email verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during verification'
+      });
+    }
+  });
+
+  // Resend verification email endpoint
+  app.post('/api/bakers/resend-verification', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      // Find baker by email
+      const baker = await databaseStorage.getBakerByEmail(email);
+      if (!baker) {
+        return res.status(400).json({
+          success: false,
+          message: 'No account found with this email'
+        });
+      }
+
+      if (baker.emailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is already verified'
+        });
+      }
+
+      // Generate new verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationUrl = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
+
+      // Update baker with new verification token
+      await databaseStorage.updateBaker(baker.id, {
+        verificationToken
+      });
+
+      // Send verification email
+      try {
+        const emailTemplate = emailTemplates.emailVerification(baker.name, verificationUrl);
+        await sendEmail({
+          to: email,
+          toName: baker.name,
+          subject: emailTemplate.subject,
+          textPart: emailTemplate.textPart,
+          htmlPart: emailTemplate.htmlPart
+        });
+
+        res.json({
+          success: true,
+          message: 'Verification email sent! Please check your email.'
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to send verification email. Please try again later.'
+        });
+      }
+
+    } catch (error) {
+      console.error('Resend verification error:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'

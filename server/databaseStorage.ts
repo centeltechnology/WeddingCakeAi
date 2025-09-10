@@ -70,6 +70,7 @@ export class DatabaseStorage {
     subscriptionPlan?: string;
     emailVerified?: boolean;
     verificationToken?: string;
+    verificationTokenExpiry?: Date;
   }) {
     // Generate unique slug from baker name
     const slug = await generateUniqueSlug(insertBaker.name, (s: string) => this.checkSlugExists(s));
@@ -87,6 +88,7 @@ export class DatabaseStorage {
         subscriptionPlan: insertBaker.subscriptionPlan || 'starter',
         emailVerified: insertBaker.emailVerified || false,
         verificationToken: insertBaker.verificationToken || null,
+        verificationTokenExpiry: insertBaker.verificationTokenExpiry || null,
       })
       .returning();
     return baker;
@@ -95,6 +97,7 @@ export class DatabaseStorage {
   async updateBaker(bakerId: string, updates: {
     emailVerified?: boolean;
     verificationToken?: string | null;
+    verificationTokenExpiry?: Date | null;
     paymentLinks?: any;
     availability?: any;
   }) {
@@ -103,6 +106,7 @@ export class DatabaseStorage {
     // Only include whitelisted fields to prevent overwriting sensitive data
     if (updates.emailVerified !== undefined) validUpdates.emailVerified = updates.emailVerified;
     if (updates.verificationToken !== undefined) validUpdates.verificationToken = updates.verificationToken;
+    if (updates.verificationTokenExpiry !== undefined) validUpdates.verificationTokenExpiry = updates.verificationTokenExpiry;
     if (updates.paymentLinks !== undefined) validUpdates.paymentLinks = updates.paymentLinks;
     if (updates.availability !== undefined) validUpdates.availability = updates.availability;
 
@@ -155,6 +159,20 @@ export class DatabaseStorage {
 
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
+  }
+
+  // Email verification helper methods
+  isVerificationTokenExpired(baker: any): boolean {
+    if (!baker.verificationTokenExpiry) {
+      return false; // No expiry set, consider valid for backward compatibility
+    }
+    return new Date() > new Date(baker.verificationTokenExpiry);
+  }
+
+  createVerificationTokenExpiry(): Date {
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 24); // 24 hours from now
+    return expiry;
   }
 
 
