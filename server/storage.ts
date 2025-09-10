@@ -2098,9 +2098,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBaker(insertBaker: InsertBaker): Promise<Baker> {
+    // Generate unique slug from baker name
+    let slug: string | null = null;
+    if (insertBaker.name) {
+      const { generateUniqueSlug } = require("./utils");
+      slug = await generateUniqueSlug(insertBaker.name, async (s: string) => {
+        const existing = await db.select().from(bakers).where(eq(bakers.slug, s));
+        return existing.length > 0;
+      });
+    }
+
     const [baker] = await db
       .insert(bakers)
-      .values({ ...insertBaker, id: insertBaker.id || randomUUID() })
+      .values({ 
+        ...insertBaker, 
+        id: insertBaker.id || randomUUID(),
+        slug: slug
+      })
       .returning();
     return baker;
   }
