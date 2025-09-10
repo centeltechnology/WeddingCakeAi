@@ -85,7 +85,7 @@ export function BakerSlugWrapper({ children, slug }: BakerSlugWrapperProps) {
 
   // Pass the baker ID to children
   return React.cloneElement(children as React.ReactElement, { 
-    bakerId: baker.id,
+    bakerId: (baker as any).id,
     bakerData: baker 
   });
 }

@@ -79,7 +79,7 @@ function Router() {
       <Route path="/baker/:slug/dashboard">
         {(params) => (
           <BakerSlugWrapper slug={params.slug}>
-            <BakerDashboard />
+            <BakerDashboard bakerId="" />
           </BakerSlugWrapper>
         )}
       </Route>

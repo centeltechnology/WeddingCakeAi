@@ -859,7 +859,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               size="sm"
                               onClick={() => {
                                 if (confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
-                                  updateLeadMutation.mutate({ leadId: lead.id, updates: { deleted: true } });
+                                  updateLeadMutation.mutate({ leadId: lead.id, updates: { status: 'archived' } });
                                   toast({
                                     title: "Lead Deleted",
                                     description: "Lead has been permanently deleted",

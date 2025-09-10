@@ -62,8 +62,8 @@ export function setupAuthRoutes(app: Express) {
         isActive: true
       });
 
-      // Create JWT token
-      const token = createToken(user.id, user.username, user.role);
+      // Create JWT token  
+      const token = createToken(user.id, username, user.role);
 
       res.json({
         success: true,
@@ -126,7 +126,7 @@ export function setupAuthRoutes(app: Express) {
       await databaseStorage.updateUserLastLogin(user.id);
 
       // Create JWT token
-      const token = createToken(user.id, user.username, user.role);
+      const token = createToken(user.id, username, user.role);
 
       res.json({
         success: true,
