@@ -51,6 +51,15 @@ export class DatabaseStorage {
   }
 
   // Baker methods
+  async getBakerByVerificationToken(token: string) {
+    const [baker] = await db
+      .select()
+      .from(bakers)
+      .where(eq(bakers.verificationToken, token))
+      .limit(1);
+    return baker;
+  }
+
   async createBaker(insertBaker: {
     name: string;
     email: string;
@@ -59,6 +68,8 @@ export class DatabaseStorage {
     phone?: string | null;
     isActive?: boolean;
     subscriptionPlan?: string;
+    emailVerified?: boolean;
+    verificationToken?: string;
   }) {
     // Generate unique slug from baker name
     const slug = await generateUniqueSlug(insertBaker.name, (s: string) => this.checkSlugExists(s));
@@ -74,9 +85,31 @@ export class DatabaseStorage {
         phone: insertBaker.phone || null,
         isActive: insertBaker.isActive !== undefined ? insertBaker.isActive : true,
         subscriptionPlan: insertBaker.subscriptionPlan || 'starter',
+        emailVerified: insertBaker.emailVerified || false,
+        verificationToken: insertBaker.verificationToken || null,
       })
       .returning();
     return baker;
+  }
+
+  async updateBaker(bakerId: string, updates: {
+    emailVerified?: boolean;
+    verificationToken?: string | null;
+    paymentLinks?: any;
+    availability?: any;
+  }) {
+    const validUpdates: any = {};
+    
+    // Only include whitelisted fields to prevent overwriting sensitive data
+    if (updates.emailVerified !== undefined) validUpdates.emailVerified = updates.emailVerified;
+    if (updates.verificationToken !== undefined) validUpdates.verificationToken = updates.verificationToken;
+    if (updates.paymentLinks !== undefined) validUpdates.paymentLinks = updates.paymentLinks;
+    if (updates.availability !== undefined) validUpdates.availability = updates.availability;
+
+    await db
+      .update(bakers)
+      .set(validUpdates)
+      .where(eq(bakers.id, bakerId));
   }
 
   async getBakerByEmail(email: string) {
@@ -124,43 +157,6 @@ export class DatabaseStorage {
     return bcrypt.hash(password, 10);
   }
 
-  async updateBaker(id: string, updates: Partial<any>) {
-    // Define whitelisted fields that can be safely updated
-    const whitelistedFields = [
-      'name', 'phone', 'address', 'latitude', 'longitude', 'description', 
-      'specialties', 'portfolio', 'subdomain', 'customDomain', 'paymentLinks',
-      'availability', 'socialMedia', 'priceRange', 'businessName'
-    ];
-    
-    // Filter updates to only include whitelisted fields
-    const safeUpdates: any = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (whitelistedFields.includes(key)) {
-        safeUpdates[key] = value;
-      } else {
-        console.warn(`Attempted to update restricted field: ${key}`);
-      }
-    }
-    
-    // Only proceed if there are safe updates
-    if (Object.keys(safeUpdates).length === 0) {
-      throw new Error('No valid fields provided for update');
-    }
-    
-    const [updatedBaker] = await db
-      .update(bakers)
-      .set(safeUpdates)
-      .where(eq(bakers.id, id))
-      .returning();
-    return updatedBaker;
-  }
-
-  async updateUserLastLogin(id: string) {
-    await db
-      .update(users)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(users.id, id));
-  }
 
   // Booking methods for simplified booking system
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {

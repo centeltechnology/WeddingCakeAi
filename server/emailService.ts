@@ -119,6 +119,55 @@ ${weddingDate ? `<li><strong>Wedding Date:</strong> ${weddingDate}</li>` : ''}
 </div>`
   }),
 
+  emailVerification: (name: string, verificationUrl: string) => ({
+    subject: 'Please verify your Bakewise account',
+    textPart: `Hi ${name},
+
+Welcome to Bakewise! Please verify your email address to complete your account setup.
+
+Click here to verify: ${verificationUrl}
+
+If you didn't create this account, you can safely ignore this email.
+
+Best regards,
+The Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Welcome to Bakewise! 🎂</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Welcome to Bakewise! We're excited to have you join our community of talented bakers.
+</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+To complete your account setup and start managing your cake business, please verify your email address by clicking the button below:
+</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${verificationUrl}" style="background-color: #7c2d12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Verify Email Address
+</a>
+</div>
+
+<p style="font-size: 14px; line-height: 1.5; color: #666; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+If the button doesn't work, you can copy and paste this link into your browser:<br>
+<a href="${verificationUrl}" style="color: #7c2d12; word-break: break-all;">${verificationUrl}</a>
+</p>
+
+<p style="font-size: 14px; color: #666;">
+If you didn't create this account, you can safely ignore this email.
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Team</strong>
+</p>
+</div>`
+  }),
+
   leadConfirmation: (customerName: string, bakerName: string) => ({
     subject: `Your Wedding Cake Inquiry Sent Successfully`,
     textPart: `Hi ${customerName},

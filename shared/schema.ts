@@ -189,6 +189,9 @@ export const bakers = pgTable("bakers", {
   cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
   businessName: text("business_name"), // For Stripe customer creation
   tenantId: varchar("tenant_id"), // For multi-tenant support
+  // Email verification
+  emailVerified: boolean("email_verified").default(false),
+  verificationToken: varchar("verification_token"),
   // Social media handles
   socialMedia: json("social_media").$type<{
     instagram?: string;
