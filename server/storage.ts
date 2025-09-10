@@ -2092,6 +2092,11 @@ export class DatabaseStorage implements IStorage {
     return baker || undefined;
   }
 
+  async getBakerBySlug(slug: string): Promise<Baker | undefined> {
+    const [baker] = await db.select().from(bakers).where(eq(bakers.slug, slug));
+    return baker || undefined;
+  }
+
   async createBaker(insertBaker: InsertBaker): Promise<Baker> {
     const [baker] = await db
       .insert(bakers)

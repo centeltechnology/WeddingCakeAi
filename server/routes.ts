@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/bakers/:bakerId/stripe-connect/create-account', async (req, res) => {
     try {
       const bakerId = req.params.bakerId;
-      const baker = await storage.getBaker(bakerId);
+      const baker = await resolveBaker(bakerId);
       
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
@@ -458,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/bakers/:bakerId/stripe-connect/status', async (req, res) => {
     try {
       const { bakerId } = req.params;
-      const baker = await storage.getBaker(bakerId);
+      const baker = await resolveBaker(bakerId);
       
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
@@ -696,6 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const publicBakers = activeBakers.map(baker => ({
         id: baker.id,
         name: baker.name,
+        slug: baker.slug,
         businessName: baker.businessName,
         description: baker.description,
         address: baker.address,
