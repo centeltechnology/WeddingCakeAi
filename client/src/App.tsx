@@ -57,6 +57,7 @@ import SuperAdminSetup from "@/pages/super-admin-setup";
 import BakerLogin from "@/pages/baker-login";
 import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
+import VerifyEmail from "@/pages/verify-email";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
@@ -98,6 +99,7 @@ function Router() {
         )}
       </Route>
       <Route path="/baker-login" component={BakerLogin} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/auth-test" component={AuthTest} />
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
       <Route path="/super-admin-login" component={SuperAdminLogin} />

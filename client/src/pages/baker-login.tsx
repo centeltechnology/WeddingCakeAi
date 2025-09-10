@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { ChefHat, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { ChefHat, Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useLocation, Link } from "wouter";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -24,6 +25,8 @@ export default function BakerLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [showVerificationBanner, setShowVerificationBanner] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -32,6 +35,21 @@ export default function BakerLogin() {
       password: "",
     },
   });
+
+  // Check for verification parameters in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verificationSent = urlParams.get('verification-sent');
+    const email = urlParams.get('email');
+    
+    if (verificationSent === 'true' && email) {
+      setShowVerificationBanner(true);
+      setVerificationEmail(decodeURIComponent(email));
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
@@ -58,6 +76,18 @@ export default function BakerLogin() {
 
         // Redirect to baker dashboard using the baker's slug
         setLocation(`/baker/${result.baker.slug}/dashboard`);
+      } else if (result.requiresVerification) {
+        // Handle email verification required
+        setShowVerificationBanner(true);
+        setVerificationEmail(data.email);
+        setError("");
+        
+        toast({
+          title: "Email verification required",
+          description: "Please verify your email address before logging in.",
+          variant: "destructive",
+          duration: 6000,
+        });
       } else {
         setError(result.message || "Invalid email or password");
       }
@@ -86,6 +116,15 @@ export default function BakerLogin() {
             Access your Bakewise business dashboard
           </p>
         </div>
+
+        {/* Email Verification Banner */}
+        {showVerificationBanner && verificationEmail && (
+          <EmailVerificationBanner
+            userEmail={verificationEmail}
+            onDismiss={() => setShowVerificationBanner(false)}
+            className="mb-6"
+          />
+        )}
 
         {/* Login Form */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">

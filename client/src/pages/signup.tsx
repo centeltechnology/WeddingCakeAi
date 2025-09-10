@@ -110,20 +110,34 @@ export default function Signup() {
       return await response.json();
     },
     onSuccess: (response) => {
-      // Store the token
-      if (response.token) {
-        localStorage.setItem("baker_token", response.token);
+      // Check if email verification is required
+      if (response.requiresVerification) {
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account before logging in.",
+          duration: 8000,
+        });
+        
+        // Redirect to login page with verification message
+        setTimeout(() => {
+          setLocation('/baker-login?verification-sent=true&email=' + encodeURIComponent(response.baker.email));
+        }, 2000);
+      } else {
+        // Store the token only if verification is not required
+        if (response.token) {
+          localStorage.setItem("baker_token", response.token);
+        }
+        
+        toast({
+          title: "Welcome to Bakewise!",
+          description: "Your account has been created successfully. Redirecting to your dashboard...",
+        });
+        
+        // Redirect to baker dashboard using SEO-friendly slug
+        setTimeout(() => {
+          setLocation(`/baker/${response.baker.slug}/dashboard`);
+        }, 2000);
       }
-      
-      toast({
-        title: "Welcome to Bakewise!",
-        description: "Your account has been created successfully. Redirecting to your dashboard...",
-      });
-      
-      // Redirect to baker dashboard using SEO-friendly slug
-      setTimeout(() => {
-        setLocation(`/baker/${response.baker.slug}/dashboard`);
-      }, 2000);
     },
     onError: (error: any) => {
       toast({
