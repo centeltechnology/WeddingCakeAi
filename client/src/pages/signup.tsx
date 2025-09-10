@@ -109,7 +109,12 @@ export default function Signup() {
       });
       return await response.json();
     },
-    onSuccess: (baker) => {
+    onSuccess: (response) => {
+      // Store the token
+      if (response.token) {
+        localStorage.setItem("baker_token", response.token);
+      }
+      
       toast({
         title: "Welcome to Bakewise!",
         description: "Your account has been created successfully. Redirecting to your dashboard...",
@@ -117,7 +122,7 @@ export default function Signup() {
       
       // Redirect to baker dashboard using SEO-friendly slug
       setTimeout(() => {
-        setLocation(`/baker/${baker.baker.slug}/dashboard`);
+        setLocation(`/baker/${response.baker.slug}/dashboard`);
       }, 2000);
     },
     onError: (error: any) => {
