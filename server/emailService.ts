@@ -31,7 +31,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
 
   try {
     const emailParams = {
-      Source: `${params.fromName || 'Bakewise'} <${params.from || 'noreply@bakewise.co'}>`,
+      Source: `${params.fromName || 'Bakewise'} <${params.from || 'noreply@bakewiseapp.com'}>`,
       Destination: {
         ToAddresses: [
           params.toName 
