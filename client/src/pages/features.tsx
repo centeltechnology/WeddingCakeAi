@@ -188,19 +188,19 @@ export default function Features() {
                 <CardTitle className="text-xl font-semibold text-gray-900">Easy Payments</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed mb-4">Collect deposits, send invoices, and get paid faster with integrated payment processing</CardDescription>
+                <CardDescription className="text-gray-600 leading-relaxed mb-4">Set up your preferred payment methods and get paid your way—no complex setup required</CardDescription>
                 <div className="space-y-2 text-sm text-gray-500">
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    <span>Stripe integration</span>
+                    <span>Zelle, PayPal, CashApp & more</span>
                   </div>
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    <span>Automated invoicing</span>
+                    <span>Custom payment links</span>
                   </div>
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    <span>Payment tracking</span>
+                    <span>Simple manual tracking</span>
                   </div>
                 </div>
               </CardContent>
