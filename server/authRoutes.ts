@@ -148,7 +148,9 @@ export function setupAuthRoutes(app: Express) {
         });
       }
 
-      if (!user.isActive) {
+      // Normalize isActive field (handle both camelCase and snake_case)
+      const isActive = (user as any).isActive ?? (user as any).is_active ?? true;
+      if (!isActive) {
         return res.status(401).json({ 
           success: false, 
           message: 'Account is disabled' 
