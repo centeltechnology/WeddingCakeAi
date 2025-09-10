@@ -96,7 +96,7 @@ export function setupAuthRoutes(app: Express) {
       if (!user.id) {
         throw new Error('User ID is required for token creation');
       }
-      const token = createToken(user.id, username, user.role);
+      const token = createToken(user.id, username, user.role || 'super_admin');
 
       res.json({
         success: true,
@@ -161,7 +161,7 @@ export function setupAuthRoutes(app: Express) {
       await databaseStorage.updateUserLastLogin(user.id);
 
       // Create JWT token
-      const token = createToken(user.id, username, user.role);
+      const token = createToken(user.id, username, user.role || 'super_admin');
 
       res.json({
         success: true,
