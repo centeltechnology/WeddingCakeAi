@@ -2659,6 +2659,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // SIMPLE TEST ROUTE MOVED BEFORE SUPER ADMIN SETUP - TEMPORARILY COMMENTED
+  /*
+  app.post('/api/test-simple-before', async (req, res) => {
+    res.json({ success: true, message: 'Simple test route BEFORE super admin setup works!' });
+  });
+  */
+
   // Super Admin Authentication Routes
   // Super Admin Setup (First-time setup)
   app.post('/api/super-admin/setup', async (req, res) => {
@@ -2737,7 +2744,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simple test route to check if auth routes work
+  // TEMPORARILY COMMENTING OUT ALL ROUTES AFTER SUPER ADMIN SETUP TO TEST
+  /*
+  // Simple test route to check if auth routes work - TEMPORARILY COMMENTED
   app.post('/api/super-admin/test', async (req, res) => {
     console.log('DEBUG: Super admin test route hit');
     res.json({ success: true, message: 'Test route working' });
@@ -2745,7 +2754,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // BRAND NEW route to test compilation
   app.post('/api/debug/test-new', async (req, res) => {
+    console.log('DEBUG: test-new route hit successfully!');
     res.json({ success: true, message: 'NEW ROUTE WORKS - COMPILATION OK!' });
+  });
+
+  // TEST: Same route but GET method
+  app.get('/api/debug/test-new-get', async (req, res) => {
+    res.json({ success: true, message: 'NEW GET ROUTE WORKS - COMPILATION OK!' });
+  });
+  */
+
+  // SIMPLE TEST ROUTE TO SEE IF THIS POSITION WORKS
+  app.post('/api/test-simple', async (req, res) => {
+    res.json({ success: true, message: 'Simple test route works!' });
   });
 
   app.post('/api/super-admin/login', async (req, res) => {
@@ -2760,13 +2781,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Test if we can bypass storage and check database directly
+      console.log('DEBUG: Testing hardcoded bypass - username:', username, 'password:', password);
       if (username === 'bwadmin' && password === 'password') {
+        console.log('DEBUG: Hardcoded bypass matched!');
         return res.json({
           success: true,
           token: 'test-token',
           message: 'Direct authentication bypassed storage - SUCCESS!'
         });
       }
+      console.log('DEBUG: Hardcoded bypass not matched, continuing...');
 
       // Simple direct database check to bypass storage issues
       const allUsers = await storage.getUsersWithRole('super_admin');
@@ -3095,7 +3119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'tenant_suspended',
         resource: 'tenant',
         resourceId: tenantId,
-        details: { tenantName: tenant.name },
+        details: { tenantName: tenant.name } as Record<string, any>,
         ipAddress: req.ip
       });
 
@@ -3116,7 +3140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'tenant_activated',
         resource: 'tenant',
         resourceId: tenantId,
-        details: { tenantName: tenant.name },
+        details: { tenantName: tenant.name } as Record<string, any>,
         ipAddress: req.ip
       });
 
@@ -3142,7 +3166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: user.isActive ? 'user_deactivated' : 'user_activated',
         resource: 'user',
         resourceId: userId,
-        details: { username: user.username },
+        details: { username: user.username } as Record<string, any>,
         ipAddress: req.ip
       });
 
@@ -3166,7 +3190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'password_reset',
         resource: 'user',
         resourceId: userId,
-        details: { resetBy: 'super_admin' },
+        details: { resetBy: 'super_admin' } as Record<string, any>,
         ipAddress: req.ip
       });
 
@@ -3236,7 +3260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const metric = await storage.createSystemHealthMetric({
         metricName,
-        value: parseFloat(value),
+        metricValue: parseFloat(value),
         unit: unit || '',
         status: value > 90 ? 'critical' : value > 70 ? 'warning' : 'healthy',
         metadata: metadata || {}
@@ -3256,7 +3280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const job = await storage.createDataExportJob({
         requestedById: req.user.userId,
-        exportType,
+        jobType: exportType,
         format: format || 'csv',
         status: 'pending',
         parameters: {
@@ -3270,14 +3294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setTimeout(async () => {
         try {
           await storage.updateDataExportJob(job.id, {
-            status: 'processing',
-            progress: 50
+            status: 'processing'
+            // progress: 50 - field removed from schema
           });
           
           setTimeout(async () => {
             await storage.updateDataExportJob(job.id, {
               status: 'completed',
-              progress: 100,
+              // progress: 100, - field removed from schema
               downloadUrl: `/exports/${job.id}.${format}`,
               fileSize: Math.floor(Math.random() * 1000000)
             });
@@ -3285,7 +3309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
           await storage.updateDataExportJob(job.id, {
             status: 'failed',
-            error: 'Processing failed'
+            errorMessage: 'Processing failed'
           });
         }
       }, 1000);
@@ -3329,7 +3353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title,
         message,
         type: type || 'info',
-        priority: priority || 'normal',
+        // priority: priority || 'normal', - field removed from schema
         targetAudience: targetAudience || 'all',
         isActive: true,
         createdById: req.user.userId,
@@ -3421,7 +3445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schedule = await storage.createMaintenanceSchedule({
         title,
         description,
-        type,
+        // type, - field removed from schema
         status: 'scheduled',
         scheduledStart: new Date(scheduledStart),
         scheduledEnd: new Date(scheduledEnd),
@@ -3503,7 +3527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           results.push({ userId, success: true, result });
         } catch (error) {
-          results.push({ userId, success: false, error: error.message });
+          results.push({ userId, success: false, error: (error as Error).message });
         }
       }
       
@@ -3533,7 +3557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get current user from token
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser((req as any).user.userId);
       if (!user) {
         return res.status(404).json({ 
           success: false, 
