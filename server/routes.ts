@@ -424,21 +424,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle platform profile configuration error
-      if (error.message?.includes('platform-profile') || error.message?.includes('losses')) {
+      if (error.message?.includes('platform-profile') || error.message?.includes('losses') || error.message?.includes('platform configuration')) {
         return res.status(400).json({ 
           error: 'Platform Configuration Required',
-          message: 'Stripe Connect platform needs additional configuration. Please contact support for assistance with payment setup.',
-          supportMessage: 'This is a platform-level configuration that our team needs to complete.'
+          message: 'The payment processing system requires additional setup. This is a one-time configuration that needs to be completed by the platform administrator.',
+          supportMessage: 'Please contact support to enable payment processing for your bakery.',
+          setupInstructions: 'The platform administrator needs to complete the Stripe Connect platform profile at https://dashboard.stripe.com/connect/accounts/overview'
         });
       }
       
       // Handle invalid redirect URL errors
-      if (error.message?.includes('redirect_uri') || error.message?.includes('return_url')) {
-        return res.status(400).json({ 
-          error: 'Configuration Error',
-          message: 'There is a configuration issue with the payment setup. Please contact support.',
-          supportMessage: 'Domain or redirect URL configuration needs to be updated.'
-        });
+      if (error.message?.includes('redirect_uri') || error.message?.includes('return_url') || error.message?.includes('HTTPS')) {
+        // Try to recreate the account link with HTTPS forced
+        try {
+          const httpsAccountLink = await stripe.accountLinks.create({
+            account: connectAccountId,
+            refresh_url: `https://${host}/baker-dashboard?tab=payments&refresh=true`,
+            return_url: `https://${host}/baker-dashboard?tab=payments&success=true`,
+            type: 'account_onboarding',
+          });
+          
+          return res.json({ 
+            onboardingUrl: httpsAccountLink.url,
+            accountId: connectAccountId 
+          });
+        } catch (httpsError) {
+          return res.status(400).json({ 
+            error: 'Configuration Error',
+            message: 'There is a configuration issue with the payment setup. Please ensure you are accessing the site via HTTPS.',
+            supportMessage: 'Try accessing the site with https:// instead of http://'
+          });
+        }
       }
       
       // Handle other Stripe errors with more specific messaging
