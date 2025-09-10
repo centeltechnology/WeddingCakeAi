@@ -39,7 +39,7 @@ export default function BakerLogin() {
 
     try {
       const response = await import('@/lib/csrf').then(({ makeAuthenticatedRequest }) => 
-        makeAuthenticatedRequest("/api/baker/login", {
+        makeAuthenticatedRequest("/api/bakers/login", {
           method: "POST",
           body: JSON.stringify(data),
         })
@@ -56,8 +56,8 @@ export default function BakerLogin() {
           description: `Welcome back, ${result.baker.name}!`,
         });
 
-        // Redirect to baker dashboard using the baker's ID
-        setLocation(`/baker/${result.baker.id}/dashboard`);
+        // Redirect to baker dashboard using the baker's slug
+        setLocation(`/baker/${result.baker.slug}/dashboard`);
       } else {
         setError(result.message || "Invalid email or password");
       }
