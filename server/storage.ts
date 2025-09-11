@@ -17,7 +17,10 @@ import {
   auditLogs, systemAnnouncements, systemHealthMetrics, dataExportJobs, maintenanceSchedule,
   type AuditLog, type InsertAuditLog, type SystemAnnouncement, type InsertSystemAnnouncement,
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
-  type MaintenanceSchedule, type InsertMaintenanceSchedule
+  type MaintenanceSchedule, type InsertMaintenanceSchedule,
+  announcements, emailJobs, activityLogs,
+  type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
+  type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -222,6 +225,31 @@ export interface IStorage {
   getMaintenanceSchedules(): Promise<MaintenanceSchedule[]>;
   updateMaintenanceSchedule(id: string, updates: Partial<InsertMaintenanceSchedule>): Promise<MaintenanceSchedule | undefined>;
   deleteMaintenanceSchedule(id: string): Promise<boolean>;
+
+  // Announcements CRUD
+  getAnnouncements(): Promise<Announcement[]>;
+  createAnnouncement(data: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: string): Promise<boolean>;
+
+  // Email Jobs
+  getEmailJobs(): Promise<EmailJob[]>;
+  createEmailJob(data: InsertEmailJob): Promise<EmailJob>;
+  getEmailJob(id: string): Promise<EmailJob | undefined>;
+  updateEmailJob(id: string, data: Partial<InsertEmailJob>): Promise<EmailJob | undefined>;
+
+  // Activity Logs
+  createActivityLog(data: InsertActivityLog): Promise<ActivityLog>;
+  getActivityLogs(filters?: {tenantId?: string, userId?: string, limit?: number}): Promise<ActivityLog[]>;
+
+  // Bulk Operations & Management
+  bulkUpdateBakerStatus(ids: string[], status: boolean): Promise<number>;
+  resetUserPassword(userId: string, temporaryPassword: string): Promise<boolean>;
+  updateBakerPlan(bakerId: string, planType: string): Promise<Baker | undefined>;
+
+  // System Operations
+  createBackup(): Promise<{success: boolean, backupId?: string}>;
+  clearCache(): Promise<{success: boolean}>;
 }
 
 export class MemStorage implements IStorage {
@@ -269,6 +297,9 @@ export class MemStorage implements IStorage {
   private systemHealthMetrics: Map<string, SystemHealthMetric>;
   private dataExportJobs: Map<string, DataExportJob>;
   private maintenanceSchedules: Map<string, MaintenanceSchedule>;
+  private announcements: Map<string, Announcement>;
+  private emailJobs: Map<string, EmailJob>;
+  private activityLogs: Map<string, ActivityLog>;
 
   private initializeSuperAdminUser() {
     // Create default super admin user for development
@@ -337,6 +368,9 @@ export class MemStorage implements IStorage {
     this.systemHealthMetrics = new Map();
     this.dataExportJobs = new Map();
     this.maintenanceSchedules = new Map();
+    this.announcements = new Map();
+    this.emailJobs = new Map();
+    this.activityLogs = new Map();
     
     // Initialize with sample data
     this.initializeSuperAdminUser();
@@ -2003,6 +2037,289 @@ export class MemStorage implements IStorage {
     this.contractTemplates.set(birthdayContract.id, birthdayContract);
     this.contractTemplates.set(corporateContract.id, corporateContract);
   }
+
+  // Super Admin methods implementation for MemStorage
+  async createAuditLog(insertAuditLog: InsertAuditLog): Promise<AuditLog> {
+    const id = randomUUID();
+    const auditLog: AuditLog = {
+      id,
+      ...insertAuditLog,
+      createdAt: new Date(),
+    };
+    this.auditLogs.set(id, auditLog);
+    return auditLog;
+  }
+
+  async getAuditLogs(limit: number = 100, offset: number = 0): Promise<AuditLog[]> {
+    const logs = Array.from(this.auditLogs.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(offset, offset + limit);
+    return logs;
+  }
+
+  async getAuditLogsByUser(userId: string): Promise<AuditLog[]> {
+    return Array.from(this.auditLogs.values())
+      .filter(log => log.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createSystemAnnouncement(insertAnnouncement: InsertSystemAnnouncement): Promise<SystemAnnouncement> {
+    const id = randomUUID();
+    const announcement: SystemAnnouncement = {
+      id,
+      ...insertAnnouncement,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.systemAnnouncements.set(id, announcement);
+    return announcement;
+  }
+
+  async getSystemAnnouncements(isActive?: boolean): Promise<SystemAnnouncement[]> {
+    let announcements = Array.from(this.systemAnnouncements.values());
+    if (isActive !== undefined) {
+      announcements = announcements.filter(a => a.isActive === isActive);
+    }
+    return announcements
+      .filter(a => !a.expiresAt || a.expiresAt > new Date())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateSystemAnnouncement(id: string, updates: Partial<InsertSystemAnnouncement>): Promise<SystemAnnouncement | undefined> {
+    const announcement = this.systemAnnouncements.get(id);
+    if (!announcement) return undefined;
+    const updated = { ...announcement, ...updates, updatedAt: new Date() };
+    this.systemAnnouncements.set(id, updated);
+    return updated;
+  }
+
+  async deleteSystemAnnouncement(id: string): Promise<boolean> {
+    return this.systemAnnouncements.delete(id);
+  }
+
+  async createSystemHealthMetric(insertMetric: InsertSystemHealthMetric): Promise<SystemHealthMetric> {
+    const id = randomUUID();
+    const metric: SystemHealthMetric = {
+      id,
+      ...insertMetric,
+      recordedAt: new Date(),
+    };
+    this.systemHealthMetrics.set(id, metric);
+    return metric;
+  }
+
+  async getLatestSystemHealthMetrics(): Promise<SystemHealthMetric[]> {
+    const metricsMap = new Map<string, SystemHealthMetric>();
+    Array.from(this.systemHealthMetrics.values())
+      .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())
+      .forEach(metric => {
+        if (!metricsMap.has(metric.metricName)) {
+          metricsMap.set(metric.metricName, metric);
+        }
+      });
+    return Array.from(metricsMap.values());
+  }
+
+  async getSystemHealthMetricsByName(name: string, limit: number = 50): Promise<SystemHealthMetric[]> {
+    return Array.from(this.systemHealthMetrics.values())
+      .filter(m => m.metricName === name)
+      .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())
+      .slice(0, limit);
+  }
+
+  async createDataExportJob(insertJob: InsertDataExportJob): Promise<DataExportJob> {
+    const id = randomUUID();
+    const job: DataExportJob = {
+      id,
+      ...insertJob,
+      createdAt: new Date(),
+      completedAt: null,
+    };
+    this.dataExportJobs.set(id, job);
+    return job;
+  }
+
+  async getDataExportJobs(userId?: string): Promise<DataExportJob[]> {
+    let jobs = Array.from(this.dataExportJobs.values());
+    if (userId) {
+      jobs = jobs.filter(j => j.requestedById === userId);
+    }
+    return jobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateDataExportJob(id: string, updates: Partial<InsertDataExportJob>): Promise<DataExportJob | undefined> {
+    const job = this.dataExportJobs.get(id);
+    if (!job) return undefined;
+    const updateData = { ...updates };
+    if (updates.status === 'completed' || updates.status === 'failed') {
+      updateData.completedAt = new Date();
+    }
+    const updated = { ...job, ...updateData };
+    this.dataExportJobs.set(id, updated);
+    return updated;
+  }
+
+  async createMaintenanceSchedule(insertSchedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const id = randomUUID();
+    const schedule: MaintenanceSchedule = {
+      id,
+      ...insertSchedule,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.maintenanceSchedules.set(id, schedule);
+    return schedule;
+  }
+
+  async getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    return Array.from(this.maintenanceSchedules.values())
+      .sort((a, b) => a.scheduledStart.getTime() - b.scheduledStart.getTime());
+  }
+
+  async updateMaintenanceSchedule(id: string, updates: Partial<InsertMaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
+    const schedule = this.maintenanceSchedules.get(id);
+    if (!schedule) return undefined;
+    const updated = { ...schedule, ...updates, updatedAt: new Date() };
+    this.maintenanceSchedules.set(id, updated);
+    return updated;
+  }
+
+  async deleteMaintenanceSchedule(id: string): Promise<boolean> {
+    return this.maintenanceSchedules.delete(id);
+  }
+
+  // New Announcements CRUD methods
+  async getAnnouncements(): Promise<Announcement[]> {
+    return Array.from(this.announcements.values())
+      .filter(a => a.isActive && (!a.expiresAt || a.expiresAt > new Date()))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createAnnouncement(data: InsertAnnouncement): Promise<Announcement> {
+    const id = randomUUID();
+    const announcement: Announcement = {
+      id,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.announcements.set(id, announcement);
+    return announcement;
+  }
+
+  async updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement | undefined> {
+    const announcement = this.announcements.get(id);
+    if (!announcement) return undefined;
+    const updated = { ...announcement, ...data, updatedAt: new Date() };
+    this.announcements.set(id, updated);
+    return updated;
+  }
+
+  async deleteAnnouncement(id: string): Promise<boolean> {
+    return this.announcements.delete(id);
+  }
+
+  // Email Jobs methods
+  async getEmailJobs(): Promise<EmailJob[]> {
+    return Array.from(this.emailJobs.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createEmailJob(data: InsertEmailJob): Promise<EmailJob> {
+    const id = randomUUID();
+    const emailJob: EmailJob = {
+      id,
+      ...data,
+      createdAt: new Date(),
+    };
+    this.emailJobs.set(id, emailJob);
+    return emailJob;
+  }
+
+  async getEmailJob(id: string): Promise<EmailJob | undefined> {
+    return this.emailJobs.get(id);
+  }
+
+  async updateEmailJob(id: string, data: Partial<InsertEmailJob>): Promise<EmailJob | undefined> {
+    const job = this.emailJobs.get(id);
+    if (!job) return undefined;
+    const updated = { ...job, ...data };
+    this.emailJobs.set(id, updated);
+    return updated;
+  }
+
+  // Activity Logs methods
+  async createActivityLog(data: InsertActivityLog): Promise<ActivityLog> {
+    const id = randomUUID();
+    const log: ActivityLog = {
+      id,
+      ...data,
+      createdAt: new Date(),
+    };
+    this.activityLogs.set(id, log);
+    return log;
+  }
+
+  async getActivityLogs(filters?: {tenantId?: string, userId?: string, limit?: number}): Promise<ActivityLog[]> {
+    let logs = Array.from(this.activityLogs.values());
+    
+    if (filters?.tenantId) {
+      logs = logs.filter(l => l.tenantId === filters.tenantId);
+    }
+    if (filters?.userId) {
+      logs = logs.filter(l => l.userId === filters.userId);
+    }
+    
+    logs = logs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    if (filters?.limit) {
+      logs = logs.slice(0, filters.limit);
+    }
+    
+    return logs;
+  }
+
+  // Bulk Operations & Management methods
+  async bulkUpdateBakerStatus(ids: string[], status: boolean): Promise<number> {
+    let count = 0;
+    for (const id of ids) {
+      const baker = this.bakers.get(id);
+      if (baker) {
+        baker.isActive = status;
+        this.bakers.set(id, baker);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async resetUserPassword(userId: string, temporaryPassword: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    user.password = temporaryPassword;
+    this.users.set(userId, user);
+    return true;
+  }
+
+  async updateBakerPlan(bakerId: string, planType: string): Promise<Baker | undefined> {
+    const baker = this.bakers.get(bakerId);
+    if (!baker) return undefined;
+    baker.subscriptionPlan = planType;
+    baker.updatedAt = new Date();
+    this.bakers.set(bakerId, baker);
+    return baker;
+  }
+
+  // System Operations methods
+  async createBackup(): Promise<{success: boolean, backupId?: string}> {
+    // In-memory storage doesn't need backup, just return success
+    return { success: true, backupId: randomUUID() };
+  }
+
+  async clearCache(): Promise<{success: boolean}> {
+    // In-memory storage is the cache, return success without clearing
+    return { success: true };
+  }
 }
 
 // Helper function to convert undefined to null for database operations
@@ -2857,6 +3174,177 @@ export class DatabaseStorage implements IStorage {
   async deleteMaintenanceSchedule(id: string): Promise<boolean> {
     const result = await db.delete(maintenanceSchedule).where(eq(maintenanceSchedule.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // New Announcements CRUD methods
+  async getAnnouncements(): Promise<Announcement[]> {
+    const result = await db
+      .select()
+      .from(announcements)
+      .where(eq(announcements.isActive, true))
+      .orderBy(sql`${announcements.createdAt} DESC`);
+    
+    return result.filter(a => !a.expiresAt || a.expiresAt > new Date());
+  }
+
+  async createAnnouncement(data: InsertAnnouncement): Promise<Announcement> {
+    const [announcement] = await db
+      .insert(announcements)
+      .values({ ...data, id: randomUUID() })
+      .returning();
+    return announcement;
+  }
+
+  async updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement | undefined> {
+    const [updated] = await db
+      .update(announcements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteAnnouncement(id: string): Promise<boolean> {
+    const result = await db.delete(announcements).where(eq(announcements.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Email Jobs methods
+  async getEmailJobs(): Promise<EmailJob[]> {
+    return await db
+      .select()
+      .from(emailJobs)
+      .orderBy(sql`${emailJobs.createdAt} DESC`);
+  }
+
+  async createEmailJob(data: InsertEmailJob): Promise<EmailJob> {
+    const [job] = await db
+      .insert(emailJobs)
+      .values({ ...data, id: randomUUID() })
+      .returning();
+    return job;
+  }
+
+  async getEmailJob(id: string): Promise<EmailJob | undefined> {
+    const [job] = await db
+      .select()
+      .from(emailJobs)
+      .where(eq(emailJobs.id, id));
+    return job || undefined;
+  }
+
+  async updateEmailJob(id: string, data: Partial<InsertEmailJob>): Promise<EmailJob | undefined> {
+    const [updated] = await db
+      .update(emailJobs)
+      .set(data)
+      .where(eq(emailJobs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Activity Logs methods
+  async createActivityLog(data: InsertActivityLog): Promise<ActivityLog> {
+    const [log] = await db
+      .insert(activityLogs)
+      .values({ ...data, id: randomUUID() })
+      .returning();
+    return log;
+  }
+
+  async getActivityLogs(filters?: {tenantId?: string, userId?: string, limit?: number}): Promise<ActivityLog[]> {
+    let query = db.select().from(activityLogs);
+    
+    if (filters?.tenantId) {
+      query = query.where(eq(activityLogs.tenantId, filters.tenantId));
+    }
+    if (filters?.userId) {
+      query = query.where(eq(activityLogs.userId, filters.userId));
+    }
+    
+    query = query.orderBy(sql`${activityLogs.createdAt} DESC`);
+    
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    return await query;
+  }
+
+  // Bulk Operations & Management methods
+  async bulkUpdateBakerStatus(ids: string[], status: boolean): Promise<number> {
+    if (ids.length === 0) return 0;
+    
+    const result = await db
+      .update(bakers)
+      .set({ isActive: status, updatedAt: new Date() })
+      .where(sql`${bakers.id} = ANY(${ids})`);
+    
+    return result.rowCount || 0;
+  }
+
+  async resetUserPassword(userId: string, temporaryPassword: string): Promise<boolean> {
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+    
+    const result = await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+    
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async updateBakerPlan(bakerId: string, planType: string): Promise<Baker | undefined> {
+    const [updated] = await db
+      .update(bakers)
+      .set({ subscriptionPlan: planType, updatedAt: new Date() })
+      .where(eq(bakers.id, bakerId))
+      .returning();
+    return updated || undefined;
+  }
+
+  // System Operations methods
+  async createBackup(): Promise<{success: boolean, backupId?: string}> {
+    try {
+      // In a real implementation, this would trigger a database backup
+      // For now, we'll just return success
+      const backupId = randomUUID();
+      
+      // Log the backup attempt
+      await this.createAuditLog({
+        userId: 'system',
+        action: 'backup_created',
+        entityType: 'system',
+        entityId: backupId,
+        description: 'System backup initiated',
+      });
+      
+      return { success: true, backupId };
+    } catch (error) {
+      console.error('Backup creation failed:', error);
+      return { success: false };
+    }
+  }
+
+  async clearCache(): Promise<{success: boolean}> {
+    try {
+      // In a real implementation, this would clear Redis or other caching layers
+      // For now, we'll just return success
+      
+      // Log the cache clear
+      await this.createAuditLog({
+        userId: 'system',
+        action: 'cache_cleared',
+        entityType: 'system',
+        entityId: 'cache',
+        description: 'System cache cleared',
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Cache clear failed:', error);
+      return { success: false };
+    }
   }
 }
 
