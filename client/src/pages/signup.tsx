@@ -28,54 +28,56 @@ import {
 
 const plans = [
   {
-    id: 'starter',
-    name: 'Starter',
-    price: 'FREE',
-    monthly: 'forever',
+    id: 'free',
+    name: 'Free',
+    price: '$0',
+    monthly: 'Forever',
     description: 'Perfect for getting started',
     icon: <BadgeCheck className="w-8 h-8 text-blue-600" />,
     features: [
-      'Basic CRM (up to 10 customers)',
-      '3 quotes per month',
-      'Basic calculator themes',
-      'Email support',
-      'Standard branding'
+      'Basic profile listing',
+      '3 leads per month',
+      'Standard placement in search',
+      'Basic contact information',
+      'Portfolio uploads',
+      'Customer reviews'
     ]
   },
   {
-    id: 'professional',
+    id: 'pro',
     name: 'Professional',
-    price: '$79',
+    price: '$19',
     monthly: 'per month',
-    description: 'For growing bakeries',
+    description: 'Perfect for growing cottage bakers',
     icon: <Crown className="w-8 h-8 text-purple-600" />,
     highlighted: true,
     features: [
-      'Unlimited customers & quotes',
-      'Advanced CRM & pipeline tracking',
-      'Contract management & e-signatures',
-      'Payment processing & deposits',
-      'Custom branding & subdomain',
-      'Priority support',
-      'Analytics dashboard'
+      'Unlimited leads & customers',
+      'Full portfolio with unlimited photos',
+      'Custom domain support',
+      'Professional quote templates',
+      'Contract management',
+      'Payment processing integration',
+      'Email automation',
+      'Basic analytics'
     ]
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: '$149',
+    id: 'plus',
+    name: 'Plus',
+    price: '$39',
     monthly: 'per month',
-    description: 'For established bakeries',
+    description: 'For established bakeries scaling up',
     icon: <Rocket className="w-8 h-8 text-orange-600" />,
     features: [
       'Everything in Professional',
-      'Multi-location support',
-      'Team collaboration tools',
+      'Priority marketplace placement',
       'Advanced analytics & reporting',
-      'White-label customization',
-      'Custom domain support',
-      'Dedicated account manager',
-      'Phone support'
+      'White-label branding options',
+      'API access for integrations',
+      'Multiple team member accounts',
+      'Priority customer support',
+      'Advanced automation features'
     ]
   }
 ];
@@ -91,7 +93,7 @@ export default function Signup() {
     confirmPassword: '',
     phone: '',
     city: '',
-    selectedPlan: 'professional'
+    selectedPlan: 'free'
   });
 
   const signupMutation = useMutation({
@@ -110,7 +112,22 @@ export default function Signup() {
       return await response.json();
     },
     onSuccess: (response) => {
-      // Check if email verification is required
+      // For paid plans, redirect to Stripe checkout
+      if (formData.selectedPlan !== 'free' && response.checkoutUrl) {
+        toast({
+          title: "Account created successfully!",
+          description: "Redirecting to secure payment...",
+          duration: 3000,
+        });
+        
+        // Redirect to Stripe checkout
+        setTimeout(() => {
+          window.location.href = response.checkoutUrl;
+        }, 1500);
+        return;
+      }
+
+      // For free plan or if no checkout URL (email verification flow)
       if (response.requiresVerification) {
         toast({
           title: "Account created successfully!",
@@ -304,7 +321,7 @@ export default function Signup() {
               <CardTitle className="text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Get Started Today</CardTitle>
               <CardDescription className="text-gray-600">
                 Fill out the form below to create your Bakewise account.<br/>
-                <span className="text-rose-600 font-medium">Professional and Enterprise plans include a 14-day free trial!</span>
+                <span className="text-rose-600 font-medium">Start free or upgrade immediately to unlock advanced features!</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -420,13 +437,13 @@ export default function Signup() {
                 size="lg"
               >
                 {signupMutation.isPending ? "Creating Account..." : 
-                 formData.selectedPlan === 'starter' ? "Create Free Account" : "Start Your 14-Day Free Trial"}
+                 formData.selectedPlan === 'free' ? "Create Free Account" : "Continue to Payment"}
               </Button>
               
                 <p className="text-xs text-gray-500 text-center">
-                  {formData.selectedPlan === 'starter' 
+                  {formData.selectedPlan === 'free' 
                     ? "Free account - no credit card required." 
-                    : "14-day trial - no credit card required. Cancel anytime."
+                    : "Proceed to secure payment after account creation."
                   } <br/>
                   By signing up, you agree to our Terms of Service and Privacy Policy.
                 </p>

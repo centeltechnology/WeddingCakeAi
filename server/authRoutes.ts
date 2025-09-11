@@ -1,8 +1,21 @@
 import type { Express } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import Stripe from "stripe";
 import { databaseStorage } from "./databaseStorage";
 import { sendEmail, emailTemplates } from "./emailService";
+import { type InsertBaker } from "@shared/schema";
+
+// Initialize Stripe for subscription management
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-06-20",
+  });
+  console.log('Stripe initialized for baker subscriptions');
+} else {
+  console.warn('STRIPE_SECRET_KEY not found - subscription features will be disabled');
+}
 
 // Harden JWT security - fail fast in production if JWT_SECRET is not set
 const JWT_SECRET = (() => {
@@ -324,7 +337,7 @@ export function setupAuthRoutes(app: Express) {
   // Baker Authentication
   app.post('/api/bakers/register', async (req, res) => {
     try {
-      const { name, email, password, address, phone } = req.body;
+      const { name, email, password, address, phone, subscriptionPlan = 'free' } = req.body;
 
       // Validate input
       if (!name || !email || !password || !address) {
@@ -338,6 +351,15 @@ export function setupAuthRoutes(app: Express) {
         return res.status(400).json({
           success: false,
           message: 'Password must be at least 6 characters long'
+        });
+      }
+
+      // Validate subscription plan
+      const validPlans = ['free', 'pro', 'plus'];
+      if (!validPlans.includes(subscriptionPlan)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid subscription plan'
         });
       }
 
@@ -364,7 +386,7 @@ export function setupAuthRoutes(app: Express) {
         address,
         phone,
         isActive: true,
-        subscriptionPlan: 'starter',
+        subscriptionPlan,
         emailVerified: false,
         verificationToken,
         verificationTokenExpiry
@@ -386,6 +408,89 @@ export function setupAuthRoutes(app: Express) {
         // Continue with registration even if email fails
       }
 
+      // For paid plans, create Stripe checkout session
+      if (subscriptionPlan !== 'free' && stripe) {
+        try {
+          // Map plan to Stripe price ID
+          const priceIds = {
+            'pro': process.env.STRIPE_PRICE_ID_PROFESSIONAL,
+            'plus': process.env.STRIPE_PRICE_ID_ENTERPRISE
+          };
+
+          const priceId = priceIds[subscriptionPlan as keyof typeof priceIds];
+          if (!priceId) {
+            throw new Error(`No Stripe price ID found for plan: ${subscriptionPlan}`);
+          }
+
+          // Create Stripe customer
+          const customer = await stripe.customers.create({
+            email: baker.email,
+            name: baker.name,
+            metadata: {
+              bakerId: baker.id,
+              plan: subscriptionPlan
+            }
+          });
+
+          // Create checkout session for immediate payment (no trial)
+          const session = await stripe.checkout.sessions.create({
+            customer: customer.id,
+            mode: 'subscription',
+            payment_method_types: ['card'],
+            line_items: [
+              {
+                price: priceId,
+                quantity: 1,
+              },
+            ],
+            success_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?payment=success`,
+            cancel_url: `${req.protocol}://${req.get('host')}/signup?payment=cancelled`,
+            metadata: {
+              bakerId: baker.id,
+              plan: subscriptionPlan
+            }
+          });
+
+          // Update baker with Stripe customer ID
+          await databaseStorage.updateBaker(baker.id, {
+            stripeCustomerId: customer.id
+          } as Partial<InsertBaker>);
+
+          return res.status(201).json({
+            success: true,
+            message: 'Account created! Redirecting to payment...',
+            requiresVerification: true,
+            emailSent,
+            checkoutUrl: session.url,
+            baker: {
+              id: baker.id,
+              name: baker.name,
+              slug: baker.slug,
+              email: baker.email,
+              emailVerified: baker.emailVerified
+            }
+          });
+
+        } catch (stripeError) {
+          console.error('Stripe checkout creation error:', stripeError);
+          // Continue with registration but don't fail completely
+          return res.status(201).json({
+            success: true,
+            message: 'Baker registered successfully! Please contact support to set up your subscription.',
+            requiresVerification: true,
+            emailSent,
+            baker: {
+              id: baker.id,
+              name: baker.name,
+              slug: baker.slug,
+              email: baker.email,
+              emailVerified: baker.emailVerified
+            }
+          });
+        }
+      }
+
+      // For free plan, return normal response
       res.status(201).json({
         success: true,
         message: 'Baker registered successfully! Please check your email to verify your account.',
