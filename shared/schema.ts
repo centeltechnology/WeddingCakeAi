@@ -912,12 +912,56 @@ export const maintenanceSchedule = pgTable("maintenance_schedule", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Super Admin Dashboard tables
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").default('info'), // info, warning, urgent
+  priority: text("priority").default('normal'), // low, normal, high
+  isActive: boolean("is_active").default(true),
+  targetAudience: text("target_audience"), // all, bakers, admins
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const emailJobs = pgTable("email_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  filters: json("filters").$type<Record<string, any>>(), // For filtering recipients
+  templateKey: text("template_key"),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  totalRecipients: integer("total_recipients").default(0),
+  sentCount: integer("sent_count").default(0),
+  failedCount: integer("failed_count").default(0),
+  status: text("status").default('queued'), // queued, sending, completed, failed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => bakers.id),
+  userId: varchar("user_id").references(() => users.id),
+  actor: text("actor").notNull(), // Who performed the action
+  entityType: text("entity_type").notNull(), // tenant, user, announcement, etc.
+  action: text("action").notNull(), // created, updated, deleted, suspended, etc.
+  metadata: json("metadata").$type<Record<string, any>>(), // Additional data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Super Admin schemas
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
 export const insertSystemAnnouncementSchema = createInsertSchema(systemAnnouncements).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSystemHealthMetricSchema = createInsertSchema(systemHealthMetrics).omit({ id: true, recordedAt: true });
 export const insertDataExportJobSchema = createInsertSchema(dataExportJobs).omit({ id: true, createdAt: true, completedAt: true });
 export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedule).omit({ id: true, createdAt: true, updatedAt: true });
+
+// New Super Admin Dashboard schemas
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEmailJobSchema = createInsertSchema(emailJobs).omit({ id: true, createdAt: true });
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
 
 // Super Admin types
 export type AuditLog = typeof auditLogs.$inferSelect;
@@ -930,3 +974,11 @@ export type DataExportJob = typeof dataExportJobs.$inferSelect;
 export type InsertDataExportJob = z.infer<typeof insertDataExportJobSchema>;
 export type MaintenanceSchedule = typeof maintenanceSchedule.$inferSelect;
 export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
+
+// New Super Admin Dashboard types
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type EmailJob = typeof emailJobs.$inferSelect;
+export type InsertEmailJob = z.infer<typeof insertEmailJobSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
