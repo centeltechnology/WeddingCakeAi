@@ -909,6 +909,16 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
     setQuickActionTenantId('');
   };
 
+  const handleQuickSuspendSubmit = () => {
+    if (!quickActionTenantId) return;
+    quickSuspendMutation.mutate(quickActionTenantId);
+  };
+
+  const handleQuickActivateSubmit = () => {
+    if (!quickActionTenantId) return;
+    quickActivateMutation.mutate(quickActionTenantId);
+  };
+
   const handleSendAnnouncement = () => {
     setShowAnnouncementDialog(true);
     setAnnouncementForm({
@@ -927,6 +937,10 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
 
   const handleClearCache = () => {
     clearCacheMutation.mutate();
+  };
+
+  const handleExportData = () => {
+    exportDataMutation.mutate({ exportType: 'all', format: 'json' });
   };
 
   const handleChangePlan = (tenant: TenantSummary) => {
