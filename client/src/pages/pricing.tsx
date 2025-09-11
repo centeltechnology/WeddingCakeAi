@@ -54,7 +54,7 @@ export default function Pricing() {
           <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 mb-12">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span>14-day free trial</span>
+              <span>Free tier available</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
@@ -137,10 +137,10 @@ export default function Pricing() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card className="border-0 bg-white/70 backdrop-blur-md shadow-lg" data-testid="faq-trial">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">Is there really a free trial?</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Is there really a free tier?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Yes! You get 14 days to try all features completely free. No credit card required to start.</p>
+                <p className="text-gray-600">Yes! Our free tier includes basic features forever. Upgrade to Pro or Plus anytime for advanced features.</p>
               </CardContent>
             </Card>
 
@@ -190,7 +190,7 @@ export default function Pricing() {
               
               <p className="text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto mb-8">
                 Join hundreds of successful bakers who've transformed their businesses with Bakewise. 
-                Start your free trial today and see the difference professional tools can make.
+                Start with our free tier or upgrade immediately to unlock all professional features.
               </p>
               
               <div className="flex justify-center mb-8">
@@ -199,14 +199,14 @@ export default function Pricing() {
                 ))}
               </div>
               
-              <Button asChild size="lg" className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-4 text-lg font-semibold" data-testid="button-start-free-trial">
+              <Button asChild size="lg" className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-4 text-lg font-semibold" data-testid="button-get-started">
                 <Link href="/signup" className="flex items-center">
-                  Start Your Free Trial
+                  Get Started Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               
-              <p className="text-sm text-gray-500 mt-4">No credit card required • 14-day free trial</p>
+              <p className="text-sm text-gray-500 mt-4">Free tier available • Pro & Plus start immediately</p>
             </CardContent>
           </Card>
         </div>
