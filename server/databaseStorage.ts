@@ -43,6 +43,12 @@ export class DatabaseStorage {
       .where(eq(users.role, role));
   }
 
+  async getAllUsers() {
+    return await db
+      .select()
+      .from(users);
+  }
+
   async updateUserLastLogin(userId: string) {
     await db
       .update(users)

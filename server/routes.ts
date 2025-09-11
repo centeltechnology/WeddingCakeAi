@@ -2963,16 +2963,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Super Admin Dashboard API Routes (protected)
   app.get('/api/super-admin/stats', verifySuperAdminToken, async (req, res) => {
     try {
-      // Get real platform statistics from database
-      const allTenants = await storage.getTenants();
-      const activeTenants = allTenants.filter(t => t.subscriptionStatus === 'active');
-      const allUsers = await storage.getUsersWithRole(''); // Get all users regardless of role by passing empty string
+      // Get real platform statistics from bakers table
+      const allBakers = await storage.getBakers();
+      const activeBakers = allBakers.filter(b => b.isActive && 
+        (!b.subscriptionStatus || b.subscriptionStatus === 'active' || b.subscriptionStatus === 'trialing'));
+      
+      // Get all users from both users and bakers tables
+      const adminUsers = await storage.getUsersWithRole(''); // Get all admin users
+      const totalUsers = adminUsers.length + allBakers.length;
       
       // Calculate basic statistics
       const stats = {
-        totalTenants: allTenants.length,
-        activeTenants: activeTenants.length,
-        totalUsers: allUsers.length,
+        totalTenants: allBakers.length,
+        activeTenants: activeBakers.length,
+        totalUsers: totalUsers,
         monthlyRevenue: 0, // Calculate from actual transactions if needed
         totalRevenue: 0,   // Calculate from actual transactions if needed
         revenueGrowth: 0,  // Calculate from historical data if needed
@@ -2989,17 +2993,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/super-admin/tenants', verifySuperAdminToken, async (req, res) => {
     try {
-      // Get real tenant data from database
-      const tenants = await storage.getTenants();
+      // Get baker data and transform to tenant format for UI
+      const bakers = await storage.getBakers();
       
-      res.json(tenants);
+      // Transform bakers to match expected tenant format
+      const tenantData = bakers.map(baker => ({
+        id: baker.id,
+        name: baker.name,
+        status: baker.subscriptionStatus === 'trialing' ? 'trial' : 
+                (baker.isActive ? 'active' : 'suspended'),
+        planType: baker.subscriptionPlan || 'starter',
+        monthlyRevenue: 0, // Would calculate from actual revenue
+        userCount: 1, // Each baker counts as 1 user
+        lastActivity: baker.updatedAt || baker.createdAt || new Date().toISOString(),
+        createdAt: baker.createdAt || new Date().toISOString()
+      }));
+      
+      res.json(tenantData);
     } catch (error) {
       console.error('Error fetching tenants:', error);
       res.status(500).json({ error: 'Failed to fetch tenants' });
     }
   });
 
-  // Update tenant status
+  // Update baker (tenant) status
   app.patch('/api/super-admin/tenants/:tenantId/status', verifySuperAdminToken, async (req, res) => {
     try {
       const { tenantId } = req.params;
@@ -3012,26 +3029,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const tenant = await storage.getTenant(tenantId);
-      if (!tenant) {
+      const baker = await storage.getBaker(tenantId);
+      if (!baker) {
         return res.status(404).json({ 
           success: false, 
-          message: 'Tenant not found' 
+          message: 'Baker not found' 
         });
       }
 
-      const updatedTenant = await storage.updateTenant(tenantId, { 
-        status, 
-        updatedAt: new Date() 
+      await storage.updateBaker(tenantId, { 
+        isActive: status === 'active'
       });
 
       res.json({
         success: true,
-        tenant: updatedTenant
+        message: `Baker ${status === 'active' ? 'activated' : 'suspended'} successfully`
       });
 
     } catch (error) {
-      console.error('Update tenant status error:', error);
+      console.error('Update baker status error:', error);
       res.status(500).json({ 
         success: false, 
         message: 'Internal server error' 
@@ -3039,7 +3055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update tenant details
+  // Update baker (tenant) details
   app.patch('/api/super-admin/tenants/:tenantId', verifySuperAdminToken, async (req, res) => {
     try {
       const { tenantId } = req.params;
@@ -3048,27 +3064,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove non-updateable fields
       delete updates.id;
       delete updates.createdAt;
+      
+      // Map UI fields to baker fields
+      const bakerUpdates: any = {};
+      if (updates.name) bakerUpdates.name = updates.name;
+      if (updates.planType) bakerUpdates.subscriptionPlan = updates.planType;
 
-      const tenant = await storage.getTenant(tenantId);
-      if (!tenant) {
+      const baker = await storage.getBaker(tenantId);
+      if (!baker) {
         return res.status(404).json({ 
           success: false, 
-          message: 'Tenant not found' 
+          message: 'Baker not found' 
         });
       }
 
-      const updatedTenant = await storage.updateTenant(tenantId, { 
-        ...updates, 
-        updatedAt: new Date() 
-      });
+      await storage.updateBaker(tenantId, bakerUpdates);
 
       res.json({
         success: true,
-        tenant: updatedTenant
+        message: 'Baker updated successfully'
       });
 
     } catch (error) {
-      console.error('Update tenant error:', error);
+      console.error('Update baker error:', error);
       res.status(500).json({ 
         success: false, 
         message: 'Internal server error' 
@@ -3153,23 +3171,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all users (Super Admin only)
   app.get('/api/super-admin/users', verifySuperAdminToken, async (req, res) => {
     try {
-      // Get all users regardless of role
-      const allUsers = await storage.getUsersWithRole('');
+      // Get admin users from users table (including super_admin)
+      const adminUsers = await storage.getAllUsers();
       
-      // Format user data for super admin view
-      const users = allUsers.map(user => ({
+      // Get bakers to include as users
+      const bakers = await storage.getBakers();
+      
+      // Format admin user data
+      const formattedAdminUsers = adminUsers.map(user => ({
         id: user.id,
         name: user.username || user.email || 'Unknown',
         email: user.email,
-        role: user.role || 'user',
+        role: user.role || 'super_admin',
         status: user.isActive ? 'active' : 'suspended',
         lastLogin: user.lastLoginAt?.toISOString() || null,
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
-        tenantId: 'default', // For multi-tenant support later
-        tenantName: 'Default'
+        tenantId: user.id, // Admin is their own tenant
+        tenantName: user.username || 'Admin'
       }));
       
-      res.json(users);
+      // Format baker data as users
+      const formattedBakers = bakers.map(baker => ({
+        id: baker.id,
+        name: baker.name,
+        email: baker.email,
+        role: 'baker',
+        status: baker.isActive ? 'active' : 'suspended',
+        lastLogin: baker.updatedAt || baker.createdAt || new Date().toISOString(),
+        createdAt: baker.createdAt || new Date().toISOString(),
+        tenantId: baker.id, // Baker is their own tenant
+        tenantName: baker.name
+      }));
+      
+      // Combine all users
+      const allUsers = [...formattedAdminUsers, ...formattedBakers];
+      
+      res.json(allUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       res.status(500).json({ error: 'Failed to fetch users' });
@@ -3182,46 +3219,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tenantId } = req.body;
       if (!tenantId) {
-        return res.status(400).json({ message: 'Tenant ID is required' });
+        return res.status(400).json({ message: 'Baker ID is required' });
       }
 
-      const tenant = await storage.updateTenant(tenantId, { subscriptionStatus: 'suspended' });
+      await storage.updateBaker(tenantId, { isActive: false });
+      const baker = await storage.getBaker(tenantId);
       
       // Log the action
       await storage.createAuditLog({
         userId: req.user.userId,
-        action: 'tenant_suspended',
-        resource: 'tenant',
+        action: 'baker_suspended',
+        resource: 'baker',
         resourceId: tenantId,
-        details: { tenantName: tenant.name } as Record<string, any>,
+        details: { bakerName: baker?.name } as Record<string, any>,
         ipAddress: req.ip
       });
 
-      res.json({ success: true, tenant });
+      res.json({ success: true, baker });
     } catch (error) {
-      console.error('Error suspending tenant:', error);
-      res.status(500).json({ message: 'Failed to suspend tenant' });
+      console.error('Error suspending baker:', error);
+      res.status(500).json({ message: 'Failed to suspend baker' });
     }
   });
 
   app.post('/api/super-admin/quick-actions/tenant/activate', verifySuperAdminToken, async (req: any, res) => {
     try {
       const { tenantId } = req.body;
-      const tenant = await storage.updateTenant(tenantId, { subscriptionStatus: 'active' });
+      
+      await storage.updateBaker(tenantId, { isActive: true });
+      const baker = await storage.getBaker(tenantId);
       
       await storage.createAuditLog({
         userId: req.user.userId,
-        action: 'tenant_activated',
-        resource: 'tenant',
+        action: 'baker_activated',
+        resource: 'baker',
         resourceId: tenantId,
-        details: { tenantName: tenant.name } as Record<string, any>,
+        details: { bakerName: baker?.name } as Record<string, any>,
         ipAddress: req.ip
       });
 
-      res.json({ success: true, tenant });
+      res.json({ success: true, baker });
     } catch (error) {
-      console.error('Error activating tenant:', error);
-      res.status(500).json({ message: 'Failed to activate tenant' });
+      console.error('Error activating baker:', error);
+      res.status(500).json({ message: 'Failed to activate baker' });
     }
   });
 

@@ -30,6 +30,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
   deleteUser(id: string): Promise<void>;
   getUsersWithRole(role: string): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
 
   // Baker operations
   getBakers(): Promise<Baker[]>;
@@ -547,6 +548,10 @@ export class MemStorage implements IStorage {
 
   async getUsersWithRole(role: string): Promise<User[]> {
     return Array.from(this.users.values()).filter(user => user.role === role);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
@@ -2620,6 +2625,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersWithRole(role: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   // Baker operations
