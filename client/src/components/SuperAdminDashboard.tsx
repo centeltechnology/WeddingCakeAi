@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -357,8 +361,53 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
   const [showUserEditModal, setShowUserEditModal] = useState(false);
+  
+  // Bulk selection states
+  const [selectedTenants, setSelectedTenants] = useState<Set<string>>(new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  
+  // Dialog states
+  const [showQuickSuspendDialog, setShowQuickSuspendDialog] = useState(false);
+  const [showQuickActivateDialog, setShowQuickActivateDialog] = useState(false);
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
+  const [showChangePlanDialog, setShowChangePlanDialog] = useState(false);
+  const [showActivityLogsDialog, setShowActivityLogsDialog] = useState(false);
+  const [showMassEmailDialog, setShowMassEmailDialog] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  
+  // Form states
+  const [quickActionTenantId, setQuickActionTenantId] = useState('');
+  const [newPlan, setNewPlan] = useState('');
+  const [selectedTenantForAction, setSelectedTenantForAction] = useState<TenantSummary | null>(null);
+  const [selectedUserForAction, setSelectedUserForAction] = useState<PlatformUser | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    priority: 'normal',
+    targetAudience: 'all',
+    expiresAt: ''
+  });
+  const [massEmailForm, setMassEmailForm] = useState({
+    jobName: '',
+    recipientFilter: 'all',
+    subject: '',
+    body: ''
+  });
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
 
   // API Queries for new tabs
+  const { data: emailJobs = [], isLoading: emailJobsLoading } = useQuery({
+    queryKey: ['/api/super-admin/email-jobs'],
+    enabled: activeTab === 'communication'
+  });
+
+  const { data: activityLogs = [], isLoading: activityLogsLoading } = useQuery({
+    queryKey: ['/api/super-admin/activity-logs', selectedTenantForAction?.id],
+    enabled: showActivityLogsDialog && !!selectedTenantForAction
+  });
+
   const { data: auditLogs = [], isLoading: auditLogsLoading } = useQuery({
     queryKey: ['/api/super-admin/audit-logs'],
     enabled: activeTab === 'security'
@@ -467,10 +516,262 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   });
 
   // Quick Action Mutations
+  // Announcement mutations
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (data: typeof announcementForm) => {
+      const response = await apiRequest('POST', '/api/super-admin/announcements', data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
+      setShowAnnouncementDialog(false);
+      setAnnouncementForm({
+        title: '',
+        message: '',
+        type: 'info',
+        priority: 'normal',
+        targetAudience: 'all',
+        expiresAt: ''
+      });
+      toast({
+        title: "Success",
+        description: "Announcement created successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create announcement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateAnnouncementMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PATCH', `/api/super-admin/announcements/${id}`, data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
+      setEditingAnnouncement(null);
+      toast({
+        title: "Success",
+        description: "Announcement updated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update announcement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/super-admin/announcements/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
+      toast({
+        title: "Success",
+        description: "Announcement deleted successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete announcement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mass email mutation
+  const sendMassEmailMutation = useMutation({
+    mutationFn: async (data: typeof massEmailForm) => {
+      const response = await apiRequest('POST', '/api/super-admin/email-jobs', data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/email-jobs'] });
+      setShowMassEmailDialog(false);
+      setMassEmailForm({
+        jobName: '',
+        recipientFilter: 'all',
+        subject: '',
+        body: ''
+      });
+      toast({
+        title: "Success",
+        description: "Email job created successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create email job",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Database backup mutation
+  const databaseBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/super-admin/backup');
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Database backup initiated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create backup",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Clear cache mutation
+  const clearCacheMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/super-admin/clear-cache');
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Cache cleared successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clear cache",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Change plan mutation
+  const changePlanMutation = useMutation({
+    mutationFn: async ({ tenantId, planType }: { tenantId: string; planType: string }) => {
+      const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}/plan`, { planType });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      setShowChangePlanDialog(false);
+      setSelectedTenantForAction(null);
+      setNewPlan('');
+      toast({
+        title: "Success",
+        description: "Plan changed successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change plan",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('POST', `/api/super-admin/users/${userId}/reset-password`);
+      return response;
+    },
+    onSuccess: () => {
+      setShowResetPasswordDialog(false);
+      setSelectedUserForAction(null);
+      toast({
+        title: "Success",
+        description: "Password reset link sent to user",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk action mutations
+  const bulkSuspendTenantsMutation = useMutation({
+    mutationFn: async (tenantIds: string[]) => {
+      const promises = tenantIds.map(id => 
+        apiRequest('PATCH', `/api/super-admin/tenants/${id}/status`, { status: 'suspended' })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      setSelectedTenants(new Set());
+      toast({
+        title: "Success",
+        description: "Selected tenants suspended successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to suspend tenants",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkActivateTenantsMutation = useMutation({
+    mutationFn: async (tenantIds: string[]) => {
+      const promises = tenantIds.map(id => 
+        apiRequest('PATCH', `/api/super-admin/tenants/${id}/status`, { status: 'active' })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
+      setSelectedTenants(new Set());
+      toast({
+        title: "Success",
+        description: "Selected tenants activated successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to activate tenants",
+        variant: "destructive",
+      });
+    },
+  });
+
   const quickSuspendMutation = useMutation({
     mutationFn: async (tenantId: string) => {
-      const response = await apiRequest('POST', '/api/super-admin/quick-actions/tenant/suspend', { tenantId });
-      return response.json();
+      const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}/status`, { status: 'suspended' });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
@@ -492,8 +793,8 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
 
   const quickActivateMutation = useMutation({
     mutationFn: async (tenantId: string) => {
-      const response = await apiRequest('POST', '/api/super-admin/quick-actions/tenant/activate', { tenantId });
-      return response.json();
+      const response = await apiRequest('PATCH', `/api/super-admin/tenants/${tenantId}/status`, { status: 'active' });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/tenants'] });
@@ -516,7 +817,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
   const exportDataMutation = useMutation({
     mutationFn: async (exportConfig: { exportType: string; format: string }) => {
       const response = await apiRequest('POST', '/api/super-admin/data-export', exportConfig);
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({
@@ -597,6 +898,202 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
     }).format(amount);
   };
 
+  // Handler functions
+  const handleQuickSuspendTenant = () => {
+    setShowQuickSuspendDialog(true);
+    setQuickActionTenantId('');
+  };
+
+  const handleQuickActivateTenant = () => {
+    setShowQuickActivateDialog(true);
+    setQuickActionTenantId('');
+  };
+
+  const handleSendAnnouncement = () => {
+    setShowAnnouncementDialog(true);
+    setAnnouncementForm({
+      title: '',
+      message: '',
+      type: 'info',
+      priority: 'normal',
+      targetAudience: 'all',
+      expiresAt: ''
+    });
+  };
+
+  const handleDatabaseBackup = () => {
+    databaseBackupMutation.mutate();
+  };
+
+  const handleClearCache = () => {
+    clearCacheMutation.mutate();
+  };
+
+  const handleChangePlan = (tenant: TenantSummary) => {
+    setSelectedTenantForAction(tenant);
+    setNewPlan(tenant.planType);
+    setShowChangePlanDialog(true);
+  };
+
+  const handleViewActivityLogs = (tenant: TenantSummary) => {
+    setSelectedTenantForAction(tenant);
+    setShowActivityLogsDialog(true);
+  };
+
+  const handleResetUserPassword = (user: PlatformUser) => {
+    setSelectedUserForAction(user);
+    setShowResetPasswordDialog(true);
+  };
+
+  const handleExportTenants = () => {
+    // Export tenants to CSV
+    const csv = [
+      ['ID', 'Name', 'Status', 'Plan', 'Monthly Revenue', 'User Count', 'Created At'],
+      ...tenants.map(t => [
+        t.id,
+        t.name,
+        t.status,
+        t.planType,
+        t.monthlyRevenue.toString(),
+        t.userCount.toString(),
+        t.createdAt
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tenants-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportUsers = () => {
+    // Export users to CSV
+    const csv = [
+      ['ID', 'Name', 'Email', 'Tenant', 'Role', 'Status', 'Last Login', 'Created At'],
+      ...users.map(u => [
+        u.id,
+        u.name,
+        u.email,
+        u.tenantName,
+        u.role,
+        u.status,
+        u.lastLogin || 'Never',
+        u.createdAt
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleToggleTenantSelection = (tenantId: string) => {
+    const newSelection = new Set(selectedTenants);
+    if (newSelection.has(tenantId)) {
+      newSelection.delete(tenantId);
+    } else {
+      newSelection.add(tenantId);
+    }
+    setSelectedTenants(newSelection);
+  };
+
+  const handleToggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  const handleSelectAllTenants = () => {
+    if (selectedTenants.size === filteredTenants.length) {
+      setSelectedTenants(new Set());
+    } else {
+      setSelectedTenants(new Set(filteredTenants.map(t => t.id)));
+    }
+  };
+
+  const handleSelectAllUsers = () => {
+    if (selectedUsers.size === filteredUsers.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(filteredUsers.map(u => u.id)));
+    }
+  };
+
+  const handleBulkSuspendTenants = () => {
+    if (selectedTenants.size > 0) {
+      bulkSuspendTenantsMutation.mutate(Array.from(selectedTenants));
+    }
+  };
+
+  const handleBulkActivateTenants = () => {
+    if (selectedTenants.size > 0) {
+      bulkActivateTenantsMutation.mutate(Array.from(selectedTenants));
+    }
+  };
+
+  const handleCreateAnnouncement = () => {
+    if (!announcementForm.title || !announcementForm.message) {
+      toast({
+        title: "Error",
+        description: "Please fill in required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    createAnnouncementMutation.mutate(announcementForm);
+  };
+
+  const handleEditAnnouncement = (announcement: any) => {
+    setEditingAnnouncement(announcement);
+    setAnnouncementForm({
+      title: announcement.title,
+      message: announcement.message,
+      type: announcement.type || 'info',
+      priority: announcement.priority || 'normal',
+      targetAudience: announcement.targetAudience || 'all',
+      expiresAt: announcement.expiresAt || ''
+    });
+    setShowAnnouncementDialog(true);
+  };
+
+  const handleSaveAnnouncement = () => {
+    if (editingAnnouncement) {
+      updateAnnouncementMutation.mutate({
+        id: editingAnnouncement.id,
+        data: announcementForm
+      });
+    } else {
+      handleCreateAnnouncement();
+    }
+  };
+
+  const handleDeleteAnnouncement = (id: string) => {
+    deleteAnnouncementMutation.mutate(id);
+  };
+
+  const handleSendMassEmail = () => {
+    if (!massEmailForm.jobName || !massEmailForm.subject || !massEmailForm.body) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    sendMassEmailMutation.mutate(massEmailForm);
+  };
+
   // Click handlers for tenant actions
   const handleViewTenant = (tenant: TenantSummary) => {
     toast({
@@ -659,65 +1156,7 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
     // In a real app, this would open an add tenant modal
   };
 
-  // Quick Action Handlers
-  const handleQuickSuspendTenant = () => {
-    if (tenants && tenants.length > 0) {
-      const activeTenant = tenants.find((t: any) => t.status === 'active');
-      if (activeTenant) {
-        quickSuspendMutation.mutate(activeTenant.id);
-      } else {
-        toast({
-          title: "No Active Tenants",
-          description: "There are no active tenants to suspend.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "No Tenants Found",
-        description: "There are no tenants available.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleQuickActivateTenant = () => {
-    if (tenants && tenants.length > 0) {
-      const suspendedTenant = tenants.find((t: any) => t.status === 'suspended');
-      if (suspendedTenant) {
-        quickActivateMutation.mutate(suspendedTenant.id);
-      } else {
-        toast({
-          title: "No Suspended Tenants",
-          description: "There are no suspended tenants to activate.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "No Tenants Found",
-        description: "There are no tenants available.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSendAnnouncement = () => {
-    toast({
-      title: "Announcement Feature",
-      description: "System announcement feature will be available in the Announcements tab.",
-      variant: "default",
-    });
-    // This would normally open a modal to create announcements
-  };
-
-  const handleExportData = () => {
-    const exportConfig = {
-      exportType: 'platform_data',
-      format: 'csv'
-    };
-    exportDataMutation.mutate(exportConfig);
-  };
+  // [Old handlers removed - using comprehensive versions below]
 
   if (statsLoading) {
     return (
@@ -1591,7 +2030,21 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                       <CardTitle>System Announcements</CardTitle>
                       <CardDescription>Manage platform-wide announcements and notifications</CardDescription>
                     </div>
-                    <Button data-testid="button-create-announcement">
+                    <Button 
+                      onClick={() => {
+                        setEditingAnnouncement(null);
+                        setAnnouncementForm({
+                          title: '',
+                          message: '',
+                          type: 'info',
+                          priority: 'normal',
+                          targetAudience: 'all',
+                          expiresAt: ''
+                        });
+                        setShowAnnouncementDialog(true);
+                      }}
+                      data-testid="button-create-announcement"
+                    >
                       <Bell className="h-4 w-4 mr-2" />
                       Create Announcement
                     </Button>
@@ -1844,6 +2297,478 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
           }}
           onSave={handleSaveUser}
         />
+
+        {/* Quick Suspend Dialog */}
+        <Dialog open={showQuickSuspendDialog} onOpenChange={setShowQuickSuspendDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Quick Suspend Tenant</DialogTitle>
+              <DialogDescription>
+                Enter the tenant ID to suspend immediately
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="suspend-tenant-id">Tenant ID</Label>
+                <Input
+                  id="suspend-tenant-id"
+                  value={quickActionTenantId}
+                  onChange={(e) => setQuickActionTenantId(e.target.value)}
+                  placeholder="Enter tenant ID"
+                  data-testid="input-suspend-tenant-id"
+                />
+              </div>
+              {tenants.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Or select from active tenants:</Label>
+                  <Select value={quickActionTenantId} onValueChange={setQuickActionTenantId}>
+                    <SelectTrigger data-testid="select-suspend-tenant">
+                      <SelectValue placeholder="Select a tenant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenants.filter(t => t.status === 'active').map(tenant => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} ({tenant.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowQuickSuspendDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleQuickSuspendSubmit}
+                disabled={!quickActionTenantId || quickSuspendMutation.isPending}
+                data-testid="button-confirm-suspend"
+              >
+                {quickSuspendMutation.isPending ? 'Suspending...' : 'Suspend Tenant'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quick Activate Dialog */}
+        <Dialog open={showQuickActivateDialog} onOpenChange={setShowQuickActivateDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Quick Activate Tenant</DialogTitle>
+              <DialogDescription>
+                Enter the tenant ID to activate immediately
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="activate-tenant-id">Tenant ID</Label>
+                <Input
+                  id="activate-tenant-id"
+                  value={quickActionTenantId}
+                  onChange={(e) => setQuickActionTenantId(e.target.value)}
+                  placeholder="Enter tenant ID"
+                  data-testid="input-activate-tenant-id"
+                />
+              </div>
+              {tenants.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Or select from suspended tenants:</Label>
+                  <Select value={quickActionTenantId} onValueChange={setQuickActionTenantId}>
+                    <SelectTrigger data-testid="select-activate-tenant">
+                      <SelectValue placeholder="Select a tenant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenants.filter(t => t.status === 'suspended').map(tenant => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} ({tenant.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowQuickActivateDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleQuickActivateSubmit}
+                disabled={!quickActionTenantId || quickActivateMutation.isPending}
+                data-testid="button-confirm-activate"
+              >
+                {quickActivateMutation.isPending ? 'Activating...' : 'Activate Tenant'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create/Edit Announcement Dialog */}
+        <Dialog open={showAnnouncementDialog} onOpenChange={setShowAnnouncementDialog}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingAnnouncement ? 'Edit Announcement' : 'Create System Announcement'}
+              </DialogTitle>
+              <DialogDescription>
+                Send important messages to all platform users
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-title">Title *</Label>
+                  <Input
+                    id="announcement-title"
+                    value={announcementForm.title}
+                    onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                    placeholder="Announcement title"
+                    data-testid="input-announcement-title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-type">Type</Label>
+                  <Select 
+                    value={announcementForm.type} 
+                    onValueChange={(value) => setAnnouncementForm({...announcementForm, type: value})}
+                  >
+                    <SelectTrigger data-testid="select-announcement-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="info">Info</SelectItem>
+                      <SelectItem value="warning">Warning</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-priority">Priority</Label>
+                  <Select 
+                    value={announcementForm.priority} 
+                    onValueChange={(value) => setAnnouncementForm({...announcementForm, priority: value})}
+                  >
+                    <SelectTrigger data-testid="select-announcement-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-audience">Target Audience</Label>
+                  <Select 
+                    value={announcementForm.targetAudience} 
+                    onValueChange={(value) => setAnnouncementForm({...announcementForm, targetAudience: value})}
+                  >
+                    <SelectTrigger data-testid="select-announcement-audience">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="bakers">Bakers Only</SelectItem>
+                      <SelectItem value="admins">Admins Only</SelectItem>
+                      <SelectItem value="customers">Customers Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="announcement-message">Message *</Label>
+                <Textarea
+                  id="announcement-message"
+                  value={announcementForm.message}
+                  onChange={(e) => setAnnouncementForm({...announcementForm, message: e.target.value})}
+                  placeholder="Enter your announcement message..."
+                  rows={5}
+                  data-testid="textarea-announcement-message"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="announcement-expires">Expires At (Optional)</Label>
+                <Input
+                  id="announcement-expires"
+                  type="datetime-local"
+                  value={announcementForm.expiresAt}
+                  onChange={(e) => setAnnouncementForm({...announcementForm, expiresAt: e.target.value})}
+                  data-testid="input-announcement-expires"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAnnouncementDialog(false);
+                  setEditingAnnouncement(null);
+                  setAnnouncementForm({
+                    title: '',
+                    message: '',
+                    type: 'info',
+                    priority: 'normal',
+                    targetAudience: 'all',
+                    expiresAt: ''
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveAnnouncement}
+                disabled={createAnnouncementMutation.isPending || updateAnnouncementMutation.isPending}
+                data-testid="button-save-announcement"
+              >
+                {createAnnouncementMutation.isPending || updateAnnouncementMutation.isPending ? 
+                  'Saving...' : (editingAnnouncement ? 'Update' : 'Create') + ' Announcement'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mass Email Dialog */}
+        <Dialog open={showMassEmailDialog} onOpenChange={setShowMassEmailDialog}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Send Mass Email</DialogTitle>
+              <DialogDescription>
+                Send emails to selected groups of users
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-job-name">Job Name *</Label>
+                <Input
+                  id="email-job-name"
+                  value={massEmailForm.jobName}
+                  onChange={(e) => setMassEmailForm({...massEmailForm, jobName: e.target.value})}
+                  placeholder="e.g., Monthly Newsletter"
+                  data-testid="input-email-job-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-recipients">Recipient Filter</Label>
+                <Select 
+                  value={massEmailForm.recipientFilter} 
+                  onValueChange={(value) => setMassEmailForm({...massEmailForm, recipientFilter: value})}
+                >
+                  <SelectTrigger data-testid="select-email-recipients">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="bakers">Bakers Only</SelectItem>
+                    <SelectItem value="customers">Customers Only</SelectItem>
+                    <SelectItem value="admins">Admins Only</SelectItem>
+                    <SelectItem value="trial">Trial Users</SelectItem>
+                    <SelectItem value="paid">Paid Users</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-subject">Subject *</Label>
+                <Input
+                  id="email-subject"
+                  value={massEmailForm.subject}
+                  onChange={(e) => setMassEmailForm({...massEmailForm, subject: e.target.value})}
+                  placeholder="Email subject line"
+                  data-testid="input-email-subject"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-body">Body *</Label>
+                <Textarea
+                  id="email-body"
+                  value={massEmailForm.body}
+                  onChange={(e) => setMassEmailForm({...massEmailForm, body: e.target.value})}
+                  placeholder="Enter your email content..."
+                  rows={8}
+                  data-testid="textarea-email-body"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowMassEmailDialog(false);
+                  setMassEmailForm({
+                    jobName: '',
+                    recipientFilter: 'all',
+                    subject: '',
+                    body: ''
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendMassEmail}
+                disabled={sendMassEmailMutation.isPending}
+                data-testid="button-send-mass-email"
+              >
+                {sendMassEmailMutation.isPending ? 'Sending...' : 'Send Email'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Plan Dialog */}
+        <Dialog open={showChangePlanDialog} onOpenChange={setShowChangePlanDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change Tenant Plan</DialogTitle>
+              <DialogDescription>
+                Update the subscription plan for {selectedTenantForAction?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-plan">Select New Plan</Label>
+                <Select value={newPlan} onValueChange={setNewPlan}>
+                  <SelectTrigger data-testid="select-new-plan">
+                    <SelectValue placeholder="Select a plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowChangePlanDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (selectedTenantForAction && newPlan) {
+                    changePlanMutation.mutate({ 
+                      tenantId: selectedTenantForAction.id, 
+                      planType: newPlan 
+                    });
+                  }
+                }}
+                disabled={!newPlan || changePlanMutation.isPending}
+                data-testid="button-confirm-change-plan"
+              >
+                {changePlanMutation.isPending ? 'Updating...' : 'Change Plan'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Activity Logs Dialog */}
+        <Dialog open={showActivityLogsDialog} onOpenChange={setShowActivityLogsDialog}>
+          <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Activity Logs</DialogTitle>
+              <DialogDescription>
+                Viewing activity for {selectedTenantForAction?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {activityLogsLoading ? (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <p className="mt-2 text-muted-foreground">Loading activity logs...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activityLogs.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No activity logs found</p>
+                    </div>
+                  ) : (
+                    activityLogs.map((log: any) => (
+                      <div key={log.id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Activity className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{log.action}</p>
+                          <p className="text-sm text-muted-foreground">{log.details}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(log.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowActivityLogsDialog(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the user
+                {selectedUserForAction && ` "${selectedUserForAction.name}"`} and remove all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSelectedUserForAction(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedUserForAction) {
+                    deleteUserMutation.mutate(selectedUserForAction.id);
+                    setShowDeleteConfirmDialog(false);
+                    setSelectedUserForAction(null);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+                data-testid="button-confirm-delete"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Reset Password Confirmation Dialog */}
+        <AlertDialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset User Password</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will send a password reset link to {selectedUserForAction?.name} at {selectedUserForAction?.email}.
+                The user will need to click the link to set a new password.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSelectedUserForAction(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedUserForAction) {
+                    resetPasswordMutation.mutate(selectedUserForAction.id);
+                  }
+                }}
+                data-testid="button-confirm-reset-password"
+              >
+                Send Reset Link
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
