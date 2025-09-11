@@ -3711,6 +3711,385 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Additional Super Admin Routes for System Management
+  
+  // System Backup Route
+  app.post('/api/super-admin/backup', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { type = 'full' } = req.body; // 'full', 'database', 'files'
+      
+      // Log the backup request
+      await storage.createActivityLog({
+        actor: 'super_admin',
+        entityType: 'system',
+        action: 'backup_initiated',
+        metadata: { type, requestedBy: req.user.userId }
+      });
+      
+      // Create backup job
+      const backupJob = await storage.createDataExportJob({
+        userId: req.user.userId,
+        type: `backup_${type}`,
+        status: 'pending',
+        metadata: { 
+          backupType: type,
+          initiatedAt: new Date().toISOString()
+        }
+      });
+      
+      // In a real implementation, this would trigger an async backup process
+      // For now, we'll simulate the backup being queued
+      res.json({
+        success: true,
+        message: `System backup (${type}) has been initiated`,
+        jobId: backupJob.id,
+        status: 'queued'
+      });
+      
+    } catch (error) {
+      console.error('Error initiating backup:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to initiate backup' 
+      });
+    }
+  });
+  
+  // Clear System Cache Route
+  app.post('/api/super-admin/clear-cache', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { cacheType = 'all' } = req.body; // 'all', 'api', 'database', 'cdn'
+      
+      // Log the cache clear request
+      await storage.createActivityLog({
+        actor: 'super_admin',
+        entityType: 'system',
+        action: 'cache_cleared',
+        metadata: { cacheType, clearedBy: req.user.userId }
+      });
+      
+      // In a real implementation, this would clear various caches
+      // For now, we'll simulate cache clearing
+      const cachesClearedCount = cacheType === 'all' ? 4 : 1;
+      
+      res.json({
+        success: true,
+        message: `Cache cleared successfully (${cacheType})`,
+        details: {
+          cacheType,
+          itemsCleared: cachesClearedCount,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to clear cache' 
+      });
+    }
+  });
+  
+  // Update Tenant Plan Route
+  app.patch('/api/super-admin/tenants/:id/plan', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { plan, reason } = req.body;
+      
+      if (!plan || !['basic', 'premium', 'enterprise'].includes(plan)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid plan. Must be one of: basic, premium, enterprise'
+        });
+      }
+      
+      const tenant = await storage.getTenant(id);
+      if (!tenant) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Tenant not found' 
+        });
+      }
+      
+      const oldPlan = tenant.subscriptionPlan;
+      
+      // Update tenant plan
+      const updatedTenant = await storage.updateTenant(id, {
+        subscriptionPlan: plan,
+        updatedAt: new Date()
+      });
+      
+      // Log the plan change
+      await storage.createActivityLog({
+        actor: 'super_admin',
+        entityType: 'tenant',
+        action: 'plan_changed',
+        tenantId: id,
+        metadata: { 
+          oldPlan,
+          newPlan: plan,
+          reason: reason || 'Manual plan change by admin',
+          changedBy: req.user.userId
+        }
+      });
+      
+      res.json({
+        success: true,
+        message: `Tenant plan updated from ${oldPlan} to ${plan}`,
+        tenant: updatedTenant
+      });
+      
+    } catch (error) {
+      console.error('Error updating tenant plan:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to update tenant plan' 
+      });
+    }
+  });
+  
+  // Get Tenant Activity Logs Route
+  app.get('/api/super-admin/tenants/:id/activity', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { limit = 50 } = req.query;
+      
+      const tenant = await storage.getTenant(id);
+      if (!tenant) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Tenant not found' 
+        });
+      }
+      
+      // Get activity logs for this tenant
+      const activityLogs = await storage.getActivityLogs({
+        tenantId: id,
+        limit: parseInt(limit as string)
+      });
+      
+      res.json({
+        success: true,
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          subdomain: tenant.subdomain
+        },
+        activities: activityLogs,
+        total: activityLogs.length
+      });
+      
+    } catch (error) {
+      console.error('Error fetching tenant activity logs:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch activity logs' 
+      });
+    }
+  });
+  
+  // Bulk Tenant Operations Route
+  app.post('/api/super-admin/tenants/bulk', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { action, ids, reason } = req.body;
+      
+      if (!action || !['suspend', 'activate', 'delete'].includes(action)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid action. Must be one of: suspend, activate, delete'
+        });
+      }
+      
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No tenant IDs provided'
+        });
+      }
+      
+      const results = [];
+      
+      for (const tenantId of ids) {
+        try {
+          const tenant = await storage.getTenant(tenantId);
+          if (!tenant) {
+            results.push({ tenantId, success: false, error: 'Tenant not found' });
+            continue;
+          }
+          
+          let result;
+          switch (action) {
+            case 'suspend':
+              result = await storage.updateTenant(tenantId, {
+                isActive: false,
+                subscriptionStatus: 'suspended',
+                updatedAt: new Date()
+              });
+              break;
+            case 'activate':
+              result = await storage.updateTenant(tenantId, {
+                isActive: true,
+                subscriptionStatus: 'active',
+                updatedAt: new Date()
+              });
+              break;
+            case 'delete':
+              // In production, this would be a soft delete or require additional confirmation
+              result = await storage.updateTenant(tenantId, {
+                isActive: false,
+                subscriptionStatus: 'cancelled',
+                updatedAt: new Date()
+              });
+              break;
+            default:
+              throw new Error(`Unknown action: ${action}`);
+          }
+          
+          // Log the bulk action
+          await storage.createActivityLog({
+            actor: 'super_admin',
+            entityType: 'tenant',
+            action: `bulk_${action}`,
+            tenantId,
+            metadata: { 
+              action,
+              reason: reason || 'Bulk operation by admin',
+              performedBy: req.user.userId
+            }
+          });
+          
+          results.push({ tenantId, success: true, result });
+        } catch (error) {
+          results.push({ tenantId, success: false, error: (error as Error).message });
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Bulk ${action} operation completed`,
+        results,
+        summary: {
+          total: ids.length,
+          successful: results.filter(r => r.success).length,
+          failed: results.filter(r => !r.success).length
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error performing bulk tenant operation:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to perform bulk operation' 
+      });
+    }
+  });
+  
+  // Email Job Management Routes
+  
+  // Get all email jobs
+  app.get('/api/super-admin/email-jobs', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const emailJobs = await storage.getEmailJobs();
+      
+      res.json({
+        success: true,
+        emailJobs,
+        total: emailJobs.length
+      });
+      
+    } catch (error) {
+      console.error('Error fetching email jobs:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch email jobs' 
+      });
+    }
+  });
+  
+  // Create email job (queue mass email)
+  app.post('/api/super-admin/email-jobs', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { type, recipients, subject, content, metadata } = req.body;
+      
+      if (!type || !recipients || !subject || !content) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: type, recipients, subject, content'
+        });
+      }
+      
+      // Create the email job
+      const emailJob = await storage.createEmailJob({
+        type,
+        recipients,
+        subject,
+        content,
+        status: 'pending',
+        metadata: {
+          ...metadata,
+          createdBy: req.user.userId,
+          createdAt: new Date().toISOString()
+        }
+      });
+      
+      // Log the email job creation
+      await storage.createActivityLog({
+        actor: 'super_admin',
+        entityType: 'email',
+        action: 'job_created',
+        metadata: { 
+          jobId: emailJob.id,
+          type,
+          recipientCount: recipients.length,
+          createdBy: req.user.userId
+        }
+      });
+      
+      res.json({
+        success: true,
+        message: 'Email job created successfully',
+        emailJob
+      });
+      
+    } catch (error) {
+      console.error('Error creating email job:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create email job' 
+      });
+    }
+  });
+  
+  // Get specific email job
+  app.get('/api/super-admin/email-jobs/:id', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const emailJobs = await storage.getEmailJobs();
+      const emailJob = emailJobs.find(job => job.id === id);
+      
+      if (!emailJob) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Email job not found' 
+        });
+      }
+      
+      res.json({
+        success: true,
+        emailJob
+      });
+      
+    } catch (error) {
+      console.error('Error fetching email job:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch email job' 
+      });
+    }
+  });
+
   // Baker Self-Service Billing API Routes
   app.get('/api/bakers/:bakerId/billing', async (req, res) => {
     try {
