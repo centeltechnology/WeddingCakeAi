@@ -2969,7 +2969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (!b.subscriptionStatus || b.subscriptionStatus === 'active' || b.subscriptionStatus === 'trialing'));
       
       // Get all users from both users and bakers tables
-      const adminUsers = await storage.getUsersWithRole(''); // Get all admin users
+      const adminUsers = await storage.getAllUsers(); // Get all admin users (super_admin, etc.)
       const totalUsers = adminUsers.length + allBakers.length;
       
       // Calculate basic statistics
