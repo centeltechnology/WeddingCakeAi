@@ -10,7 +10,7 @@ import { type InsertBaker } from "@shared/schema";
 let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2025-08-27.basil",
   });
   console.log('Stripe initialized for baker subscriptions');
 } else {
@@ -408,60 +408,113 @@ export function setupAuthRoutes(app: Express) {
         // Continue with registration even if email fails
       }
 
-      // For paid plans, create Stripe checkout session
-      if (subscriptionPlan !== 'free' && stripe) {
+      // For paid plans, create Stripe checkout session with security and idempotency
+      if (subscriptionPlan !== 'starter' && stripe) {
         try {
-          // Map plan to Stripe price ID
-          const priceIds = {
-            'pro': process.env.STRIPE_PRICE_ID_PROFESSIONAL,
-            'plus': process.env.STRIPE_PRICE_ID_ENTERPRISE
-          };
-
-          const priceId = priceIds[subscriptionPlan as keyof typeof priceIds];
-          if (!priceId) {
-            throw new Error(`No Stripe price ID found for plan: ${subscriptionPlan}`);
+          // Import secure subscription manager
+          const { subscriptionManager } = await import('./subscriptionConfig');
+          
+          // SECURITY: Normalize and validate plan on server side
+          const normalizedPlanId = subscriptionManager.normalizePlanId(subscriptionPlan);
+          const plan = subscriptionManager.getPlan(normalizedPlanId);
+          
+          if (!plan || !subscriptionManager.isPaidPlan(normalizedPlanId)) {
+            throw new Error(`Invalid or unpaid plan: ${subscriptionPlan}`);
           }
 
-          // Create Stripe customer
-          const customer = await stripe.customers.create({
-            email: baker.email,
-            name: baker.name,
-            metadata: {
-              bakerId: baker.id,
-              plan: subscriptionPlan
-            }
-          });
+          const priceId = subscriptionManager.getStripePriceId(normalizedPlanId);
+          if (!priceId) {
+            throw new Error(`No Stripe price ID configured for plan: ${normalizedPlanId}`);
+          }
 
-          // Create checkout session for immediate payment (no trial)
-          const session = await stripe.checkout.sessions.create({
+          // CUSTOMER REUSE: Check if customer already exists to prevent duplicates
+          let customer;
+          if (baker.stripeCustomerId) {
+            try {
+              customer = await stripe.customers.retrieve(baker.stripeCustomerId);
+              console.log('♻️ Reusing existing Stripe customer:', customer.id);
+            } catch (customerError) {
+              console.warn('⚠️ Existing customer not found, creating new one:', customerError);
+              customer = null;
+            }
+          }
+
+          // Create new customer if none exists or retrieval failed
+          if (!customer) {
+            customer = await stripe.customers.create({
+              email: baker.email,
+              name: baker.name,
+              metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
+            });
+            console.log('🆕 Created new Stripe customer:', customer.id);
+
+            // Update baker with customer ID immediately for future reuse
+            await databaseStorage.updateBaker(baker.id, {
+              stripeCustomerId: customer.id
+            } as Partial<InsertBaker>);
+          }
+
+          // IDEMPOTENCY: Check for existing pending checkout sessions to prevent duplicates
+          const existingSessions = await stripe.checkout.sessions.list({
             customer: customer.id,
-            mode: 'subscription',
-            payment_method_types: ['card'],
-            line_items: [
-              {
-                price: priceId,
-                quantity: 1,
-              },
-            ],
-            success_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?payment=success`,
-            cancel_url: `${req.protocol}://${req.get('host')}/signup?payment=cancelled`,
-            metadata: {
-              bakerId: baker.id,
-              plan: subscriptionPlan
-            }
+            status: 'open',
+            limit: 1
           });
 
-          // Update baker with Stripe customer ID
+          let session;
+          if (existingSessions.data.length > 0) {
+            session = existingSessions.data[0];
+            console.log('♻️ Reusing existing checkout session:', session.id);
+          } else {
+            // Create new checkout session with comprehensive metadata and trial
+            session = await stripe.checkout.sessions.create({
+              customer: customer.id,
+              mode: 'subscription',
+              payment_method_types: ['card'],
+              line_items: [
+                {
+                  price: priceId,
+                  quantity: 1,
+                },
+              ],
+              subscription_data: plan.trialDays ? {
+                trial_period_days: plan.trialDays,
+                metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
+              } : {
+                metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
+              },
+              success_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${req.protocol}://${req.get('host')}/signup?payment=cancelled&plan=${normalizedPlanId}`,
+              metadata: {
+                ...subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id),
+                registrationFlow: 'true'
+              },
+              allow_promotion_codes: true,
+              billing_address_collection: 'auto',
+              tax_id_collection: { enabled: true }
+            });
+            console.log('🆕 Created new checkout session:', session.id);
+          }
+
+          // Update baker plan in pending state  
           await databaseStorage.updateBaker(baker.id, {
-            stripeCustomerId: customer.id
+            subscriptionPlan: normalizedPlanId,
+            subscriptionStatus: 'pending'
           } as Partial<InsertBaker>);
 
           return res.status(201).json({
             success: true,
-            message: 'Account created! Redirecting to payment...',
+            message: plan.trialDays ? 
+              `Account created! Start your ${plan.trialDays}-day free trial.` :
+              'Account created! Redirecting to payment...',
             requiresVerification: true,
             emailSent,
             checkoutUrl: session.url,
+            plan: {
+              id: normalizedPlanId,
+              name: plan.name,
+              trialDays: plan.trialDays
+            },
             baker: {
               id: baker.id,
               name: baker.name,
@@ -472,13 +525,14 @@ export function setupAuthRoutes(app: Express) {
           });
 
         } catch (stripeError) {
-          console.error('Stripe checkout creation error:', stripeError);
+          console.error('❌ Stripe checkout creation error:', stripeError);
           // Continue with registration but don't fail completely
           return res.status(201).json({
             success: true,
             message: 'Baker registered successfully! Please contact support to set up your subscription.',
             requiresVerification: true,
             emailSent,
+            error: 'subscription_setup_failed',
             baker: {
               id: baker.id,
               name: baker.name,

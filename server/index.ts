@@ -13,7 +13,9 @@ import Stripe from "stripe";
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-08-27.basil",
+  });
   console.log('Stripe initialized for platform subscriptions');
 } else {
   console.log('Stripe not configured - manual payment system only');
@@ -49,59 +51,195 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
   try {
     console.log('Processing webhook event:', event.type);
     
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object;
-      console.log('Payment succeeded for payment intent:', paymentIntent.id);
-      
-      // Import storage here to avoid circular dependencies
-      const { storage } = await import('./storage');
-      const { sendEmail } = await import('./emailService');
-      
-      // Update transaction status
-      const transactions = await storage.getTransactionsByBakerId(paymentIntent.metadata.bakerId);
-      const transaction = transactions.find(t => t.stripePaymentIntentId === paymentIntent.id);
-      
-      if (transaction) {
-        await storage.updateTransactionStatus(transaction.id, 'completed');
-        
-        // If this was a deposit payment, update quote status
-        if (paymentIntent.metadata.type === 'deposit' && paymentIntent.metadata.quoteId) {
-          await storage.updateQuote(paymentIntent.metadata.quoteId, {
-            status: 'deposit_paid'
-          });
-        }
-        
-        // If this was a final payment, mark quote as fully paid
-        if (paymentIntent.metadata.type === 'final_payment' && paymentIntent.metadata.quoteId) {
-          await storage.updateQuote(paymentIntent.metadata.quoteId, {
-            status: 'paid'
-          });
+    // Import dependencies here to avoid circular dependencies
+    const { storage } = await import('./storage');
+    const { sendEmail } = await import('./emailService');
+    const { subscriptionManager } = await import('./subscriptionConfig');
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        console.log('🎉 Checkout session completed:', session.id);
+
+        // Validate required metadata
+        if (!session.metadata?.bakerId || !session.metadata?.planId) {
+          console.error('❌ Missing required metadata in checkout session:', session.metadata);
+          break;
         }
 
-        // Send confirmation email (if email service is configured)
+        const { bakerId, planId } = session.metadata;
+        const plan = subscriptionManager.getPlan(planId);
+
+        if (!plan) {
+          console.error('❌ Invalid plan ID in checkout session:', planId);
+          break;
+        }
+
+        // Get subscription details from Stripe
+        let subscription: any = null;
+        if (session.subscription) {
+          subscription = await stripe!.subscriptions.retrieve(session.subscription as string);
+        }
+
+        // Update baker with subscription details
+        const updateData: any = {
+          subscriptionPlan: planId,
+          stripeSubscriptionId: subscription?.id || null,
+          subscriptionStatus: subscription?.status || 'active',
+          currentPeriodStart: subscription?.current_period_start ? new Date(subscription.current_period_start * 1000) : null,
+          currentPeriodEnd: subscription?.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
+        };
+
+        // Handle trial status
+        if (subscription?.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000)) {
+          updateData.subscriptionStatus = 'trialing';
+        }
+
+        await storage.updateBaker(bakerId, updateData);
+
+        // Send welcome email
         try {
-          const customer = await storage.getCustomer(paymentIntent.metadata.customerId);
-          if (customer) {
+          const baker = await storage.getBaker(bakerId);
+          if (baker?.email) {
             await sendEmail({
-              to: customer.email,
-              subject: 'Payment Confirmation',
-              text: `Dear ${customer.name},\n\nYour payment of $${(paymentIntent.amount / 100).toFixed(2)} has been successfully processed.\n\nDescription: ${paymentIntent.description}\n\nThank you for your business!`
+              to: baker.email,
+              subject: `Welcome to ${plan.name} Plan!`,
+              text: `Welcome to Bakewise! Your ${plan.name} subscription is now active. You can access all premium features from your dashboard.`,
+              htmlPart: `
+                <h2>Welcome to Bakewise!</h2>
+                <p>Your <strong>${plan.name}</strong> subscription is now active.</p>
+                <p>You can now access all premium features including:</p>
+                <ul>
+                  ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                <p><a href="${process.env.FRONTEND_URL}/baker/${baker.slug}/dashboard">Access your dashboard</a></p>
+              `
             });
           }
         } catch (emailError) {
-          console.error('Failed to send payment confirmation email:', emailError);
-          // Don't fail the webhook for email issues
+          console.error('Failed to send welcome email:', emailError);
         }
-        
-        console.log('Transaction marked as completed:', transaction.id);
+
+        console.log('✅ Baker subscription activated:', { bakerId, planId, subscriptionId: subscription?.id });
+        break;
       }
-    } else if (event.type === 'account.updated') {
-      console.log('Stripe Connect account updated:', event.data.object.id);
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        console.log('🔄 Subscription updated:', subscription.id);
+
+        // Find baker by subscription ID
+        const bakers = await storage.getBakers();
+        const baker = bakers.find((b: any) => b.stripeSubscriptionId === subscription.id);
+
+        if (!baker) {
+          console.error('❌ No baker found for subscription:', subscription.id);
+          break;
+        }
+
+        // Map Stripe subscription status to our status
+        let subscriptionStatus = subscription.status;
+        
+        // Handle trial status specifically
+        if (subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000)) {
+          subscriptionStatus = 'trialing';
+        }
+
+        // Update baker subscription info
+        const updateData: any = {
+          subscriptionStatus,
+          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+        };
+
+        await storage.updateBaker(baker.id, updateData);
+
+        // Handle status changes
+        if (subscription.status === 'canceled') {
+          console.log('📧 Subscription canceled, sending confirmation email');
+          try {
+            if (baker.email) {
+              await sendEmail({
+                to: baker.email,
+                subject: 'Subscription Canceled',
+                text: 'Your Bakewise subscription has been canceled. You can continue using your account until your current period ends.',
+              });
+            }
+          } catch (emailError) {
+            console.error('Failed to send cancellation email:', emailError);
+          }
+        }
+
+        console.log('✅ Baker subscription status updated:', { 
+          bakerId: baker.id, 
+          status: subscriptionStatus,
+          periodEnd: updateData.currentPeriodEnd 
+        });
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        console.log('🗑️ Subscription deleted:', subscription.id);
+
+        // Find baker and downgrade to starter plan
+        const bakers = await storage.getBakers();
+        const baker = bakers.find((b: any) => b.stripeSubscriptionId === subscription.id);
+
+        if (baker) {
+          await storage.updateBaker(baker.id, {
+            subscriptionPlan: 'starter',
+            subscriptionStatus: 'canceled',
+            stripeSubscriptionId: null,
+            currentPeriodStart: null,
+            currentPeriodEnd: null,
+            cancelAtPeriodEnd: false,
+          });
+
+          console.log('✅ Baker downgraded to starter plan:', baker.id);
+        }
+        break;
+      }
+
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object;
+        console.log('💳 Payment succeeded for payment intent:', paymentIntent.id);
+        
+        // Handle one-time payments (quotes, transactions)
+        if (paymentIntent.metadata?.bakerId) {
+          const transactions = await storage.getTransactionsByBakerId(paymentIntent.metadata.bakerId);
+          const transaction = transactions.find(t => t.stripePaymentIntentId === paymentIntent.id);
+          
+          if (transaction) {
+            await storage.updateTransactionStatus(transaction.id, 'completed');
+            
+            // Handle quote status updates
+            if (paymentIntent.metadata.type === 'deposit' && paymentIntent.metadata.quoteId) {
+              await storage.updateQuote(paymentIntent.metadata.quoteId, { status: 'deposit_paid' });
+            } else if (paymentIntent.metadata.type === 'final_payment' && paymentIntent.metadata.quoteId) {
+              await storage.updateQuote(paymentIntent.metadata.quoteId, { status: 'paid' });
+            }
+
+            console.log('✅ Transaction marked as completed:', transaction.id);
+          }
+        }
+        break;
+      }
+
+      case 'account.updated': {
+        console.log('🔧 Stripe Connect account updated:', event.data.object.id);
+        break;
+      }
+
+      default: {
+        console.log('ℹ️ Unhandled webhook event type:', event.type);
+      }
     }
     
     res.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    console.error('❌ Error processing webhook:', error);
     res.status(500).send('Webhook processing failed');
   }
 });

@@ -10,10 +10,11 @@ import {
   type QuoteTemplate, type InsertQuoteTemplate, type Quote, type InsertQuote, type QuoteItem, type InsertQuoteItem,
   type ContractTemplate, type InsertContractTemplate, type Contract, type InsertContract, type ContractSignature, type InsertContractSignature,
   type PaymentPlan, type InsertPaymentPlan, type PaymentSchedule, type InsertPaymentSchedule, type Invoice, type InsertInvoice,
+  type Booking, type InsertBooking,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
-  paymentPlans, paymentSchedule, invoices,
+  paymentPlans, paymentSchedule, invoices, bookings,
   auditLogs, systemAnnouncements, systemHealthMetrics, dataExportJobs, maintenanceSchedule,
   type AuditLog, type InsertAuditLog, type SystemAnnouncement, type InsertSystemAnnouncement,
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
@@ -3345,6 +3346,31 @@ export class DatabaseStorage implements IStorage {
       console.error('Cache clear failed:', error);
       return { success: false };
     }
+  }
+
+  // Booking methods for simplified booking system
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const [booking] = await db
+      .insert(bookings)
+      .values(insertBooking)
+      .returning();
+    return booking;
+  }
+
+  async getBookingsByBakerId(bakerId: string): Promise<Booking[]> {
+    return await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.bakerId, bakerId));
+  }
+
+  async updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking> {
+    const [updatedBooking] = await db
+      .update(bookings)
+      .set(updates)
+      .where(eq(bookings.id, id))
+      .returning();
+    return updatedBooking;
   }
 }
 

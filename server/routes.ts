@@ -7,7 +7,7 @@ import {
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
-  paymentLinksSchema
+  paymentLinksSchema, type Booking, type InsertBooking
 } from "@shared/schema";
 import { authenticateJWT, authorizeBakerWithData, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
@@ -501,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startTime = new Date(booking.startISO);
       const endTime = new Date(booking.endISO);
       
-      const hasConflict = existingBookings.some(existing => {
+      const hasConflict = existingBookings.some((existing: Booking) => {
         if (existing.status === 'cancelled') return false;
         
         const existingStart = new Date(existing.startISO);
@@ -732,8 +732,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessName: baker.businessName,
         description: baker.description,
         address: baker.address,
-        city: baker.city,
-        state: baker.state,
         rating: baker.rating,
         priceRange: baker.priceRange,
         specialties: baker.specialties,
@@ -768,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Only create Stripe customer for paid plans or if specifically requested
-      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter') {
+      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter' && stripe) {
         try {
           const customer = await stripe.customers.create({
             email: bakerData.email,
@@ -790,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create Stripe subscription for paid plans with 14-day trial
-      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter') {
+      if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter' && stripe && bakerWithStripe.stripeCustomerId) {
         const priceIds = {
           professional: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
           enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE
@@ -800,7 +798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (priceId) {
           try {
             const subscription = await stripe.subscriptions.create({
-              customer: customer.id,
+              customer: bakerWithStripe.stripeCustomerId,
               items: [{ price: priceId }],
               trial_period_days: 14,
               metadata: {
@@ -811,8 +809,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             bakerWithStripe.stripeSubscriptionId = subscription.id;
             bakerWithStripe.subscriptionStatus = 'trialing';
-            if (subscription.current_period_end) {
-              bakerWithStripe.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+            if ((subscription as any).current_period_end) {
+              bakerWithStripe.currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
             }
           } catch (stripeError) {
             console.error('Error creating Stripe subscription:', stripeError);
@@ -1052,6 +1050,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { amount, bakerId, customerId, type, quoteId, description } = req.body;
       
+      if (!stripe) {
+        return res.status(500).json({ message: 'Payment processing not configured' });
+      }
+      
       // Get baker info to check for Stripe Connect account
       const baker = await storage.getBaker(bakerId);
       if (!baker) {
@@ -1148,6 +1150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No deposit amount set for this quote" });
       }
 
+      if (!stripe) {
+        return res.status(500).json({ message: 'Payment processing not configured' });
+      }
+
       const customer = await storage.getCustomer(quote.customerId);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
@@ -1226,6 +1232,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (finalAmount <= 0) {
         return res.status(400).json({ message: "No final payment required" });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ message: 'Payment processing not configured' });
       }
 
       const customer = await storage.getCustomer(quote.customerId);
@@ -1314,13 +1324,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get the availability record to check ownership
-      const existingAvailability = await storage.getAvailability(id);
+      const existingAvailability = await storage.getAvailabilityByBakerId(id).then(avails => avails.find(a => a.id === id));
       if (!existingAvailability) {
         return res.status(404).json({ message: "Availability not found" });
       }
 
       // Check if user owns this availability record
-      if (user.role === 'baker' && user.userId !== existingAvailability.bakerId) {
+      if (user.role === 'baker' && user.userId !== existingAvailability?.bakerId) {
         return res.status(403).json({ 
           error: 'Access forbidden',
           message: 'You can only modify your own availability'
@@ -1339,7 +1349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = insertAvailabilitySchema.partial().parse(req.body);
       
       // Ensure bakerId cannot be changed
-      if ('bakerId' in updates && updates.bakerId !== existingAvailability.bakerId) {
+      if ('bakerId' in updates && updates.bakerId !== existingAvailability?.bakerId) {
         return res.status(400).json({ 
           error: 'Invalid update',
           message: 'Cannot change availability ownership'
@@ -3400,8 +3410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parameters: {
           dateRange: dateRange || {},
           filters: filters || {}
-        },
-        progress: 0
+        }
       });
       
       // Simulate export processing
@@ -3409,13 +3418,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           await storage.updateDataExportJob(job.id, {
             status: 'processing'
-            // progress: 50 - field removed from schema
           });
           
           setTimeout(async () => {
             await storage.updateDataExportJob(job.id, {
               status: 'completed',
-              // progress: 100, - field removed from schema
               downloadUrl: `/exports/${job.id}.${format}`,
               fileSize: Math.floor(Math.random() * 1000000)
             });
@@ -3467,7 +3474,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title,
         message,
         type: type || 'info',
-        // priority: priority || 'normal', - field removed from schema
         targetAudience: targetAudience || 'all',
         isActive: true,
         createdById: req.user.userId,
@@ -3559,7 +3565,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schedule = await storage.createMaintenanceSchedule({
         title,
         description,
-        // type, - field removed from schema
         status: 'scheduled',
         scheduledStart: new Date(scheduledStart),
         scheduledEnd: new Date(scheduledEnd),
@@ -3573,7 +3578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'maintenance_scheduled',
         resource: 'maintenance',
         resourceId: schedule.id,
-        details: { title, type, scheduledStart },
+        details: { title, scheduledStart },
         ipAddress: req.ip
       });
       
@@ -4144,6 +4149,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
 
+      if (!stripe) {
+        return res.json([]);
+      }
+
       // Fetch invoices from Stripe
       const invoices = await stripe.invoices.list({
         customer: baker.stripeCustomerId,
@@ -4225,75 +4234,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/bakers/:bakerId/billing/change-plan', async (req, res) => {
+  // SECURE plan change endpoint with authentication and validation
+  app.post('/api/bakers/:bakerId/billing/change-plan', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
       const { bakerId } = req.params;
       const { planId } = req.body;
       
-      const baker = await storage.getBaker(bakerId);
+      // Import secure subscription manager
+      const { subscriptionManager } = await import('./subscriptionConfig');
+      
+      const baker = req.baker; // Already loaded and validated by middleware
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
       }
 
-      // Handle downgrade to free plan
-      if (planId === 'free') {
+      // SECURITY: Normalize and validate plan on server side
+      const normalizedPlanId = subscriptionManager.normalizePlanId(planId);
+      const targetPlan = subscriptionManager.getPlan(normalizedPlanId);
+      
+      if (!targetPlan) {
+        return res.status(400).json({ error: 'Invalid plan specified' });
+      }
+
+      // Check if user can transition to this plan
+      const currentPlan = baker.subscriptionPlan || 'starter';
+      const transitionCheck = subscriptionManager.canUpgradeToPlan(currentPlan, normalizedPlanId);
+      
+      if (!transitionCheck.allowed) {
+        return res.status(400).json({ error: transitionCheck.reason });
+      }
+
+      // Handle downgrade to starter plan
+      if (normalizedPlanId === 'starter') {
+        // Cancel existing subscription at period end if exists
+        if (baker.stripeSubscriptionId && stripe) {
+          try {
+            await stripe!.subscriptions.update(baker.stripeSubscriptionId, {
+              cancel_at_period_end: true
+            });
+            
+            await storage.updateBaker(bakerId, {
+              cancelAtPeriodEnd: true
+            });
+            
+            return res.json({ 
+              success: true, 
+              message: 'Your subscription will be cancelled at the end of the current billing period. You can continue using premium features until then.' 
+            });
+          } catch (stripeError) {
+            console.error('Error cancelling subscription:', stripeError);
+            // Fallback to immediate downgrade
+          }
+        }
+        
+        // Immediate downgrade for non-Stripe subscriptions
         await storage.updateBaker(bakerId, {
-          subscriptionPlan: 'free',
+          subscriptionPlan: 'starter',
           subscriptionStatus: 'active',
           cancelAtPeriodEnd: false
         });
         
-        return res.json({ success: true, message: 'Plan downgraded to Free' });
+        return res.json({ success: true, message: 'Plan changed to Starter' });
       }
 
       // Handle upgrade/change to paid plan
-      const plans = {
-        professional: { priceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL, price: 19 },
-        plus: { priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE, price: 39 }
-      };
-
-      const selectedPlan = plans[planId as keyof typeof plans];
-      if (!selectedPlan?.priceId) {
-        return res.status(400).json({ error: 'Invalid plan selected' });
+      if (!stripe) {
+        return res.status(503).json({ error: 'Payment processing not available' });
       }
 
-      // Create or retrieve Stripe customer
-      let stripeCustomerId = baker.stripeCustomerId;
-      if (!stripeCustomerId) {
-        const customer = await stripe.customers.create({
+      const priceId = subscriptionManager.getStripePriceId(normalizedPlanId);
+      if (!priceId) {
+        return res.status(400).json({ error: 'Plan not available for purchase' });
+      }
+
+      // CUSTOMER REUSE: Check if customer already exists
+      let customer;
+      if (baker.stripeCustomerId) {
+        try {
+          customer = await stripe.customers.retrieve(baker.stripeCustomerId);
+          console.log('♻️ Reusing existing Stripe customer for plan change:', customer.id);
+        } catch (customerError) {
+          console.warn('⚠️ Existing customer not found during plan change:', customerError);
+          customer = null;
+        }
+      }
+
+      // Create new customer if needed
+      if (!customer) {
+        customer = await stripe.customers.create({
           email: baker.email,
           name: baker.name,
-          metadata: { bakerId }
+          metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
         });
-        stripeCustomerId = customer.id;
         
         await storage.updateBaker(bakerId, {
-          stripeCustomerId
+          stripeCustomerId: customer.id
         });
+        console.log('🆕 Created new customer for plan change:', customer.id);
       }
 
-      // Create Stripe Checkout session
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: selectedPlan.priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing&success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/baker-dashboard?tab=billing&cancelled=true`,
-        metadata: {
-          bakerId,
-          planId
-        }
+      // IDEMPOTENCY: Check for existing pending checkout sessions
+      const existingSessions = await stripe.checkout.sessions.list({
+        customer: customer.id,
+        status: 'open',
+        limit: 1
       });
 
-      res.json({ checkoutUrl: session.url });
+      let session;
+      if (existingSessions.data.length > 0) {
+        session = existingSessions.data[0];
+        console.log('♻️ Reusing existing checkout session for plan change:', session.id);
+      } else {
+        // Handle subscription mode based on current status
+        let mode: 'subscription' | 'setup' = 'subscription';
+        let subscriptionData: any = {};
+
+        // If baker has active subscription, create a new subscription (Stripe will handle proration)
+        if (baker.stripeSubscriptionId) {
+          mode = 'subscription';
+          subscriptionData = {
+            metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
+          };
+        } else {
+          // New subscription with trial if configured
+          if (targetPlan.trialDays) {
+            subscriptionData.trial_period_days = targetPlan.trialDays;
+          }
+          subscriptionData.metadata = subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id);
+        }
+
+        // Create new checkout session
+        session = await stripe.checkout.sessions.create({
+          customer: customer.id,
+          mode,
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          subscription_data: subscriptionData,
+          success_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?tab=billing&success=true&plan=${normalizedPlanId}`,
+          cancel_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?tab=billing&cancelled=true`,
+          metadata: {
+            ...subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id),
+            planChangeFlow: 'true',
+            previousPlan: currentPlan
+          },
+          allow_promotion_codes: true,
+          billing_address_collection: 'auto'
+        });
+        console.log('🆕 Created new checkout session for plan change:', session.id);
+      }
+
+      // Update baker status to pending
+      await storage.updateBaker(bakerId, {
+        subscriptionStatus: 'pending'
+      });
+
+      res.json({ 
+        checkoutUrl: session.url,
+        plan: {
+          id: normalizedPlanId,
+          name: targetPlan.name,
+          trialDays: targetPlan.trialDays
+        }
+      });
+      
     } catch (error) {
-      console.error('Error changing plan:', error);
+      console.error('❌ Error changing plan:', error);
       res.status(500).json({ error: 'Failed to change subscription plan' });
     }
   });
@@ -4305,6 +4415,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!baker?.stripeCustomerId) {
         return res.status(404).json({ error: 'No active subscription found' });
+      }
+
+      if (!stripe) {
+        return res.status(503).json({ error: 'Payment processing not available' });
       }
 
       // Get active subscriptions
@@ -4345,6 +4459,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      if (!stripe) {
+        return res.status(503).json({ error: 'Payment processing not available' });
       }
 
       // If baker doesn't have a Stripe customer ID, create one
