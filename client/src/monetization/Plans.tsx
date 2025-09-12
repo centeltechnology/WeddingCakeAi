@@ -19,7 +19,6 @@ interface Plan {
   icon: React.ReactNode;
   features: PlanFeature[];
   highlighted?: boolean;
-  stripeLink?: string;
 }
 
 const plans: Plan[] = [
@@ -49,7 +48,6 @@ const plans: Plan[] = [
     description: 'Perfect for growing cottage bakers',
     icon: <Crown className="w-8 h-8 text-purple-600" />,
     highlighted: true,
-    stripeLink: STRIPE_LINKS.proMonthly,
     features: [
       { text: 'Unlimited leads & customers', included: true },
       { text: 'Full portfolio with unlimited photos', included: true },
@@ -68,7 +66,6 @@ const plans: Plan[] = [
     monthly: 'per month',
     description: 'For established bakeries scaling up',
     icon: <Rocket className="w-8 h-8 text-orange-600" />,
-    stripeLink: STRIPE_LINKS.plusMonthly,
     features: [
       { text: 'Everything in Professional', included: true },
       { text: 'Priority marketplace placement', included: true },
@@ -99,7 +96,7 @@ export default function Plans({ bakerId, onPlanChange }: PlansProps) {
     }
   }, []);
 
-  const handlePlanSelect = async (planId: 'free' | 'pro' | 'plus', stripeLink?: string) => {
+  const handlePlanSelect = async (planId: 'free' | 'pro' | 'plus') => {
     if (!DEMO_MODE && bakerId) {
       // Use server-side plan change endpoint for authenticated bakers
       try {
@@ -126,7 +123,7 @@ export default function Plans({ bakerId, onPlanChange }: PlansProps) {
       }
     } else if (!DEMO_MODE && planId !== 'free') {
       // For non-authenticated users wanting paid plans, redirect to signup
-      window.location.href = '/baker-signup';
+      window.location.href = '/signup';
     } else {
       // Demo mode, free plan, or fallback
       setActivePlan(planId);
@@ -194,7 +191,7 @@ export default function Plans({ bakerId, onPlanChange }: PlansProps) {
                     ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl'
                     : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold shadow-md hover:shadow-lg'
                 }`}
-                onClick={() => handlePlanSelect(plan.id, plan.stripeLink)}
+                onClick={() => handlePlanSelect(plan.id)}
                 data-testid={`button-select-${plan.id}`}
               >
                 {activePlan === plan.id ? (

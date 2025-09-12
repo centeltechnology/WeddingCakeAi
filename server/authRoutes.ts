@@ -10,7 +10,7 @@ import { type InsertBaker } from "@shared/schema";
 let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-08-27.basil",
+    apiVersion: "2024-06-20",
   });
   console.log('Stripe initialized for baker subscriptions');
 } else {
@@ -477,10 +477,8 @@ export function setupAuthRoutes(app: Express) {
                   quantity: 1,
                 },
               ],
-              subscription_data: plan.trialDays ? {
-                trial_period_days: plan.trialDays,
-                metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
-              } : {
+              subscription_data: {
+                // No trial period - immediate billing enforced
                 metadata: subscriptionManager.generatePlanMetadata(normalizedPlanId, baker.id)
               },
               success_url: `${req.protocol}://${req.get('host')}/baker/${baker.slug}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -504,16 +502,13 @@ export function setupAuthRoutes(app: Express) {
 
           return res.status(201).json({
             success: true,
-            message: plan.trialDays ? 
-              `Account created! Start your ${plan.trialDays}-day free trial.` :
-              'Account created! Redirecting to payment...',
+            message: 'Account created! Redirecting to payment...',
             requiresVerification: true,
             emailSent,
             checkoutUrl: session.url,
             plan: {
               id: normalizedPlanId,
-              name: plan.name,
-              trialDays: plan.trialDays
+              name: plan.name
             },
             baker: {
               id: baker.id,

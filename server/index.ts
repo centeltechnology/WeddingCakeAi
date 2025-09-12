@@ -8,13 +8,17 @@ import { startEmailAutomationScheduler } from "./emailAutomation";
 
 const app = express();
 
+// In-memory store for webhook idempotency (prevent duplicate processing)
+// In production, consider using Redis or database for persistence across restarts
+const processedWebhookEvents = new Set<string>();
+
 // Import stripe for webhook handler (optional for manual payment system)
 import Stripe from "stripe";
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-08-27.basil",
+    apiVersion: "2024-06-20",
   });
   console.log('Stripe initialized for platform subscriptions');
 } else {
@@ -46,6 +50,17 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
     console.error('❌ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  // Idempotency check using event ID
+  const eventId = event.id;
+  if (processedWebhookEvents.has(eventId)) {
+    console.log('🔄 Event already processed, skipping:', eventId);
+    return res.json({ received: true, status: 'already_processed' });
+  }
+
+  // Mark event as processed (add to idempotency set)
+  processedWebhookEvents.add(eventId);
+  console.log('📝 Event marked as processed:', eventId);
 
   // Process the webhook event
   try {
