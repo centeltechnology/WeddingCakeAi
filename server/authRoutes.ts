@@ -780,7 +780,7 @@ export function setupAuthRoutes(app: Express) {
   });
 
   // Email verification endpoint
-  app.get('/verify-email', async (req, res) => {
+  app.get('/api/verify-email', async (req, res) => {
     try {
       const { token } = req.query;
       

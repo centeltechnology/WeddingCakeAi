@@ -41,7 +41,7 @@ export default function VerifyEmail() {
     // Verify the email with the token
     const verifyEmail = async () => {
       try {
-        const response = await fetch(`/verify-email?token=${encodeURIComponent(token)}`, {
+        const response = await fetch(`/api/verify-email?token=${encodeURIComponent(token)}`, {
           method: 'GET',
           credentials: 'include',
         });
