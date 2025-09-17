@@ -155,14 +155,20 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     timeline: "flexible"
   });
 
-  // Fetch baker information for branding
+  // Fetch baker information for branding - with retry and fallback
   const { data: baker } = useQuery({
     queryKey: [`/api/bakers/${bakerId}`],
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fetch dynamic pricing configuration
+  // Fetch dynamic pricing configuration - with retry and fallback
   const { data: pricingConfig } = useQuery({
     queryKey: [`/api/bakers/${bakerId}/pricing`],
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Use dynamic pricing or fallback to defaults (memoized for performance)
@@ -332,16 +338,17 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
     };
   };
 
-  if (!baker) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2 text-muted-foreground">Loading cake calculator...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't block on baker loading - calculator can work with fallback data
+  // if (!baker) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100">
+  //       <div className="text-center">
+  //         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  //         <p className="mt-2 text-muted-foreground">Loading cake calculator...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100 ${className || ''}`}>
@@ -360,7 +367,7 @@ export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculato
               </div>
               <div>
                 <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  {(baker as any)?.name || 'Loading...'}
+                  {(baker as any)?.name || 'Wedding Cake Calculator'}
                 </h1>
                 <p className="text-sm text-gray-600 font-medium">AI-Powered Cake Designer</p>
               </div>
