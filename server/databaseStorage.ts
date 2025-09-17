@@ -123,6 +123,8 @@ export class DatabaseStorage {
     paymentLinks?: any;
     availability?: any;
     stripeCustomerId?: string;
+    subscriptionPlan?: string;
+    subscriptionStatus?: string;
   }) {
     const validUpdates: any = {};
     
@@ -133,6 +135,8 @@ export class DatabaseStorage {
     if (updates.paymentLinks !== undefined) validUpdates.paymentLinks = updates.paymentLinks;
     if (updates.availability !== undefined) validUpdates.availability = updates.availability;
     if (updates.stripeCustomerId !== undefined) validUpdates.stripeCustomerId = updates.stripeCustomerId;
+    if (updates.subscriptionPlan !== undefined) validUpdates.subscriptionPlan = updates.subscriptionPlan;
+    if (updates.subscriptionStatus !== undefined) validUpdates.subscriptionStatus = updates.subscriptionStatus;
 
     await db
       .update(bakers)
