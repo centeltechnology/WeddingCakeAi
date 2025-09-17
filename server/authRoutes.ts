@@ -489,6 +489,10 @@ export function setupAuthRoutes(app: Express) {
               },
               allow_promotion_codes: true,
               billing_address_collection: 'auto',
+              customer_update: {
+                name: 'auto',
+                address: 'auto'
+              },
               tax_id_collection: { enabled: true }
             });
             console.log('🆕 Created new checkout session:', session.id);
