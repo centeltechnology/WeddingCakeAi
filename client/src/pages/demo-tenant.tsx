@@ -211,7 +211,7 @@ export default function DemoTenant() {
                     variant="outline"
                     data-testid="button-try-lead-capture"
                   >
-                    <Link href="/baker/70c29a5d-72f3-443f-8c39-c2ced5210f05/calculator">
+                    <Link href="/calculator">
                       <ChefHat className="h-4 w-4 mr-2" />
                       Try Live Lead Capture Demo
                     </Link>

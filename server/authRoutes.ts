@@ -409,7 +409,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // For paid plans, create Stripe checkout session with security and idempotency
-      if (subscriptionPlan !== 'starter' && stripe) {
+      if (subscriptionPlan !== 'free' && stripe) {
         try {
           // Import secure subscription manager
           const { subscriptionManager } = await import('./subscriptionConfig');
