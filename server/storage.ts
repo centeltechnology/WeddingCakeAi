@@ -2795,7 +2795,9 @@ export class DatabaseStorage implements IStorage {
     const [template] = await db.select().from(quoteTemplates).where(eq(quoteTemplates.id, id));
     return template || undefined;
   }
-  async getQuoteTemplatesByBaker(bakerId: string): Promise<QuoteTemplate[]> { return []; }
+  async getQuoteTemplatesByBaker(bakerId: string): Promise<QuoteTemplate[]> {
+    return await db.select().from(quoteTemplates).where(eq(quoteTemplates.bakerId, bakerId));
+  }
   async getQuoteTemplates(bakerId: string): Promise<QuoteTemplate[]> {
     return await db.select().from(quoteTemplates).where(eq(quoteTemplates.bakerId, bakerId));
   }

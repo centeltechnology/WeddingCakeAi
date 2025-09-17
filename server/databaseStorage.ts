@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { users, bakers, bookings, type Booking, type InsertBooking } from "@shared/schema";
+import { users, bakers, bookings, quoteTemplates, type Booking, type InsertBooking } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { generateUniqueSlug } from "./utils";
 
@@ -304,6 +304,14 @@ export class DatabaseStorage {
       .where(eq(bookings.id, id))
       .returning();
     return updatedBooking;
+  }
+
+  // Quote template methods
+  async getQuoteTemplatesByBaker(bakerId: string) {
+    return await db
+      .select()
+      .from(quoteTemplates)
+      .where(eq(quoteTemplates.bakerId, bakerId));
   }
 }
 

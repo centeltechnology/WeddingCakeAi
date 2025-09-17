@@ -1929,55 +1929,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { bakerId } = req.params;
       
-      // Mock pricing configuration - in real app, fetch from database
+      // Fetch from database
+      const templates = await storage.getQuoteTemplatesByBaker(bakerId);
+      
+      if (!templates || templates.length === 0) {
+        // Fallback to mock data if no templates found
+        const pricingConfig = {
+          id: `pricing-${bakerId}`,
+          bakerId,
+          cakeSizes: [
+            { size: "6-inch", servings: 12, basePrice: 75, costToMake: 30, profitMargin: 60 },
+            { size: "8-inch", servings: 24, basePrice: 95, costToMake: 40, profitMargin: 58 },
+            { size: "10-inch", servings: 38, basePrice: 125, costToMake: 55, profitMargin: 56 },
+            { size: "12-inch", servings: 56, basePrice: 155, costToMake: 75, profitMargin: 52 },
+            { size: "14-inch", servings: 78, basePrice: 195, costToMake: 100, profitMargin: 49 }
+          ],
+          shapes: [
+            { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
+            { id: "heart", name: "Heart", baseUpcharge: 15, costToMake: 8, profitMargin: 47 },
+            { id: "square", name: "Square", baseUpcharge: 10, costToMake: 5, profitMargin: 50 }
+          ],
+          flavors: [
+            { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false },
+            { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false },
+            { id: "red-velvet", name: "Red Velvet", upcharge: 18, isPremium: true },
+            { id: "funfetti", name: "Funfetti", upcharge: 8, isPremium: false }
+          ],
+          decorations: [
+            { id: "fresh-roses", name: "Fresh Roses", description: "Beautiful fresh roses", price: 50, category: "flowers", isActive: true },
+            { id: "buttercream-rosettes", name: "Buttercream Rosettes", description: "Hand-piped roses", price: 40, category: "design", isActive: true },
+            { id: "gold-leaf", name: "Gold Leaf Accent", description: "Edible gold leaf", price: 95, category: "design", isActive: true }
+          ],
+          taxRate: 8.75,
+          deliverySettings: { baseDeliveryFee: 50 },
+          lastUpdated: new Date().toISOString()
+        };
+        return res.json(pricingConfig);
+      }
+
+      // Use the first active template
+      const template = templates.find(t => t.isActive) || templates[0];
+      
+      // Transform database data to expected format
       const pricingConfig = {
-        id: `pricing-${bakerId}`,
+        id: template.id,
         bakerId,
-        cakeSizes: [
-          { size: "6-inch", servings: 12, basePrice: 75, costToMake: 30, profitMargin: 60 },
-          { size: "8-inch", servings: 24, basePrice: 95, costToMake: 40, profitMargin: 58 },
-          { size: "10-inch", servings: 38, basePrice: 125, costToMake: 55, profitMargin: 56 },
-          { size: "12-inch", servings: 56, basePrice: 155, costToMake: 75, profitMargin: 52 },
-          { size: "14-inch", servings: 78, basePrice: 195, costToMake: 100, profitMargin: 49 }
+        cakeSizes: (template.tiers as any[])?.map((tier: any) => ({
+          size: `${tier.diameter}-inch`,
+          servings: tier.servings,
+          basePrice: tier.basePrice,
+          costToMake: Math.round(tier.basePrice * 0.4), // Estimated 40% cost
+          profitMargin: Math.round(60 - (tier.tierNumber * 2)) // Decreasing margin by size
+        })) || [
+          { size: "8-inch", servings: 24, basePrice: 95, costToMake: 40, profitMargin: 58 }
         ],
         shapes: [
           { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
           { id: "heart", name: "Heart", baseUpcharge: 15, costToMake: 8, profitMargin: 47 },
           { id: "square", name: "Square", baseUpcharge: 10, costToMake: 5, profitMargin: 50 }
         ],
-        flavors: [
-          { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false },
-          { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false },
-          { id: "strawberry", name: "Fresh Strawberry", upcharge: 0, isPremium: false },
-          { id: "lemon", name: "Lemon Zest", upcharge: 0, isPremium: false },
-          { id: "red-velvet", name: "Red Velvet", upcharge: 18, isPremium: true },
-          { id: "funfetti", name: "Funfetti", upcharge: 8, isPremium: false },
-          { id: "carrot", name: "Carrot Spice", upcharge: 20, isPremium: true },
-          { id: "champagne", name: "Champagne", upcharge: 28, isPremium: true },
-          { id: "salted-caramel", name: "Salted Caramel", upcharge: 25, isPremium: true },
-          { id: "cookies-cream", name: "Cookies & Cream", upcharge: 15, isPremium: true }
-        ],
-        decorations: [
-          { id: "fresh-roses", name: "Fresh Roses", description: "Beautiful fresh roses", price: 50, costToMake: 22, category: "flowers", isActive: true },
-          { id: "fresh-peonies", name: "Fresh Peonies", description: "Elegant peonies", price: 70, costToMake: 32, category: "flowers", isActive: true },
-          { id: "buttercream-rosettes", name: "Buttercream Rosettes", description: "Hand-piped roses", price: 40, costToMake: 18, category: "design", isActive: true },
-          { id: "fondant-draping", name: "Fondant Draping", description: "Elegant draping", price: 60, costToMake: 28, category: "design", isActive: true },
-          { id: "gold-leaf", name: "Gold Leaf Accent", description: "Edible gold leaf", price: 95, costToMake: 50, category: "design", isActive: true },
-          { id: "custom-monogram", name: "Custom Monogram", description: "Personalized monogram", price: 50, costToMake: 18, category: "topper", isActive: true }
-        ],
-        taxRate: 9.25,
+        flavors: (template.flavorOptions as any[])?.map((flavor: any) => ({
+          id: flavor.id,
+          name: flavor.name,
+          upcharge: flavor.priceModifier || 0,
+          isPremium: (flavor.priceModifier || 0) > 10
+        })) || [],
+        decorations: (template.addOns as any[])?.map((addon: any) => ({
+          id: addon.id,
+          name: addon.name,
+          description: addon.description,
+          price: addon.price,
+          category: addon.category,
+          isActive: true
+        })) || [],
+        taxRate: 8.75, // Default tax rate
         deliverySettings: {
-          baseDeliveryFee: 60,
+          baseDeliveryFee: (template.deliveryOptions as any[])?.find((d: any) => d.id === 'standard')?.price || 50,
           freeDeliveryMinimum: 250,
           deliveryRadius: 30,
           perMileRate: 3.0
         },
         profitSettings: {
-          defaultMargin: 58,
+          defaultMargin: template.profitMargin || 58,
           minimumMargin: 40,
           laborRate: 30
         },
-        lastUpdated: new Date().toISOString()
+        lastUpdated: template.updatedAt?.toISOString() || new Date().toISOString()
       };
 
       res.json(pricingConfig);
