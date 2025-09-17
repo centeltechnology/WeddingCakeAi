@@ -211,10 +211,10 @@ export default function DemoTenant() {
                     variant="outline"
                     data-testid="button-try-lead-capture"
                   >
-                    <Link href="/calculator">
+                    <a href="/calculator" target="_blank" rel="noopener noreferrer">
                       <ChefHat className="h-4 w-4 mr-2" />
                       Try Live Lead Capture Demo
-                    </Link>
+                    </a>
                   </Button>
                   <p className="text-xs text-muted-foreground">
                     See how customers submit cake inquiries that appear in your CRM
