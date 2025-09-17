@@ -122,6 +122,7 @@ export class DatabaseStorage {
     verificationTokenExpiry?: Date | null;
     paymentLinks?: any;
     availability?: any;
+    stripeCustomerId?: string;
   }) {
     const validUpdates: any = {};
     
@@ -131,6 +132,7 @@ export class DatabaseStorage {
     if (updates.verificationTokenExpiry !== undefined) validUpdates.verificationTokenExpiry = updates.verificationTokenExpiry;
     if (updates.paymentLinks !== undefined) validUpdates.paymentLinks = updates.paymentLinks;
     if (updates.availability !== undefined) validUpdates.availability = updates.availability;
+    if (updates.stripeCustomerId !== undefined) validUpdates.stripeCustomerId = updates.stripeCustomerId;
 
     await db
       .update(bakers)
