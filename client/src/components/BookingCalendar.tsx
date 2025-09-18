@@ -49,7 +49,11 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
     queryKey: [`/api/bakers/${baker.id}/availability`],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/bakers/${baker.id}/availability`);
-      return response as Availability[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch availability');
+      }
+      const data = await response.json();
+      return data as Availability[];
     },
   });
 
@@ -63,7 +67,10 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
       });
       
       if (onBookingComplete) {
-        onBookingComplete(consultation.id);
+        const consultationId = typeof consultation === 'object' && consultation && 'id' in consultation 
+          ? String(consultation.id)
+          : 'unknown';
+        onBookingComplete(consultationId);
       }
       
       // Reset form

@@ -355,12 +355,25 @@ export default function BakerProfile() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href={`/baker/${baker.id}/calculator`}>
-                  <Button className="w-full" data-testid="button-get-quote-sidebar">
+                  <Button className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold" data-testid="button-get-quote-sidebar">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Get Price Quote
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full" data-testid="button-send-message">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-rose-300 text-rose-600 hover:bg-rose-50" 
+                  data-testid="button-send-message"
+                  onClick={() => {
+                    const subject = encodeURIComponent(`Inquiry about ${baker.businessName || baker.name}`);
+                    const body = encodeURIComponent(`Hi ${baker.name},\n\nI'm interested in your cake services and would like to discuss my upcoming event.\n\nBest regards`);
+                    if (baker.email) {
+                      window.location.href = `mailto:${baker.email}?subject=${subject}&body=${body}`;
+                    } else {
+                      alert('Contact information not available. Please use the phone number to reach this baker.');
+                    }
+                  }}
+                >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Send Message
                 </Button>
@@ -406,7 +419,20 @@ export default function BakerProfile() {
                       <p className="text-sm text-gray-500">Serves 50 mile radius</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50"
+                    data-testid="button-view-on-map"
+                    onClick={() => {
+                      if (baker.address) {
+                        const encodedAddress = encodeURIComponent(baker.address);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+                      } else {
+                        alert('Address not available for this baker.');
+                      }
+                    }}
+                  >
                     View on Map
                   </Button>
                 </div>
