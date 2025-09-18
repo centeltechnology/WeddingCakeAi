@@ -5,19 +5,33 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MapPin, Star, Phone, Globe, Instagram, Facebook, 
-  Clock, DollarSign, Award, Users, Calendar, MessageSquare 
+  Clock, DollarSign, Award, Users, Calendar, MessageSquare, Check
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import type { Baker } from "@shared/schema";
+import type { Baker, Review, InsertReview } from "@shared/schema";
 import { BookingCalendar } from "@/components/BookingCalendar";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertReviewSchema } from "@shared/schema";
+import { format } from "date-fns";
 
 export default function BakerProfile() {
   const params = useParams();
   const bakerId = params.id;
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: baker, isLoading } = useQuery<Baker>({
     queryKey: [`/api/bakers/${bakerId}`],
@@ -284,56 +298,7 @@ export default function BakerProfile() {
               </TabsContent>
               
               <TabsContent value="reviews" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Customer Reviews</CardTitle>
-                    <CardDescription>What our clients say</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Sample reviews */}
-                      <div className="border-b pb-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star key={star} className="h-4 w-4 text-yellow-500 fill-current" />
-                              ))}
-                            </div>
-                            <span className="ml-2 font-medium">Sarah Johnson</span>
-                          </div>
-                          <span className="text-sm text-gray-500">2 weeks ago</span>
-                        </div>
-                        <p className="text-gray-700">
-                          "Absolutely stunning wedding cake! The design exceeded our expectations and the taste was incredible. 
-                          Everyone at our reception couldn't stop raving about it."
-                        </p>
-                      </div>
-                      
-                      <div className="border-b pb-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star key={star} className="h-4 w-4 text-yellow-500 fill-current" />
-                              ))}
-                            </div>
-                            <span className="ml-2 font-medium">Michael Chen</span>
-                          </div>
-                          <span className="text-sm text-gray-500">1 month ago</span>
-                        </div>
-                        <p className="text-gray-700">
-                          "Professional service from start to finish. The consultation was thorough and the final cake was 
-                          exactly what we envisioned. Highly recommend!"
-                        </p>
-                      </div>
-                      
-                      <Button variant="outline" className="w-full" data-testid="button-see-all-reviews">
-                        See All Reviews
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ReviewsSection bakerId={baker.id} />
               </TabsContent>
             </Tabs>
           </div>
@@ -444,5 +409,300 @@ export default function BakerProfile() {
       
       <Footer />
     </div>
+  );
+}
+
+// Reviews Section Component
+function ReviewsSection({ bakerId }: { bakerId: string }) {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch reviews for this baker
+  const { data: reviews = [], isLoading: reviewsLoading } = useQuery<Review[]>({
+    queryKey: [`/api/bakers/${bakerId}/reviews`],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/bakers/${bakerId}/reviews`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+      return await response.json();
+    },
+  });
+
+  // Form for submitting new reviews
+  const form = useForm<InsertReview>({
+    resolver: zodResolver(insertReviewSchema),
+    defaultValues: {
+      bakerId,
+      customerName: "",
+      customerEmail: "",
+      rating: 5,
+      reviewText: "",
+      cakeStyle: "",
+      isVerified: false,
+    },
+  });
+
+  // Submit review mutation
+  const submitReviewMutation = useMutation({
+    mutationFn: async (reviewData: InsertReview) => {
+      const response = await apiRequest('POST', '/api/reviews', reviewData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit review');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Review Submitted!",
+        description: "Thank you for your feedback. Your review will be verified and published shortly.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/reviews`] });
+      setShowReviewForm(false);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Submit Review",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmitReview = (data: InsertReview) => {
+    submitReviewMutation.mutate({
+      ...data,
+      bakerId,
+    });
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-4 w-4 ${
+              star <= rating ? "text-yellow-500 fill-current" : "text-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  if (reviewsLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Reviews</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse border-b pb-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                  <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-gray-200 rounded"></div>
+                  <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Customer Reviews</CardTitle>
+            <CardDescription>
+              {reviews.length > 0 
+                ? `${reviews.length} review${reviews.length > 1 ? 's' : ''} from happy customers`
+                : "Be the first to leave a review!"
+              }
+            </CardDescription>
+          </div>
+          
+          <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-write-review">
+                Write Review
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Write a Review</DialogTitle>
+                <DialogDescription>
+                  Share your experience with this baker to help other customers make informed decisions.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmitReview)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="customerName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Your Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter your name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="customerEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="your@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="rating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rating</FormLabel>
+                        <FormControl>
+                          <Select value={String(field.value)} onValueChange={(value) => field.onChange(parseInt(value))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="5">5 Stars - Excellent</SelectItem>
+                              <SelectItem value="4">4 Stars - Very Good</SelectItem>
+                              <SelectItem value="3">3 Stars - Good</SelectItem>
+                              <SelectItem value="2">2 Stars - Fair</SelectItem>
+                              <SelectItem value="1">1 Star - Poor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cakeStyle"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cake Style (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Wedding Cake, Birthday Cake" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="reviewText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Review</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Tell us about your experience with this baker..."
+                            className="min-h-24"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="submit"
+                      disabled={submitReviewMutation.isPending}
+                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
+                      data-testid="button-submit-review"
+                    >
+                      {submitReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowReviewForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {reviews.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <Star className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-2">No reviews yet</p>
+            <p className="text-sm">Be the first to share your experience with this baker!</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {reviews.map((review) => (
+              <div key={review.id} className="border-b pb-6 last:border-b-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    {renderStars(review.rating)}
+                    <span className="font-medium">{review.customerName}</span>
+                    {review.isVerified && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Check className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {format(new Date(review.createdAt || ''), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                
+                {review.cakeStyle && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    <strong>Style:</strong> {review.cakeStyle}
+                  </p>
+                )}
+                
+                {review.reviewText && (
+                  <p className="text-gray-700 leading-relaxed">{review.reviewText}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
