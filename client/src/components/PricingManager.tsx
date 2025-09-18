@@ -9,6 +9,12 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+
+// Extract tenant slug from current URL path
+function getTenantSlugFromPath(): string | null {
+  const pathMatch = window.location.pathname.match(/^\/baker\/([^\/]+)/);
+  return pathMatch ? pathMatch[1] : null;
+}
 import {
   DollarSign,
   Save,
@@ -168,6 +174,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
         ...existingPricing,
         shapes: existingPricing.shapes || DEFAULT_SHAPES // Ensure shapes are available
       });
+      setHasChanges(false); // Reset changes state when loading existing data
     }
   }, [existingPricing]);
 
@@ -300,7 +307,18 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.open(`/baker/${bakerId}/calculator`, '_blank')}
+            onClick={() => {
+              const tenantSlug = getTenantSlugFromPath();
+              if (tenantSlug) {
+                window.open(`/baker/${tenantSlug}/calculator`, '_blank');
+              } else {
+                toast({
+                  title: "Preview Unavailable",
+                  description: "Unable to determine tenant context for calculator preview.",
+                  variant: "destructive",
+                });
+              }
+            }}
             data-testid="button-preview-calculator"
           >
             <Eye className="h-4 w-4 mr-2" />
