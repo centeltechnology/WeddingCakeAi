@@ -1541,6 +1541,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // General baker profile update
+  app.put("/api/bakers/:id", authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Validate request body with Zod schema
+      const updateBakerProfileSchema = z.object({
+        description: z.string().max(2000, 'Description too long').optional(),
+        specialties: z.array(z.string()).max(25, 'Too many specialties').optional(),
+        cakeTypes: z.array(z.string()).max(25, 'Too many cake types').optional()
+      });
+      
+      const validation = updateBakerProfileSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Invalid request data',
+          details: validation.error.issues 
+        });
+      }
+      
+      const { description, specialties, cakeTypes } = validation.data;
+      
+      // Validate baker exists
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Prepare update object with only allowed fields for security
+      const updates: any = {};
+      if (description !== undefined) {
+        updates.description = description;
+      }
+      if (specialties !== undefined) {
+        // Clean up specialties (trim whitespace, remove duplicates)
+        const cleanSpecialties = [...new Set(specialties
+          .map(s => typeof s === 'string' ? s.trim() : '')
+          .filter(s => s.length > 0)
+        )];
+        updates.specialties = cleanSpecialties;
+      }
+      if (cakeTypes !== undefined) {
+        // Clean up cake types (trim whitespace, remove duplicates)
+        const cleanCakeTypes = [...new Set(cakeTypes
+          .map(c => typeof c === 'string' ? c.trim() : '')
+          .filter(c => c.length > 0)
+        )];
+        updates.cakeTypes = cleanCakeTypes;
+      }
+
+      // Update baker profile
+      await storage.updateBaker(id, updates);
+      
+      // Return updated baker data (sanitized for security)
+      const updatedBaker = await storage.getBaker(id);
+      if (!updatedBaker) {
+        return res.status(404).json({ error: 'Baker not found after update' });
+      }
+      
+      // Sanitize sensitive fields before returning
+      const safeBaker = {
+        id: updatedBaker.id,
+        name: updatedBaker.name,
+        slug: updatedBaker.slug,
+        email: updatedBaker.email,
+        phone: updatedBaker.phone,
+        address: updatedBaker.address,
+        latitude: updatedBaker.latitude,
+        longitude: updatedBaker.longitude,
+        rating: updatedBaker.rating,
+        priceRange: updatedBaker.priceRange,
+        specialties: updatedBaker.specialties,
+        cakeTypes: updatedBaker.cakeTypes,
+        description: updatedBaker.description,
+        portfolio: updatedBaker.portfolio,
+        subscriptionPlan: updatedBaker.subscriptionPlan,
+        isActive: updatedBaker.isActive,
+        subdomain: updatedBaker.subdomain,
+        customDomain: updatedBaker.customDomain,
+        paymentLinks: updatedBaker.paymentLinks,
+        availability: updatedBaker.availability,
+        businessName: updatedBaker.businessName,
+        emailVerified: updatedBaker.emailVerified,
+        socialMedia: updatedBaker.socialMedia,
+        createdAt: updatedBaker.createdAt,
+        updatedAt: updatedBaker.updatedAt
+      };
+      
+      res.json(safeBaker);
+    } catch (error: any) {
+      console.error('Error updating baker profile:', error);
+      res.status(500).json({ error: 'Failed to update baker profile' });
+    }
+  });
+
   // AI Image Generation Route
   app.post("/api/generate-cake-image", async (req, res) => {
     try {

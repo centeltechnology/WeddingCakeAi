@@ -145,6 +145,7 @@ export const bakers = pgTable("bakers", {
   rating: decimal("rating"),
   priceRange: text("price_range"),
   specialties: text("specialties").array(),
+  cakeTypes: text("cake_types").array(),
   description: text("description"),
   portfolio: text("portfolio").array(),
   subscriptionPlan: text("subscription_plan").default('starter'), // starter, professional, enterprise

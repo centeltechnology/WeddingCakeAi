@@ -36,7 +36,10 @@ import {
   Save,
   MapPin,
   Trash2,
-  Star
+  Star,
+  Plus,
+  Tag,
+  Cake
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +64,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [subdomainInput, setSubdomainInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [aboutText, setAboutText] = useState("");
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [newSpecialty, setNewSpecialty] = useState("");
+  const [cakeTypes, setCakeTypes] = useState<string[]>([]);
+  const [newCakeType, setNewCakeType] = useState("");
 
   const handleLogout = () => {
     // Clear any stored authentication tokens
@@ -176,6 +183,129 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     },
   });
 
+  // Specialties update mutation
+  const updateSpecialtiesMutation = useMutation({
+    mutationFn: async (newSpecialties: string[]) => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ specialties: newSpecialties })
+      });
+      if (!response.ok) throw new Error('Failed to update specialties');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      toast({
+        title: "Specialties Updated",
+        description: "Your specialties have been updated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Cake types update mutation
+  const updateCakeTypesMutation = useMutation({
+    mutationFn: async (newCakeTypes: string[]) => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ cakeTypes: newCakeTypes })
+      });
+      if (!response.ok) throw new Error('Failed to update cake types');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      toast({
+        title: "Cake Types Updated",
+        description: "Your cake types have been updated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addSpecialty = () => {
+    if (newSpecialty.trim() && !specialties.includes(newSpecialty.trim())) {
+      const updatedSpecialties = [...specialties, newSpecialty.trim()];
+      const previousSpecialties = [...specialties]; // Store for rollback
+      setSpecialties(updatedSpecialties);
+      setNewSpecialty("");
+      updateSpecialtiesMutation.mutate(updatedSpecialties, {
+        onError: () => {
+          // Rollback on error
+          setSpecialties(previousSpecialties);
+          setNewSpecialty(newSpecialty.trim()); // Restore input
+        }
+      });
+    }
+  };
+
+  const removeSpecialty = (specialty: string) => {
+    const updatedSpecialties = specialties.filter(s => s !== specialty);
+    const previousSpecialties = [...specialties]; // Store for rollback
+    setSpecialties(updatedSpecialties);
+    updateSpecialtiesMutation.mutate(updatedSpecialties, {
+      onError: () => {
+        // Rollback on error
+        setSpecialties(previousSpecialties);
+      }
+    });
+  };
+
+  const addCakeType = () => {
+    if (newCakeType.trim() && !cakeTypes.includes(newCakeType.trim())) {
+      const updatedCakeTypes = [...cakeTypes, newCakeType.trim()];
+      const previousCakeTypes = [...cakeTypes]; // Store for rollback
+      setCakeTypes(updatedCakeTypes);
+      setNewCakeType("");
+      updateCakeTypesMutation.mutate(updatedCakeTypes, {
+        onError: () => {
+          // Rollback on error
+          setCakeTypes(previousCakeTypes);
+          setNewCakeType(newCakeType.trim()); // Restore input
+        }
+      });
+    }
+  };
+
+  const removeCakeType = (cakeType: string) => {
+    const updatedCakeTypes = cakeTypes.filter(c => c !== cakeType);
+    const previousCakeTypes = [...cakeTypes]; // Store for rollback
+    setCakeTypes(updatedCakeTypes);
+    updateCakeTypesMutation.mutate(updatedCakeTypes, {
+      onError: () => {
+        // Rollback on error
+        setCakeTypes(previousCakeTypes);
+      }
+    });
+  };
+
+  const handleSpecialtyKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSpecialty();
+    }
+  };
+
+  const handleCakeTypeKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCakeType();
+    }
+  };
 
   const handleStatusChange = (leadId: string, newStatus: string) => {
     updateLeadMutation.mutate({ leadId, updates: { status: newStatus } });
@@ -249,12 +379,18 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     plus: { leads: -1, portfolio: -1 }  // unlimited
   };
 
-  // Initialize aboutText when baker data loads
+  // Initialize aboutText, specialties, and cakeTypes when baker data loads
   useEffect(() => {
     if (baker?.description) {
       setAboutText(baker.description);
     }
-  }, [baker?.description]);
+    if (baker?.specialties) {
+      setSpecialties(baker.specialties);
+    }
+    if (baker?.cakeTypes) {
+      setCakeTypes(baker.cakeTypes);
+    }
+  }, [baker?.description, baker?.specialties, baker?.cakeTypes]);
 
   if (!baker) {
     return (
@@ -671,6 +807,165 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 </Button>
               </div>
               
+              {/* Specialties Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
+                      <Tag className="w-4 h-4 mr-2" />
+                      Specialties & Services
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add specialties like "Wedding Cakes", "Custom Decorations", etc.
+                    </p>
+                  </div>
+                  
+                  {/* Add New Specialty */}
+                  <div className="flex space-x-2">
+                    <Input
+                      value={newSpecialty}
+                      onChange={(e) => setNewSpecialty(e.target.value)}
+                      placeholder="e.g., Wedding Cakes, Custom Decorations..."
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addSpecialty();
+                        }
+                      }}
+                      data-testid="input-new-specialty"
+                    />
+                    <Button
+                      type="button"
+                      onClick={addSpecialty}
+                      disabled={!newSpecialty.trim() || updateSpecialtiesMutation.isPending}
+                      size="sm"
+                      className="bg-rose-500 hover:bg-rose-600 text-white"
+                      data-testid="button-add-specialty"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Current Specialties */}
+                  {specialties.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {specialties.map((specialty, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className={`bg-rose-100 text-rose-800 hover:bg-rose-200 flex items-center space-x-1 px-3 py-1 ${
+                              updateSpecialtiesMutation.isPending ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <span>{specialty}</span>
+                            <button
+                              onClick={() => removeSpecialty(specialty)}
+                              className="ml-1 hover:text-rose-600"
+                              disabled={updateSpecialtiesMutation.isPending}
+                              aria-label={`Remove ${specialty} specialty`}
+                              data-testid={`button-remove-specialty-${index}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      {updateSpecialtiesMutation.isPending && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <div className="animate-spin w-3 h-3 border border-gray-300 border-t-rose-500 rounded-full mr-2" />
+                          Updating specialties...
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {specialties.length === 0 && (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      No specialties added yet. Add your first specialty above!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Cake Types Management */}
+              <div className="space-y-4 bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-lg border border-orange-200">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 flex items-center">
+                      <Cake className="w-4 h-4 mr-2" />
+                      Cake Types
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add cake types like "Layer Cakes", "Cupcakes", "Sheet Cakes", etc.
+                    </p>
+                  </div>
+                  
+                  {/* Add New Cake Type */}
+                  <div className="flex space-x-2">
+                    <Input
+                      value={newCakeType}
+                      onChange={(e) => setNewCakeType(e.target.value)}
+                      placeholder="e.g., Layer Cakes, Cupcakes, Sheet Cakes..."
+                      className="flex-1"
+                      onKeyPress={handleCakeTypeKeyPress}
+                      data-testid="input-new-cake-type"
+                    />
+                    <Button
+                      type="button"
+                      onClick={addCakeType}
+                      disabled={!newCakeType.trim() || updateCakeTypesMutation.isPending}
+                      size="sm"
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                      data-testid="button-add-cake-type"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Current Cake Types */}
+                  {cakeTypes.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {cakeTypes.map((cakeType, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className={`bg-orange-100 text-orange-800 hover:bg-orange-200 flex items-center space-x-1 px-3 py-1 ${
+                              updateCakeTypesMutation.isPending ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <span>{cakeType}</span>
+                            <button
+                              onClick={() => removeCakeType(cakeType)}
+                              className="ml-1 hover:text-orange-600"
+                              disabled={updateCakeTypesMutation.isPending}
+                              aria-label={`Remove ${cakeType} cake type`}
+                              data-testid={`button-remove-cake-type-${index}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      {updateCakeTypesMutation.isPending && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <div className="animate-spin w-3 h-3 border border-gray-300 border-t-orange-500 rounded-full mr-2" />
+                          Updating cake types...
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {cakeTypes.length === 0 && (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      No cake types added yet. Add your first cake type above!
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Preview Section */}
               {aboutText && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-rose-500">

@@ -125,6 +125,9 @@ export class DatabaseStorage {
     stripeCustomerId?: string;
     subscriptionPlan?: string;
     subscriptionStatus?: string;
+    description?: string;
+    specialties?: string[];
+    cakeTypes?: string[];
   }) {
     const validUpdates: any = {};
     
@@ -137,6 +140,9 @@ export class DatabaseStorage {
     if (updates.stripeCustomerId !== undefined) validUpdates.stripeCustomerId = updates.stripeCustomerId;
     if (updates.subscriptionPlan !== undefined) validUpdates.subscriptionPlan = updates.subscriptionPlan;
     if (updates.subscriptionStatus !== undefined) validUpdates.subscriptionStatus = updates.subscriptionStatus;
+    if (updates.description !== undefined) validUpdates.description = updates.description;
+    if (updates.specialties !== undefined) validUpdates.specialties = updates.specialties;
+    if (updates.cakeTypes !== undefined) validUpdates.cakeTypes = updates.cakeTypes;
 
     await db
       .update(bakers)
