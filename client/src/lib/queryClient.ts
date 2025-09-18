@@ -7,6 +7,12 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Extract tenant slug from current URL path
+function getTenantSlugFromPath(): string | null {
+  const pathMatch = window.location.pathname.match(/^\/baker\/([^\/]+)/);
+  return pathMatch ? pathMatch[1] : null;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -16,6 +22,12 @@ export async function apiRequest(
   
   if (data) {
     headers["Content-Type"] = "application/json";
+  }
+  
+  // Add tenant slug header for API calls if we're in a tenant context
+  const tenantSlug = getTenantSlugFromPath();
+  if (tenantSlug) {
+    headers["x-tenant-slug"] = tenantSlug;
   }
   
   // Add Authorization header for super admin routes
@@ -45,6 +57,12 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const url = queryKey.join("/") as string;
     const headers: Record<string, string> = {};
+    
+    // Add tenant slug header for API calls if we're in a tenant context
+    const tenantSlug = getTenantSlugFromPath();
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
     
     // Add Authorization header for super admin routes
     if (url.includes('/api/super-admin/')) {

@@ -112,8 +112,9 @@ function Router() {
         </SuperAdminAuthWrapper>
       )} />
       <Route path="/super-admin/reset-password" component={SuperAdminResetPassword} />
-      <Route path="/baker/:bakerId/calculator">
-        {(params) => <CakeCalculator bakerId={params.bakerId} />}
+      {/* Tenant-based calculator route (e.g. /baker/bakewise-test-2/calculator) */}
+      <Route path="/baker/:tenantSlug/calculator">
+        {(params) => <CakeCalculator tenantSlug={params.tenantSlug} />}
       </Route>
       <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
       <Route path="/terms" component={Terms} />

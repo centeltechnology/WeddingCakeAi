@@ -33,6 +33,7 @@ import {
 
 interface CakeCalculatorProps {
   bakerId?: string;
+  tenantSlug?: string;
   className?: string;
 }
 
@@ -136,7 +137,7 @@ const DEFAULT_DECORATION_OPTIONS: DecorationOption[] = [
   { id: "preservation-kit", name: "Top Tier Preservation", description: "Professional preservation of top tier", price: 45, category: "extras" }
 ];
 
-export function CakeCalculator({ bakerId = "baker-1", className }: CakeCalculatorProps) {
+export function CakeCalculator({ bakerId = "baker-1", tenantSlug, className }: CakeCalculatorProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [tiers, setTiers] = useState<CakeTier[]>([]);

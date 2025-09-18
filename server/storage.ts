@@ -125,6 +125,7 @@ export interface IStorage {
   getTenant(id: string): Promise<Tenant | undefined>;
   getTenants(): Promise<Tenant[]>;
   getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined>;
+  getTenantBySlug(slug: string): Promise<Tenant | undefined>;
   getTenantByDomain(domain: string): Promise<Tenant | undefined>;
   updateTenant(id: string, updates: Partial<InsertTenant>): Promise<Tenant>;
   
@@ -1268,6 +1269,10 @@ export class MemStorage implements IStorage {
 
   async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
     return Array.from(this.tenants.values()).find(t => t.subdomain === subdomain && t.isActive);
+  }
+
+  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+    return this.getTenantBySubdomain(slug);
   }
 
   async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
@@ -2725,6 +2730,10 @@ export class DatabaseStorage implements IStorage {
     return tenant || undefined;
   }
 
+  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+    return this.getTenantBySubdomain(slug);
+  }
+
   async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
     // Check both subdomain and custom domain
     const [tenant] = await db.select().from(tenants).where(
@@ -2936,6 +2945,10 @@ export class DatabaseStorage implements IStorage {
   async getTenantBySubdomain(subdomain: string): Promise<Tenant | undefined> {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.subdomain, subdomain));
     return tenant || undefined;
+  }
+
+  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+    return this.getTenantBySubdomain(slug);
   }
 
   async getTenantByDomain(domain: string): Promise<Tenant | undefined> {

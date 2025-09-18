@@ -17,28 +17,63 @@ export interface TenantRequest extends Request {
 }
 
 /**
- * Middleware to detect and load tenant information based on subdomain or custom domain
+ * Middleware to detect and load tenant information based on path or subdomain/custom domain
  */
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    const hostname = req.get('host') || req.hostname;
     let tenant: Tenant | undefined;
     
-    // Extract subdomain or check for custom domain
-    if (hostname.includes('.')) {
-      const parts = hostname.split('.');
+    // First, try to extract tenant from path (e.g., /baker/bakewise-test-2/calculator)
+    const pathMatch = req.originalUrl.match(/^\/baker\/([^\/]+)/);
+    if (pathMatch) {
+      const tenantSlug = pathMatch[1];
+      tenant = await storage.getTenantBySlug(tenantSlug);
+    }
+    
+    // Second, try to extract tenant from header (sent by frontend)
+    // Security: Only allow header-based detection for safe HTTP methods (GET, HEAD, OPTIONS)
+    // For write operations (POST, PUT, PATCH, DELETE), require path-based or authenticated context
+    if (!tenant && ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      const tenantSlugHeader = req.get('x-tenant-slug');
+      if (tenantSlugHeader) {
+        tenant = await storage.getTenantBySlug(tenantSlugHeader);
+      }
+    }
+    
+    // Third, try to extract tenant from referer URL (safe methods only)
+    // Security: Only allow referer-based detection for safe HTTP methods (GET, HEAD, OPTIONS)
+    // For write operations, this could be spoofed for cross-tenant attacks
+    if (!tenant && ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      const referer = req.get('referer');
+      if (referer) {
+        const refererMatch = referer.match(/\/baker\/([^\/]+)/);
+        if (refererMatch) {
+          const tenantSlug = refererMatch[1];
+          tenant = await storage.getTenantBySlug(tenantSlug);
+        }
+      }
+    }
+    
+    // Finally, fall back to hostname-based detection
+    if (!tenant) {
+      const hostname = req.get('host') || req.hostname;
       
-      // Check if it's a custom domain first
-      tenant = await storage.getTenantByDomain(hostname);
-      
-      // If not a custom domain, check for subdomain pattern
-      if (!tenant && parts.length >= 3) {
-        // Extract subdomain (e.g., "venue1" from "venue1.weddingcakeai.com")
-        const subdomain = parts[0];
+      // Extract subdomain or check for custom domain
+      if (hostname.includes('.')) {
+        const parts = hostname.split('.');
         
-        // Skip common prefixes that aren't tenant subdomains
-        if (!['www', 'api', 'admin', 'app'].includes(subdomain)) {
-          tenant = await storage.getTenantBySubdomain(subdomain);
+        // Check if it's a custom domain first
+        tenant = await storage.getTenantByDomain(hostname);
+        
+        // If not a custom domain, check for subdomain pattern
+        if (!tenant && parts.length >= 3) {
+          // Extract subdomain (e.g., "venue1" from "venue1.weddingcakeai.com")
+          const subdomain = parts[0];
+          
+          // Skip common prefixes that aren't tenant subdomains
+          if (!['www', 'api', 'admin', 'app'].includes(subdomain)) {
+            tenant = await storage.getTenantBySubdomain(subdomain);
+          }
         }
       }
     }
