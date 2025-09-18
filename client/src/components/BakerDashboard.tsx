@@ -59,7 +59,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [subdomainInput, setSubdomainInput] = useState("");
-  const [customDomainInput, setCustomDomainInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [aboutText, setAboutText] = useState("");
 
@@ -177,36 +176,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     },
   });
 
-  // Custom domain save mutation
-  const saveCustomDomainMutation = useMutation({
-    mutationFn: async (customDomain: string) => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customDomain })
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save custom domain');
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Custom Domain Updated",
-        description: data.message,
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
-      setCustomDomainInput("");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleStatusChange = (leadId: string, newStatus: string) => {
     updateLeadMutation.mutate({ leadId, updates: { status: newStatus } });
@@ -235,18 +204,6 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     saveSubdomainMutation.mutate(subdomainInput);
   };
 
-  const handleSaveCustomDomain = async () => {
-    if (!customDomainInput.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a custom domain",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    saveCustomDomainMutation.mutate(customDomainInput);
-  };
 
   const filteredLeads = leads?.filter(lead => {
     const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -963,75 +920,41 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* URL Slug Configuration */}
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                  <CardHeader>
-                    <h4 className="text-lg font-semibold text-blue-800 flex items-center">
-                      <Globe className="w-5 h-5 mr-2" />
-                      Your Bakewise URL
-                    </h4>
-                    <p className="text-sm text-blue-600">Create your professional bakery URL</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-blue-800">Choose your URL slug (no spaces):</label>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">bakewiseapp.com/baker/</span>
-                        <Input 
-                          placeholder="yourbakery" 
-                          className="flex-1"
-                          value={subdomainInput}
-                          onChange={(e) => setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                          data-testid="input-subdomain"
-                        />
-                      </div>
-                      <p className="text-xs text-blue-600">Your professional URL: bakewiseapp.com/baker/{subdomainInput || 'yourbakery'}</p>
-                      <p className="text-xs text-orange-600 font-medium">⚠️ Use only lowercase letters, numbers, and hyphens. No spaces allowed!</p>
-                    </div>
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700" 
-                      onClick={handleSaveSubdomain}
-                      disabled={saveSubdomainMutation.isPending}
-                      data-testid="button-save-subdomain"
-                    >
-                      {saveSubdomainMutation.isPending ? "Saving..." : "Save URL Slug"}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Custom Domain */}
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                  <CardHeader>
-                    <h4 className="text-lg font-semibold text-purple-800 flex items-center">
-                      <Globe className="w-5 h-5 mr-2" />
-                      Custom Domain (Pro)
-                    </h4>
-                    <p className="text-sm text-purple-600">Use your own domain name</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-purple-800">Your domain:</label>
+              {/* URL Slug Configuration */}
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 max-w-2xl">
+                <CardHeader>
+                  <h4 className="text-lg font-semibold text-blue-800 flex items-center">
+                    <Globe className="w-5 h-5 mr-2" />
+                    Your Bakewise URL
+                  </h4>
+                  <p className="text-sm text-blue-600">Create your professional bakery URL</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-blue-800">Choose your URL slug (no spaces):</label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">bakewiseapp.com/baker/</span>
                       <Input 
-                        placeholder="yourbakery.com" 
-                        className="w-full"
-                        value={customDomainInput}
-                        onChange={(e) => setCustomDomainInput(e.target.value.toLowerCase())}
-                        data-testid="input-custom-domain"
+                        placeholder="yourbakery" 
+                        className="flex-1"
+                        value={subdomainInput}
+                        onChange={(e) => setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                        data-testid="input-subdomain"
                       />
-                      <p className="text-xs text-purple-600">Point your domain to our servers for professional branding</p>
                     </div>
-                    <Button 
-                      className="w-full bg-purple-600 hover:bg-purple-700" 
-                      onClick={handleSaveCustomDomain}
-                      disabled={saveCustomDomainMutation.isPending}
-                      data-testid="button-save-custom-domain"
-                    >
-                      {saveCustomDomainMutation.isPending ? "Configuring..." : "Configure Custom Domain"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+                    <p className="text-xs text-blue-600">Your professional URL: bakewiseapp.com/baker/{subdomainInput || 'yourbakery'}</p>
+                    <p className="text-xs text-orange-600 font-medium">⚠️ Use only lowercase letters, numbers, and hyphens. No spaces allowed!</p>
+                  </div>
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700" 
+                    onClick={handleSaveSubdomain}
+                    disabled={saveSubdomainMutation.isPending}
+                    data-testid="button-save-subdomain"
+                  >
+                    {saveSubdomainMutation.isPending ? "Saving..." : "Save URL Slug"}
+                  </Button>
+                </CardContent>
+              </Card>
 
               {/* Current Domain Status */}
               <Card className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
