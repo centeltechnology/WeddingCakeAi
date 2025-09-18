@@ -27,8 +27,9 @@ export function ReviewSystem({ bakerId, canLeaveReview = false }: ReviewSystemPr
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['/api/bakers', bakerId, 'reviews'],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/bakers/${bakerId}/reviews`);
-      return response as Review[];
+      const response = await fetch(`/api/bakers/${bakerId}/reviews`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
+      return response.json() as Review[];
     },
   });
 
@@ -139,7 +140,7 @@ export function ReviewSystem({ bakerId, canLeaveReview = false }: ReviewSystemPr
                 {averageRating}
               </div>
               <div className="flex justify-center my-2">
-                {renderStars(Math.round(parseFloat(averageRating)))}
+                {renderStars(Math.round(parseFloat(averageRating.toString())))}
               </div>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                 Based on {reviews.length} review{reviews.length !== 1 ? 's' : ''}
