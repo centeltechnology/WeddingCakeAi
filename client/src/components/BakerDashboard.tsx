@@ -349,7 +349,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   if (customDomain) {
                     previewUrl = `https://${customDomain}`;
                   } else if (subdomain) {
-                    previewUrl = `https://${subdomain}.bakewiseapp.com`;
+                    previewUrl = `https://bakewiseapp.com/baker/${subdomain}/calculator`;
                   }
                   
                   window.open(previewUrl, '_blank');
@@ -1042,11 +1042,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
                       <div>
-                        <p className="font-medium text-green-800">Active Domain</p>
+                        <p className="font-medium text-green-800">Active URL</p>
                         <p className="text-sm text-green-600">
                           {domainConfig?.customDomain || 
-                           (domainConfig?.subdomain ? `${domainConfig.subdomain}.bakewiseapp.com` : 
-                            'No domain configured')}
+                           (domainConfig?.subdomain ? `bakewiseapp.com/baker/${domainConfig.subdomain}/calculator` : 
+                            'No URL configured')}
                         </p>
                       </div>
                       <Badge className={domainConfig?.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
