@@ -58,6 +58,7 @@ interface AccountDetails {
     twitter: string;
     website: string;
     tiktok: string;
+    pinterest: string;
   };
   businessHours: {
     monday: { open: string; close: string; closed: boolean };
@@ -105,6 +106,16 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { currentTheme, setTheme } = useCalculatorTheme();
   const [editingProfile, setEditingProfile] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'viewer' as const });
+  
+  // Local form state for editing
+  const [formData, setFormData] = useState<Partial<AccountDetails>>({});
+  
+  // Update form data when account data changes
+  const updateFormData = (account: AccountDetails | undefined) => {
+    if (account && !editingProfile) {
+      setFormData(account);
+    }
+  };
 
   // Fetch actual baker data
   const { data: baker } = useQuery<any>({
@@ -116,12 +127,12 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
     }
   });
 
-  // Transform baker data to account details format
-  const { data: account, isLoading: accountLoading } = useQuery<AccountDetails>({
+  // Transform baker data to account details format  
+  const { data: account, isLoading: accountLoading } = useQuery({
     queryKey: [`/api/bakers/${bakerId}/account`],
     queryFn: async () => {
       if (!baker) throw new Error('Baker data not loaded');
-      return {
+      const accountData = {
         id: bakerId,
         businessName: baker.name,
         ownerName: baker.name, // Using baker name as owner for now  
@@ -132,6 +143,14 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
           city: baker.address || '',
           state: '',
           zipCode: ''
+        },
+        socialMedia: {
+          facebook: '',
+          instagram: '',
+          twitter: '',
+          website: '',
+          tiktok: '',
+          pinterest: ''
         },
         businessHours: {
           monday: { open: '08:00', close: '18:00', closed: false },
@@ -148,6 +167,8 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
           marketingEmails: false
         }
       };
+      updateFormData(accountData);
+      return accountData;
     }
   });
 
@@ -197,6 +218,29 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
     }
   });
 
+  // Save profile mutation
+  const saveProfileMutation = useMutation({
+    mutationFn: async (profileData: Partial<AccountDetails>) => {
+      return await apiRequest("PUT", `/api/bakers/${bakerId}`, profileData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been saved successfully!",
+      });
+      setEditingProfile(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/account`] });
+    },
+    onError: () => {
+      toast({
+        title: "Save Failed",
+        description: "Unable to save profile changes. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Add team member mutation
   const addTeamMemberMutation = useMutation({
     mutationFn: async (member: { email: string; role: string }) => {
@@ -218,6 +262,30 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
       });
     },
   });
+
+  // Handle form field changes
+  const handleFieldChange = (field: string, value: string, nestedField?: string) => {
+    setFormData(prev => {
+      if (nestedField) {
+        return {
+          ...prev,
+          [field]: {
+            ...prev[field as keyof AccountDetails],
+            [nestedField]: value
+          }
+        };
+      }
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
+  };
+
+  // Handle save
+  const handleSave = () => {
+    saveProfileMutation.mutate(formData);
+  };
 
   const getPlanColor = (plan: string) => {
     switch (plan) {
@@ -311,32 +379,36 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                 <div>
                   <Label>Business Name</Label>
                   <Input
-                    value={account?.businessName}
+                    value={editingProfile ? formData.businessName || '' : account?.businessName || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('businessName', e.target.value)}
                     data-testid="input-business-name"
                   />
                 </div>
                 <div>
                   <Label>Owner Name</Label>
                   <Input
-                    value={account?.ownerName}
+                    value={editingProfile ? formData.ownerName || '' : account?.ownerName || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('ownerName', e.target.value)}
                     data-testid="input-owner-name"
                   />
                 </div>
                 <div>
                   <Label>Email Address</Label>
                   <Input
-                    value={account?.email}
+                    value={editingProfile ? formData.email || '' : account?.email || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('email', e.target.value)}
                     data-testid="input-email"
                   />
                 </div>
                 <div>
                   <Label>Phone Number</Label>
                   <Input
-                    value={account?.phone}
+                    value={editingProfile ? formData.phone || '' : account?.phone || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('phone', e.target.value)}
                     data-testid="input-phone"
                   />
                 </div>
@@ -350,10 +422,11 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">@</span>
                         <Input
-                          value={account?.socialMedia?.instagram || ''}
+                          value={editingProfile ? formData.socialMedia?.instagram || '' : account?.socialMedia?.instagram || ''}
                           disabled={!editingProfile}
                           placeholder="your_instagram"
                           className="pl-8"
+                          onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'instagram')}
                           data-testid="input-instagram"
                         />
                       </div>
@@ -361,9 +434,10 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     <div>
                       <Label>Facebook Page</Label>
                       <Input
-                        value={account?.socialMedia?.facebook || ''}
+                        value={editingProfile ? formData.socialMedia?.facebook || '' : account?.socialMedia?.facebook || ''}
                         disabled={!editingProfile}
                         placeholder="facebook.com/yourpage"
+                        onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'facebook')}
                         data-testid="input-facebook"
                       />
                     </div>
@@ -372,10 +446,11 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">@</span>
                         <Input
-                          value={account?.socialMedia?.tiktok || ''}
+                          value={editingProfile ? formData.socialMedia?.tiktok || '' : account?.socialMedia?.tiktok || ''}
                           disabled={!editingProfile}
                           placeholder="your_tiktok"
                           className="pl-8"
+                          onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'tiktok')}
                           data-testid="input-tiktok"
                         />
                       </div>
@@ -383,18 +458,20 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     <div>
                       <Label>Pinterest</Label>
                       <Input
-                        value={account?.socialMedia?.pinterest || ''}
+                        value={editingProfile ? formData.socialMedia?.pinterest || '' : account?.socialMedia?.pinterest || ''}
                         disabled={!editingProfile}
                         placeholder="pinterest.com/yourboard"
+                        onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'pinterest')}
                         data-testid="input-pinterest"
                       />
                     </div>
                     <div className="md:col-span-2">
                       <Label>Website</Label>
                       <Input
-                        value={account?.socialMedia?.website || ''}
+                        value={editingProfile ? formData.socialMedia?.website || '' : account?.socialMedia?.website || ''}
                         disabled={!editingProfile}
                         placeholder="https://yourwebsite.com"
+                        onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'website')}
                         data-testid="input-website"
                       />
                     </div>
@@ -404,13 +481,18 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                   <div className="flex space-x-2 pt-2">
                     <Button 
                       size="sm" 
+                      onClick={handleSave}
+                      disabled={saveProfileMutation.isPending}
                       className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold px-4 py-2"
                       data-testid="button-save-profile"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {saveProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setEditingProfile(false)}>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setEditingProfile(false);
+                      if (account) setFormData(account); // Reset form data on cancel
+                    }}>
                       Cancel
                     </Button>
                   </div>
@@ -434,8 +516,9 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                 <div>
                   <Label>Street Address</Label>
                   <Input
-                    value={account?.address?.street}
+                    value={editingProfile ? formData.address?.street || '' : account?.address?.street || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('address', e.target.value, 'street')}
                     data-testid="input-street"
                   />
                 </div>
@@ -443,16 +526,18 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                   <div>
                     <Label>City</Label>
                     <Input
-                      value={account?.address?.city}
+                      value={editingProfile ? formData.address?.city || '' : account?.address?.city || ''}
                       disabled={!editingProfile}
+                      onChange={(e) => handleFieldChange('address', e.target.value, 'city')}
                       data-testid="input-city"
                     />
                   </div>
                   <div>
                     <Label>State</Label>
                     <Input
-                      value={account?.address?.state}
+                      value={editingProfile ? formData.address?.state || '' : account?.address?.state || ''}
                       disabled={!editingProfile}
+                      onChange={(e) => handleFieldChange('address', e.target.value, 'state')}
                       data-testid="input-state"
                     />
                   </div>
@@ -460,26 +545,12 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                 <div>
                   <Label>ZIP Code</Label>
                   <Input
-                    value={account?.address?.zipCode}
+                    value={editingProfile ? formData.address?.zipCode || '' : account?.address?.zipCode || ''}
                     disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('address', e.target.value, 'zipCode')}
                     data-testid="input-zip"
                   />
                 </div>
-                {editingProfile && (
-                  <div className="flex space-x-2 pt-2">
-                    <Button 
-                      size="sm" 
-                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold px-4 py-2"
-                      data-testid="button-save-address"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Address
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setEditingProfile(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>

@@ -387,6 +387,26 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
               </div>
 
               <div>
+                <Label htmlFor="templateId">Quote Template (Optional)</Label>
+                <Select 
+                  value={newQuote.templateId} 
+                  onValueChange={(value) => setNewQuote(prev => ({ ...prev, templateId: value }))}
+                >
+                  <SelectTrigger data-testid="select-template">
+                    <SelectValue placeholder="Choose a template or start from scratch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No template (start from scratch)</SelectItem>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name} - ${template.basePrice}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="eventDate">Event Date</Label>
                 <Input
                   id="eventDate"
