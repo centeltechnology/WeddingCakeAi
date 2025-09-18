@@ -97,6 +97,7 @@ export function AdvancedQuoteTemplates({ bakerId }: AdvancedQuoteTemplatesProps)
       queryClient.invalidateQueries({ queryKey: ['/api/quote-templates', bakerId] });
       setIsCreating(false);
       setSelectedTemplate(null);
+      setActiveTab('list'); // Navigate back to list after successful save
       toast({
         title: "Success",
         description: "Template saved successfully!",
@@ -385,7 +386,7 @@ export function AdvancedQuoteTemplates({ bakerId }: AdvancedQuoteTemplatesProps)
               template={selectedTemplate}
               isCreating={isCreating}
               onSave={(data) => {
-                setActiveTab('list');
+                // Keep editor open until save succeeds to allow retry on failure
                 createTemplateMutation.mutate(data);
               }}
               onCancel={() => {

@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { BillingDashboard } from '@/components/BillingDashboard';
-import CalculatorThemeSelector from '@/components/CalculatorThemeSelector';
+import CalculatorThemeSelector, { calculatorThemes } from '@/components/CalculatorThemeSelector';
 import { useCalculatorTheme } from '@/hooks/useCalculatorTheme';
 import {
   User,
@@ -101,7 +102,7 @@ interface TeamMember {
 export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { currentTheme } = useCalculatorTheme();
+  const { currentTheme, setTheme } = useCalculatorTheme();
   const [editingProfile, setEditingProfile] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({ email: '', role: 'viewer' as const });
 
@@ -501,9 +502,11 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                 <CalculatorThemeSelector 
                   selectedTheme={currentTheme.id}
                   onThemeChange={(themeId) => {
+                    setTheme(themeId);
+                    const selectedTheme = calculatorThemes.find(t => t.id === themeId);
                     toast({
                       title: "Theme Updated",
-                      description: `Switched to ${currentTheme.name} theme`,
+                      description: `Switched to ${selectedTheme?.name || 'selected'} theme`,
                     });
                   }}
                 />
@@ -536,31 +539,51 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex space-x-3">
-                  <Input
-                    placeholder="Enter email address"
-                    value={newTeamMember.email}
-                    onChange={(e) => setNewTeamMember({...newTeamMember, email: e.target.value})}
-                    data-testid="input-team-email"
-                  />
-                  <select
-                    value={newTeamMember.role}
-                    onChange={(e) => setNewTeamMember({...newTeamMember, role: e.target.value as any})}
-                    className="px-3 py-2 border rounded-md"
-                    data-testid="select-team-role"
-                  >
-                    <option value="viewer">Viewer</option>
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <Button
-                    onClick={() => addTeamMemberMutation.mutate(newTeamMember)}
-                    disabled={!newTeamMember.email || addTeamMemberMutation.isPending}
-                    data-testid="button-invite-member"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invite
-                  </Button>
+                <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Enter email address"
+                      value={newTeamMember.email}
+                      onChange={(e) => setNewTeamMember({...newTeamMember, email: e.target.value})}
+                      data-testid="input-team-email"
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Select
+                      value={newTeamMember.role}
+                      onValueChange={(value) => setNewTeamMember({...newTeamMember, role: value as any})}
+                    >
+                      <SelectTrigger className="w-32" data-testid="select-team-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Button
+                      onClick={() => addTeamMemberMutation.mutate(newTeamMember)}
+                      disabled={!newTeamMember.email || addTeamMemberMutation.isPending}
+                      data-testid="button-invite-member"
+                      className="w-full sm:w-auto bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-medium"
+                    >
+                      {addTeamMemberMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Invite Team Member
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

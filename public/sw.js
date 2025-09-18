@@ -1,24 +1,28 @@
 // Bakewise PWA Service Worker
-const CACHE_NAME = 'bakewise-v1.0.0';
-const STATIC_CACHE = 'bakewise-static-v1.0.0';
-const DYNAMIC_CACHE = 'bakewise-dynamic-v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
+const STATIC_CACHE = `bakewise-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `bakewise-dynamic-${CACHE_VERSION}`;
 
-// Core files to cache immediately
+// Core files to cache immediately (excluding index.html to prevent stale shells)
 const CORE_ASSETS = [
-  '/',
-  '/dashboard',
-  '/admin',
   '/manifest.json',
   '/offline.html'
 ];
 
-// API endpoints to cache
-const API_CACHE_PATTERNS = [
-  /^\/api\/bakers\//,
-  /^\/api\/customers\//,
-  /^\/api\/quotes\//,
-  /^\/api\/tenant\//
+// Patterns to bypass service worker (for development and API requests)
+const BYPASS_PATTERNS = [
+  /^\/api\//,           // All API requests
+  /^\/src\//,           // Vite dev files
+  /^\/@vite\//,         // Vite internals
+  /^\/__vite_ping/,     // Vite ping
+  /^\/@react-refresh/,  // React refresh
+  /^\/node_modules\//   // Node modules
 ];
+
+// Check if request should bypass service worker
+const shouldBypass = (url) => {
+  return BYPASS_PATTERNS.some(pattern => pattern.test(url.pathname));
+};
 
 // Install event - cache core assets
 self.addEventListener('install', (event) => {
@@ -63,7 +67,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache with network fallback
+// Fetch event - network-first for navigation, bypass patterns for dev/API
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -73,19 +77,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests with cache-first strategy for GET requests
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(request));
-    return;
+  // Bypass service worker for development and API requests
+  if (shouldBypass(url)) {
+    console.log('Bakewise SW: Bypassing SW for:', url.pathname);
+    return; // Let the request go directly to network
   }
 
-  // Handle navigation requests (pages)
+  // Handle navigation requests (pages) with network-first strategy
   if (request.mode === 'navigate') {
     event.respondWith(handleNavigationRequest(request));
     return;
   }
 
-  // Handle static assets
+  // Handle static assets with cache-first strategy
   event.respondWith(handleStaticRequest(request));
 });
 
@@ -157,42 +161,37 @@ async function handleApiRequest(request) {
   }
 }
 
-// Handle navigation requests (pages)
+// Handle navigation requests (pages) - ALWAYS network-first, never cache index.html
 async function handleNavigationRequest(request) {
   try {
-    // Try network first for fresh content
+    console.log('Bakewise SW: Network-first navigation request:', request.url);
+    // Always try network first for navigation to ensure fresh app shell
     const response = await fetch(request);
     
     if (response.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, response.clone());
+      // DO NOT cache the main index.html to prevent stale shells
+      // Only cache specific page resources if needed
       return response;
     }
     
     throw new Error('Network response not ok');
     
   } catch (error) {
-    console.log('Bakewise SW: Network failed for navigation, serving from cache');
+    console.log('Bakewise SW: Network failed for navigation, checking offline status');
     
-    // Try cache
-    const cache = await caches.open(STATIC_CACHE);
-    const cachedResponse = await cache.match(request);
-    
-    if (cachedResponse) {
-      return cachedResponse;
+    // Only serve offline fallback if truly offline
+    if (!navigator.onLine) {
+      const cache = await caches.open(STATIC_CACHE);
+      const offlinePage = await cache.match('/offline.html');
+      
+      if (offlinePage) {
+        console.log('Bakewise SW: Serving offline fallback');
+        return offlinePage;
+      }
     }
     
-    // Fallback to app shell
-    const appShell = await cache.match('/');
-    if (appShell) {
-      return appShell;
-    }
-    
-    // Last resort - offline page
-    return cache.match('/offline.html') || new Response('App temporarily unavailable', {
-      status: 503,
-      headers: { 'Content-Type': 'text/html' }
-    });
+    // If network fails but we're online, let it fail naturally so browser can show error
+    throw error;
   }
 }
 
