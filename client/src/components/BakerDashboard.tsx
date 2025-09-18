@@ -216,17 +216,17 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     if (!subdomainInput.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a subdomain",
+        description: "Please enter a slug for your bakery URL",
         variant: "destructive",
       });
       return;
     }
     
-    // Validate subdomain format
-    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomainInput)) {
+    // Validate slug format (no spaces, URL-safe characters only)
+    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(subdomainInput) || subdomainInput.includes(' ')) {
       toast({
         title: "Error",
-        description: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.",
+        description: "Invalid slug format. Use only lowercase letters, numbers, and hyphens. No spaces allowed.",
         variant: "destructive",
       });
       return;
@@ -964,29 +964,30 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid gap-6 md:grid-cols-2">
-                {/* Subdomain Configuration */}
+                {/* URL Slug Configuration */}
                 <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                   <CardHeader>
                     <h4 className="text-lg font-semibold text-blue-800 flex items-center">
                       <Globe className="w-5 h-5 mr-2" />
-                      Your Bakewise Subdomain
+                      Your Bakewise URL
                     </h4>
-                    <p className="text-sm text-blue-600">Create your professional subdomain</p>
+                    <p className="text-sm text-blue-600">Create your professional bakery URL</p>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-blue-800">Choose your subdomain:</label>
+                      <label className="text-sm font-medium text-blue-800">Choose your URL slug (no spaces):</label>
                       <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">bakewiseapp.com/baker/</span>
                         <Input 
                           placeholder="yourbakery" 
                           className="flex-1"
                           value={subdomainInput}
-                          onChange={(e) => setSubdomainInput(e.target.value.toLowerCase())}
+                          onChange={(e) => setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                           data-testid="input-subdomain"
                         />
-                        <span className="text-sm text-gray-600">.bakewiseapp.com</span>
                       </div>
-                      <p className="text-xs text-blue-600">This will be your professional URL: yourbakery.bakewiseapp.com</p>
+                      <p className="text-xs text-blue-600">Your professional URL: bakewiseapp.com/baker/{subdomainInput || 'yourbakery'}</p>
+                      <p className="text-xs text-orange-600 font-medium">⚠️ Use only lowercase letters, numbers, and hyphens. No spaces allowed!</p>
                     </div>
                     <Button 
                       className="w-full bg-blue-600 hover:bg-blue-700" 
@@ -994,7 +995,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       disabled={saveSubdomainMutation.isPending}
                       data-testid="button-save-subdomain"
                     >
-                      {saveSubdomainMutation.isPending ? "Saving..." : "Save Subdomain"}
+                      {saveSubdomainMutation.isPending ? "Saving..." : "Save URL Slug"}
                     </Button>
                   </CardContent>
                 </Card>

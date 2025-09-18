@@ -22,9 +22,9 @@ export default function SubdomainSetup() {
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">Setting Up Your Professional Subdomain</h1>
+            <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">Setting Up Your Professional Bakery URL</h1>
             <p className="text-xl text-gray-600">
-              Create your branded bakewiseapp.com subdomain to establish your professional online presence
+              Create your branded bakewiseapp.com URL to establish your professional online presence
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export default function SubdomainSetup() {
               <ul className="space-y-2 text-blue-800">
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
-                  Professional URL: yourbakery.bakewiseapp.com
+                  Professional URL: bakewiseapp.com/baker/yourbakery
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
