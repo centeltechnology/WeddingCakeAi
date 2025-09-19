@@ -373,16 +373,21 @@ export function CalendarSystem({ bakerId, isOwner = false }: CalendarSystemProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {availability.length === 0 ? (
+          {!Array.isArray(availability) || availability.length === 0 ? (
             <div className="text-center py-8 text-gray-600 dark:text-gray-400">
               <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-              <p>No availability set. {isOwner ? 'Add your first availability above.' : 'Check back later for updates.'}</p>
+              <p>
+                {!Array.isArray(availability) 
+                  ? 'Using template-based availability. Individual slots not shown here.'
+                  : `No availability set. ${isOwner ? 'Add your first availability above.' : 'Check back later for updates.'}`
+                }
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {availability
-                .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime())
-                .map(avail => {
+              {(availability as any[])
+                .sort((a: any, b: any) => new Date(a.date!).getTime() - new Date(b.date!).getTime())
+                .map((avail: any) => {
                   const timeSlots: TimeSlot[] = JSON.parse(avail.timeSlots as string);
                   
                   return (
