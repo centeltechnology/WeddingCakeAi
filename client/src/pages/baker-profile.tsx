@@ -28,14 +28,14 @@ import { format } from "date-fns";
 
 export default function BakerProfile() {
   const params = useParams();
-  const bakerId = params.id;
+  const bakerSlug = params.slug;
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: baker, isLoading } = useQuery<Baker>({
-    queryKey: [`/api/bakers/${bakerId}`],
+    queryKey: [`/baker/${bakerSlug}/info`],
   });
 
   if (isLoading) {
@@ -125,7 +125,7 @@ export default function BakerProfile() {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <Link href={`/baker/${baker.id}/calculator`}>
+                    <Link href={`/baker/${baker.slug || baker.id}/calculator`}>
                       <Button size="sm" data-testid="button-get-quote">
                         Get Quote
                       </Button>
