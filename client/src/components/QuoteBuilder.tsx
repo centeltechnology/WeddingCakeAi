@@ -53,7 +53,12 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
     deliveryAddress: '',
     setupTime: '',
     customerNotes: '',
-    terms: '50% deposit required to secure date. Final payment due 7 days before event.'
+    terms: '50% deposit required to secure date. Final payment due 7 days before event.',
+    subtotal: '0.00',
+    taxRate: '0.0875',
+    taxAmount: '0.00',
+    total: '0.00',
+    depositAmount: '0.00'
   });
 
   // Fetch quotes
@@ -107,19 +112,61 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       if (!response.ok) throw new Error('Failed to convert lead to customer');
       return response.json();
     },
-    onSuccess: (customer) => {
+    onSuccess: async (customer, leadId) => {
       // Invalidate specific customer and lead queries
       queryClient.invalidateQueries({ queryKey: ['/api/customers', bakerId] });
       queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
       
-      // Only set customerId if customer object has valid id
+      // Get the lead data to access estimate pricing
+      const selectedLead = leads.find(lead => lead.id === leadId);
+      
+      // Pre-populate quote with customer and calculator pricing data
       if (customer && customer.id) {
-        setNewQuote(prev => ({ ...prev, customerId: customer.id }));
+        const quoteTitleSuffix = selectedLead?.weddingDate 
+          ? `Wedding Cake for ${selectedLead.customerName}`
+          : `Cake for ${selectedLead.customerName}`;
+        
+        setNewQuote(prev => ({ 
+          ...prev, 
+          customerId: customer.id,
+          title: quoteTitleSuffix,
+          eventDate: selectedLead?.weddingDate || '',
+          guestCount: selectedLead?.guestCount || 100,
+          eventType: 'wedding',
+          customerNotes: selectedLead?.message || '',
+        }));
+        
+        // If lead has calculator estimate, fetch and pre-populate pricing
+        if (selectedLead?.estimateId) {
+          try {
+            const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+            const estimateResponse = await makeAuthenticatedRequest(`/api/estimates/${selectedLead.estimateId}`);
+            if (estimateResponse.ok) {
+              const estimate = await estimateResponse.json();
+              
+              // Pre-populate quote with calculator pricing AND numeric values
+              setNewQuote(prev => ({
+                ...prev,
+                description: `${estimate.tiers || 1}-tier ${estimate.shape || 'round'} cake, ${estimate.cakeFlavor || 'vanilla'} flavor` +
+                            (estimate.filling ? ` with ${estimate.filling} filling` : '') +
+                            (estimate.decorations ? `. Decorations: ${Object.keys(estimate.decorations).filter(k => estimate.decorations[k]).join(', ')}` : '') +
+                            (estimate.specialRequests ? `. Special requests: ${estimate.specialRequests}` : ''),
+                // Pre-populate numeric pricing fields from calculator
+                subtotal: estimate.subtotal || '0.00',
+                taxAmount: estimate.tax || '0.00',
+                total: estimate.total || '0.00',
+                taxRate: '0.0875', // Default tax rate
+              }));
+            }
+          } catch (error) {
+            console.error('Failed to fetch estimate data:', error);
+          }
+        }
       }
       
       toast({
-        title: "Lead Converted",
-        description: "Lead has been converted to customer and selected for the quote.",
+        title: "Lead Converted & Quote Pre-filled",
+        description: "Lead converted to customer and quote pre-populated with calculator pricing data.",
       });
     },
     onError: () => {
@@ -137,7 +184,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       return apiRequest('POST', '/api/quotes', quoteData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', bakerId] });
       toast({
         title: "Quote Created",
         description: "Your quote has been created successfully!",
@@ -154,7 +201,12 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
         deliveryAddress: '',
         setupTime: '',
         customerNotes: '',
-        terms: '50% deposit required to secure date. Final payment due 7 days before event.'
+        terms: '50% deposit required to secure date. Final payment due 7 days before event.',
+        subtotal: '0.00',
+        taxRate: '0.0875',
+        taxAmount: '0.00',
+        total: '0.00',
+        depositAmount: '0.00'
       });
     },
     onError: () => {
@@ -172,7 +224,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       return apiRequest('PUT', `/api/quotes/${id}`, updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', bakerId] });
       toast({
         title: "Quote Updated",
         description: "Your quote has been updated successfully!",
@@ -186,7 +238,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       return apiRequest('POST', `/api/quotes/${quoteId}/send`);
     },
     onSuccess: (_, quoteId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', bakerId] });
       const quote = quotes.find(q => q.id === quoteId);
       toast({
         title: "Quote Sent!",
@@ -217,11 +269,12 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       bakerId,
       quoteNumber: `Q${new Date().getFullYear()}-${String(quotes.length + 1).padStart(3, '0')}`,
       status: 'draft',
-      subtotal: '0.00',
-      taxRate: '0.0875',
-      taxAmount: '0.00',
-      total: '0.00',
-      depositAmount: '0.00',
+      // Preserve pre-populated values from lead/template, fallback to defaults
+      subtotal: newQuote.subtotal || '0.00',
+      taxRate: newQuote.taxRate || '0.0875',
+      taxAmount: newQuote.taxAmount || '0.00',
+      total: newQuote.total || '0.00',
+      depositAmount: newQuote.depositAmount || '0.00',
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
     };
 
@@ -415,7 +468,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
               Create Quote
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Quote</DialogTitle>
               <DialogDescription>
@@ -504,7 +557,31 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                 <Label htmlFor="templateId">Quote Template (Optional)</Label>
                 <Select 
                   value={newQuote.templateId} 
-                  onValueChange={(value) => setNewQuote(prev => ({ ...prev, templateId: value === 'no-template' ? '' : value }))}
+                  onValueChange={(value) => {
+                    if (value === 'no-template') {
+                      setNewQuote(prev => ({ ...prev, templateId: '' }));
+                    } else {
+                      // Find selected template and pre-populate pricing fields
+                      const selectedTemplate = templates.find(t => t.id === value);
+                      if (selectedTemplate) {
+                        setNewQuote(prev => ({ 
+                          ...prev, 
+                          templateId: value,
+                          title: selectedTemplate.name,
+                          description: selectedTemplate.description || '',
+                          subtotal: selectedTemplate.basePrice || '0.00',
+                          total: selectedTemplate.basePrice || '0.00',
+                        }));
+                        
+                        toast({
+                          title: "Template Applied",
+                          description: "Template pricing loaded. You can edit all fields before creating the quote.",
+                        });
+                      } else {
+                        setNewQuote(prev => ({ ...prev, templateId: value }));
+                      }
+                    }
+                  }}
                 >
                   <SelectTrigger data-testid="select-template">
                     <SelectValue placeholder="Choose a template or start from scratch" />
@@ -551,6 +628,75 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                   placeholder="Describe the cake design and requirements..."
                   data-testid="textarea-description"
                 />
+              </div>
+
+              {/* Pricing Section */}
+              <div className="md:col-span-2 border-t pt-4">
+                <Label className="text-base font-semibold mb-3 block">Pricing (Editable)</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label htmlFor="subtotal">Subtotal</Label>
+                    <Input
+                      id="subtotal"
+                      type="number"
+                      step="0.01"
+                      value={newQuote.subtotal || '0.00'}
+                      onChange={(e) => {
+                        const subtotal = parseFloat(e.target.value) || 0;
+                        const taxRate = parseFloat(newQuote.taxRate || '0.0875');
+                        const tax = subtotal * taxRate;
+                        const total = subtotal + tax;
+                        
+                        setNewQuote(prev => ({ 
+                          ...prev, 
+                          subtotal: e.target.value,
+                          taxAmount: tax.toFixed(2),
+                          total: total.toFixed(2)
+                        }));
+                      }}
+                      placeholder="0.00"
+                      data-testid="input-subtotal"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                    <Input
+                      id="taxRate"
+                      type="number"
+                      step="0.001"
+                      value={(parseFloat(newQuote.taxRate || '0.0875') * 100).toFixed(3)}
+                      onChange={(e) => {
+                        const taxRatePercent = parseFloat(e.target.value) || 0;
+                        const taxRate = taxRatePercent / 100;
+                        const subtotal = parseFloat(newQuote.subtotal || '0');
+                        const tax = subtotal * taxRate;
+                        const total = subtotal + tax;
+                        
+                        setNewQuote(prev => ({ 
+                          ...prev, 
+                          taxRate: taxRate.toFixed(4),
+                          taxAmount: tax.toFixed(2),
+                          total: total.toFixed(2)
+                        }));
+                      }}
+                      placeholder="8.750"
+                      data-testid="input-tax-rate"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="total">Total</Label>
+                    <Input
+                      id="total"
+                      type="number"
+                      step="0.01"
+                      value={newQuote.total || '0.00'}
+                      onChange={(e) => setNewQuote(prev => ({ ...prev, total: e.target.value }))}
+                      placeholder="0.00"
+                      data-testid="input-total"
+                      className="font-semibold"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2">

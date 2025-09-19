@@ -226,14 +226,19 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
     mutationFn: async (profileData: Partial<AccountDetails>) => {
       return await apiRequest("PUT", `/api/bakers/${bakerId}`, profileData);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // First set editing to false
+      setEditingProfile(false);
+      
+      // Then invalidate and wait for data to refetch
+      await queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/account`] });
+      
+      // Show success toast after data updates
       toast({
         title: "Profile Updated",
         description: "Your profile has been saved successfully!",
       });
-      setEditingProfile(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/account`] });
     },
     onError: () => {
       toast({
@@ -287,7 +292,46 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
 
   // Handle save
   const handleSave = () => {
-    saveProfileMutation.mutate(formData);
+    // Transform complex formData into the flat structure expected by API
+    const apiData: any = {};
+    
+    // Transform business name to name field
+    if (formData.businessName) {
+      apiData.name = formData.businessName;
+    } else if (formData.ownerName) {
+      apiData.name = formData.ownerName;
+    }
+    
+    // Transform phone (simple string)
+    if (formData.phone) {
+      apiData.phone = formData.phone;
+    }
+    
+    // Transform nested address object into simple string
+    if (formData.address) {
+      const addressParts = [
+        formData.address.street,
+        formData.address.city,
+        formData.address.state,
+        formData.address.zipCode
+      ].filter(Boolean);
+      if (addressParts.length > 0) {
+        apiData.address = addressParts.join(', ');
+      }
+    }
+    
+    // Transform description (simple string)
+    if (formData.description) {
+      apiData.description = formData.description;
+    }
+    
+    // Transform years experience (simple number)
+    if (formData.yearsExperience) {
+      apiData.yearsExperience = formData.yearsExperience;
+    }
+    
+    console.log('Sending baker profile data:', apiData);
+    saveProfileMutation.mutate(apiData);
   };
 
   const getPlanColor = (plan: string) => {
