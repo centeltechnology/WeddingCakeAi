@@ -722,18 +722,8 @@ export function setupAuthRoutes(app: Express) {
         });
       }
 
-      // Return baker info (public data)
-      res.json({
-        success: true,
-        id: baker.id,
-        name: baker.name,
-        slug: baker.slug,
-        email: baker.email,
-        address: baker.address,
-        phone: baker.phone,
-        subscriptionPlan: baker.subscriptionPlan,
-        isActive: baker.isActive
-      });
+      // Return full baker data for profile page
+      res.json(baker);
 
     } catch (error) {
       console.error('Baker info error:', error);
