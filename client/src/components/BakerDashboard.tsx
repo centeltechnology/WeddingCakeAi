@@ -48,7 +48,7 @@ import PortfolioUploader from "./PortfolioUploader";
 import { QuoteBuilder } from "./QuoteBuilder";
 import { ContractManager } from "./ContractManager";
 import { PaymentManager } from "./PaymentManager";
-import { EmbeddableWidget } from "./EmbeddableWidget";
+import { BrandingSystem } from "./BrandingSystem";
 import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
 import { CalendarSystem } from "./CalendarSystem";
@@ -440,12 +440,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               </Badge>
               <Button
                 onClick={() => {
-                  // Use domain-aware preview logic with calculator path
+                  // Use domain-aware preview logic with profile path
                   const previewUrl = baker?.customDomain 
-                    ? `https://${baker.customDomain}/calculator`
+                    ? `https://${baker.customDomain}/profile`
                     : baker?.subdomain 
-                      ? `https://${baker.subdomain}.bakewise.co/calculator`
-                      : `/calculator/${bakerId}`;
+                      ? `https://${baker.subdomain}.bakewise.co/profile`
+                      : `/baker/${bakerId}/profile`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
@@ -647,9 +647,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               <Upload className="w-5 h-5" />
               <span>Portfolio</span>
             </TabsTrigger>
-            <TabsTrigger value="widgets" className="flex-col h-20 gap-2 text-xs">
-              <Code className="w-5 h-5" />
-              <span>Widgets</span>
+            <TabsTrigger value="branding" className="flex-col h-20 gap-2 text-xs">
+              <Tag className="w-5 h-5" />
+              <span>Branding</span>
             </TabsTrigger>
             <TabsTrigger value="account" className="flex-col h-20 gap-2 text-xs">
               <Settings className="w-5 h-5" />
@@ -734,9 +734,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   <Upload className="w-4 h-4 mr-2" />
                   Portfolio
                 </TabsTrigger>
-                <TabsTrigger value="widgets" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Code className="w-4 h-4 mr-2" />
-                  Widgets
+                <TabsTrigger value="branding" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
+                  <Tag className="w-4 h-4 mr-2" />
+                  Branding
                 </TabsTrigger>
               </TabsList>
             </CardContent>
@@ -1272,8 +1272,8 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
           <PricingManager bakerId={bakerId} />
         </TabsContent>
 
-        <TabsContent value="widgets">
-          <EmbeddableWidget bakerId={bakerId} />
+        <TabsContent value="branding">
+          <BrandingSystem bakerId={bakerId} />
         </TabsContent>
 
         <TabsContent value="portfolio">
