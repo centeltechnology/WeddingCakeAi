@@ -1030,6 +1030,41 @@ export function CakeCalculator({ bakerId = "baker-1", tenantSlug, className }: C
         config={getAIConfiguration()}
         isOpen={showAIDesigner}
         onClose={() => setShowAIDesigner(false)}
+        onIncludeInQuote={(aiConfig, imageUrl) => {
+          // Convert AI configuration to quote request for this baker
+          const tierSizes = aiConfig.tiers.map(tier => `${tier.size}-inch`).join(', ');
+          const flavors = [...new Set(aiConfig.tiers.map(tier => tier.flavor))].join(', ');
+          const decorationsList = Object.entries(aiConfig.decorations)
+            .filter(([_, enabled]) => enabled)
+            .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase())
+            .join(', ');
+          
+          const message = `AI-Generated Dream Cake Request:
+• ${aiConfig.totalTiers} tiers: ${tierSizes}
+• Flavors: ${flavors}
+• Decorations: ${decorationsList || 'none'}
+${aiConfig.specialRequests ? `• Special requests: ${aiConfig.specialRequests}` : ''}
+${imageUrl ? `• AI visualization: ${imageUrl}` : ''}
+
+Generated from AI Dream Cake Designer. Please provide a detailed quote for this custom design.`;
+
+          // Pre-fill the quote request with AI cake details
+          setCustomerInfo(prev => ({
+            ...prev,
+            // Keep existing customer info but add AI cake details to notes
+          }));
+          
+          // Add AI cake configuration to special requests
+          setSpecialRequests(message);
+          
+          // Navigate to the quote request step
+          setStep(3);
+          
+          toast({
+            title: "AI Cake Added!",
+            description: "Your dream cake design has been added to the quote request. Please fill in your contact details.",
+          });
+        }}
       />
 
       {/* Social Media Footer */}

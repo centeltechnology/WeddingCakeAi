@@ -31,9 +31,10 @@ interface DreamCakeDesignerProps {
   config: CakeConfiguration;
   isOpen: boolean;
   onClose: () => void;
+  onIncludeInQuote?: (config: CakeConfiguration, imageUrl?: string) => void;
 }
 
-export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesignerProps) {
+export function DreamCakeDesigner({ config, isOpen, onClose, onIncludeInQuote }: DreamCakeDesignerProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,10 +91,29 @@ export function DreamCakeDesigner({ config, isOpen, onClose }: DreamCakeDesigner
   };
 
   const handleIncludeInQuote = () => {
-    // TODO: Implement include in quote functionality
-    console.log("Including image in quote");
-    alert("Include in quote functionality will be implemented");
-    onClose();
+    if (onIncludeInQuote) {
+      // Call the provided callback with the configuration and image URL
+      onIncludeInQuote(config, generatedImageUrl || undefined);
+      onClose();
+    } else {
+      // Fallback for when no callback is provided - store in localStorage for potential use
+      const cakeData = {
+        config,
+        imageUrl: generatedImageUrl,
+        prompt: createPrompt(config),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Store the AI cake data for potential quote builder use
+      const existingCakes = JSON.parse(localStorage.getItem('aiGeneratedCakes') || '[]');
+      existingCakes.push(cakeData);
+      // Keep only the last 5 AI generated cakes
+      const recentCakes = existingCakes.slice(-5);
+      localStorage.setItem('aiGeneratedCakes', JSON.stringify(recentCakes));
+      
+      alert("AI cake saved! You can use this design when creating quotes with bakers. Visit a baker's profile to start a quote.");
+      onClose();
+    }
   };
 
   const handleClose = () => {

@@ -571,9 +571,49 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       
       {/* DreamCake Designer Modal */}
       <DreamCakeDesigner
-        config={config}
+        config={{
+          // Convert the Calculator config to DreamCakeDesigner format
+          tiers: Array.from({ length: config.tiers }, (_, i) => ({
+            size: config.baseSize - (i * 2), // Each tier is 2 inches smaller than the previous
+            shape: config.shape,
+            flavor: config.cakeFlavor
+          })),
+          totalTiers: config.tiers,
+          decorations: config.decorations,
+          specialRequests: config.specialRequests || ''
+        }}
         isOpen={isDreamCakeDesignerOpen}
         onClose={() => setIsDreamCakeDesignerOpen(false)}
+        onIncludeInQuote={(aiConfig, imageUrl) => {
+          // Convert the AI cake configuration to a format suitable for estimates
+          const tierSizes = aiConfig.tiers.map(tier => `${tier.size}-inch`).join(', ');
+          const flavors = [...new Set(aiConfig.tiers.map(tier => tier.flavor))].join(', ');
+          const cakeDescription = `AI-Generated Dream Cake: ${aiConfig.totalTiers} tiers (${tierSizes}), flavors: ${flavors}. Decorations: ${Object.entries(aiConfig.decorations).filter(([_, enabled]) => enabled).map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ') || 'none'}. ${aiConfig.specialRequests ? `Special requests: ${aiConfig.specialRequests}` : ''}`;
+          
+          const aiCakeEstimate = {
+            guestCount: config.guestCount || 75,
+            eventDate: config.eventDate || '',
+            budget: pricing.total,
+            description: cakeDescription,
+            preferences: {
+              cakeStyle: `${aiConfig.totalTiers}-tier cake with sizes: ${tierSizes}`,
+              decorations: Object.entries(aiConfig.decorations)
+                .filter(([_, enabled]) => enabled)
+                .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase())
+                .join(', ') || 'none',
+              specialRequests: aiConfig.specialRequests,
+              aiImageUrl: imageUrl
+            }
+          };
+          
+          // Save the AI-generated cake as an estimate
+          saveEstimateMutation.mutate(aiCakeEstimate);
+          
+          toast({
+            title: "Dream Cake Saved!",
+            description: "Your AI-generated cake has been saved to your estimates. You can now share it with bakers when requesting quotes.",
+          });
+        }}
       />
     </div>
   );
