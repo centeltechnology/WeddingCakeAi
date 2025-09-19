@@ -73,6 +73,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [cakeTypes, setCakeTypes] = useState<string[]>([]);
   const [newCakeType, setNewCakeType] = useState("");
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("leads");
 
   const handleLogout = () => {
     // Clear authentication tokens using centralized token manager
@@ -609,7 +610,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       </div>
 
       {/* Navigation Tabs - Organized by Category */}
-      <Tabs defaultValue="leads" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Mobile Tab Navigation */}
         <div className="lg:hidden mb-6">
           <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
@@ -1272,7 +1273,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               <Button
                                 onClick={() => {
                                   // Navigate to quotes with this lead pre-selected for conversion
-                                  setActiveSection('quotes');
+                                  setActiveTab('quotes');
                                   setSelectedLead(null);
                                   toast({
                                     title: "Quote Creation Ready",
