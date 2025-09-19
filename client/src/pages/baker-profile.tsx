@@ -30,6 +30,7 @@ export default function BakerProfile() {
   const params = useParams();
   const bakerId = params.id;
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -232,7 +233,12 @@ export default function BakerProfile() {
                               className="w-full h-64 object-cover rounded-lg transition-transform group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                              <Button variant="secondary" size="sm">
+                              <Button 
+                                variant="secondary" 
+                                size="sm"
+                                onClick={() => setSelectedImage(image)}
+                                data-testid={`button-view-details-${index}`}
+                              >
                                 View Details
                               </Button>
                             </div>
@@ -411,6 +417,30 @@ export default function BakerProfile() {
       </main>
       
       <Footer />
+      
+      {/* Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img 
+              src={selectedImage} 
+              alt="Portfolio Details"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+              data-testid="button-close-image"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
