@@ -237,6 +237,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="4">4 inch (serves ~6)</SelectItem>
                       <SelectItem value="8">8 inch</SelectItem>
                       <SelectItem value="10">10 inch</SelectItem>
                       <SelectItem value="12">12 inch</SelectItem>

@@ -31,6 +31,7 @@ const BASE_PRICES = {
     4: 580,
   },
   sizeMultipliers: {
+    4: 0.5,
     8: 0.8,
     10: 1.0,
     12: 1.3,
