@@ -265,6 +265,7 @@ export class MemStorage implements IStorage {
   private transactions: Map<string, Transaction>;
   private availability: Map<string, Availability>;
   private consultations: Map<string, Consultation>;
+  private bookings: Map<string, Booking>;
   private analytics: Map<string, Analytics>;
   private bakerProfiles: Map<string, BakerProfile>;
   
@@ -318,7 +319,10 @@ export class MemStorage implements IStorage {
       isActive: true,
       lastLoginAt: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+      resetTokenUsedAt: null
     };
     
     this.users.set(adminId, adminUser);
@@ -336,6 +340,7 @@ export class MemStorage implements IStorage {
     this.transactions = new Map();
     this.availability = new Map();
     this.consultations = new Map();
+    this.bookings = new Map();
     this.analytics = new Map();
     this.bakerProfiles = new Map();
     
@@ -558,7 +563,10 @@ export class MemStorage implements IStorage {
       isActive: insertUser.isActive ?? true,
       lastLoginAt: insertUser.lastLoginAt || null,
       createdAt: insertUser.createdAt || new Date(),
-      updatedAt: insertUser.updatedAt || new Date()
+      updatedAt: insertUser.updatedAt || new Date(),
+      resetTokenHash: insertUser.resetTokenHash || null,
+      resetTokenExpiresAt: insertUser.resetTokenExpiresAt || null,
+      resetTokenUsedAt: insertUser.resetTokenUsedAt || null
     };
     this.users.set(id, user);
     return user;
@@ -887,6 +895,37 @@ export class MemStorage implements IStorage {
       c.status !== 'cancelled' && 
       c.status !== 'completed'
     ).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // Booking methods (simplified replacement for consultations)
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    const id = randomUUID();
+    const newBooking: Booking = {
+      ...booking,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.bookings.set(id, newBooking);
+    return newBooking;
+  }
+
+  async getBookingsByBakerId(bakerId: string): Promise<Booking[]> {
+    return Array.from(this.bookings.values()).filter(booking => booking.bakerId === bakerId);
+  }
+
+  async updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking> {
+    const existing = this.bookings.get(id);
+    if (!existing) {
+      throw new Error(`Booking with id ${id} not found`);
+    }
+    const updated: Booking = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.bookings.set(id, updated);
+    return updated;
   }
 
   private initializeSampleAvailability() {
@@ -1851,14 +1890,14 @@ export class MemStorage implements IStorage {
       basePrice: "500.00",
       pricePerServing: "8.50",
       tiers: [
-        { tierNumber: 1, diameter: 12, height: 4, servings: 60, priceMultiplier: 1.0 },
-        { tierNumber: 2, diameter: 9, height: 4, servings: 35, priceMultiplier: 0.8 },
-        { tierNumber: 3, diameter: 6, height: 4, servings: 15, priceMultiplier: 0.6 }
+        { tierNumber: 1, name: "Base Tier", diameter: 12, height: 4, servings: 60, basePrice: 300, priceMultiplier: 1.0, isOptional: false },
+        { tierNumber: 2, name: "Middle Tier", diameter: 9, height: 4, servings: 35, basePrice: 150, priceMultiplier: 0.8, isOptional: false },
+        { tierNumber: 3, name: "Top Tier", diameter: 6, height: 4, servings: 15, basePrice: 100, priceMultiplier: 0.6, isOptional: true }
       ],
       addOns: [
-        { name: "Sugar Flowers", description: "Handcrafted sugar flowers", price: 150, category: "decoration" },
-        { name: "Gold Leaf Accent", description: "Edible gold leaf details", price: 100, category: "decoration" },
-        { name: "Delivery & Setup", description: "Professional delivery and setup", price: 75, category: "service" }
+        { id: "addon-1", name: "Sugar Flowers", description: "Handcrafted sugar flowers", price: 150, category: "decoration", pricingType: "fixed", isRequired: false },
+        { id: "addon-2", name: "Gold Leaf Accent", description: "Edible gold leaf details", price: 100, category: "decoration", pricingType: "fixed", isRequired: false },
+        { id: "addon-3", name: "Delivery & Setup", description: "Professional delivery and setup", price: 75, category: "service", pricingType: "fixed", isRequired: false }
       ],
       isActive: true,
       createdAt: new Date(),

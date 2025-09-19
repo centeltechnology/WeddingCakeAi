@@ -9,9 +9,7 @@ import { type InsertBaker } from "@shared/schema";
 // Initialize Stripe for subscription management
 let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-06-20",
-  });
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   console.log('Stripe initialized for baker subscriptions');
 } else {
   console.warn('STRIPE_SECRET_KEY not found - subscription features will be disabled');
@@ -451,7 +449,7 @@ export function setupAuthRoutes(app: Express) {
             // Update baker with customer ID immediately for future reuse
             await databaseStorage.updateBaker(baker.id, {
               stripeCustomerId: customer.id
-            } as Partial<InsertBaker>);
+            });
           }
 
           // IDEMPOTENCY: Check for existing pending checkout sessions to prevent duplicates
@@ -502,7 +500,7 @@ export function setupAuthRoutes(app: Express) {
           await databaseStorage.updateBaker(baker.id, {
             subscriptionPlan: normalizedPlanId,
             subscriptionStatus: 'pending'
-          } as Partial<InsertBaker>);
+          });
 
           return res.status(201).json({
             success: true,
