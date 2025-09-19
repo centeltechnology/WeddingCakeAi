@@ -105,7 +105,6 @@ export default function BakerProfile() {
                       <div className="flex items-center">
                         <Star className="h-4 w-4 text-yellow-500 fill-current mr-1" />
                         <span className="font-medium">{baker.rating}</span>
-                        <span className="ml-1">(127 reviews)</span>
                       </div>
                     )}
                     {baker.address && (
@@ -130,7 +129,14 @@ export default function BakerProfile() {
                         Get Quote
                       </Button>
                     </Link>
-                    <Button size="sm" variant="outline" data-testid="button-book-consultation">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      data-testid="button-book-consultation"
+                      onClick={() => {
+                        document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
                       Book Consultation
                     </Button>
                   </div>
@@ -140,25 +146,55 @@ export default function BakerProfile() {
               {/* Contact & Social */}
               <div className="flex flex-wrap gap-2">
                 {baker.phone && (
-                  <Button size="sm" variant="outline" className="h-8" data-testid="button-phone">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-8" 
+                    data-testid="button-phone"
+                    onClick={() => window.location.href = `tel:${baker.phone}`}
+                  >
                     <Phone className="h-4 w-4 mr-1" />
                     Call
                   </Button>
                 )}
                 {baker.socialMedia?.website && (
-                  <Button size="sm" variant="outline" className="h-8" data-testid="button-website">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-8" 
+                    data-testid="button-website"
+                    onClick={() => {
+                      const website = baker.socialMedia?.website;
+                      if (website) {
+                        const url = website.startsWith('http') ? website : `https://${website}`;
+                        window.open(url, '_blank');
+                      }
+                    }}
+                  >
                     <Globe className="h-4 w-4 mr-1" />
                     Website
                   </Button>
                 )}
                 {baker.socialMedia?.instagram && (
-                  <Button size="sm" variant="outline" className="h-8" data-testid="button-instagram">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-8" 
+                    data-testid="button-instagram"
+                    onClick={() => window.open(`https://instagram.com/${baker.socialMedia?.instagram?.replace('@', '')}`, '_blank')}
+                  >
                     <Instagram className="h-4 w-4 mr-1" />
                     Instagram
                   </Button>
                 )}
                 {baker.socialMedia?.facebook && (
-                  <Button size="sm" variant="outline" className="h-8" data-testid="button-facebook">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-8" 
+                    data-testid="button-facebook"
+                    onClick={() => window.open(`https://facebook.com/${baker.socialMedia?.facebook?.replace('@', '')}`, '_blank')}
+                  >
                     <Facebook className="h-4 w-4 mr-1" />
                     Facebook
                   </Button>
@@ -223,40 +259,6 @@ export default function BakerProfile() {
                       {baker.description || "This talented baker brings creativity and passion to every cake creation."}
                     </p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <Clock className="h-4 w-4 mr-2" />
-                          Business Hours
-                        </h4>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <div className="flex justify-between">
-                            <span>Monday - Friday</span>
-                            <span>9:00 AM - 6:00 PM</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Saturday</span>
-                            <span>10:00 AM - 4:00 PM</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Sunday</span>
-                            <span>By Appointment</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <Users className="h-4 w-4 mr-2" />
-                          Service Area
-                        </h4>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <p>Within 50 miles of {baker.address?.split(',')[1] || 'our location'}</p>
-                          <p>Delivery available for orders over $200</p>
-                          <p>Setup service included for wedding cakes</p>
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -270,28 +272,47 @@ export default function BakerProfile() {
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Cake Types</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">Specialties</h4>
                         <div className="flex flex-wrap gap-2">
-                          {baker.specialties?.map((specialty: string, index: number) => (
-                            <Badge key={index} variant="secondary">
-                              {specialty}
-                            </Badge>
-                          )) || (
+                          {baker.specialties && baker.specialties.length > 0 ? (
+                            baker.specialties.map((specialty: string, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {specialty}
+                              </Badge>
+                            ))
+                          ) : (
                             <p className="text-gray-500">No specialties listed</p>
                           )}
                         </div>
                       </div>
                       
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Additional Services</h4>
-                        <ul className="space-y-2 text-sm text-gray-600">
-                          <li>• Custom cake design consultations</li>
-                          <li>• Cake tasting appointments</li>
-                          <li>• Wedding cake delivery & setup</li>
-                          <li>• Corporate event catering</li>
-                          <li>• Cake decorating classes</li>
-                        </ul>
+                        <h4 className="font-semibold text-gray-900 mb-3">Cake Types</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {baker.cakeTypes && baker.cakeTypes.length > 0 ? (
+                            baker.cakeTypes.map((cakeType: string, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {cakeType}
+                              </Badge>
+                            ))
+                          ) : (
+                            <p className="text-gray-500">No cake types listed</p>
+                          )}
+                        </div>
                       </div>
+                      
+                      {baker.services && baker.services.length > 0 && (
+                        <div className="md:col-span-2">
+                          <h4 className="font-semibold text-gray-900 mb-3">Additional Services</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {baker.services.map((service: string, index: number) => (
+                              <Badge key={index} variant="outline">
+                                {service}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -306,12 +327,14 @@ export default function BakerProfile() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Booking Calendar */}
-            <BookingCalendar 
-              baker={baker} 
-              onBookingComplete={(consultationId) => {
-                console.log('Consultation booked:', consultationId);
-              }} 
-            />
+            <div id="booking-calendar">
+              <BookingCalendar 
+                baker={baker} 
+                onBookingComplete={(consultationId) => {
+                  console.log('Consultation booked:', consultationId);
+                }} 
+              />
+            </div>
             
             {/* Quick Actions */}
             <Card>
@@ -345,20 +368,6 @@ export default function BakerProfile() {
               </CardContent>
             </Card>
             
-            {/* Baker Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Baker Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {(baker.yearsExperience !== undefined && baker.yearsExperience !== null) && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Years Experience</span>
-                    <span className="font-medium">{baker.yearsExperience} year{baker.yearsExperience !== 1 ? 's' : ''}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
             
             {/* Location */}
             <Card>
@@ -371,7 +380,11 @@ export default function BakerProfile() {
                     <MapPin className="h-4 w-4 mr-2 mt-0.5 text-gray-500" />
                     <div>
                       <p className="font-medium">{baker.address}</p>
-                      <p className="text-sm text-gray-500">Serves 50 mile radius</p>
+                      {baker.pricing?.deliverySettings?.deliveryRadius && (
+                        <p className="text-sm text-gray-500">
+                          Serves {baker.pricing.deliverySettings.deliveryRadius} mile radius
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Button 
