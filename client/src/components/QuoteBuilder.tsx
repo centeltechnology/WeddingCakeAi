@@ -492,7 +492,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                     )}
                     
                     {customers.length === 0 && leads.filter(lead => lead.status !== 'converted').length === 0 && (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-customers-available" disabled>
                         No customers or leads available
                       </SelectItem>
                     )}
