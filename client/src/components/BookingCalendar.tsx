@@ -459,6 +459,22 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
           Schedule a consultation with {baker.businessName || baker.name}
         </CardDescription>
         
+        {/* Booking Policy Information */}
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 mt-4">
+          <div className="space-y-2 text-sm">
+            <div className="font-medium text-pink-800">Booking Policy</div>
+            <div className="text-pink-700">
+              • Minimum 24 hours advance notice required
+            </div>
+            <div className="text-pink-700">
+              • Consultations available up to 60 days in advance  
+            </div>
+            <div className="text-pink-700">
+              • Free initial consultation (typically 30-60 minutes)
+            </div>
+          </div>
+        </div>
+        
         {/* Progress indicators */}
         <div className="flex items-center space-x-2 mt-4">
           {[1, 2, 3].map((step) => (
