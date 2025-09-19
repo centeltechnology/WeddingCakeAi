@@ -50,6 +50,7 @@ import { PaymentManager } from "./PaymentManager";
 import { EmbeddableWidget } from "./EmbeddableWidget";
 import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
+import { CalendarSystem } from "./CalendarSystem";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -68,6 +69,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [newSpecialty, setNewSpecialty] = useState("");
   const [cakeTypes, setCakeTypes] = useState<string[]>([]);
   const [newCakeType, setNewCakeType] = useState("");
+  const [selectedLead, setSelectedLead] = useState<string | null>(null);
 
   const handleLogout = () => {
     // Clear authentication tokens using centralized token manager
@@ -442,7 +444,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                     ? `https://${baker.customDomain}/calculator`
                     : baker?.subdomain 
                       ? `https://${baker.subdomain}.bakewise.co/calculator`
-                      : `/baker/${baker?.slug || bakerId}/calculator`;
+                      : `/calculator/${bakerId}`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
@@ -628,6 +630,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               <FileCheck className="w-5 h-5" />
               <span>Contracts</span>
             </TabsTrigger>
+            <TabsTrigger value="bookings" className="flex-col h-20 gap-2 text-xs">
+              <Calendar className="w-5 h-5" />
+              <span>Bookings</span>
+            </TabsTrigger>
             <TabsTrigger value="payments" className="flex-col h-20 gap-2 text-xs">
               <CreditCard className="w-5 h-5" />
               <span>Payments</span>
@@ -678,6 +684,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <FileCheck className="w-4 h-4 mr-2" />
                   Contracts
+                </TabsTrigger>
+                <TabsTrigger value="bookings" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Bookings
                 </TabsTrigger>
               </TabsList>
             </CardContent>
@@ -1093,14 +1103,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               variant="outline" 
                               size="sm"
                               onClick={() => {
-                                handleStatusChange(lead.id, 'archived');
-                                toast({
-                                  title: "Lead Archived",
-                                  description: "Lead moved to archived status",
-                                });
+                                setSelectedLead(selectedLead === lead.id ? null : lead.id);
                               }}
-                              className="text-orange-600 hover:text-orange-700"
-                              data-testid={`button-archive-${lead.id}`}
+                              className="text-blue-600 hover:text-blue-700"
+                              data-testid={`button-view-${lead.id}`}
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -1150,6 +1156,77 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                           </div>
                         </div>
 
+                        {/* Expanded Lead Details */}
+                        {selectedLead === lead.id && (
+                          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+                            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">Lead Details</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <strong>Email:</strong> {lead.customerEmail}
+                              </div>
+                              {lead.customerPhone && (
+                                <div>
+                                  <strong>Phone:</strong> {lead.customerPhone}
+                                </div>
+                              )}
+                              {lead.weddingDate && (
+                                <div>
+                                  <strong>Event Date:</strong> {new Date(lead.weddingDate).toLocaleDateString()}
+                                </div>
+                              )}
+                              {lead.guestCount && (
+                                <div>
+                                  <strong>Guest Count:</strong> {lead.guestCount}
+                                </div>
+                              )}
+                              {lead.budget && (
+                                <div>
+                                  <strong>Budget:</strong> {lead.budget}
+                                </div>
+                              )}
+                              {(lead as any).venue && (
+                                <div>
+                                  <strong>Venue:</strong> {(lead as any).venue}
+                                </div>
+                              )}
+                            </div>
+                            {(lead as any).cakeDetails && (
+                              <div className="mt-3">
+                                <strong>Cake Requirements:</strong>
+                                <div className="mt-1 text-sm text-gray-600">
+                                  {(lead as any).cakeDetails.tiers?.length > 0 && (
+                                    <div>Tiers: {(lead as any).cakeDetails.tiers.length}</div>
+                                  )}
+                                  {(lead as any).cakeDetails.specialRequests && (
+                                    <div>Special Requests: {(lead as any).cakeDetails.specialRequests}</div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Archive Action */}
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  updateLeadMutation.mutate({
+                                    id: lead.id!,
+                                    updates: { status: 'archived' }
+                                  });
+                                  setSelectedLead(null);
+                                }}
+                                disabled={updateLeadMutation.isPending}
+                                data-testid={`button-archive-${lead.id}`}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Archive className="w-4 h-4 mr-2" />
+                                Archive Lead
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
                         {lead.message && (
                           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mt-4">
                             <p className="text-sm text-foreground">{lead.message}</p>
@@ -1180,6 +1257,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="contracts">
           <ContractManager bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="bookings">
+          <CalendarSystem bakerId={bakerId} isOwner={true} />
         </TabsContent>
 
         <TabsContent value="payments">

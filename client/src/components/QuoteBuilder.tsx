@@ -412,13 +412,13 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                 <Label htmlFor="templateId">Quote Template (Optional)</Label>
                 <Select 
                   value={newQuote.templateId} 
-                  onValueChange={(value) => setNewQuote(prev => ({ ...prev, templateId: value }))}
+                  onValueChange={(value) => setNewQuote(prev => ({ ...prev, templateId: value === 'no-template' ? '' : value }))}
                 >
                   <SelectTrigger data-testid="select-template">
                     <SelectValue placeholder="Choose a template or start from scratch" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No template (start from scratch)</SelectItem>
+                    <SelectItem value="no-template">No template (start from scratch)</SelectItem>
                     {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name} - ${template.basePrice}

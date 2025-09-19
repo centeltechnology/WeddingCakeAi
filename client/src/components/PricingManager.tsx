@@ -173,7 +173,10 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
     if (existingPricing) {
       setPricing({
         ...existingPricing,
-        shapes: (Array.isArray(existingPricing.shapes) && existingPricing.shapes.length > 0) ? existingPricing.shapes : DEFAULT_SHAPES
+        cakeSizes: (Array.isArray(existingPricing.cakeSizes) && existingPricing.cakeSizes.length > 0) ? existingPricing.cakeSizes : DEFAULT_CAKE_SIZES,
+        flavors: (Array.isArray(existingPricing.flavors) && existingPricing.flavors.length > 0) ? existingPricing.flavors : DEFAULT_FLAVORS,
+        shapes: (Array.isArray(existingPricing.shapes) && existingPricing.shapes.length > 0) ? existingPricing.shapes : DEFAULT_SHAPES,
+        decorations: (Array.isArray(existingPricing.decorations) && existingPricing.decorations.length > 0) ? existingPricing.decorations : DEFAULT_DECORATIONS
       });
       setHasChanges(false); // Reset changes state when loading existing data
     }
