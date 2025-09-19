@@ -441,12 +441,8 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               </Badge>
               <Button
                 onClick={() => {
-                  // Use domain-aware preview logic with profile path
-                  const previewUrl = baker?.customDomain 
-                    ? `https://${baker.customDomain}/profile`
-                    : baker?.subdomain 
-                      ? `https://${baker.subdomain}.bakewise.co/profile`
-                      : `/baker/${bakerId}/profile`;
+                  // Always use internal route for now since external subdomains aren't set up
+                  const previewUrl = `/baker/${bakerId}/profile`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
