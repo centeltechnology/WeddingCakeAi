@@ -25,7 +25,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, like, sql, gte } from "drizzle-orm";
+import { eq, and, or, like, sql, gte, desc, ne } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -2493,35 +2493,63 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(bakers);
   }
 
-  // Missing consultation methods
-  async createConsultation(insertConsultation: any): Promise<any> {
-    // TODO: Implement consultation creation with database
-    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  // Consultation methods
+  async createConsultation(insertConsultation: InsertConsultation): Promise<Consultation> {
+    const [consultation] = await db
+      .insert(consultations)
+      .values({ ...insertConsultation, id: insertConsultation.id || randomUUID() })
+      .returning();
+    return consultation;
   }
 
-  async getConsultation(id: string): Promise<any> {
-    // TODO: Implement consultation retrieval
-    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  async getConsultation(id: string): Promise<Consultation | undefined> {
+    const [consultation] = await db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.id, id));
+    return consultation || undefined;
   }
 
-  async getConsultationsByBaker(bakerId: string): Promise<any[]> {
-    // TODO: Implement consultation listing by baker
-    return [];
+  async getConsultationsByBaker(bakerId: string): Promise<Consultation[]> {
+    return await db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.bakerId, bakerId))
+      .orderBy(desc(consultations.date));
   }
 
-  async getUpcomingConsultations(bakerId: string): Promise<any[]> {
-    // TODO: Implement upcoming consultation retrieval
-    return [];
+  async getUpcomingConsultations(bakerId: string): Promise<Consultation[]> {
+    const today = new Date().toISOString().split('T')[0];
+    return await db
+      .select()
+      .from(consultations)
+      .where(and(
+        eq(consultations.bakerId, bakerId),
+        gte(consultations.date, today),
+        ne(consultations.status, 'cancelled')
+      ))
+      .orderBy(consultations.date, consultations.timeSlot);
   }
 
-  async updateConsultation(id: string, updates: any): Promise<any> {
-    // TODO: Implement consultation updates
-    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  async updateConsultation(id: string, updates: Partial<InsertConsultation>): Promise<Consultation | undefined> {
+    const [consultation] = await db
+      .update(consultations)
+      .set(updates)
+      .where(eq(consultations.id, id))
+      .returning();
+    return consultation || undefined;
   }
 
-  async cancelConsultation(id: string, reason: string): Promise<any> {
-    // TODO: Implement consultation cancellation
-    throw new Error('Consultation methods not yet implemented in DatabaseStorage');
+  async cancelConsultation(id: string, reason: string): Promise<Consultation | undefined> {
+    const [consultation] = await db
+      .update(consultations)
+      .set({ 
+        status: 'cancelled',
+        notes: reason
+      })
+      .where(eq(consultations.id, id))
+      .returning();
+    return consultation || undefined;
   }
 
   // Missing customer search methods

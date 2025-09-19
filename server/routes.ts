@@ -1318,15 +1318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bakers/:bakerId/availability", authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
-    try {
-      const { bakerId } = req.params;
-      const availability = await storage.getAvailabilityByBakerId(bakerId);
-      res.json(availability);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Note: Public availability route exists at line 414 for customer booking
+  // Authenticated availability management uses the AvailabilitySettings component
 
   app.put("/api/availability/:id", authenticateJWT, async (req: AuthenticatedRequest, res) => {
     try {
