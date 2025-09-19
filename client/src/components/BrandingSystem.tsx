@@ -524,42 +524,6 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
           </Card>
         </TabsContent>
 
-        {/* Domain Tab */}
-        <TabsContent value="domain" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Globe className="h-5 w-5" />
-                <span>Custom Domain</span>
-                {brandingConfig.whiteLabel.enabled && <Crown className="h-4 w-4 text-yellow-500" />}
-              </CardTitle>
-              <CardDescription>
-                Use your own domain for a professional white-label experience
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-
-              <div className="space-y-2">
-                <Label>Default URL</Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    value={`https://${tenantId}.bakewiseapp.com`}
-                    readOnly
-                    className="bg-muted"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`https://${tenantId}.bakewiseapp.com`, '_blank')}
-                    data-testid="button-open-default-url"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Email Tab */}
         <TabsContent value="email" className="space-y-6">
