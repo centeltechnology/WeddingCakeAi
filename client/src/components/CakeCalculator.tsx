@@ -137,7 +137,7 @@ const DEFAULT_DECORATION_OPTIONS: DecorationOption[] = [
   { id: "preservation-kit", name: "Top Tier Preservation", description: "Professional preservation of top tier", price: 45, category: "extras" }
 ];
 
-export function CakeCalculator({ bakerId = "baker-1", tenantSlug, className }: CakeCalculatorProps) {
+export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculatorProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [tiers, setTiers] = useState<CakeTier[]>([]);
@@ -159,6 +159,7 @@ export function CakeCalculator({ bakerId = "baker-1", tenantSlug, className }: C
   // Fetch baker information for branding - with retry and fallback
   const { data: baker } = useQuery({
     queryKey: [`/api/bakers/${bakerId}`],
+    enabled: !!bakerId,
     retry: 1,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -167,6 +168,7 @@ export function CakeCalculator({ bakerId = "baker-1", tenantSlug, className }: C
   // Fetch dynamic pricing configuration - with retry and fallback
   const { data: pricingConfig } = useQuery({
     queryKey: [`/api/bakers/${bakerId}/pricing`],
+    enabled: !!bakerId,
     retry: 1,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes

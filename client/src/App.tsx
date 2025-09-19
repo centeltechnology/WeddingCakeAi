@@ -52,6 +52,7 @@ import CustomerRetention from "@/pages/help/customer-retention";
 import PricingStrategies from "@/pages/help/pricing-strategies";
 import Marketplace from "@/pages/marketplace";
 import BakerProfile from "@/pages/baker-profile";
+import Bakers from "@/pages/bakers";
 import SuperAdminLogin from "@/pages/super-admin-login";
 import SuperAdminSetup from "@/pages/super-admin-setup";
 import SuperAdminForgotPassword from "@/pages/super-admin-forgot-password";
@@ -113,8 +114,12 @@ function Router() {
       )} />
       <Route path="/super-admin/reset-password" component={SuperAdminResetPassword} />
       {/* Tenant-based calculator route (e.g. /baker/bakewise-test-2/calculator) */}
-      <Route path="/baker/:tenantSlug/calculator">
-        {(params) => <CakeCalculator tenantSlug={params.tenantSlug} />}
+      <Route path="/baker/:slug/calculator">
+        {(params) => (
+          <BakerSlugWrapper slug={params.slug}>
+            <CakeCalculator />
+          </BakerSlugWrapper>
+        )}
       </Route>
       {/* Direct baker ID calculator route */}
       <Route path="/calculator/:bakerId">
@@ -151,6 +156,7 @@ function Router() {
       <Route path="/help/customer-retention" component={CustomerRetention} />
       <Route path="/help/pricing-strategies" component={PricingStrategies} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/bakers" component={Bakers} />
       <Route path="/baker/:id/profile" component={BakerProfile} />
       <Route path="/settings" component={Settings} />
       <Route path="/account-settings" component={Settings} />
