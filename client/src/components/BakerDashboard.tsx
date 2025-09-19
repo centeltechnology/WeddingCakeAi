@@ -437,16 +437,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               </Badge>
               <Button
                 onClick={() => {
-                  const subdomain = domainConfig?.subdomain;
-                  const customDomain = domainConfig?.customDomain;
-                  let previewUrl = 'https://bakewiseapp.com/marketplace';
-                  
-                  if (customDomain) {
-                    previewUrl = `https://${customDomain}`;
-                  } else if (subdomain) {
-                    previewUrl = `https://bakewiseapp.com/baker/${subdomain}/calculator`;
-                  }
-                  
+                  // Use domain-aware preview logic with calculator path
+                  const previewUrl = baker?.customDomain 
+                    ? `https://${baker.customDomain}/calculator`
+                    : baker?.subdomain 
+                      ? `https://${baker.subdomain}.bakewise.co/calculator`
+                      : `/baker/${baker?.slug || bakerId}/calculator`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"

@@ -91,6 +91,7 @@ interface BakerPricingConfig {
 }
 
 const DEFAULT_CAKE_SIZES: CakeSizePricing[] = [
+  { size: "4-inch", servings: 6, basePrice: 45, costToMake: 18, profitMargin: 60 },
   { size: "6-inch", servings: 12, basePrice: 65, costToMake: 25, profitMargin: 62 },
   { size: "8-inch", servings: 24, basePrice: 85, costToMake: 35, profitMargin: 59 },
   { size: "10-inch", servings: 38, basePrice: 115, costToMake: 50, profitMargin: 57 },
@@ -172,7 +173,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
     if (existingPricing) {
       setPricing({
         ...existingPricing,
-        shapes: existingPricing.shapes || DEFAULT_SHAPES // Ensure shapes are available
+        shapes: (Array.isArray(existingPricing.shapes) && existingPricing.shapes.length > 0) ? existingPricing.shapes : DEFAULT_SHAPES
       });
       setHasChanges(false); // Reset changes state when loading existing data
     }
@@ -183,13 +184,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
     mutationFn: async (pricingConfig: BakerPricingConfig) => {
       return await apiRequest("PUT", `/api/bakers/${bakerId}/pricing`, pricingConfig);
     },
-    onSuccess: () => {
+    onSuccess: (data, pricingConfig) => {
+      // Update cache immediately for better UX
+      queryClient.setQueryData([`/api/bakers/${bakerId}/pricing`], pricingConfig);
+      // Also invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/pricing`] });
       toast({
         title: "Pricing Updated!",
         description: "Your pricing configuration has been saved successfully.",
       });
       setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/pricing`] });
     },
     onError: () => {
       toast({
@@ -327,6 +331,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
           <Button 
             onClick={handleSave}
             disabled={!hasChanges || savePricingMutation.isPending}
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md disabled:opacity-50"
             data-testid="button-save-pricing"
           >
             {savePricingMutation.isPending ? (

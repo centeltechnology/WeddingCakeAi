@@ -84,6 +84,7 @@ interface QuoteRequest {
 
 // Default fallback values - these will be replaced by dynamic pricing
 const DEFAULT_CAKE_SIZES = [
+  { size: "4-inch", servings: 6, basePrice: 45 },
   { size: "6-inch", servings: 12, basePrice: 65 },
   { size: "8-inch", servings: 24, basePrice: 85 },
   { size: "10-inch", servings: 38, basePrice: 115 },
@@ -175,30 +176,33 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   });
 
   // Use dynamic pricing or fallback to defaults (memoized for performance)
-  const CAKE_SIZES = useMemo(() => 
-    (pricingConfig as any)?.cakeSizes || DEFAULT_CAKE_SIZES, 
-    [pricingConfig]
-  );
+  const CAKE_SIZES = useMemo(() => {
+    const dynamicSizes = (pricingConfig as any)?.cakeSizes;
+    return (dynamicSizes && dynamicSizes.length > 0) ? dynamicSizes : DEFAULT_CAKE_SIZES;
+  }, [pricingConfig]);
   
-  const CAKE_FLAVORS = useMemo(() => 
-    (pricingConfig as any)?.flavors?.map((f: any) => ({
-      id: f.id,
-      name: f.name,
-      premium: f.isPremium,
-      upcharge: f.upcharge
-    })) || DEFAULT_CAKE_FLAVORS, 
-    [pricingConfig]
-  );
+  const CAKE_FLAVORS = useMemo(() => {
+    const dynamicFlavors = (pricingConfig as any)?.flavors;
+    if (dynamicFlavors && dynamicFlavors.length > 0) {
+      return dynamicFlavors.map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        premium: f.isPremium,
+        upcharge: f.upcharge
+      }));
+    }
+    return DEFAULT_CAKE_FLAVORS;
+  }, [pricingConfig]);
   
-  const DECORATION_OPTIONS = useMemo(() => 
-    (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive) || DEFAULT_DECORATION_OPTIONS, 
-    [pricingConfig]
-  );
+  const DECORATION_OPTIONS = useMemo(() => {
+    const dynamicDecorations = (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive);
+    return (dynamicDecorations && dynamicDecorations.length > 0) ? dynamicDecorations : DEFAULT_DECORATION_OPTIONS;
+  }, [pricingConfig]);
   
-  const SHAPE_OPTIONS = useMemo(() => 
-    (pricingConfig as any)?.shapes || CAKE_SHAPES, 
-    [pricingConfig]
-  );
+  const SHAPE_OPTIONS = useMemo(() => {
+    const dynamicShapes = (pricingConfig as any)?.shapes;
+    return (dynamicShapes && dynamicShapes.length > 0) ? dynamicShapes : CAKE_SHAPES;
+  }, [pricingConfig]);
   
   const TAX_RATE = ((pricingConfig as any)?.taxRate || 8.75) / 100;
   const DELIVERY_FEE = (pricingConfig as any)?.deliverySettings?.baseDeliveryFee || 50;

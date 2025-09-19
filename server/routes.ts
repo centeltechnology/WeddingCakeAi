@@ -3,6 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
+import { z } from "zod";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
