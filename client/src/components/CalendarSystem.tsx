@@ -30,7 +30,7 @@ export function CalendarSystem({ bakerId, isOwner = false }: CalendarSystemProps
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: availability = [], isLoading } = useQuery<Availability[]>({
+  const { data: availability = [], isLoading } = useQuery({
     queryKey: ['/api/bakers', bakerId, 'availability'],
     queryFn: async () => {
       const response = await fetch(`/api/bakers/${bakerId}/availability`);
@@ -146,7 +146,12 @@ export function CalendarSystem({ bakerId, isOwner = false }: CalendarSystemProps
   };
 
   const getAvailabilityForDate = (date: string) => {
-    return availability.find(a => a.date === date);
+    // Handle different availability data formats
+    if (Array.isArray(availability)) {
+      return availability.find(a => a.date === date);
+    }
+    // For template-based availability, return null as it's handled differently
+    return null;
   };
 
   const formatDate = (date: Date) => {
