@@ -709,43 +709,6 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
-  // Baker dashboard route (slug-based)
-  app.get('/baker/:slug/dashboard', async (req, res) => {
-    try {
-      const { slug } = req.params;
-      
-      // Find baker by slug
-      const baker = await databaseStorage.getBakerBySlug(slug);
-      if (!baker) {
-        return res.status(404).json({
-          success: false,
-          message: 'Baker not found'
-        });
-      }
-
-      // Return baker dashboard data
-      res.json({
-        success: true,
-        baker: {
-          id: baker.id,
-          name: baker.name,
-          slug: baker.slug,
-          email: baker.email,
-          address: baker.address,
-          phone: baker.phone,
-          subscriptionPlan: baker.subscriptionPlan,
-          isActive: baker.isActive
-        }
-      });
-
-    } catch (error) {
-      console.error('Baker dashboard error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  });
 
   // Get baker info by slug (for frontend routing)
   app.get('/baker/:slug/info', async (req, res) => {
