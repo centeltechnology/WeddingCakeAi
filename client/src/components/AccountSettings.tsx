@@ -112,7 +112,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   // Local form state for editing
   const [formData, setFormData] = useState<Partial<AccountDetails>>({});
   
-  // Update form data when account data changes
+  // Update form data when account data changes (only when not editing)
   const updateFormData = (account: AccountDetails | undefined) => {
     if (account && !editingProfile) {
       setFormData(account);
@@ -227,18 +227,18 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
       return await apiRequest("PUT", `/api/bakers/${bakerId}`, profileData);
     },
     onSuccess: async () => {
-      // First set editing to false
-      setEditingProfile(false);
+      // Show success toast first
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been saved successfully!",
+      });
       
       // Then invalidate and wait for data to refetch
       await queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
       await queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/account`] });
       
-      // Show success toast after data updates
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been saved successfully!",
-      });
+      // Finally set editing to false (this allows the updateFormData to work properly)
+      setEditingProfile(false);
     },
     onError: () => {
       toast({

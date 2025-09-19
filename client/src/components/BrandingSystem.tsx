@@ -318,11 +318,9 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
 
       {/* Main Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="appearance" data-testid="tab-appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="domain" data-testid="tab-domain">Domain</TabsTrigger>
           <TabsTrigger value="email" data-testid="tab-email">Email</TabsTrigger>
-          <TabsTrigger value="white-label" data-testid="tab-white-label">White Label</TabsTrigger>
         </TabsList>
 
         {/* Appearance Tab */}
