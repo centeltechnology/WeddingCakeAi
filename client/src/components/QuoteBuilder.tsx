@@ -883,13 +883,20 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                     
                     <div className="flex space-x-2 pt-2">
                       <Button variant="outline" size="sm" onClick={() => {
-                        // Use template to create new quote
+                        // Use template to create new quote with full pricing pre-population
                         setNewQuote({
                           ...newQuote,
                           templateId: template.id,
-                          title: template.name
+                          title: template.name,
+                          description: template.description || '',
+                          subtotal: template.basePrice || '0.00',
+                          total: template.basePrice || '0.00',
                         });
                         setIsCreating(true);
+                        toast({
+                          title: "Template Applied",
+                          description: "Template pricing loaded. You can edit all fields before creating the quote.",
+                        });
                       }}>
                         <Plus className="h-3 w-3 mr-1" />
                         Use Template
