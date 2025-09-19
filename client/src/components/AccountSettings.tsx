@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Baker } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,6 +75,7 @@ interface AccountDetails {
     paymentUpdates: boolean;
     marketingEmails: boolean;
   };
+  yearsExperience?: number;
 }
 
 interface Subscription {
@@ -118,7 +120,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   };
 
   // Fetch actual baker data
-  const { data: baker } = useQuery<any>({
+  const { data: baker } = useQuery<Baker>({
     queryKey: [`/api/bakers`, bakerId],
     queryFn: async () => {
       const response = await fetch(`/api/bakers/${bakerId}`);
@@ -165,7 +167,8 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
           newLeads: true,
           paymentUpdates: true,
           marketingEmails: false
-        }
+        },
+        yearsExperience: baker.yearsExperience ?? undefined
       };
       updateFormData(accountData);
       return accountData;
@@ -264,7 +267,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   });
 
   // Handle form field changes
-  const handleFieldChange = (field: string, value: string, nestedField?: string) => {
+  const handleFieldChange = (field: string, value: string | number | undefined, nestedField?: string) => {
     setFormData(prev => {
       if (nestedField) {
         return {
@@ -410,6 +413,19 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     disabled={!editingProfile}
                     onChange={(e) => handleFieldChange('phone', e.target.value)}
                     data-testid="input-phone"
+                  />
+                </div>
+                <div>
+                  <Label>Years of Experience</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={editingProfile ? (formData.yearsExperience ?? '') : (account?.yearsExperience ?? '')}
+                    disabled={!editingProfile}
+                    onChange={(e) => handleFieldChange('yearsExperience', e.target.value === '' ? undefined : parseInt(e.target.value))}
+                    placeholder="Enter years of experience"
+                    data-testid="input-years-experience"
                   />
                 </div>
                 

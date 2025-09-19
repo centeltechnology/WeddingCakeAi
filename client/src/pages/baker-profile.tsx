@@ -348,25 +348,15 @@ export default function BakerProfile() {
             {/* Baker Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Baker Stats</CardTitle>
+                <CardTitle>Baker Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Response Time</span>
-                  <span className="font-medium">Within 2 hours</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Completed Orders</span>
-                  <span className="font-medium">450+</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Years Experience</span>
-                  <span className="font-medium">8 years</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Repeat Customers</span>
-                  <span className="font-medium">85%</span>
-                </div>
+                {(baker.yearsExperience !== undefined && baker.yearsExperience !== null) && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Years Experience</span>
+                    <span className="font-medium">{baker.yearsExperience} year{baker.yearsExperience !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
             

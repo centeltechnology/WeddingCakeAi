@@ -153,6 +153,7 @@ function Router() {
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/baker/:id/profile" component={BakerProfile} />
       <Route path="/settings" component={Settings} />
+      <Route path="/account-settings" component={Settings} />
       <Route path="/billing" component={Billing} />
       <Route component={NotFound} />
     </Switch>
