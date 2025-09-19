@@ -852,6 +852,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!baker) {
         return res.status(404).json({ message: "Baker not found" });
       }
+      
+      // Track profile view
+      try {
+        await storage.trackAnalytics({
+          bakerId: baker.id,
+          metric: 'profile_view',
+          date: new Date().toISOString().split('T')[0]
+        });
+      } catch (analyticsError) {
+        // Don't fail the request if analytics tracking fails
+        console.warn('Failed to track analytics:', analyticsError);
+      }
+      
       res.json(baker);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1520,26 +1533,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Track baker profile views
-  app.get("/api/bakers/:id", async (req, res) => {
-    try {
-      const baker = await storage.getBaker(req.params.id);
-      if (!baker) {
-        return res.status(404).json({ message: "Baker not found" });
-      }
-      
-      // Track profile view
-      await storage.trackAnalytics({
-        bakerId: req.params.id,
-        metric: 'profile_view',
-        date: new Date().toISOString().split('T')[0]
-      });
-      
-      res.json(baker);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
 
   // General baker profile update
   app.put("/api/bakers/:id", authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
@@ -2285,33 +2278,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cake Calculator Quote Request API
+  // Cake Calculator Quote Request API - Creates actual leads
   app.post('/api/bakers/:bakerId/quote-requests', async (req, res) => {
     try {
       const { bakerId } = req.params;
-      const quoteRequest = {
-        id: `quote-request-${Date.now()}`,
-        bakerId,
-        tenantId: 'tenant-1', // This would come from baker lookup
-        ...req.body,
-        status: 'new',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      const quoteRequest = req.body;
+      
+      // Get baker to retrieve tenantId
+      const baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Transform quote request to lead data
+      const specialRequestsText = quoteRequest.cakeDesign?.specialRequests || '';
+      const cakeDetails = `${quoteRequest.cakeDesign?.tiers?.length || 0} tier cake for ${quoteRequest.guestCount} guests`;
+      const decorationsText = quoteRequest.cakeDesign?.decorations?.length > 0 
+        ? `Decorations: ${quoteRequest.cakeDesign.decorations.join(', ')}`
+        : '';
+      
+      const message = [
+        `Quote request via Cake Calculator:`,
+        cakeDetails,
+        decorationsText,
+        specialRequestsText ? `Special requests: ${specialRequestsText}` : '',
+        `Contact preference: ${quoteRequest.contactPreference}`,
+        `Timeline: ${quoteRequest.timeline}`,
+        quoteRequest.venue ? `Venue: ${quoteRequest.venue}` : ''
+      ].filter(Boolean).join('\n');
+
+      const leadData = {
+        tenantId: baker.tenantId,
+        bakerId: bakerId,
+        customerName: quoteRequest.customerName,
+        customerEmail: quoteRequest.email,
+        customerPhone: quoteRequest.phone || null,
+        weddingDate: quoteRequest.eventDate || null,
+        guestCount: quoteRequest.guestCount || null,
+        budget: quoteRequest.pricing?.total ? `$${quoteRequest.pricing.total.toFixed(2)}` : null,
+        message: message,
+        status: 'new'
       };
 
-      // In a real app, this would save to database and trigger notifications
-      // For demo, we'll just simulate success
-      console.log('New cake calculator quote request:', quoteRequest);
+      // Create the lead using the existing lead creation logic
+      const lead = await storage.createLead(leadData);
       
-      // Simulate email notification to baker
-      setTimeout(() => {
-        console.log(`Email notification sent to baker ${bakerId} about new quote request`);
-      }, 1000);
+      // Send notification emails (same logic as the /api/leads endpoint)
+      // Track analytics (non-blocking)
+      try {
+        await storage.trackAnalytics({
+          bakerId: bakerId,
+          metric: 'contact_attempt',
+          date: new Date().toISOString().split('T')[0]
+        });
+      } catch (analyticsError) {
+        // Don't fail the entire request if analytics tracking fails
+        console.warn('Failed to track analytics for quote request:', analyticsError);
+      }
+      
+      // Email baker about new lead
+      const template = emailTemplates.newLeadNotification(
+        baker.name,
+        leadData.customerName,
+        leadData.customerEmail,
+        leadData.message,
+        leadData.weddingDate || undefined
+      );
+      
+      await sendEmail({
+        to: baker.email,
+        from: 'noreply@weddingcakecalculator.com',
+        fromName: 'Wedding Cake Calculator',
+        ...template
+      });
+      
+      // Email confirmation to customer
+      const confirmTemplate = emailTemplates.leadConfirmation(
+        leadData.customerName,
+        baker.name
+      );
+      
+      await sendEmail({
+        to: leadData.customerEmail,
+        from: 'noreply@weddingcakecalculator.com',
+        fromName: 'Wedding Cake Calculator',
+        ...confirmTemplate
+      });
 
       res.status(201).json({
         success: true,
         message: 'Quote request submitted successfully',
-        quoteRequestId: quoteRequest.id
+        leadId: lead.id
       });
     } catch (error) {
       console.error('Error processing quote request:', error);

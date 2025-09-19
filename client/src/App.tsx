@@ -116,6 +116,10 @@ function Router() {
       <Route path="/baker/:tenantSlug/calculator">
         {(params) => <CakeCalculator tenantSlug={params.tenantSlug} />}
       </Route>
+      {/* Direct baker ID calculator route */}
+      <Route path="/calculator/:bakerId">
+        {(params) => <CakeCalculator bakerId={params.bakerId} />}
+      </Route>
       <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
