@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
-  insertTransactionSchema, insertAvailabilitySchema, insertAnalyticsSchema, insertBakerProfileSchema,
+  insertTransactionSchema, insertAvailabilitySchema, insertConsultationSchema, insertAnalyticsSchema, insertBakerProfileSchema,
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
   paymentLinksSchema, type Booking, type InsertBooking
 } from "@shared/schema";
@@ -1379,18 +1379,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Consultation booking routes - PUBLIC ACCESS
   app.post("/api/consultations", async (req, res) => {
     try {
-      const consultationData = req.body; // TODO: Add consultation schema validation
-      const consultation = await storage.createConsultation(consultationData);
+      console.log('POST /api/consultations - Request body:', JSON.stringify(req.body, null, 2));
       
-      // Track analytics for consultation booking
-      await storage.trackAnalytics({
-        bakerId: consultation.bakerId,
-        metric: 'consultation_booked',
-        date: new Date().toISOString().split('T')[0]
-      });
+      const consultationData = insertConsultationSchema.parse(req.body);
+      console.log('Parsed consultation data:', JSON.stringify(consultationData, null, 2));
+      
+      const consultation = await storage.createConsultation(consultationData);
+      console.log('Created consultation:', JSON.stringify(consultation, null, 2));
+      
+      // Track analytics for consultation booking (non-blocking)
+      try {
+        if (consultation && consultation.bakerId) {
+          await storage.trackAnalytics({
+            bakerId: consultation.bakerId,
+            metric: 'consultation_booked',
+            date: new Date().toISOString().split('T')[0]
+          });
+        }
+      } catch (analyticsError) {
+        // Don't fail the entire request if analytics tracking fails
+        console.warn('Failed to track consultation booking analytics:', analyticsError);
+      }
       
       res.status(201).json(consultation);
     } catch (error: any) {
+      console.error('Consultation booking error:', error);
       res.status(400).json({ message: error.message });
     }
   });

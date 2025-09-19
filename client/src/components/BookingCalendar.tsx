@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
+import { useParams } from "wouter";
 import type { Availability, Baker } from "@shared/schema";
 
 interface BookingCalendarProps {
@@ -44,24 +45,67 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const params = useParams();
+  const bakerId = params.id || baker.id; // Use URL param if available, fallback to baker.id
 
   const { data: availability, isLoading: isLoadingAvailability } = useQuery({
-    queryKey: [`/api/bakers/${baker.id}/availability`],
+    queryKey: [`/api/bakers/${bakerId}/availability`],
   });
 
   const bookConsultationMutation = useMutation({
-    mutationFn: (consultationData: any) => 
-      apiRequest('POST', '/api/consultations', consultationData),
+    mutationFn: async (consultationData: any) => {
+      console.log('BookingCalendar - Starting consultation booking with data:', consultationData);
+      const response = await apiRequest('POST', '/api/consultations', consultationData);
+      console.log('BookingCalendar - Received response from booking API:', response);
+      return response;
+    },
     onSuccess: (consultation) => {
-      toast({
-        title: "Consultation Booked!",
-        description: `Your consultation with ${baker.businessName || baker.name} has been successfully booked for ${format(selectedDate!, 'MMMM d, yyyy')} at ${selectedTimeSlot}.`,
-      });
+      console.log('BookingCalendar - onSuccess called with consultation:', consultation);
+      
+      // Capture values before resetting them
+      const bookedDate = selectedDate;
+      const bookedTimeSlot = selectedTimeSlot;
+      
+      // Show success toast with multiple attempts
+      try {
+        // First attempt: Test toast
+        toast({
+          title: "Test Toast",
+          description: "This is a test to verify toast system works",
+        });
+        console.log('BookingCalendar - Test toast triggered');
+        
+        // Second attempt: Actual success toast
+        setTimeout(() => {
+          toast({
+            title: "Consultation Booked!",
+            description: bookedDate && bookedTimeSlot 
+              ? `Your consultation with ${baker.businessName || baker.name} has been successfully booked for ${format(bookedDate, 'MMMM d, yyyy')} at ${bookedTimeSlot}.`
+              : `Your consultation with ${baker.businessName || baker.name} has been successfully booked!`,
+          });
+          console.log('BookingCalendar - Success toast triggered');
+        }, 100);
+      } catch (toastError) {
+        console.error('BookingCalendar - Error showing toast:', toastError);
+        // Show fallback toast
+        toast({
+          title: "Booking Complete",
+          description: "Your consultation has been booked successfully!",
+        });
+      }
       
       if (onBookingComplete) {
-        const consultationId = typeof consultation === 'object' && consultation && 'id' in consultation 
-          ? String(consultation.id)
-          : 'unknown';
+        // Handle different response formats
+        let consultationId = 'unknown';
+        if (consultation) {
+          if (typeof consultation === 'object' && 'id' in consultation) {
+            consultationId = String(consultation.id);
+          } else if (typeof consultation === 'string') {
+            consultationId = consultation;
+          }
+        }
+        console.log('BookingCalendar - Consultation response:', JSON.stringify(consultation, null, 2));
+        console.log('BookingCalendar - Extracted consultation ID:', consultationId);
         onBookingComplete(consultationId);
       }
       
@@ -81,9 +125,10 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
       });
       setCurrentStep(1);
       
-      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${baker.id}/availability`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/availability`] });
     },
     onError: (error: any) => {
+      console.error('BookingCalendar - onError called with error:', error);
       toast({
         title: "Booking Failed",
         description: error.message || "Unable to book consultation. Please try again.",
@@ -94,6 +139,8 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
 
   // Process availability data to get available dates
   useEffect(() => {
+    console.log('BookingCalendar - Processing availability data:', JSON.stringify(availability, null, 2));
+    
     if (availability && typeof availability === 'object') {
       // Check if it's a template-based availability or array of dates
       if ('mode' in availability && (availability as any).mode === 'template') {
@@ -136,6 +183,18 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
         }
         
         setAvailableDates(dates);
+      } else if ('mode' in availability && (availability as any).mode === 'custom' && (availability as any).slots) {
+        // Handle custom availability with slots
+        const config = availability as any;
+        const slots = config.slots || {};
+        const dates = Object.keys(slots).filter(date => {
+          const dateObj = new Date(date);
+          const today = startOfDay(new Date());
+          return dateObj >= today; // Only show future dates
+        }).sort();
+        
+        console.log('BookingCalendar - Custom mode dates:', dates);
+        setAvailableDates(dates);
       } else if (Array.isArray(availability)) {
         // Handle array-based availability (existing logic)
         const today = startOfDay(new Date());
@@ -169,7 +228,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       
       // Check if it's template-based availability
-      if ('mode' in availability && (availability as any).mode === 'template') {
+      if (availability && typeof availability === 'object' && 'mode' in availability && (availability as any).mode === 'template') {
         const config = availability as any;
         const slotMinutes = config.slotMinutes || 60;
         
@@ -235,6 +294,31 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
             available: isAvailable
           });
         }
+        
+        setAvailableTimeSlots(timeSlots);
+      } else if (availability && typeof availability === 'object' && 'mode' in availability && (availability as any).mode === 'custom' && (availability as any).slots) {
+        // Handle custom availability with slots
+        const config = availability as any;
+        const slots = config.slots || {};
+        const dateSlots = slots[dateStr] || [];
+        
+        console.log('BookingCalendar - Custom mode time slots for', dateStr, ':', dateSlots);
+        
+        // Convert slot strings to TimeSlot objects
+        const timeSlots: TimeSlot[] = dateSlots.map((slot: string) => {
+          // Assume slot is like "10:00" and create 60-minute slots
+          const slotMinutes = config.slotMinutes || 60;
+          const [hours, minutes] = slot.split(':').map(Number);
+          const endDate = new Date();
+          endDate.setHours(hours, minutes + slotMinutes, 0, 0);
+          const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+          
+          return {
+            start: slot,
+            end: endTime,
+            available: true
+          };
+        });
         
         setAvailableTimeSlots(timeSlots);
       } else if (Array.isArray(availability)) {
@@ -317,7 +401,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
     let startDate = new Date();
     let maxDays = 90; // Expanded default to cover more cases
     
-    if (availability && 'mode' in availability && (availability as any).mode === 'template') {
+    if (availability && typeof availability === 'object' && 'mode' in availability && (availability as any).mode === 'template') {
       const config = availability as any;
       const minNoticeMinutes = Number(config.minNoticeMinutes ?? 1440);
       const maxAdvanceDays = config.maxAdvanceDays || 60;
@@ -464,7 +548,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
                               : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
                           }
                         `}
-                        data-testid={`time-slot-${timeSlotStr}`}
+                        data-testid={`time-${slot.start}`}
                       >
                         <Clock className="h-4 w-4 mx-auto mb-1" />
                         {slot.start} - {slot.end}
