@@ -2579,6 +2579,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send quote to customer via email
+  app.post('/api/quotes/:id/send', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Get quote details
+      const quote = await storage.getQuote(id);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+
+      // Check if user is authorized to send this quote
+      if (user.role === 'baker') {
+        // Bakers can only send their own quotes
+        if (user.userId !== quote.bakerId) {
+          return res.status(403).json({ 
+            error: 'Access forbidden',
+            message: 'You can only send your own quotes'
+          });
+        }
+      } else if (user.role === 'super_admin') {
+        // Super admins can send any quote (allow for support scenarios)
+      } else {
+        // All other roles (customers, etc.) are forbidden
+        return res.status(403).json({ 
+          error: 'Access forbidden',
+          message: 'Only bakers can send quotes'
+        });
+      }
+
+      // Get customer details
+      const customer = await storage.getCustomer(quote.customerId);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      // Get baker details
+      const baker = await storage.getBaker(quote.bakerId);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Check if quote is in sendable state
+      if (quote.status !== 'draft') {
+        return res.status(409).json({ 
+          error: 'Quote cannot be sent',
+          message: `Quote is already ${quote.status}. Only draft quotes can be sent.`
+        });
+      }
+
+      // Send email notification first before updating status
+      try {
+        const emailContent = emailTemplates.quoteSent(
+          customer.name,
+          baker.businessName || baker.name,
+          quote.quoteNumber,
+          quote.total || '0.00',
+          quote.validUntil || 'No expiration'
+        );
+
+        const emailResult = await sendEmail({
+          to: customer.email,
+          toName: customer.name,
+          subject: emailContent.subject,
+          textPart: emailContent.textPart,
+          htmlPart: emailContent.htmlPart
+        });
+
+        // Check if email was actually sent
+        if (!emailResult) {
+          return res.status(502).json({ 
+            error: 'Email delivery failed',
+            message: 'Unable to send email to customer. Please check email configuration.'
+          });
+        }
+
+        // Only update quote status after successful email send
+        const updatedQuote = await storage.updateQuote(id, {
+          status: 'sent',
+          sentAt: new Date()
+        });
+
+        res.json({
+          success: true,
+          message: 'Quote sent successfully',
+          quote: updatedQuote
+        });
+
+      } catch (emailError) {
+        console.error('Email sending error:', emailError);
+        return res.status(502).json({ 
+          error: 'Email delivery failed',
+          message: 'Failed to send email to customer. Please try again or contact support.'
+        });
+      }
+
+    } catch (error) {
+      console.error('Error sending quote:', error);
+      res.status(500).json({ error: 'Failed to send quote' });
+    }
+  });
+
   // Contract API Routes
   app.get('/api/contracts', async (req, res) => {
     try {

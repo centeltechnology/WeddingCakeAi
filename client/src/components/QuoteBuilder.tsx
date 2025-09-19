@@ -135,6 +135,28 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
     }
   });
 
+  // Send quote mutation
+  const sendQuoteMutation = useMutation({
+    mutationFn: async (quoteId: string) => {
+      return apiRequest('POST', `/api/quotes/${quoteId}/send`);
+    },
+    onSuccess: (_, quoteId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes'] });
+      const quote = quotes.find(q => q.id === quoteId);
+      toast({
+        title: "Quote Sent!",
+        description: `Quote ${quote?.quoteNumber} has been sent to the customer successfully.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleCreateQuote = () => {
     if (!newQuote.title || !newQuote.customerId) {
       toast({
@@ -532,6 +554,18 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                           <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
+                        {quote.status === 'draft' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => sendQuoteMutation.mutate(quote.id)}
+                            disabled={sendQuoteMutation.isPending}
+                            data-testid={`button-send-quote-${quote.id}`}
+                          >
+                            <Send className="h-3 w-3 mr-1" />
+                            Send
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => generatePDF(quote)}>
                           <Download className="h-3 w-3 mr-1" />
                           PDF
