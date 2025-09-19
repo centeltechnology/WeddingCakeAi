@@ -1242,15 +1242,94 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               </div>
                             </div>
                             
-                            {/* Message Section */}
+                            {/* Enhanced Rich Text Message Section */}
                             {lead.message && (
                               <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 mb-6">
                                 <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
                                   <MessageSquare className="w-4 h-4 mr-2 text-rose-500" />
                                   Customer Message
                                 </h6>
-                                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-600 p-3 rounded-lg">
-                                  "{lead.message}"
+                                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-600 p-4 rounded-lg">
+                                  {/* Parse and format the message with rich text */}
+                                  <div className="space-y-3">
+                                    {lead.message.split('\n\n').map((paragraph, index) => {
+                                      // Check if paragraph contains image URLs
+                                      const imageUrlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
+                                      const linkRegex = /(https?:\/\/[^\s]+)/gi;
+                                      
+                                      // Split paragraph by image URLs to handle them separately
+                                      const parts = paragraph.split(imageUrlRegex);
+                                      
+                                      return (
+                                        <div key={index} className="mb-3">
+                                          {parts.map((part, partIndex) => {
+                                            // If it's an image URL
+                                            if (imageUrlRegex.test(part)) {
+                                              return (
+                                                <div key={partIndex} className="my-3">
+                                                  <div className="inline-block bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2">
+                                                    <a 
+                                                      href={part} 
+                                                      target="_blank" 
+                                                      rel="noopener noreferrer"
+                                                      className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+                                                      data-testid={`link-image-${partIndex}`}
+                                                    >
+                                                      <Eye className="w-4 h-4" />
+                                                      <span>View Image</span>
+                                                      <ExternalLink className="w-3 h-3" />
+                                                    </a>
+                                                    <div className="text-xs text-gray-500 mt-1 break-all">{part}</div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            }
+                                            // If it's a regular URL
+                                            else if (linkRegex.test(part)) {
+                                              return (
+                                                <a 
+                                                  key={partIndex}
+                                                  href={part} 
+                                                  target="_blank" 
+                                                  rel="noopener noreferrer"
+                                                  className="text-blue-600 hover:text-blue-700 underline inline-flex items-center space-x-1"
+                                                >
+                                                  <span>{part}</span>
+                                                  <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                              );
+                                            }
+                                            // Regular text with enhanced formatting
+                                            else {
+                                              return (
+                                                <span key={partIndex} className="inline">
+                                                  {part.split('\n').map((line, lineIndex) => (
+                                                    <span key={lineIndex}>
+                                                      {lineIndex > 0 && <br />}
+                                                      {/* Bold text detection */}
+                                                      {line.includes('**') ? 
+                                                        line.split('**').map((segment, segIndex) => 
+                                                          segIndex % 2 === 1 ? 
+                                                            <strong key={segIndex} className="font-semibold text-gray-800 dark:text-gray-200">{segment}</strong> : 
+                                                            segment
+                                                        ) : line
+                                                      }
+                                                    </span>
+                                                  ))}
+                                                </span>
+                                              );
+                                            }
+                                          })}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  {/* Message metadata */}
+                                  <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between text-xs text-gray-500">
+                                    <span>💬 Customer inquiry</span>
+                                    <span>{lead.message.length} characters</span>
+                                  </div>
                                 </div>
                               </div>
                             )}
