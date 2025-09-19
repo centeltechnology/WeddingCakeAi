@@ -40,7 +40,8 @@ import {
   Plus,
   Tag,
   Cake,
-  Archive
+  Archive,
+  Calculator
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -1154,72 +1155,199 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                           </div>
                         </div>
 
-                        {/* Expanded Lead Details */}
+                        {/* Enhanced Formatted Lead Details */}
                         {selectedLead === lead.id && (
-                          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
-                            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">Lead Details</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <strong>Email:</strong> {lead.customerEmail}
+                          <div className="mt-6 p-6 bg-gradient-to-br from-rose-50 via-pink-50 to-white dark:from-rose-900/20 dark:via-pink-900/20 dark:to-gray-800 rounded-xl border border-rose-200 shadow-lg">
+                            {/* Header with Lead Info */}
+                            <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                  {lead.customerName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <h5 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">{lead.customerName}</h5>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">Wedding Cake Inquiry</p>
+                                </div>
                               </div>
-                              {lead.customerPhone && (
-                                <div>
-                                  <strong>Phone:</strong> {lead.customerPhone}
+                              <div className="text-right">
+                                <div className="text-sm text-gray-500 dark:text-gray-400">Received</div>
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {new Date(lead.createdAt!).toLocaleDateString('en-US', { 
+                                    weekday: 'short', 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                  })}
                                 </div>
-                              )}
-                              {lead.weddingDate && (
-                                <div>
-                                  <strong>Event Date:</strong> {new Date(lead.weddingDate).toLocaleDateString()}
-                                </div>
-                              )}
-                              {lead.guestCount && (
-                                <div>
-                                  <strong>Guest Count:</strong> {lead.guestCount}
-                                </div>
-                              )}
-                              {lead.budget && (
-                                <div>
-                                  <strong>Budget:</strong> {lead.budget}
-                                </div>
-                              )}
-                              {(lead as any).venue && (
-                                <div>
-                                  <strong>Venue:</strong> {(lead as any).venue}
-                                </div>
-                              )}
+                              </div>
                             </div>
-                            {(lead as any).cakeDetails && (
-                              <div className="mt-3">
-                                <strong>Cake Requirements:</strong>
-                                <div className="mt-1 text-sm text-gray-600">
-                                  {(lead as any).cakeDetails.tiers?.length > 0 && (
-                                    <div>Tiers: {(lead as any).cakeDetails.tiers.length}</div>
+                            
+                            {/* Contact Information Card */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                              <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
+                                <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                                  <Mail className="w-4 h-4 mr-2 text-rose-500" />
+                                  Contact Information
+                                </h6>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex items-center">
+                                    <span className="w-12 text-gray-500">Email:</span>
+                                    <a href={`mailto:${lead.customerEmail}`} className="text-blue-600 hover:text-blue-700 underline">
+                                      {lead.customerEmail}
+                                    </a>
+                                  </div>
+                                  {lead.customerPhone && (
+                                    <div className="flex items-center">
+                                      <span className="w-12 text-gray-500">Phone:</span>
+                                      <a href={`tel:${lead.customerPhone}`} className="text-blue-600 hover:text-blue-700 underline">
+                                        {lead.customerPhone}
+                                      </a>
+                                    </div>
                                   )}
-                                  {(lead as any).cakeDetails.specialRequests && (
-                                    <div>Special Requests: {(lead as any).cakeDetails.specialRequests}</div>
+                                </div>
+                              </div>
+                              
+                              {/* Event Details Card */}
+                              <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
+                                <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                                  <Calendar className="w-4 h-4 mr-2 text-rose-500" />
+                                  Event Details
+                                </h6>
+                                <div className="space-y-2 text-sm">
+                                  {lead.weddingDate && (
+                                    <div className="flex items-center">
+                                      <span className="w-16 text-gray-500">Date:</span>
+                                      <span className="font-medium">{new Date(lead.weddingDate).toLocaleDateString('en-US', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                      })}</span>
+                                    </div>
                                   )}
+                                  {lead.guestCount && (
+                                    <div className="flex items-center">
+                                      <span className="w-16 text-gray-500">Guests:</span>
+                                      <span className="font-medium">{lead.guestCount} people</span>
+                                    </div>
+                                  )}
+                                  {lead.budget && (
+                                    <div className="flex items-center">
+                                      <span className="w-16 text-gray-500">Budget:</span>
+                                      <span className="font-medium text-green-600">{lead.budget}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Message Section */}
+                            {lead.message && (
+                              <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 mb-6">
+                                <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                                  <MessageSquare className="w-4 h-4 mr-2 text-rose-500" />
+                                  Customer Message
+                                </h6>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-600 p-3 rounded-lg">
+                                  "{lead.message}"
                                 </div>
                               </div>
                             )}
                             
-                            {/* Archive Action */}
-                            <div className="mt-4 flex justify-end">
+                            {/* Calculator Details if available */}
+                            {lead.estimateId && (
+                              <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 mb-6">
+                                <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                                  <Calculator className="w-4 h-4 mr-2 text-rose-500" />
+                                  Calculator Estimate
+                                </h6>
+                                <div className="text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                  This lead includes a calculator estimate. Click "Create Quote" to view and edit the pricing details.
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                              <Button
+                                onClick={() => {
+                                  // Navigate to quotes with this lead pre-selected for conversion
+                                  setActiveSection('quotes');
+                                  setSelectedLead(null);
+                                  toast({
+                                    title: "Quote Creation Ready",
+                                    description: "Navigate to Quotes section and convert this lead to create a customized quote.",
+                                  });
+                                }}
+                                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-lg"
+                                data-testid={`button-create-quote-${lead.id}`}
+                              >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Create Quote
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  // Open email client or consultation booking
+                                  const subject = encodeURIComponent(`Consultation Request - ${lead.customerName} Wedding Cake`);
+                                  const body = encodeURIComponent(`Hi ${lead.customerName},\n\nI'd love to schedule a consultation to discuss your wedding cake requirements in more detail.\n\nWhen would be a good time for you?\n\nBest regards,\n${baker?.name || 'Your Baker'}`);
+                                  window.open(`mailto:${lead.customerEmail}?subject=${subject}&body=${body}`);
+                                  
+                                  toast({
+                                    title: "Email Client Opened",
+                                    description: "Consultation request email template has been prepared.",
+                                  });
+                                }}
+                                className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                data-testid={`button-request-consultation-${lead.id}`}
+                              >
+                                <Phone className="w-4 h-4 mr-2" />
+                                Request Consultation
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  updateLeadMutation.mutate({
+                                    leadId: lead.id!,
+                                    updates: { status: 'contacted' }
+                                  });
+                                  toast({
+                                    title: "Lead Status Updated",
+                                    description: "Lead marked as contacted.",
+                                  });
+                                }}
+                                disabled={updateLeadMutation.isPending}
+                                className="border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                data-testid={`button-mark-contacted-${lead.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Mark as Contacted
+                              </Button>
+                              
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  updateLeadMutation.mutate({
-                                    leadId: lead.id!,
-                                    updates: { status: 'archived' }
-                                  });
-                                  setSelectedLead(null);
+                                  if (confirm('Are you sure you want to archive this lead? It will be moved to your archived leads.')) {
+                                    updateLeadMutation.mutate({
+                                      leadId: lead.id!,
+                                      updates: { status: 'archived' }
+                                    });
+                                    setSelectedLead(null);
+                                    toast({
+                                      title: "Lead Archived",
+                                      description: "Lead has been moved to archives.",
+                                    });
+                                  }
                                 }}
                                 disabled={updateLeadMutation.isPending}
+                                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                                 data-testid={`button-archive-${lead.id}`}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Archive className="w-4 h-4 mr-2" />
-                                Archive Lead
+                                Archive
                               </Button>
                             </div>
                           </div>
