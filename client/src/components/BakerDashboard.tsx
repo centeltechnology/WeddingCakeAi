@@ -41,7 +41,8 @@ import {
   Tag,
   Cake,
   Archive,
-  Calculator
+  Calculator,
+  ExternalLink
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
