@@ -245,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Domain Configuration API
   // Baker-specific domain configuration
-  app.put('/api/bakers/:bakerId/domain', async (req, res) => {
+  app.put('/api/bakers/:bakerId/domain', authenticateJWT, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
       const { subdomain, customDomain } = req.body;
@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bakers/:bakerId/leads", async (req, res) => {
+  app.get("/api/bakers/:bakerId/leads", authenticateJWT, authorizeBakerWithData, async (req, res) => {
     try {
       const leads = await storage.getLeadsByBaker(req.params.bakerId);
       res.json(leads);
@@ -1002,7 +1002,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/leads/:id", async (req, res) => {
+  app.put("/api/leads/:id", authenticateJWT, async (req, res) => {
     try {
       const updates = insertLeadSchema.partial().parse(req.body);
       const lead = await storage.updateLead(req.params.id, updates);

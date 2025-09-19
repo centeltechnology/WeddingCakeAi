@@ -1,7 +1,9 @@
+import { tokenManager } from './auth';
+
 // Helper function to make authenticated requests (CSRF removed for better UX)
 export async function makeAuthenticatedRequest(url: string, options: RequestInit = {}) {
-  // Get baker token from localStorage
-  const token = localStorage.getItem('baker_token');
+  // Get baker token from centralized token manager
+  const token = tokenManager.getToken();
   
   const headers = {
     'Content-Type': 'application/json',

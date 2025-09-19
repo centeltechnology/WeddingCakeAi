@@ -70,9 +70,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [newCakeType, setNewCakeType] = useState("");
 
   const handleLogout = () => {
-    // Clear any stored authentication tokens
-    localStorage.removeItem('bakerToken');
-    localStorage.removeItem('authToken');
+    // Clear authentication tokens using centralized token manager
+    const { tokenManager } = require('@/lib/auth');
+    tokenManager.clearToken();
     
     // Redirect to login page
     window.location.href = '/baker-login';
@@ -100,7 +100,8 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const { data: leads, isLoading: leadsLoading } = useQuery<Lead[]>({
     queryKey: ['/api/bakers', bakerId, 'leads'],
     queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}/leads`);
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/leads`);
       if (!response.ok) throw new Error('Failed to fetch leads');
       return response.json();
     }
@@ -108,9 +109,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
   const updateLeadMutation = useMutation({
     mutationFn: async ({ leadId, updates }: { leadId: string; updates: Partial<Lead> }) => {
-      const response = await fetch(`/api/leads/${leadId}`, {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/leads/${leadId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
       if (!response.ok) throw new Error('Failed to update lead');
@@ -128,9 +129,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   // Subdomain save mutation
   const saveSubdomainMutation = useMutation({
     mutationFn: async (subdomain: string) => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`, {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/domain`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subdomain })
       });
       if (!response.ok) {
