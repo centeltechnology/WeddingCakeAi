@@ -30,11 +30,12 @@ export function CalendarSystem({ bakerId, isOwner = false }: CalendarSystemProps
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: availability = [], isLoading } = useQuery({
+  const { data: availability = [], isLoading } = useQuery<Availability[]>({
     queryKey: ['/api/bakers', bakerId, 'availability'],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/bakers/${bakerId}/availability`);
-      return response as Availability[];
+      const response = await fetch(`/api/bakers/${bakerId}/availability`);
+      if (!response.ok) throw new Error('Failed to fetch availability');
+      return await response.json();
     },
   });
 

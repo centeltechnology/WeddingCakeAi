@@ -1794,7 +1794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Convert lead to customer
-  app.post('/api/leads/:leadId/convert-to-customer', authenticateJWT, async (req, res) => {
+  app.post('/api/leads/:leadId/convert-to-customer', authenticateJWT, authorizeLeadOwnership, async (req, res) => {
     try {
       const leadId = req.params.leadId;
       const lead = await storage.getLead(leadId);

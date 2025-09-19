@@ -26,7 +26,7 @@ import {
   Clock,
   Edit
 } from 'lucide-react';
-import type { Quote, QuoteTemplate, Customer, QuoteItem } from '@shared/schema';
+import type { Quote, QuoteTemplate, Customer, QuoteItem, Lead } from '@shared/schema';
 import jsPDF from 'jspdf';
 import { StripeCheckout, QuickPaymentButton } from './StripeCheckout';
 import { AdvancedQuoteTemplates } from './AdvancedQuoteTemplates';
@@ -108,9 +108,15 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       return response.json();
     },
     onSuccess: (customer) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      // Invalidate specific customer and lead queries
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', bakerId] });
       queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
-      setNewQuote(prev => ({ ...prev, customerId: customer.id }));
+      
+      // Only set customerId if customer object has valid id
+      if (customer && customer.id) {
+        setNewQuote(prev => ({ ...prev, customerId: customer.id }));
+      }
+      
       toast({
         title: "Lead Converted",
         description: "Lead has been converted to customer and selected for the quote.",
@@ -432,10 +438,25 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                 <Label htmlFor="customer">Customer *</Label>
                 <Select 
                   value={newQuote.customerId} 
-                  onValueChange={(value) => setNewQuote(prev => ({ ...prev, customerId: value }))}
+                  onValueChange={(value) => {
+                    if (value.startsWith('lead:')) {
+                      // Extract lead ID and convert to customer
+                      const leadId = value.substring(5);
+                      convertLeadMutation.mutate(leadId);
+                    } else {
+                      setNewQuote(prev => ({ ...prev, customerId: value }));
+                    }
+                  }}
+                  disabled={customersLoading || leadsLoading || convertLeadMutation.isPending}
                 >
                   <SelectTrigger data-testid="select-customer">
-                    <SelectValue placeholder="Select customer or convert lead" />
+                    <SelectValue placeholder={
+                      customersLoading || leadsLoading 
+                        ? "Loading..." 
+                        : convertLeadMutation.isPending 
+                          ? "Converting lead..." 
+                          : "Select customer or convert lead"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.length > 0 && (
@@ -455,37 +476,25 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                       <>
                         {customers.length > 0 && <div className="h-px bg-border mx-2 my-1" />}
                         <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                          Leads (Click to Convert)
+                          Leads (Select to Convert)
                         </div>
                         {leads
                           .filter(lead => lead.status !== 'converted')
                           .map((lead) => (
-                            <div
-                              key={lead.id}
-                              className="flex items-center justify-between px-2 py-2 hover:bg-accent cursor-pointer"
-                              onClick={() => convertLeadMutation.mutate(lead.id)}
-                            >
+                            <SelectItem key={lead.id} value={`lead:${lead.id}`}>
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium">{lead.customerName}</span>
-                                <span className="text-xs text-muted-foreground">{lead.customerEmail}</span>
+                                <span className="font-medium">{lead.customerName}</span>
+                                <span className="text-xs text-muted-foreground">{lead.customerEmail} • Convert to customer</span>
                               </div>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                disabled={convertLeadMutation.isPending}
-                                className="h-6 px-2 text-xs"
-                              >
-                                {convertLeadMutation.isPending ? "Converting..." : "Convert"}
-                              </Button>
-                            </div>
+                            </SelectItem>
                           ))}
                       </>
                     )}
                     
                     {customers.length === 0 && leads.filter(lead => lead.status !== 'converted').length === 0 && (
-                      <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      <SelectItem value="" disabled>
                         No customers or leads available
-                      </div>
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>

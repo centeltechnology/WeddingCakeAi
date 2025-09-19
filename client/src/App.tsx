@@ -102,6 +102,7 @@ function Router() {
         )}
       </Route>
       <Route path="/baker-login" component={BakerLogin} />
+      <Route path="/login" component={BakerLogin} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/auth-test" component={AuthTest} />
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
