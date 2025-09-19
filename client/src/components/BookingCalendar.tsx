@@ -45,16 +45,8 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: availability = [], isLoading: isLoadingAvailability } = useQuery({
+  const { data: availability, isLoading: isLoadingAvailability } = useQuery({
     queryKey: [`/api/bakers/${baker.id}/availability`],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/bakers/${baker.id}/availability`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch availability');
-      }
-      const data = await response.json();
-      return data as Availability[];
-    },
   });
 
   const bookConsultationMutation = useMutation({
@@ -102,51 +94,168 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
 
   // Process availability data to get available dates
   useEffect(() => {
-    if (availability.length > 0) {
-      const today = startOfDay(new Date());
-      const dates = availability
-        .filter(avail => {
-          const availDate = new Date(avail.date);
-          return isAfter(availDate, today) || availDate.getTime() === today.getTime();
-        })
-        .filter(avail => !avail.isBlocked && avail.timeSlots)
-        .filter(avail => {
-          try {
-            const timeSlots = typeof avail.timeSlots === 'string' 
-              ? JSON.parse(avail.timeSlots) 
-              : avail.timeSlots;
-            return Array.isArray(timeSlots) && timeSlots.some((slot: TimeSlot) => slot.available);
-          } catch {
-            return false;
+    if (availability && typeof availability === 'object') {
+      // Check if it's a template-based availability or array of dates
+      if ('mode' in availability && (availability as any).mode === 'template') {
+        // Handle template-based availability
+        const config = availability as any;
+        const templateKey = config.templateKey || 'mon-fri-9-5';
+        const maxAdvanceDays = config.maxAdvanceDays || 60;
+        const minNoticeMinutes = Number(config.minNoticeMinutes ?? 1440); // 24 hours
+        
+        const today = new Date();
+        const minDate = new Date(today.getTime() + minNoticeMinutes * 60 * 1000);
+        const dates: string[] = [];
+        
+        // Generate available dates based on template
+        for (let i = 0; i < maxAdvanceDays; i++) {
+          const date = addDays(minDate, i);
+          const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          
+          let isAvailable = false;
+          switch (templateKey) {
+            case 'mon-fri-9-5':
+              isAvailable = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
+              break;
+            case 'tue-sat-10-6':
+              isAvailable = dayOfWeek >= 2 && dayOfWeek <= 6; // Tuesday to Saturday
+              break;
+            case 'everyday':
+              isAvailable = true;
+              break;
+            case 'weekends':
+              isAvailable = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+              break;
+            default:
+              isAvailable = dayOfWeek >= 1 && dayOfWeek <= 5; // Default to Mon-Fri
           }
-        })
-        .map(avail => avail.date)
-        .sort();
-      
-      setAvailableDates(dates);
+          
+          if (isAvailable) {
+            dates.push(format(date, 'yyyy-MM-dd'));
+          }
+        }
+        
+        setAvailableDates(dates);
+      } else if (Array.isArray(availability)) {
+        // Handle array-based availability (existing logic)
+        const today = startOfDay(new Date());
+        const dates = availability
+          .filter(avail => {
+            const availDate = new Date(avail.date);
+            return isAfter(availDate, today) || availDate.getTime() === today.getTime();
+          })
+          .filter(avail => !avail.isBlocked && avail.timeSlots)
+          .filter(avail => {
+            try {
+              const timeSlots = typeof avail.timeSlots === 'string' 
+                ? JSON.parse(avail.timeSlots) 
+                : avail.timeSlots;
+              return Array.isArray(timeSlots) && timeSlots.some((slot: TimeSlot) => slot.available);
+            } catch {
+              return false;
+            }
+          })
+          .map(avail => avail.date)
+          .sort();
+        
+        setAvailableDates(dates);
+      }
     }
   }, [availability]);
 
   // Process time slots for selected date
   useEffect(() => {
-    if (selectedDate && availability.length > 0) {
+    if (selectedDate && availability) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const dayAvailability = availability.find(avail => avail.date === dateStr);
       
-      if (dayAvailability && dayAvailability.timeSlots) {
-        try {
-          const timeSlots = typeof dayAvailability.timeSlots === 'string' 
-            ? JSON.parse(dayAvailability.timeSlots) 
-            : dayAvailability.timeSlots;
+      // Check if it's template-based availability
+      if ('mode' in availability && (availability as any).mode === 'template') {
+        const config = availability as any;
+        const slotMinutes = config.slotMinutes || 60;
+        
+        // Generate default time slots based on template
+        const templateKey = config.templateKey || 'mon-fri-9-5';
+        let startHour = 9;
+        let endHour = 17;
+        
+        switch (templateKey) {
+          case 'mon-fri-9-5':
+            startHour = 9;
+            endHour = 17;
+            break;
+          case 'tue-sat-10-6':
+            startHour = 10;
+            endHour = 18;
+            break;
+          case 'everyday':
+            startHour = 9;
+            endHour = 17;
+            break;
+          case 'weekends':
+            startHour = 10;
+            endHour = 16;
+            break;
+        }
+        
+        const timeSlots: TimeSlot[] = [];
+        const slotDurationMinutes = slotMinutes;
+        const totalMinutes = (endHour - startHour) * 60;
+        const numberOfSlots = Math.floor(totalMinutes / slotDurationMinutes);
+        
+        // Check if this is the earliest available day and apply same-day filtering
+        const minNotice = Number(config.minNoticeMinutes ?? 1440);
+        const isEarliestDay = selectedDate && 
+          format(selectedDate, 'yyyy-MM-dd') === format(new Date(Date.now() + minNotice * 60 * 1000), 'yyyy-MM-dd');
+        const now = new Date();
+        const minTimeToday = isEarliestDay ? new Date(now.getTime() + minNotice * 60 * 1000) : null;
+        
+        for (let i = 0; i < numberOfSlots; i++) {
+          const slotStartMinutes = startHour * 60 + i * slotDurationMinutes;
+          const slotEndMinutes = slotStartMinutes + slotDurationMinutes;
           
-          if (Array.isArray(timeSlots)) {
-            setAvailableTimeSlots(timeSlots.filter((slot: TimeSlot) => slot.available));
+          const startHourSlot = Math.floor(slotStartMinutes / 60);
+          const startMinuteSlot = slotStartMinutes % 60;
+          const endHourSlot = Math.floor(slotEndMinutes / 60);
+          const endMinuteSlot = slotEndMinutes % 60;
+          
+          const startTime = `${startHourSlot.toString().padStart(2, '0')}:${startMinuteSlot.toString().padStart(2, '0')}`;
+          const endTime = `${endHourSlot.toString().padStart(2, '0')}:${endMinuteSlot.toString().padStart(2, '0')}`;
+          
+          // Filter out slots that are too early for same-day bookings
+          let isAvailable = true;
+          if (minTimeToday && selectedDate) {
+            const slotDateTime = new Date(selectedDate);
+            slotDateTime.setHours(startHourSlot, startMinuteSlot, 0, 0);
+            isAvailable = slotDateTime >= minTimeToday;
           }
-        } catch {
+          
+          timeSlots.push({
+            start: startTime,
+            end: endTime,
+            available: isAvailable
+          });
+        }
+        
+        setAvailableTimeSlots(timeSlots);
+      } else if (Array.isArray(availability)) {
+        // Handle array-based availability (existing logic)
+        const dayAvailability = availability.find(avail => avail.date === dateStr);
+        
+        if (dayAvailability && dayAvailability.timeSlots) {
+          try {
+            const timeSlots = typeof dayAvailability.timeSlots === 'string' 
+              ? JSON.parse(dayAvailability.timeSlots) 
+              : dayAvailability.timeSlots;
+            
+            if (Array.isArray(timeSlots)) {
+              setAvailableTimeSlots(timeSlots.filter((slot: TimeSlot) => slot.available));
+            }
+          } catch {
+            setAvailableTimeSlots([]);
+          }
+        } else {
           setAvailableTimeSlots([]);
         }
-      } else {
-        setAvailableTimeSlots([]);
       }
     } else {
       setAvailableTimeSlots([]);
@@ -204,11 +313,34 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
   };
 
   const renderCalendarDates = () => {
-    const today = new Date();
+    // Calculate proper date window based on availability constraints
+    let startDate = new Date();
+    let maxDays = 90; // Expanded default to cover more cases
+    
+    if (availability && 'mode' in availability && (availability as any).mode === 'template') {
+      const config = availability as any;
+      const minNoticeMinutes = Number(config.minNoticeMinutes ?? 1440);
+      const maxAdvanceDays = config.maxAdvanceDays || 60;
+      
+      // Start from today + minimum notice period
+      startDate = new Date(Date.now() + minNoticeMinutes * 60 * 1000);
+      maxDays = maxAdvanceDays; // Honor full configured advance period
+    } else if (Array.isArray(availability) && availableDates.length > 0) {
+      // For array-based availability, derive window from actual available dates
+      const sortedDates = availableDates.map(d => new Date(d)).sort((a, b) => a.getTime() - b.getTime());
+      const firstAvailableDate = sortedDates[0];
+      const lastAvailableDate = sortedDates[sortedDates.length - 1];
+      
+      // Start from first available date, but ensure window covers all available dates
+      startDate = new Date(Math.min(new Date().getTime(), firstAvailableDate.getTime()));
+      const daysBetween = Math.ceil((lastAvailableDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+      maxDays = Math.max(90, daysBetween + 7); // Ensure we show all available dates plus some buffer
+    }
+    
     const dates = [];
     
-    for (let i = 0; i < 30; i++) {
-      const date = addDays(today, i);
+    for (let i = 0; i < maxDays; i++) {
+      const date = addDays(startDate, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       const isAvailable = availableDates.includes(dateStr);
       const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
@@ -316,16 +448,20 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
                   {availableTimeSlots.map((slot) => {
                     const timeSlotStr = `${slot.start}-${slot.end}`;
                     const isSelected = selectedTimeSlot === timeSlotStr;
+                    const isSlotAvailable = slot.available;
                     
                     return (
                       <button
                         key={timeSlotStr}
-                        onClick={() => handleTimeSlotSelect(timeSlotStr)}
+                        onClick={() => isSlotAvailable ? handleTimeSlotSelect(timeSlotStr) : null}
+                        disabled={!isSlotAvailable}
                         className={`
                           p-3 rounded-lg border text-sm font-medium transition-colors
                           ${isSelected 
                             ? 'bg-pink-500 text-white border-pink-500' 
-                            : 'bg-white hover:bg-pink-50 border-gray-200 text-gray-900 hover:border-pink-300'
+                            : isSlotAvailable 
+                              ? 'bg-white hover:bg-pink-50 border-gray-200 text-gray-900 hover:border-pink-300'
+                              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
                           }
                         `}
                         data-testid={`time-slot-${timeSlotStr}`}

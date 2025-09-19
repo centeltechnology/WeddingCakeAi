@@ -158,6 +158,7 @@ function Router() {
       <Route path="/help/pricing-strategies" component={PricingStrategies} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/bakers" component={Bakers} />
+      <Route path="/baker/:id" component={BakerProfile} />
       <Route path="/baker/:id/profile" component={BakerProfile} />
       <Route path="/settings" component={Settings} />
       <Route path="/account-settings" component={Settings} />
