@@ -453,7 +453,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 data-testid="button-preview"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Preview Page
+                View Profile
               </Button>
               <Button
                 onClick={handleLogout}
@@ -1273,7 +1273,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
 
         <TabsContent value="branding">
-          <BrandingSystem />
+          <BrandingSystem tenantId={bakerId} />
         </TabsContent>
 
         <TabsContent value="portfolio">
