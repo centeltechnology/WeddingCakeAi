@@ -39,7 +39,8 @@ import {
   Star,
   Plus,
   Tag,
-  Cake
+  Cake,
+  Archive
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -1211,7 +1212,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                                 size="sm"
                                 onClick={() => {
                                   updateLeadMutation.mutate({
-                                    id: lead.id!,
+                                    leadId: lead.id!,
                                     updates: { status: 'archived' }
                                   });
                                   setSelectedLead(null);

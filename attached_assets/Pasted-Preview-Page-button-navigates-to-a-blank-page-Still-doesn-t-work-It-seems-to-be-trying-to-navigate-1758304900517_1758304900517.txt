@@ -1,0 +1,27 @@
+Preview Page button navigates to a blank page. Still doesn't work. It seems to be trying to navigate to https://sweetdreams.bakewise.com/calculator instead of "https://bakewise.com/baker/${bakerId}/profile"
+
+Business/Leads
+1. leads are coming through, but when baker attempts to view lead, there is an error: [plugin:runtime-error-plugin] Archive is not defined
+/home/runner/workspace/client/src/components/BakerDashboard.tsx:1223:34
+1221|                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+1222|                                >
+1223|                                  <Archive className="w-4 h-4 mr-2" />
+   |                                   ^
+1224|                                  Archive Lead
+1225|                                </Button>
+    at /home/runner/workspace/client/src/components/BakerDashboard.tsx:1223:34
+    at Array.map (<anonymous>)
+    at BakerDashboard /home/runner/workspace/client/src/components/BakerDashboard.tsx:1060:34
+
+-Also, if you try to send a quote, there is an error: "A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder."
+2. When trying to Create a new quote, Lead does not come up in "Customer" dropdown.
+
+Pricing
+1. Flavor Names are missing (this might be a bug).
+
+Booking
+1. When you click the Booking tab, there's an error.
+2. I guess i just don't understand the booking logic because it's still not working. When you hover over the day/date box (on the /baker/${bakerId}/profile), there's just a red circle with a line. The customer can't select a day/date to start the booking process. 
+-Is there a better way to build this? Maybe a form based on time/date within baker's availability parameters. There should also be a listed fee to the customer for booking a consultation, If baker accepts the appointment, the payment link should be emailed to the lead. The baker should have to add that fee amount in the Bookings/Availability Calendar section.
+
+GET RID of the widget tab (I've said it 5 times at this point).  I'd rather theme management go there instead of widgets. Just get rid of the widgets all together.
