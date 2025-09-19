@@ -128,6 +128,11 @@ export class DatabaseStorage {
     description?: string;
     specialties?: string[];
     cakeTypes?: string[];
+    services?: string[];
+    pricing?: any;
+    name?: string;
+    phone?: string;
+    address?: string;
   }) {
     const validUpdates: any = {};
     
@@ -143,6 +148,11 @@ export class DatabaseStorage {
     if (updates.description !== undefined) validUpdates.description = updates.description;
     if (updates.specialties !== undefined) validUpdates.specialties = updates.specialties;
     if (updates.cakeTypes !== undefined) validUpdates.cakeTypes = updates.cakeTypes;
+    if (updates.services !== undefined) validUpdates.services = updates.services;
+    if (updates.pricing !== undefined) validUpdates.pricing = updates.pricing;
+    if (updates.name !== undefined) validUpdates.name = updates.name;
+    if (updates.phone !== undefined) validUpdates.phone = updates.phone;
+    if (updates.address !== undefined) validUpdates.address = updates.address;
 
     await db
       .update(bakers)

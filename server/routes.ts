@@ -1543,7 +1543,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateBakerProfileSchema = z.object({
         description: z.string().max(2000, 'Description too long').optional(),
         specialties: z.array(z.string()).max(25, 'Too many specialties').optional(),
-        cakeTypes: z.array(z.string()).max(25, 'Too many cake types').optional()
+        cakeTypes: z.array(z.string()).max(25, 'Too many cake types').optional(),
+        services: z.array(z.string()).max(25, 'Too many services').optional(),
+        pricing: z.any().optional(), // Allow any pricing structure for flexibility
+        name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
+        phone: z.string().max(20, 'Phone number too long').optional(),
+        address: z.string().max(500, 'Address too long').optional(),
+        yearsExperience: z.number().int().min(0).max(50).optional()
       });
       
       const validation = updateBakerProfileSchema.safeParse(req.body);
@@ -1554,7 +1560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { description, specialties, cakeTypes } = validation.data;
+      const { description, specialties, cakeTypes, services, pricing, name, phone, address, yearsExperience } = validation.data;
       
       // Validate baker exists
       const baker = await storage.getBaker(id);
@@ -1583,9 +1589,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )];
         updates.cakeTypes = cleanCakeTypes;
       }
+      if (services !== undefined) {
+        // Clean up services (trim whitespace, remove duplicates)
+        const cleanServices = [...new Set(services
+          .map(s => typeof s === 'string' ? s.trim() : '')
+          .filter(s => s.length > 0)
+        )];
+        updates.services = cleanServices;
+      }
+      if (pricing !== undefined) {
+        updates.pricing = pricing;
+      }
+      if (name !== undefined) {
+        updates.name = name.trim();
+      }
+      if (phone !== undefined) {
+        updates.phone = phone.trim();
+      }
+      if (address !== undefined) {
+        updates.address = address.trim();
+      }
 
       // Update baker profile
       await storage.updateBaker(id, updates);
+
+      // Handle yearsExperience separately in BakerProfile table
+      if (yearsExperience !== undefined) {
+        // Check if baker profile exists, create if not
+        let bakerProfile = await storage.getBakerProfileByBakerId(id);
+        if (!bakerProfile) {
+          // Create new baker profile
+          await storage.createBakerProfile({
+            bakerId: id,
+            yearsExperience
+          });
+        } else {
+          // Update existing baker profile
+          await storage.updateBakerProfile(bakerProfile.id, {
+            yearsExperience
+          });
+        }
+      }
       
       // Return updated baker data (sanitized for security)
       const updatedBaker = await storage.getBaker(id);

@@ -146,7 +146,56 @@ export const bakers = pgTable("bakers", {
   priceRange: text("price_range"),
   specialties: text("specialties").array(),
   cakeTypes: text("cake_types").array(),
+  services: text("services").array(),
   description: text("description"),
+  pricing: json("pricing").$type<{
+    cakeSizes?: Array<{
+      id: string;
+      name: string;
+      diameter: number;
+      servings: number;
+      basePrice: number;
+      costToMake: number;
+      profitMargin: number;
+    }>;
+    shapes?: Array<{
+      id: string;
+      name: string;
+      baseUpcharge: number;
+      costToMake: number;
+      profitMargin: number;
+    }>;
+    flavors?: Array<{
+      id: string;
+      name: string;
+      upcharge: number;
+      isPremium: boolean;
+    }>;
+    decorations?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      costToMake: number;
+      category: string;
+      isActive: boolean;
+    }>;
+    taxRate?: number;
+    deliverySettings?: {
+      baseDeliveryFee: number;
+      freeDeliveryMinimum: number;
+      deliveryRadius: number;
+      perMileRate: number;
+    };
+    profitSettings?: {
+      defaultMargin: number;
+      minimumMargin: number;
+      laborRate: number;
+    };
+    seasonalPricing?: any;
+    volumeDiscounts?: any;
+    lastUpdated?: string;
+  }>(),
   portfolio: text("portfolio").array(),
   subscriptionPlan: text("subscription_plan").default('starter'), // starter, professional, enterprise
   isActive: boolean("is_active").default(true),
