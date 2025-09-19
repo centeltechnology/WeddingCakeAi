@@ -86,6 +86,45 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
     }
   });
 
+  // Fetch leads (potential customers)
+  const { data: leads = [], isLoading: leadsLoading } = useQuery<Lead[]>({
+    queryKey: ['/api/bakers', bakerId, 'leads'],
+    queryFn: async () => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/leads`);
+      if (!response.ok) throw new Error('Failed to fetch leads');
+      return response.json();
+    }
+  });
+
+  // Convert lead to customer mutation
+  const convertLeadMutation = useMutation({
+    mutationFn: async (leadId: string) => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/leads/${leadId}/convert-to-customer`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Failed to convert lead to customer');
+      return response.json();
+    },
+    onSuccess: (customer) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
+      setNewQuote(prev => ({ ...prev, customerId: customer.id }));
+      toast({
+        title: "Lead Converted",
+        description: "Lead has been converted to customer and selected for the quote.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to convert lead to customer. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Create quote mutation
   const createQuoteMutation = useMutation({
     mutationFn: async (quoteData: any) => {
@@ -396,14 +435,58 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                   onValueChange={(value) => setNewQuote(prev => ({ ...prev, customerId: value }))}
                 >
                   <SelectTrigger data-testid="select-customer">
-                    <SelectValue placeholder="Select customer" />
+                    <SelectValue placeholder="Select customer or convert lead" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
+                    {customers.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                          Existing Customers
+                        </div>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    
+                    {leads.filter(lead => lead.status !== 'converted').length > 0 && (
+                      <>
+                        {customers.length > 0 && <div className="h-px bg-border mx-2 my-1" />}
+                        <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                          Leads (Click to Convert)
+                        </div>
+                        {leads
+                          .filter(lead => lead.status !== 'converted')
+                          .map((lead) => (
+                            <div
+                              key={lead.id}
+                              className="flex items-center justify-between px-2 py-2 hover:bg-accent cursor-pointer"
+                              onClick={() => convertLeadMutation.mutate(lead.id)}
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{lead.customerName}</span>
+                                <span className="text-xs text-muted-foreground">{lead.customerEmail}</span>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                disabled={convertLeadMutation.isPending}
+                                className="h-6 px-2 text-xs"
+                              >
+                                {convertLeadMutation.isPending ? "Converting..." : "Convert"}
+                              </Button>
+                            </div>
+                          ))}
+                      </>
+                    )}
+                    
+                    {customers.length === 0 && leads.filter(lead => lead.status !== 'converted').length === 0 && (
+                      <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                        No customers or leads available
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

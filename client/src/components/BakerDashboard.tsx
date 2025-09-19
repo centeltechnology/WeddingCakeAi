@@ -1273,7 +1273,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
 
         <TabsContent value="branding">
-          <BrandingSystem bakerId={bakerId} />
+          <BrandingSystem />
         </TabsContent>
 
         <TabsContent value="portfolio">

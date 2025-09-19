@@ -1793,6 +1793,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Convert lead to customer
+  app.post('/api/leads/:leadId/convert-to-customer', authenticateJWT, async (req, res) => {
+    try {
+      const leadId = req.params.leadId;
+      const lead = await storage.getLead(leadId);
+      
+      if (!lead) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      
+      // Check if customer already exists with this email
+      const existingCustomers = await storage.getCustomersByBaker(lead.bakerId);
+      const existingCustomer = existingCustomers.find(c => c.email === lead.customerEmail);
+      
+      if (existingCustomer) {
+        return res.json(existingCustomer);
+      }
+      
+      // Create new customer from lead data
+      const customerData = {
+        bakerId: lead.bakerId || '',
+        tenantId: lead.tenantId || null,
+        name: lead.customerName,
+        email: lead.customerEmail,
+        phone: lead.customerPhone || null,
+        eventDate: lead.weddingDate || null,
+        eventType: 'wedding',
+        guestCount: lead.guestCount || null,
+        budget: lead.budget || null,
+        source: 'lead_conversion',
+        status: 'quoted',
+      };
+      
+      const customer = await storage.createCustomer(customerData);
+      
+      // Update lead status to indicate it's been converted
+      await storage.updateLead(leadId, { status: 'converted' });
+      
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error('Error converting lead to customer:', error);
+      res.status(500).json({ error: 'Failed to convert lead to customer' });
+    }
+  });
+
   app.get('/api/customers/:id', async (req, res) => {
     try {
       const customer = await storage.getCustomer(req.params.id);
