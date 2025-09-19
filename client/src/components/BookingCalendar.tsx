@@ -53,46 +53,20 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
   });
 
   const bookConsultationMutation = useMutation({
-    mutationFn: async (consultationData: any) => {
-      console.log('BookingCalendar - Starting consultation booking with data:', consultationData);
-      const response = await apiRequest('POST', '/api/consultations', consultationData);
-      console.log('BookingCalendar - Received response from booking API:', response);
-      return response;
-    },
+    mutationFn: (consultationData: any) => 
+      apiRequest('POST', '/api/consultations', consultationData),
     onSuccess: (consultation) => {
-      console.log('BookingCalendar - onSuccess called with consultation:', consultation);
-      
       // Capture values before resetting them
       const bookedDate = selectedDate;
       const bookedTimeSlot = selectedTimeSlot;
       
-      // Show success toast with multiple attempts
-      try {
-        // First attempt: Test toast
-        toast({
-          title: "Test Toast",
-          description: "This is a test to verify toast system works",
-        });
-        console.log('BookingCalendar - Test toast triggered');
-        
-        // Second attempt: Actual success toast
-        setTimeout(() => {
-          toast({
-            title: "Consultation Booked!",
-            description: bookedDate && bookedTimeSlot 
-              ? `Your consultation with ${baker.businessName || baker.name} has been successfully booked for ${format(bookedDate, 'MMMM d, yyyy')} at ${bookedTimeSlot}.`
-              : `Your consultation with ${baker.businessName || baker.name} has been successfully booked!`,
-          });
-          console.log('BookingCalendar - Success toast triggered');
-        }, 100);
-      } catch (toastError) {
-        console.error('BookingCalendar - Error showing toast:', toastError);
-        // Show fallback toast
-        toast({
-          title: "Booking Complete",
-          description: "Your consultation has been booked successfully!",
-        });
-      }
+      // Show success toast
+      toast({
+        title: "Consultation Booked!",
+        description: bookedDate && bookedTimeSlot 
+          ? `Your consultation with ${baker.businessName || baker.name} has been successfully booked for ${format(bookedDate, 'MMMM d, yyyy')} at ${bookedTimeSlot}.`
+          : `Your consultation with ${baker.businessName || baker.name} has been successfully booked!`,
+      });
       
       if (onBookingComplete) {
         // Handle different response formats
@@ -104,8 +78,6 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
             consultationId = consultation;
           }
         }
-        console.log('BookingCalendar - Consultation response:', JSON.stringify(consultation, null, 2));
-        console.log('BookingCalendar - Extracted consultation ID:', consultationId);
         onBookingComplete(consultationId);
       }
       
@@ -128,7 +100,6 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
       queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/availability`] });
     },
     onError: (error: any) => {
-      console.error('BookingCalendar - onError called with error:', error);
       toast({
         title: "Booking Failed",
         description: error.message || "Unable to book consultation. Please try again.",
@@ -711,6 +682,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
               <Button 
                 onClick={handleNextStep}
                 disabled={!formData.customerName || !formData.customerEmail}
+                className="bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-next-step-2"
               >
                 Review Booking
@@ -792,6 +764,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
               <Button 
                 onClick={handleConfirmBooking}
                 disabled={bookConsultationMutation.isPending}
+                className="bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-confirm-booking"
               >
                 {bookConsultationMutation.isPending ? "Booking..." : "Confirm Booking"}

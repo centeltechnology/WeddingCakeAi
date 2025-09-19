@@ -1,0 +1,234 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, User, Phone, Mail, MapPin, Users, DollarSign } from "lucide-react";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { Consultation } from "@shared/schema";
+
+interface ConsultationsManagerProps {
+  bakerId: string;
+}
+
+export function ConsultationsManager({ bakerId }: ConsultationsManagerProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: allConsultations = [], isLoading } = useQuery<Consultation[]>({
+    queryKey: [`/api/bakers/${bakerId}/consultations`],
+  });
+
+  const { data: upcomingConsultations = [], isLoading: isLoadingUpcoming } = useQuery<Consultation[]>({
+    queryKey: [`/api/bakers/${bakerId}/consultations/upcoming`],
+  });
+
+  const updateConsultationMutation = useMutation({
+    mutationFn: (data: { id: string; status: string; reason?: string }) =>
+      apiRequest('PUT', `/api/consultations/${data.id}`, { status: data.status, cancelReason: data.reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/consultations`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/consultations/upcoming`] });
+      toast({
+        title: "Consultation Updated",
+        description: "The consultation status has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update consultation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const getStatusColor = (status: string | null) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'rescheduled': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const ConsultationCard = ({ consultation }: { consultation: Consultation }) => (
+    <Card key={consultation.id} data-testid={`consultation-${consultation.id}`}>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg">{consultation.customerName}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {format(new Date(consultation.date), 'MMMM d, yyyy')} at {consultation.timeSlot}
+            </CardDescription>
+          </div>
+          <Badge className={getStatusColor(consultation.status)}>
+            {consultation.status ? consultation.status.charAt(0).toUpperCase() + consultation.status.slice(1) : 'Unknown'}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="h-4 w-4 text-gray-500" />
+              <span>{consultation.customerEmail}</span>
+            </div>
+            {consultation.customerPhone && (
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-gray-500" />
+                <span>{consultation.customerPhone}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span>{consultation.duration} minutes</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            {consultation.eventType && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-gray-500" />
+                <span>{consultation.eventType.charAt(0).toUpperCase() + consultation.eventType.slice(1)}</span>
+              </div>
+            )}
+            {consultation.guestCount && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-gray-500" />
+                <span>{consultation.guestCount} guests</span>
+              </div>
+            )}
+            {consultation.budget && (
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="h-4 w-4 text-gray-500" />
+                <span>{consultation.budget}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {consultation.notes && (
+          <div className="border-t pt-3">
+            <p className="text-sm text-gray-600">
+              <strong>Notes:</strong> {consultation.notes}
+            </p>
+          </div>
+        )}
+
+        {consultation.eventDate && (
+          <div className="border-t pt-3">
+            <p className="text-sm text-gray-600">
+              <strong>Event Date:</strong> {format(new Date(consultation.eventDate), 'MMMM d, yyyy')}
+            </p>
+          </div>
+        )}
+
+        {consultation.status === 'pending' && (
+          <div className="flex gap-2 pt-3">
+            <Button
+              size="sm"
+              onClick={() => updateConsultationMutation.mutate({ 
+                id: consultation.id, 
+                status: 'confirmed' 
+              })}
+              disabled={updateConsultationMutation.isPending}
+              data-testid={`button-confirm-${consultation.id}`}
+            >
+              Confirm
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => updateConsultationMutation.mutate({ 
+                id: consultation.id, 
+                status: 'cancelled',
+                reason: 'Cancelled by baker'
+              })}
+              disabled={updateConsultationMutation.isPending}
+              data-testid={`button-cancel-${consultation.id}`}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (isLoading || isLoadingUpcoming) {
+    return (
+      <Card data-testid="consultations-loading">
+        <CardHeader>
+          <CardTitle>Loading Consultations...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="consultations-manager">
+      <Tabs defaultValue="upcoming" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upcoming" data-testid="tab-upcoming-consultations">
+            Upcoming ({upcomingConsultations.length})
+          </TabsTrigger>
+          <TabsTrigger value="all" data-testid="tab-all-consultations">
+            All Consultations ({allConsultations.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upcoming" className="space-y-4">
+          {upcomingConsultations.length > 0 ? (
+            upcomingConsultations.map(consultation => (
+              <ConsultationCard key={consultation.id} consultation={consultation} />
+            ))
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No upcoming consultations</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  New consultation bookings will appear here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4">
+          {allConsultations.length > 0 ? (
+            allConsultations.map(consultation => (
+              <ConsultationCard key={consultation.id} consultation={consultation} />
+            ))
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No consultations yet</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Customer bookings will appear here once they start booking consultations.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

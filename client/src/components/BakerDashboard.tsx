@@ -52,6 +52,7 @@ import { BrandingSystem } from "./BrandingSystem";
 import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
 import { CalendarSystem } from "./CalendarSystem";
+import { ConsultationsManager } from "./ConsultationsManager";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -1261,7 +1262,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
 
         <TabsContent value="bookings">
-          <CalendarSystem bakerId={bakerId} isOwner={true} />
+          <div className="space-y-6">
+            <ConsultationsManager bakerId={bakerId} />
+            <CalendarSystem bakerId={bakerId} isOwner={true} />
+          </div>
         </TabsContent>
 
         <TabsContent value="payments">
