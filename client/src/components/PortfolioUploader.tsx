@@ -117,9 +117,14 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
   const handleComplete = (result: { successful: Array<{ uploadURL: string }> }) => {
     console.log('Portfolio upload complete result:', result);
     if (result.successful && result.successful.length > 0) {
-      const uploadURL = result.successful[0].uploadURL as string;
-      console.log('About to send portfolio URL:', uploadURL);
-      updatePortfolioMutation.mutate(uploadURL);
+      // Process all uploaded images
+      result.successful.forEach((upload, index) => {
+        const uploadURL = upload.uploadURL as string;
+        console.log(`Processing upload ${index + 1}/${result.successful.length}:`, uploadURL);
+        setTimeout(() => {
+          updatePortfolioMutation.mutate(uploadURL);
+        }, index * 500); // Stagger API calls by 500ms to avoid overwhelming the server
+      });
     }
   };
 
@@ -167,17 +172,17 @@ export default function PortfolioUploader({ bakerId }: PortfolioUploaderProps) {
                 Upload high-quality photos of your wedding cakes to attract more customers
               </p>
               <ObjectUploader
-                maxNumberOfFiles={1}
+                maxNumberOfFiles={Math.min(5, maxImages - portfolio.length)}
                 maxFileSize={5242880} // 5MB
                 onGetUploadParameters={handleGetUploadParameters}
                 onComplete={handleComplete}
                 buttonClassName="w-full h-16 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 text-lg border-2 border-pink-400 hover:border-pink-300"
               >
                 <Upload className="w-6 h-6 mr-3 text-white" />
-                <span className="text-white font-bold">📸 Upload Portfolio Image</span>
+                <span className="text-white font-bold">📸 Upload Portfolio Images</span>
               </ObjectUploader>
               <p className="text-xs text-gray-800 mt-3 font-medium">
-                Supported formats: JPG, PNG (Max 5MB)
+                Supported formats: JPG, PNG (Max 5MB each) • Select up to {Math.min(5, maxImages - portfolio.length)} images at once
               </p>
             </div>
           )}
