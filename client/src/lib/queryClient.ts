@@ -37,6 +37,14 @@ export async function apiRequest(
       headers["Authorization"] = `Bearer ${token}`;
     }
   }
+  
+  // Add baker token for baker API routes
+  if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates')) {
+    const token = localStorage.getItem("baker_token");
+    if (token) {
+      headers["x-baker-token"] = token;
+    }
+  }
 
   const res = await fetch(url, {
     method,
@@ -69,6 +77,14 @@ export const getQueryFn: <T>(options: {
       const token = localStorage.getItem("super_admin_token");
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    
+    // Add baker token for baker API routes
+    if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates')) {
+      const token = localStorage.getItem("baker_token");
+      if (token) {
+        headers["x-baker-token"] = token;
       }
     }
     
