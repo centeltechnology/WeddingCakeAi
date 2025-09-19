@@ -9,7 +9,7 @@ import {
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
   paymentLinksSchema, type Booking, type InsertBooking
 } from "@shared/schema";
-import { authenticateJWT, authorizeBakerWithData, type AuthenticatedRequest } from "./authMiddleware";
+import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -1002,7 +1002,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/leads/:id", authenticateJWT, async (req, res) => {
+  app.put("/api/leads/:id", authenticateJWT, authorizeLeadOwnership, async (req, res) => {
     try {
       const updates = insertLeadSchema.partial().parse(req.body);
       const lead = await storage.updateLead(req.params.id, updates);

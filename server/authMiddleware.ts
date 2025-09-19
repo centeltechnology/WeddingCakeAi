@@ -18,6 +18,53 @@ interface AuthenticatedRequest extends Request {
 }
 
 /**
+ * Authorize Lead Ownership middleware - verifies the lead belongs to the authenticated baker
+ */
+export async function authorizeLeadOwnership(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'User not authenticated'
+      });
+    }
+
+    const leadId = req.params.id;
+    if (!leadId) {
+      return res.status(400).json({ 
+        error: 'Lead ID required',
+        message: 'Missing lead ID in request parameters'
+      });
+    }
+
+    // Get the lead and check ownership
+    const lead = await storage.getLead(leadId);
+    if (!lead) {
+      return res.status(404).json({ 
+        error: 'Lead not found',
+        message: 'The requested lead does not exist'
+      });
+    }
+
+    // Verify the lead belongs to the authenticated baker
+    if (lead.bakerId !== req.user.userId) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        message: 'You can only access leads that belong to you'
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Lead authorization error:', error);
+    return res.status(500).json({ 
+      error: 'Authorization error',
+      message: 'Internal server error during authorization'
+    });
+  }
+}
+
+/**
  * JWT Authentication middleware - verifies token and adds user to request
  */
 export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: NextFunction) {

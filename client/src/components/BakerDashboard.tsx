@@ -71,11 +71,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
   const handleLogout = () => {
     // Clear authentication tokens using centralized token manager
-    const { tokenManager } = require('@/lib/auth');
-    tokenManager.clearToken();
-    
-    // Redirect to login page
-    window.location.href = '/baker-login';
+    import('@/lib/auth').then(({ tokenManager }) => {
+      tokenManager.clearToken();
+      
+      // Redirect to login page
+      window.location.href = '/baker-login';
+    });
   };
 
   const { data: baker } = useQuery<Baker>({
