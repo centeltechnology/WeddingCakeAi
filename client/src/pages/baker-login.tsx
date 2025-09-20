@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { NavigationHeader } from "@/components/NavigationHeader";
+import { Footer } from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { ChefHat, Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
@@ -100,132 +103,154 @@ export default function BakerLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl flex items-center justify-center shadow-lg">
-              <ChefHat className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-white">
+      <SEOHead 
+        title="Baker Login - Bakewise SaaS Platform"
+        description="Sign in to your Bakewise baker account to access your business dashboard, manage customers, and grow your bakery business."
+      />
+      
+      <NavigationHeader />
+      
+      <div className="container mx-auto px-4 pt-20 pb-16">
+        <div className="max-w-md mx-auto">
+          
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ChefHat className="h-8 w-8 text-orange-500" />
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Baker Login
+            </h1>
+            <p className="text-gray-600">
+              Access your Bakewise business dashboard
+            </p>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-            Baker Login
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Access your Bakewise business dashboard
-          </p>
-        </div>
 
-        {/* Email Verification Banner */}
-        {showVerificationBanner && verificationEmail && (
-          <EmailVerificationBanner
-            userEmail={verificationEmail}
-            onDismiss={() => setShowVerificationBanner(false)}
-            className="mb-6"
-          />
-        )}
+          {/* Email Verification Banner */}
+          {showVerificationBanner && verificationEmail && (
+            <EmailVerificationBanner
+              userEmail={verificationEmail}
+              onDismiss={() => setShowVerificationBanner(false)}
+              className="mb-6"
+            />
+          )}
 
-        {/* Login Form */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">Sign in to your account</CardTitle>
-            <CardDescription className="text-center">
-              Enter your email and password to access your dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@bakery.com"
-                  {...form.register("email")}
-                  className="h-11"
-                  data-testid="input-email"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+          {/* Login Form */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-xl text-gray-900">Sign in to your account</CardTitle>
+              <CardDescription className="text-gray-600">
+                Enter your email and password to access your dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700 font-medium">Email Address</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    {...form.register("password")}
-                    className="h-11 pr-10"
-                    data-testid="input-password"
+                    id="email"
+                    type="email"
+                    placeholder="your@bakery.com"
+                    {...form.register("email")}
+                    className="h-11"
+                    data-testid="input-email"
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    data-testid="button-toggle-password"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+                  )}
                 </div>
-                {form.formState.errors.password && (
-                  <p className="text-sm text-red-600">{form.formState.errors.password.message}</p>
-                )}
-              </div>
 
-              <Button
-                type="submit"
-                className="w-full h-11 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
-                disabled={isLoading}
-                data-testid="button-login"
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Signing in...
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      {...form.register("password")}
+                      className="h-11 pr-10"
+                      data-testid="input-password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-gray-100"
+                      onClick={() => setShowPassword(!showPassword)}
+                      data-testid="button-toggle-password"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      )}
+                    </Button>
                   </div>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                  {form.formState.errors.password && (
+                    <p className="text-sm text-red-600">{form.formState.errors.password.message}</p>
+                  )}
+                </div>
 
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                  data-testid="button-login"
+                >
+                  {isLoading ? "Signing In..." : "Sign In"}
+                </Button>
+              </form>
 
-        {/* Back to Home */}
-        <div className="text-center">
-          <Button variant="ghost" size="sm" asChild data-testid="button-back-home">
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Bakewise
+              {/* Links */}
+              <div className="mt-6 space-y-4">
+                <div className="text-center">
+                  <Link 
+                    href="/super-admin-forgot-password" 
+                    className="text-sm text-orange-500 hover:text-orange-600"
+                    data-testid="link-forgot-password"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{" "}
+                    <Link 
+                      href="/signup" 
+                      className="text-orange-500 hover:text-orange-600 font-medium"
+                      data-testid="link-signup"
+                    >
+                      Sign up here
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Back Link */}
+          <div className="text-center mt-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+              data-testid="link-home"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to homepage
             </Link>
-          </Button>
-        </div>
-
-        {/* Security Notice */}
-        <div className="text-center text-xs text-gray-500 max-w-sm mx-auto">
-          <p>
-            Your login credentials are securely encrypted. Need help accessing your account? 
-            Contact support at support@bakewiseapp.com
-          </p>
+          </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

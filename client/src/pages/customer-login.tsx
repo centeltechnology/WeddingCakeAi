@@ -7,7 +7,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
+import { NavigationHeader } from '@/components/NavigationHeader';
+import { Footer } from '@/components/Footer';
+import SEOHead from '@/components/SEOHead';
+import { useLocation, Link } from 'wouter';
 import { 
   Mail, 
   Lock, 
@@ -15,7 +18,8 @@ import {
   Eye, 
   EyeOff,
   Heart,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 
 interface LoginForm {
@@ -96,140 +100,161 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/30 to-pink-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-br from-pink-300/20 to-rose-300/20 rounded-full blur-2xl"></div>
-      </div>
+    <div className="min-h-screen bg-white">
+      <SEOHead 
+        title="Customer Login - Bakewise Portal"
+        description="Sign in to your customer portal to view quotes, manage orders, and track your cake project progress."
+      />
       
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="relative mx-auto mb-4">
-            <div className="absolute inset-0 bg-gradient-to-r from-rose-400/40 to-pink-400/40 rounded-full blur-2xl w-20 h-20 -m-2"></div>
-            <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto relative shadow-xl">
-              <Heart className="h-8 w-8 text-white" />
+      <NavigationHeader />
+      
+      <div className="container mx-auto px-4 pt-20 pb-16">
+        <div className="max-w-md mx-auto">
+          
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Heart className="h-8 w-8 text-orange-500" />
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Customer Portal
+            </h1>
+            <p className="text-gray-600">
+              Access your quotes, payments, and order details
+            </p>
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">Customer Portal</h1>
-          <p className="text-gray-600">Access your quotes, payments, and order details</p>
-        </div>
 
-        <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Welcome Back</CardTitle>
-            <CardDescription className="text-center text-gray-600">
-              Sign in to view your quotes and manage your orders
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-medium">Email Address</Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-3 h-4 w-4 text-rose-400">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={form.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="pl-10 border-rose-200 focus:border-rose-400 focus:ring-rose-400 bg-white/50 backdrop-blur-sm"
-                    data-testid="input-customer-email"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-3 h-4 w-4 text-rose-400">
-                    <Lock className="h-4 w-4" />
-                  </div>
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={form.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    className="pl-10 pr-10 border-rose-200 focus:border-rose-400 focus:ring-rose-400 bg-white/50 backdrop-blur-sm"
-                    data-testid="input-customer-password"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-rose-100"
-                    onClick={() => setShowPassword(!showPassword)}
-                    data-testid="button-toggle-password"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4 text-rose-500" /> : <Eye className="h-4 w-4 text-rose-500" />}
-                  </Button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={loginMutation.isPending}
-                data-testid="button-customer-login"
-              >
-                {loginMutation.isPending ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Signing In...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Sign In to Portal
-                  </div>
+          {/* Login Form */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-xl text-gray-900">Welcome Back</CardTitle>
+              <CardDescription className="text-gray-600">
+                Sign in to view your quotes and manage your orders
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have access yet?{' '}
-                <span className="font-medium text-rose-600">
-                  Your baker will provide login details once your order is confirmed.
-                </span>
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700 font-medium">Email Address</Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-3 h-4 w-4 text-orange-400">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={form.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="pl-10 h-11"
+                      data-testid="input-customer-email"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div className="mt-4 pt-4 border-t border-rose-100/50">
-              <Button
-                variant="ghost"
-                className="w-full text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 backdrop-blur-sm"
-                onClick={() => setLocation('/')}
-                data-testid="button-back-home"
-              >
-                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                Back to Homepage
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-3 h-4 w-4 text-orange-400">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={form.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      className="pl-10 pr-10 h-11"
+                      data-testid="input-customer-password"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-gray-100"
+                      onClick={() => setShowPassword(!showPassword)}
+                      data-testid="button-toggle-password"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
 
-        {/* Help Section */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Need help? Contact your baker directly or email support
-          </p>
+                <Button
+                  type="submit"
+                  disabled={loginMutation.isPending}
+                  className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                  data-testid="button-customer-login"
+                >
+                  {loginMutation.isPending ? (
+                    "Signing In..."
+                  ) : (
+                    <div className="flex items-center">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign In
+                    </div>
+                  )}
+                </Button>
+              </form>
+
+              {/* Links */}
+              <div className="mt-6 space-y-4">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Need help accessing your account?{" "}
+                    <Link 
+                      href="/help" 
+                      className="text-orange-500 hover:text-orange-600"
+                      data-testid="link-customer-help"
+                    >
+                      Contact Support
+                    </Link>
+                  </p>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Looking for a quote?{" "}
+                    <Link 
+                      href="/marketplace" 
+                      className="text-orange-500 hover:text-orange-600 font-medium"
+                      data-testid="link-marketplace"
+                    >
+                      Find Bakers
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Back Link */}
+          <div className="text-center mt-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+              data-testid="link-home"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to homepage
+            </Link>
+          </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
