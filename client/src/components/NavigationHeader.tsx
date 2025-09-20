@@ -62,6 +62,30 @@ export function NavigationHeader() {
               <Button
                 asChild
                 size="sm"
+                variant="outline"
+                className="ml-4 border-2 border-orange-200 hover:border-orange-300 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                data-testid="nav-baker-login"
+              >
+                <Link href="/baker-login">
+                  Baker Login
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="ml-2 border-2 border-blue-200 hover:border-blue-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                data-testid="nav-customer-login"
+              >
+                <Link href="/customer-login">
+                  Customer Login
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                size="sm"
                 className="ml-4 bg-orange-500 hover:bg-orange-600 text-white px-6"
                 data-testid="nav-signup"
               >
