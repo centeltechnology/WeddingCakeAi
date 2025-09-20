@@ -3,20 +3,29 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SEOHead from "@/components/SEOHead";
 import { Link } from "wouter";
-import { Search, MessageSquare, FileText, CreditCard, Users, Settings, ChefHat, Calendar, TrendingUp } from "lucide-react";
+import { Search, MessageSquare, FileText, CreditCard, Users, Settings, ChefHat, Calendar, TrendingUp, HelpCircle } from "lucide-react";
 
 export default function Help() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-black flex flex-col">
+      <SEOHead 
+        title="Help Center - Bakewise Support"
+        description="Find answers to common questions, get support, and learn how to maximize your bakery business with Bakewise platform features."
+      />
+      
       <NavigationHeader />
       
-      <main className="flex-1 container mx-auto px-4 py-12">
+      <main className="flex-1 container mx-auto px-4 pt-20 pb-16">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">Help Center</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <HelpCircle className="h-10 w-10 text-orange-500" />
+            </div>
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6" data-testid="text-help-center">Help Center</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Find answers to common questions and get support for your Bakewise experience
             </p>
             
@@ -25,23 +34,25 @@ export default function Help() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input 
                 placeholder="Search for help articles..." 
-                className="pl-12 py-4 text-lg border-pink-200 focus:border-pink-400"
+                className="pl-12 py-4 text-lg border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 h-14 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 data-testid="input-help-search"
               />
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-lg transition-all duration-300 p-6 bg-white dark:bg-gray-900">
               <CardHeader className="text-center">
-                <MessageSquare className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                <CardTitle className="text-blue-900">Contact Support</CardTitle>
-                <CardDescription>Get help from our team</CardDescription>
+                <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="h-8 w-8 text-orange-500" />
+                </div>
+                <CardTitle className="text-gray-900 dark:text-white">Contact Support</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">Get help from our team</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white" 
                   data-testid="button-contact-support"
                   onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Bakewise Support Request'}
                 >
@@ -50,16 +61,18 @@ export default function Help() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-lg transition-all duration-300 p-6 bg-white dark:bg-gray-900">
               <CardHeader className="text-center">
-                <FileText className="h-12 w-12 text-green-600 mx-auto mb-2" />
-                <CardTitle className="text-green-900">Documentation</CardTitle>
-                <CardDescription>Detailed guides and tutorials</CardDescription>
+                <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-8 w-8 text-orange-500" />
+                </div>
+                <CardTitle className="text-gray-900 dark:text-white">Documentation</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">Detailed guides and tutorials</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button 
                   variant="outline" 
-                  className="border-green-600 text-green-700 hover:bg-green-50" 
+                  className="border-2 border-orange-500 text-orange-500 hover:bg-orange-50" 
                   data-testid="button-view-docs"
                   onClick={() => {
                     const topicsSection = document.querySelector('[data-section="topics"]');
@@ -71,16 +84,18 @@ export default function Help() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-lg transition-all duration-300 p-6 bg-white dark:bg-gray-900">
               <CardHeader className="text-center">
-                <Settings className="h-12 w-12 text-purple-600 mx-auto mb-2" />
-                <CardTitle className="text-purple-900">Account Help</CardTitle>
-                <CardDescription>Manage your account settings</CardDescription>
+                <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Settings className="h-8 w-8 text-orange-500" />
+                </div>
+                <CardTitle className="text-gray-900 dark:text-white">Account Help</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">Manage your account settings</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button 
                   variant="outline" 
-                  className="border-purple-600 text-purple-700 hover:bg-purple-50" 
+                  className="border-2 border-orange-500 text-orange-500 hover:bg-orange-50" 
                   data-testid="button-account-help"
                   onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Account Help Request&body=Please describe your account issue:'}
                 >
@@ -91,67 +106,67 @@ export default function Help() {
           </div>
 
           {/* Common Topics */}
-          <div className="mb-12" data-section="topics">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-8">Popular Topics</h2>
+          <div className="mb-16" data-section="topics">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-12 text-center" data-testid="text-popular-topics">Popular Topics</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* For Bakers */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <ChefHat className="h-5 w-5 mr-2 text-pink-600" />
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                  <ChefHat className="h-6 w-6 mr-3 text-orange-500" />
                   For Bakers
                 </h3>
                 <div className="space-y-3">
                   <Link href="/help/subdomain-setup">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-subdomain-setup">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Setting Up Your Subdomain</h4>
-                        <p className="text-sm text-gray-600">Learn how to claim your professional bakewiseapp.com subdomain</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Setting Up Your Subdomain</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Learn how to claim your professional bakewiseapp.com subdomain</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/quote-templates">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-quote-templates">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Creating Quote Templates</h4>
-                        <p className="text-sm text-gray-600">Build reusable templates for faster quote generation</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Creating Quote Templates</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Build reusable templates for faster quote generation</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/customer-communications">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-customer-communications">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Managing Customer Communications</h4>
-                        <p className="text-sm text-gray-600">Best practices for professional customer interactions</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Managing Customer Communications</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Best practices for professional customer interactions</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/payment-processing">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-payment-processing">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Payment Processing</h4>
-                        <p className="text-sm text-gray-600">Understanding deposits, payments, and billing</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Payment Processing</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Understanding deposits, payments, and billing</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/analytics-and-insights">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-analytics-and-insights">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Analytics & Business Insights</h4>
-                        <p className="text-sm text-gray-600">Understanding your dashboard metrics and growing your business</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Analytics & Business Insights</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Understanding your dashboard metrics and growing your business</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/marketing-your-bakery">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-marketing-your-bakery">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Marketing Your Bakery</h4>
-                        <p className="text-sm text-gray-600">Strategies for attracting customers and building your brand</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Marketing Your Bakery</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Strategies for attracting customers and building your brand</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -160,25 +175,25 @@ export default function Help() {
 
               {/* For Customers */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-pink-600" />
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                  <Users className="h-6 w-6 mr-3 text-orange-500" />
                   For Customers
                 </h3>
                 <div className="space-y-3">
                   <Link href="/help/custom-cake-ordering">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-custom-cake-ordering">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">How to Order a Custom Cake</h4>
-                        <p className="text-sm text-gray-600">Step-by-step guide to placing your first order</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">How to Order a Custom Cake</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Step-by-step guide to placing your first order</p>
                       </CardContent>
                     </Card>
                   </Link>
                   
                   <Link href="/help/quotes-and-contracts">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-quotes-and-contracts">
                       <CardContent className="p-4">
-                        <h4 className="font-semibold text-gray-800">Understanding Quotes & Contracts</h4>
-                        <p className="text-sm text-gray-600">What to expect in the ordering process</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Understanding Quotes & Contracts</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">What to expect in the ordering process</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -224,34 +239,34 @@ export default function Help() {
           </div>
 
           {/* Additional Help Topics */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-8">Additional Resources</h2>
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-12 text-center">Additional Resources</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Platform Features */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <Settings className="h-5 w-5 mr-2 text-purple-600" />
+                  <Settings className="h-5 w-5 mr-2 text-orange-500" />
                   Platform Features
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/account-setup">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Account Setup & Profile Management
                     </div>
                   </Link>
                   <Link href="/help/subscription-plans">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Subscription Plans & Billing
                     </div>
                   </Link>
                   <Link href="/help/mobile-app">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Mobile App Features
                     </div>
                   </Link>
                   <Link href="/help/notifications">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Notification Settings
                     </div>
                   </Link>
@@ -261,27 +276,27 @@ export default function Help() {
               {/* Business Growth */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                  <TrendingUp className="h-5 w-5 mr-2 text-orange-500" />
                   Business Growth
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/seo-optimization">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       SEO & Online Visibility
                     </div>
                   </Link>
                   <Link href="/help/social-media">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Social Media Integration
                     </div>
                   </Link>
                   <Link href="/help/customer-retention">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Customer Retention Strategies
                     </div>
                   </Link>
                   <Link href="/help/pricing-strategies">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Pricing & Profitability
                     </div>
                   </Link>
@@ -291,27 +306,27 @@ export default function Help() {
               {/* Technical Support */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2 text-blue-600" />
+                  <MessageSquare className="h-5 w-5 mr-2 text-orange-500" />
                   Technical Support
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/troubleshooting">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Common Issues & Solutions
                     </div>
                   </Link>
                   <Link href="/help/browser-compatibility">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Browser & Device Compatibility
                     </div>
                   </Link>
                   <Link href="/help/data-privacy">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       Privacy & Data Protection
                     </div>
                   </Link>
                   <Link href="/help/api-integration">
-                    <div className="text-sm text-gray-600 hover:text-pink-600 cursor-pointer p-2 hover:bg-pink-50 rounded">
+                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
                       API & Third-party Integrations
                     </div>
                   </Link>
@@ -321,8 +336,8 @@ export default function Help() {
           </div>
 
           {/* FAQ Section */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-8 text-center">Frequently Asked Questions</h2>
             
             <div className="space-y-6">
               <div>
@@ -356,15 +371,15 @@ export default function Help() {
           </div>
 
           {/* Contact Section */}
-          <div className="mt-12 text-center">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Still Need Help?</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="mt-16 text-center">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Still Need Help?</h2>
+            <p className="text-xl text-gray-600 mb-8">
               Our support team is here to help you succeed on Bakewise
             </p>
             <div className="flex justify-center">
               <Button 
                 size="lg" 
-                className="bg-pink-600 hover:bg-pink-700" 
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg" 
                 data-testid="button-email-support"
                 onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Support Request&body=Hi Bakewise Team,%0A%0APlease describe how we can help you:'}
               >
