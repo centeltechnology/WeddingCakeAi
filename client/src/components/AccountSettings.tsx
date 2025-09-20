@@ -183,12 +183,12 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         phone: baker.phone || '',
         address: parseAddress(baker.address || ''),
         socialMedia: {
-          facebook: '',
-          instagram: '',
-          twitter: '',
-          website: '',
-          tiktok: '',
-          pinterest: ''
+          facebook: baker.socialMedia?.facebook || '',
+          instagram: baker.socialMedia?.instagram || '',
+          twitter: baker.socialMedia?.twitter || '',
+          website: baker.socialMedia?.website || '',
+          tiktok: baker.socialMedia?.tiktok || '',
+          pinterest: baker.socialMedia?.pinterest || ''
         },
         businessHours: {
           monday: { open: '08:00', close: '18:00', closed: false },
@@ -364,6 +364,22 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
     // Transform years experience (simple number)
     if (formData.yearsExperience) {
       apiData.yearsExperience = formData.yearsExperience;
+    }
+    
+    // Transform social media (nested object)
+    if (formData.socialMedia) {
+      const socialMediaData: any = {};
+      if (formData.socialMedia.instagram) socialMediaData.instagram = formData.socialMedia.instagram;
+      if (formData.socialMedia.facebook) socialMediaData.facebook = formData.socialMedia.facebook;
+      if (formData.socialMedia.twitter) socialMediaData.twitter = formData.socialMedia.twitter;
+      if (formData.socialMedia.tiktok) socialMediaData.tiktok = formData.socialMedia.tiktok;
+      if (formData.socialMedia.pinterest) socialMediaData.pinterest = formData.socialMedia.pinterest;
+      if (formData.socialMedia.website) socialMediaData.website = formData.socialMedia.website;
+      
+      // Only include socialMedia if we have at least one social media link
+      if (Object.keys(socialMediaData).length > 0) {
+        apiData.socialMedia = socialMediaData;
+      }
     }
     
     console.log('Sending baker profile data:', apiData);

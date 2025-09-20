@@ -133,6 +133,7 @@ export class DatabaseStorage {
     name?: string;
     phone?: string;
     address?: string;
+    socialMedia?: any;
   }) {
     const validUpdates: any = {};
     
@@ -153,7 +154,9 @@ export class DatabaseStorage {
     if (updates.name !== undefined) validUpdates.name = updates.name;
     if (updates.phone !== undefined) validUpdates.phone = updates.phone;
     if (updates.address !== undefined) validUpdates.address = updates.address;
-
+    if (updates.socialMedia !== undefined) {
+      validUpdates.socialMedia = updates.socialMedia;
+    }
     await db
       .update(bakers)
       .set(validUpdates)
