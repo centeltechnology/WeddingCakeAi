@@ -445,7 +445,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               <Button
                 onClick={() => {
                   // Always use internal route for now since external subdomains aren't set up
-                  const previewUrl = `/baker/${bakerId}/profile`;
+                  const previewUrl = `/baker/${baker?.slug || bakerId}/profile`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
