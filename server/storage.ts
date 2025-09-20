@@ -3547,6 +3547,141 @@ export class DatabaseStorage implements IStorage {
     
     return updatedBaker?.pricing || updated;
   }
+
+  // ====== EMAIL CAMPAIGN METHODS ======
+  
+  async createCampaignEnrollment(enrollment: InsertEmailCampaignEnrollment): Promise<EmailCampaignEnrollment> {
+    const [result] = await db
+      .insert(emailCampaignEnrollments)
+      .values({ ...enrollment, id: enrollment.id || randomUUID() })
+      .returning();
+    return result;
+  }
+
+  async getCampaignEnrollment(id: string): Promise<EmailCampaignEnrollment | undefined> {
+    const [enrollment] = await db
+      .select()
+      .from(emailCampaignEnrollments)
+      .where(eq(emailCampaignEnrollments.id, id));
+    return enrollment || undefined;
+  }
+
+  async getActiveEnrollmentsDue(campaignKey: string, currentHour: number): Promise<EmailCampaignEnrollment[]> {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    
+    return await db
+      .select()
+      .from(emailCampaignEnrollments)
+      .where(
+        and(
+          eq(emailCampaignEnrollments.campaignKey, campaignKey),
+          eq(emailCampaignEnrollments.status, 'active'),
+          eq(emailCampaignEnrollments.sendHour, currentHour),
+          or(
+            // First email (step 0) should be sent immediately after enrollment
+            eq(emailCampaignEnrollments.lastStepSent, 0),
+            // Subsequent emails sent 24 hours after last email
+            and(
+              ne(emailCampaignEnrollments.lastStepSent, 0),
+              sql`${emailCampaignEnrollments.lastSentAt} <= ${oneDayAgo}`
+            )
+          )
+        )
+      );
+  }
+
+  async updateCampaignEnrollment(id: string, updates: Partial<InsertEmailCampaignEnrollment>): Promise<EmailCampaignEnrollment> {
+    const [enrollment] = await db
+      .update(emailCampaignEnrollments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(emailCampaignEnrollments.id, id))
+      .returning();
+    return enrollment;
+  }
+
+  async markStepSent(enrollmentId: string, step: number): Promise<EmailCampaignEnrollment> {
+    const [enrollment] = await db
+      .update(emailCampaignEnrollments)
+      .set({ 
+        lastStepSent: step, 
+        lastSentAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(emailCampaignEnrollments.id, enrollmentId))
+      .returning();
+    return enrollment;
+  }
+
+  async markConverted(enrollmentId: string, plan: string): Promise<EmailCampaignEnrollment> {
+    const [enrollment] = await db
+      .update(emailCampaignEnrollments)
+      .set({ 
+        status: 'converted', 
+        convertedAt: new Date(),
+        convertedPlan: plan,
+        updatedAt: new Date()
+      })
+      .where(eq(emailCampaignEnrollments.id, enrollmentId))
+      .returning();
+    return enrollment;
+  }
+
+  async unsubscribeFromCampaign(token: string): Promise<boolean> {
+    const result = await db
+      .update(emailCampaignEnrollments)
+      .set({ 
+        status: 'unsubscribed',
+        updatedAt: new Date()
+      })
+      .where(sql`${emailCampaignEnrollments.metadata}->>'unsubscribeToken' = ${token}`)
+      .returning();
+    return result.length > 0;
+  }
+
+  async getEnrollmentsByUser(userId?: string, bakerId?: string): Promise<EmailCampaignEnrollment[]> {
+    const conditions = [];
+    if (userId) conditions.push(eq(emailCampaignEnrollments.userId, userId));
+    if (bakerId) conditions.push(eq(emailCampaignEnrollments.bakerId, bakerId));
+    
+    if (conditions.length === 0) return [];
+    
+    return await db
+      .select()
+      .from(emailCampaignEnrollments)
+      .where(and(...conditions));
+  }
+
+  async createCampaignEvent(event: InsertEmailCampaignEvent): Promise<EmailCampaignEvent> {
+    const [result] = await db
+      .insert(emailCampaignEvents)
+      .values({ ...event, id: event.id || randomUUID() })
+      .returning();
+    return result;
+  }
+
+  async getCampaignEvents(enrollmentId: string): Promise<EmailCampaignEvent[]> {
+    return await db
+      .select()
+      .from(emailCampaignEvents)
+      .where(eq(emailCampaignEvents.enrollmentId, enrollmentId))
+      .orderBy(desc(emailCampaignEvents.createdAt));
+  }
+
+  async trackCampaignClick(enrollmentId: string, step: number, clickUrl: string): Promise<EmailCampaignEvent> {
+    const [result] = await db
+      .insert(emailCampaignEvents)
+      .values({
+        id: randomUUID(),
+        enrollmentId,
+        campaignKey: 'free_to_paid_7day',
+        step,
+        eventType: 'clicked',
+        metadata: { clickUrl }
+      })
+      .returning();
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();

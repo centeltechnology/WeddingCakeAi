@@ -1,6 +1,8 @@
 import { storage } from "./storage";
 import { sendEmail, emailTemplates } from "./emailService";
-import { differenceInDays, isAfter, format } from "date-fns";
+import { differenceInDays, isAfter, format, addDays, differenceInHours } from "date-fns";
+import { FREE_TO_PAID_CAMPAIGN, getEmailTemplate, interpolateEmailTemplate } from "./emailTemplates";
+import { randomUUID } from "crypto";
 
 // Email automation service for subscription lifecycle management
 export class EmailAutomationService {
@@ -226,7 +228,7 @@ export class EmailAutomationService {
           stripeSubscriptionId: null,
           currentPeriodStart: null,
           currentPeriodEnd: null,
-          planName: 'Free',
+          subscriptionPlan: 'starter',
           // Keep existing portfolio but limit to 5 images in frontend
           // Keep existing leads but limit new lead generation
         });
@@ -317,6 +319,184 @@ export class EmailAutomationService {
     }
   }
 
+  // ====== CONVERSION CAMPAIGN METHODS ======
+  
+  // Enroll free users in the 7-day conversion campaign
+  static async enrollFreeUsersInCampaign() {
+    try {
+      const bakers = await storage.getBakers();
+      let enrolledCount = 0;
+      
+      for (const baker of bakers) {
+        // Only enroll free users with emails who aren't already enrolled
+        if (!baker.email || baker.subscriptionPlan !== 'starter') continue;
+        
+        // Check if already enrolled in active campaign
+        const existingEnrollments = await storage.getEnrollmentsByUser(undefined, baker.id);
+        const activeEnrollment = existingEnrollments.find(e => 
+          e.campaignKey === 'free_to_paid_7day' && 
+          ['active', 'completed'].includes(e.status)
+        );
+        
+        if (activeEnrollment) continue; // Skip if already enrolled
+        
+        // Create enrollment
+        const enrollment = await storage.createCampaignEnrollment({
+          bakerId: baker.id,
+          campaignKey: 'free_to_paid_7day',
+          status: 'active',
+          lastStepSent: 0,
+          sendHour: 16, // 4 PM UTC default
+          metadata: {
+            enrollmentSource: 'auto_free_user',
+            originalPlan: baker.subscriptionPlan || 'starter',
+            unsubscribeToken: randomUUID()
+          }
+        });
+        
+        console.log(`Enrolled baker ${baker.name} in conversion campaign`);
+        enrolledCount++;
+      }
+      
+      console.log(`Enrolled ${enrolledCount} free users in conversion campaign`);
+      return enrolledCount;
+      
+    } catch (error) {
+      console.error('Error enrolling users in campaign:', error);
+      return 0;
+    }
+  }
+  
+  // Process conversion campaign emails (check for users due for next step)
+  static async processCampaignEmails() {
+    try {
+      const currentHour = new Date().getUTCHours();
+      const enrollments = await storage.getActiveEnrollmentsDue('free_to_paid_7day', currentHour);
+      let emailsSent = 0;
+      
+      for (const enrollment of enrollments) {
+        try {
+          // Determine next step
+          const nextStep = (enrollment.lastStepSent || 0) + 1;
+          if (nextStep > 7) continue; // Campaign complete
+          
+          // Get baker info
+          const baker = enrollment.bakerId ? await storage.getBaker(enrollment.bakerId) : null;
+          if (!baker || !baker.email) continue;
+          
+          // Check if user has upgraded (stop campaign)
+          if (baker.subscriptionPlan !== 'starter') {
+            await storage.markConverted(enrollment.id, baker.subscriptionPlan || 'professional');
+            console.log(`Baker ${baker.name} converted to ${baker.subscriptionPlan}, stopping campaign`);
+            continue;
+          }
+          
+          // Get email template
+          const template = getEmailTemplate('free_to_paid_7day', nextStep);
+          if (!template) continue;
+          
+          // Interpolate template with user data
+          const unsubscribeToken = enrollment.metadata?.unsubscribeToken || randomUUID();
+          const interpolated = interpolateEmailTemplate(template, {
+            upgradeUrl: `https://bakewiseapp.com/pricing?utm_source=email&utm_campaign=free_to_paid&utm_content=step${nextStep}&token=${enrollment.id}`,
+            unsubscribeUrl: `https://bakewiseapp.com/unsubscribe?token=${unsubscribeToken}`,
+            userName: baker.name,
+            bakeryName: baker.name
+          });
+          
+          // Send email
+          const success = await sendEmail({
+            to: baker.email,
+            toName: baker.name,
+            from: 'noreply@bakewiseapp.com',
+            fromName: 'Bakewise Team',
+            subject: interpolated.subject,
+            htmlPart: interpolated.body,
+            textPart: this.htmlToText(interpolated.body)
+          });
+          
+          if (success) {
+            // Mark step as sent
+            await storage.markStepSent(enrollment.id, nextStep);
+            
+            // Track event
+            await storage.createCampaignEvent({
+              enrollmentId: enrollment.id,
+              bakerId: baker.id,
+              campaignKey: 'free_to_paid_7day',
+              step: nextStep,
+              eventType: 'sent',
+              metadata: {
+                emailSubject: interpolated.subject
+              }
+            });
+            
+            console.log(`Sent conversion email step ${nextStep} to ${baker.name}`);
+            emailsSent++;
+          }
+          
+        } catch (stepError) {
+          console.error(`Error processing campaign step for enrollment ${enrollment.id}:`, stepError);
+        }
+      }
+      
+      console.log(`Sent ${emailsSent} conversion campaign emails`);
+      return emailsSent;
+      
+    } catch (error) {
+      console.error('Error processing campaign emails:', error);
+      return 0;
+    }
+  }
+  
+  // Helper to convert HTML to plain text for email
+  private static htmlToText(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+      .replace(/&amp;/g, '&') // Replace HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ') // Collapse whitespace
+      .trim();
+  }
+  
+  // Mark user as converted and stop campaigns
+  static async markUserConverted(bakerId: string, planName: string) {
+    try {
+      const enrollments = await storage.getEnrollmentsByUser(undefined, bakerId);
+      let conversionsMarked = 0;
+      
+      for (const enrollment of enrollments) {
+        if (enrollment.status === 'active') {
+          await storage.markConverted(enrollment.id, planName);
+          
+          // Track conversion event
+          await storage.createCampaignEvent({
+            enrollmentId: enrollment.id,
+            bakerId: bakerId,
+            campaignKey: enrollment.campaignKey,
+            step: enrollment.lastStepSent || 0,
+            eventType: 'converted',
+            metadata: {
+              emailSubject: `Converted to ${planName}`
+            }
+          });
+          
+          conversionsMarked++;
+        }
+      }
+      
+      console.log(`Marked ${conversionsMarked} campaigns as converted for baker ${bakerId}`);
+      return conversionsMarked;
+      
+    } catch (error) {
+      console.error('Error marking user as converted:', error);
+      return 0;
+    }
+  }
+
   // Run all automation checks including downgrades (to be called by scheduler)
   static async runAutomationChecks() {
     console.log('Running subscription lifecycle automation checks...');
@@ -325,12 +505,20 @@ export class EmailAutomationService {
     const expiredCount = await this.sendTrialExpiredNotifications();
     const downgradedCount = await this.processExpiredTrials();
     
+    // Process conversion campaigns
+    console.log('Running conversion campaign automation...');
+    const enrolledCount = await this.enrollFreeUsersInCampaign();
+    const campaignEmailsCount = await this.processCampaignEmails();
+    
     console.log(`Automation completed: ${warningsCount} warnings, ${expiredCount} expired notifications, ${downgradedCount} downgrades processed`);
+    console.log(`Campaign automation: ${enrolledCount} users enrolled, ${campaignEmailsCount} campaign emails sent`);
     
     return {
       warnings: warningsCount,
       expired: expiredCount,
-      downgrades: downgradedCount
+      downgrades: downgradedCount,
+      campaignEnrollments: enrolledCount,
+      campaignEmails: campaignEmailsCount
     };
   }
 
