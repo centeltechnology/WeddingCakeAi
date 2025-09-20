@@ -5053,6 +5053,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ====== EMAIL CAMPAIGN API ENDPOINTS ======
+
+  // Click tracking endpoint for email campaigns
+  app.get('/api/campaign/track/:enrollmentId/:step', async (req, res) => {
+    try {
+      const { enrollmentId, step } = req.params;
+      const { url } = req.query;
+
+      if (!enrollmentId || !step || !url) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      // Track the click
+      await storage.createCampaignEvent({
+        enrollmentId,
+        campaignKey: 'free_to_paid_7day',
+        step: parseInt(step),
+        eventType: 'clicked',
+        metadata: {
+          clickUrl: url as string
+        }
+      });
+
+      console.log(`Campaign link clicked: enrollment ${enrollmentId}, step ${step}, url: ${url}`);
+
+      // Redirect to the actual URL
+      res.redirect(url as string);
+    } catch (error) {
+      console.error('Error tracking campaign click:', error);
+      res.status(500).json({ error: 'Failed to track click' });
+    }
+  });
+
+  // Unsubscribe endpoint for email campaigns
+  app.get('/api/campaign/unsubscribe/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      if (!token) {
+        return res.status(400).json({ error: 'Missing unsubscribe token' });
+      }
+
+      // Unsubscribe from campaign
+      const success = await storage.unsubscribeFromCampaign(token);
+
+      if (success) {
+        // Return a simple HTML page confirming unsubscribe
+        res.send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Unsubscribed - Bakewise</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+                .success { color: #4CAF50; }
+              </style>
+            </head>
+            <body>
+              <h1 class="success">Successfully Unsubscribed</h1>
+              <p>You have been unsubscribed from our conversion email campaign.</p>
+              <p>You will no longer receive these promotional emails.</p>
+              <p><a href="/">Return to Bakewise</a></p>
+            </body>
+          </html>
+        `);
+      } else {
+        res.status(404).send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Invalid Link - Bakewise</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+                .error { color: #f44336; }
+              </style>
+            </head>
+            <body>
+              <h1 class="error">Invalid Unsubscribe Link</h1>
+              <p>This unsubscribe link is invalid or has already been used.</p>
+              <p><a href="/">Return to Bakewise</a></p>
+            </body>
+          </html>
+        `);
+      }
+    } catch (error) {
+      console.error('Error processing unsubscribe:', error);
+      res.status(500).json({ error: 'Failed to process unsubscribe' });
+    }
+  });
+
+  // Campaign analytics endpoint (admin/internal use)
+  app.get('/api/admin/campaign/analytics', async (req, res) => {
+    try {
+      // Get all enrollments
+      const enrollments = await storage.getEnrollmentsByUser();
+      
+      // Calculate analytics
+      const analytics = {
+        totalEnrollments: enrollments.length,
+        activeEnrollments: enrollments.filter(e => e.status === 'active').length,
+        convertedEnrollments: enrollments.filter(e => e.status === 'converted').length,
+        unsubscribedEnrollments: enrollments.filter(e => e.status === 'unsubscribed').length,
+        conversionRate: enrollments.length > 0 ? 
+          (enrollments.filter(e => e.status === 'converted').length / enrollments.length * 100).toFixed(1) + '%' : '0%',
+        enrollmentsByStep: {} as Record<number, number>
+      };
+
+      // Calculate step distribution
+      for (let step = 0; step <= 7; step++) {
+        analytics.enrollmentsByStep[step] = enrollments.filter(e => e.lastStepSent === step).length;
+      }
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching campaign analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
