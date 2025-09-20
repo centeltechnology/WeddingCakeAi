@@ -59,7 +59,7 @@ export default function Pricing() {
       </div>
 
       {/* Pricing Plans */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-gray-50 dark:bg-gray-900 py-20">
         <div className="container mx-auto px-4">
           <Plans />
         </div>

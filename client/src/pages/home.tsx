@@ -109,39 +109,39 @@ export default function Home() {
       </div>
 
       {/* Features Section */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-gray-50 dark:bg-gray-900 py-20">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto">
                 <Calculator className="w-8 h-8 text-orange-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Accurate Pricing</h3>
-              <p className="text-gray-600">AI powered calculations for every order</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Accurate Pricing</h3>
+              <p className="text-gray-600 dark:text-gray-300">AI powered calculations for every order</p>
             </div>
             
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto">
                 <Clock className="w-8 h-8 text-teal-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Save Time</h3>
-              <p className="text-gray-600">Automate planning and client quotes</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Save Time</h3>
+              <p className="text-gray-600 dark:text-gray-300">Automate planning and client quotes</p>
             </div>
             
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto">
                 <TrendingUp className="w-8 h-8 text-purple-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Grow Profit</h3>
-              <p className="text-gray-600">Understand margins and boost sales</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Grow Profit</h3>
+              <p className="text-gray-600 dark:text-gray-300">Understand margins and boost sales</p>
             </div>
             
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto">
                 <Smartphone className="w-8 h-8 text-blue-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Always Accessible</h3>
-              <p className="text-gray-600">Cloud-based and mobile friendly</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Always Accessible</h3>
+              <p className="text-gray-600 dark:text-gray-300">Cloud-based and mobile friendly</p>
             </div>
           </div>
         </div>
@@ -217,16 +217,16 @@ export default function Home() {
       </div>
 
       {/* Testimonials Section */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-gray-50 dark:bg-gray-900 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">What Bakers Say</h2>
-            <p className="text-xl text-gray-600">Join hundreds of successful bakers growing their business with Bakewise</p>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">What Bakers Say</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">Join hundreds of successful bakers growing their business with Bakewise</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Testimonial 1 */}
-            <Card className="border-2 border-gray-200 p-6">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
               <CardContent className="p-0">
                 <div className="flex justify-center mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -249,7 +249,7 @@ export default function Home() {
             </Card>
 
             {/* Testimonial 2 */}
-            <Card className="border-2 border-gray-200 p-6">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
               <CardContent className="p-0">
                 <div className="flex justify-center mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -272,7 +272,7 @@ export default function Home() {
             </Card>
 
             {/* Testimonial 3 */}
-            <Card className="border-2 border-gray-200 p-6">
+            <Card className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
               <CardContent className="p-0">
                 <div className="flex justify-center mb-4">
                   {[...Array(5)].map((_, i) => (
