@@ -5,264 +5,326 @@ import { useTenant } from "@/components/TenantBrandProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ChefHat, Users, FileText, CreditCard, Globe, Sparkles, Heart, Zap, ArrowRight, Star, Calendar } from "lucide-react";
+import { Calculator, Clock, TrendingUp, Smartphone, Check, Star } from "lucide-react";
 
 export default function Home() {
   const { tenant, branding } = useTenant();
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      <SEOHead />
+    <div className="min-h-screen bg-white">
+      <SEOHead 
+        title="Bakewise - Smart Cake Pricing & Planning Made Simple"
+        description="Bakewise helps cake designers and bakeries price, plan, and scale their business with ease. Automate planning and client quotes."
+      />
       
       <NavigationHeader />
       
       {/* Hero Section */}
-      <div className="relative">
-        <div className="container mx-auto px-4 py-20">
-          <div className="text-center mb-20">
-            {/* Modern Hero Badge */}
-            <div className="inline-flex items-center px-4 py-2 mb-8 bg-gray-50 border border-gray-200 rounded-full shadow-sm">
-              <ChefHat className="h-4 w-4 text-primary mr-2" />
-              <span className="text-sm font-medium text-gray-700">The Business Platform for Professional Bakeries</span>
-            </div>
-            
-            {/* Modern Title */}
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-gray-900">
-              Smart Cake Pricing &
-              <br />
-              <span className="text-primary">
-                Planning Made Simple
-              </span>
+      <div className="container mx-auto px-4 pt-20 pb-16">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8">
+            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              Smart Cake<br />
+              Pricing & Planning<br />
+              Made Simple
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Bakewise helps cake designers and bakeries price, plan, and scale their business with ease. 
-              <span className="text-gray-800 font-medium">Automate planning and client quotes. Understand margins and boost sales.</span>
+            <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+              Bakewise helps cake designers and bakeries price, plan, and scale 
+              their business with ease.
             </p>
             
-            {/* Modern CTA Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-base font-semibold" data-testid="button-start-trial">
-                <Link href="/signup" className="flex items-center">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                asChild 
+                size="lg" 
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg"
+                data-testid="button-start-trial"
+              >
+                <Link href="/signup">Start Free Trial</Link>
               </Button>
-              <Button variant="outline" asChild size="lg" className="border-2 border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-300 px-8 py-3 text-base font-semibold" data-testid="button-see-pricing">
-                <Link href="#pricing">
-                  See Pricing
-                </Link>
+              <Button 
+                asChild 
+                variant="outline" 
+                size="lg" 
+                className="border-2 border-gray-300 text-gray-700 px-8 py-3 text-lg font-semibold rounded-lg hover:bg-gray-50"
+                data-testid="button-see-pricing"
+              >
+                <Link href="/pricing">See Pricing</Link>
               </Button>
             </div>
-            
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>500+ Professional Bakeries</span>
+          </div>
+          
+          {/* Product Mockup */}
+          <div className="relative">
+            <div className="bg-gray-100 rounded-2xl p-8 shadow-2xl">
+              <div className="bg-white rounded-lg p-6 shadow-lg">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">Cake Calculator</h3>
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Cake Size</span>
+                      <span className="font-medium">8-inch</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Servings</span>
+                      <span className="font-medium">24</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Flavor</span>
+                      <span className="font-medium">Vanilla</span>
+                    </div>
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Total</span>
+                        <span className="text-2xl font-bold text-orange-500">$125</span>
+                      </div>
+                    </div>
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                      Get Quote
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>$2M+ Revenue Tracked</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <span>40% Average Profit Increase</span>
+            </div>
+            {/* Mobile mockup */}
+            <div className="absolute -bottom-8 -right-8 bg-gray-900 rounded-2xl p-4 shadow-xl w-48">
+              <div className="bg-white rounded-lg p-3">
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-gray-900">Order #1234</div>
+                  <div className="text-xs text-gray-600">Wedding Cake - 3 Tier</div>
+                  <div className="text-sm font-bold text-orange-500">$350</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="relative py-20">
+      {/* Features Section */}
+      <div className="bg-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto">
+                <Calculator className="w-8 h-8 text-orange-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Accurate Pricing</h3>
+              <p className="text-gray-600">AI powered calculations for every order</p>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto">
+                <Clock className="w-8 h-8 text-teal-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Save Time</h3>
+              <p className="text-gray-600">Automate planning and client quotes</p>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto">
+                <TrendingUp className="w-8 h-8 text-purple-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Grow Profit</h3>
+              <p className="text-gray-600">Understand margins and boost sales</p>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto">
+                <Smartphone className="w-8 h-8 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Always Accessible</h3>
+              <p className="text-gray-600">Cloud-based and mobile friendly</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Platform Section */}
+      <div className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <h2 className="text-4xl font-bold text-gray-900">
+                All you baking tools in<br />
+                one smart platform.
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Check className="w-6 h-6 text-green-500" />
+                  <span className="text-lg text-gray-700">Cake Calculator</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Check className="w-6 h-6 text-green-500" />
+                  <span className="text-lg text-gray-700">Wedding Planner</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Check className="w-6 h-6 text-green-500" />
+                  <span className="text-lg text-gray-700">Order Tracker</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Large Product Mockup */}
+            <div className="relative">
+              <div className="bg-gray-100 rounded-2xl p-8 shadow-2xl">
+                <div className="bg-white rounded-lg p-6 shadow-lg">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-semibold text-gray-900">Order Dashboard</h3>
+                      <div className="text-sm text-gray-500">Today</div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                          <span className="font-medium">Wedding Cake - Smith</span>
+                        </div>
+                        <span className="text-green-600 font-semibold">$450</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                          <span className="font-medium">Birthday Cake - Johnson</span>
+                        </div>
+                        <span className="text-green-600 font-semibold">$125</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+                          <span className="font-medium">Anniversary Cake - Davis</span>
+                        </div>
+                        <span className="text-green-600 font-semibold">$200</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonial Section */}
+      <div className="bg-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center space-x-6">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
+                  <span className="text-xl font-bold text-gray-600">SH</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xl text-gray-900 italic">
+                  "Bakewise has completely transformed how we run our cake business. It's a game changer!"
+                </p>
+                <p className="text-gray-600 font-medium">Sarah H.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
-              All your baking tools in one smart platform
-            </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Manage quotes, track orders, and grow your bakery business with powerful automation and insights.
-            </p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Pricing</h2>
+            <p className="text-xl text-gray-600">Start pricing smarter today.</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-            {/* Accurate Pricing Card */}
-            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-accurate-pricing">
-              <div className="w-12 h-12 mx-auto mb-4 bg-primary/10 rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Accurate Pricing</CardTitle>
-              <CardDescription className="text-gray-600 text-sm leading-relaxed">AI-powered calculations for every order</CardDescription>
-            </Card>
-            
-            {/* Save Time Card */}
-            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-save-time">
-              <div className="w-12 h-12 mx-auto mb-4 bg-teal-100 rounded-lg flex items-center justify-center">
-                <Zap className="h-6 w-6 text-teal-600" />
-              </div>
-              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Save Time</CardTitle>
-              <CardDescription className="text-gray-600 text-sm leading-relaxed">Automate planning and client quotes</CardDescription>
-            </Card>
-            
-            {/* Grow Profit Card */}
-            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-grow-profit">
-              <div className="w-12 h-12 mx-auto mb-4 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Grow Profit</CardTitle>
-              <CardDescription className="text-gray-600 text-sm leading-relaxed">Understand margins and boost sales</CardDescription>
-            </Card>
-            
-            {/* Always Accessible Card */}
-            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-always-accessible">
-              <div className="w-12 h-12 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Globe className="h-6 w-6 text-blue-600" />
-              </div>
-              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Always Accessible</CardTitle>
-              <CardDescription className="text-gray-600 text-sm leading-relaxed">Cloud-based and mobile friendly</CardDescription>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Tools Section */}
-      <div className="relative py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <Card className="border border-gray-200 bg-white shadow-lg" data-testid="card-tools">
-            <CardHeader className="text-center pb-6">
-              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-lg flex items-center justify-center">
-                <FileText className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle className="text-2xl md:text-3xl font-bold mb-4 text-gray-900">
-                Professional Bakery Tools
-              </CardTitle>
-              <CardDescription className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Everything you need to run and grow your bakery business efficiently
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className="text-gray-800 font-medium">Cake Calculator</span>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Starter Plan */}
+            <Card className="border-2 border-gray-200 rounded-2xl p-8">
+              <CardHeader className="text-center space-y-4 pb-8">
+                <CardTitle className="text-2xl font-bold">Starter</CardTitle>
+                <div>
+                  <span className="text-4xl font-bold">$15</span>
+                  <span className="text-gray-600">/mo</span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Users className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <span className="text-gray-800 font-medium">Wedding Planner</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-green-50 rounded-lg flex items-center justify-center">
-                    <FileText className="h-6 w-6 text-green-600" />
-                  </div>
-                  <span className="text-gray-800 font-medium">Order Tracker</span>
-                </div>
-              </div>
-              <p className="text-base text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Professional tools designed specifically for bakery operations. Track orders, calculate accurate pricing, and manage your wedding projects efficiently.
-              </p>
-              <Button variant="outline" asChild size="lg" className="border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 px-8 py-3" data-testid="button-see-demo">
-                <a href="/calculator" target="_blank" rel="noopener noreferrer">
-                  Try Calculator
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Business Testimonials */}
-      <div className="relative py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Trusted by Professional Bakeries
-            </h2>
-            <p className="text-base text-gray-600 max-w-2xl mx-auto">
-              See how Bakewise helps bakery owners streamline operations and increase profitability
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Testimonial 1 */}
-            <Card className="border-0 bg-gradient-to-br from-pink-50/80 to-rose-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-1">
-              <CardContent className="p-6">
-                <div className="flex justify-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 italic leading-relaxed">
-                  "Bakewise transformed my cake business! I went from spending hours on quotes 
-                  to closing deals in minutes. My revenue increased 400% in 6 months."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    S
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Sarah Martinez</p>
-                    <p className="text-sm text-gray-600">Sweet Dreams Cakery</p>
-                  </div>
+                <CardDescription>Basic features</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center">
+                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-lg">
+                    Start Trial
+                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Testimonial 2 */}
-            <Card className="border-0 bg-gradient-to-br from-purple-50/80 to-pink-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-2">
-              <CardContent className="p-6">
-                <div className="flex justify-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
+            {/* Pro Plan */}
+            <Card className="border-2 border-orange-500 rounded-2xl p-8 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Most Popular
+                </span>
+              </div>
+              <CardHeader className="text-center space-y-4 pb-8">
+                <CardTitle className="text-2xl font-bold">Pro</CardTitle>
+                <div>
+                  <span className="text-4xl font-bold">$29</span>
+                  <span className="text-gray-600">/mo</span>
                 </div>
-                <p className="text-gray-700 mb-6 italic leading-relaxed">
-                  "The quote builder saves me 10 hours per week. My customers love the professional 
-                  PDFs and the payment integration makes closing sales so much easier."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    M
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Maria Rodriguez</p>
-                    <p className="text-sm text-gray-600">Elegant Occasions Cakes</p>
-                  </div>
+                <CardDescription>Comprehensive tools</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg">
+                    Subscribe
+                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Testimonial 3 */}
-            <Card className="border-0 bg-gradient-to-br from-orange-50/80 to-pink-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" data-testid="card-testimonial-3">
-              <CardContent className="p-6">
-                <div className="flex justify-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
+            {/* Premium Plan */}
+            <Card className="border-2 border-gray-200 rounded-2xl p-8">
+              <CardHeader className="text-center space-y-4 pb-8">
+                <CardTitle className="text-2xl font-bold">Premium</CardTitle>
+                <div>
+                  <span className="text-4xl font-bold">$49</span>
+                  <span className="text-gray-600">/mo</span>
                 </div>
-                <p className="text-gray-700 mb-6 italic leading-relaxed">
-                  "Managing customer relationships was chaos before Bakewise. Now I track every lead, 
-                  follow up automatically, and my conversion rate doubled!"
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    J
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Jessica Thompson</p>
-                    <p className="text-sm text-gray-600">Artisan Cake Studio</p>
-                  </div>
+                <CardDescription>Advanced features</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center">
+                  <Button variant="outline" className="w-full border-2 border-gray-300 rounded-lg">
+                    Subscribe
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-      
+
+      {/* Final CTA Section */}
+      <div className="bg-gradient-to-r from-orange-400 to-orange-600 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <Button 
+            asChild 
+            size="lg" 
+            className="bg-white text-orange-600 hover:bg-gray-50 px-12 py-4 text-xl font-bold rounded-2xl shadow-lg"
+            data-testid="button-final-cta"
+          >
+            <Link href="/signup">Start Free Trial</Link>
+          </Button>
+        </div>
+      </div>
+
       <Footer />
     </div>
   );
