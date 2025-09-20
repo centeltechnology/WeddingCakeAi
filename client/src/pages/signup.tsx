@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { NavigationHeader } from '@/components/NavigationHeader';
+import { Footer } from '@/components/Footer';
+import SEOHead from '@/components/SEOHead';
 import { Link, useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
@@ -23,7 +25,8 @@ import {
   MapPin,
   Crown,
   Rocket,
-  BadgeCheck
+  BadgeCheck,
+  ArrowRight
 } from 'lucide-react';
 
 const plans = [
@@ -82,446 +85,406 @@ const plans = [
   }
 ];
 
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  bakeryName: string;
+  phone: string;
+  location: string;
+  selectedPlan: string;
+}
+
+interface SignupResponse {
+  success: boolean;
+  message: string;
+  baker?: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+  requiresVerification?: boolean;
+}
+
 export default function Signup() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    bakeryName: '',
-    ownerName: '',
+  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    bakeryName: '',
     phone: '',
-    city: '',
-    selectedPlan: 'free'
+    location: '',
+    selectedPlan: 'pro'
   });
 
   const signupMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest('POST', '/api/bakers/register', {
-        name: data.bakeryName,
-        email: data.email,
-        password: data.password,
-        phone: data.phone || null,
-        address: data.city || null,
-        subscriptionPlan: data.selectedPlan,
-        specialties: [],
-        description: null,
-        portfolio: []
-      });
-      return await response.json();
+    mutationFn: async (data: FormData): Promise<SignupResponse> => {
+      const response = await apiRequest('POST', '/api/bakers/signup', data);
+      return response.json();
     },
-    onSuccess: (response) => {
-      // For paid plans, redirect to Stripe checkout
-      if (formData.selectedPlan !== 'free' && response.checkoutUrl) {
-        toast({
-          title: "Account created successfully!",
-          description: "Redirecting to secure payment...",
-          duration: 3000,
-        });
-        
-        // Redirect to Stripe checkout
-        setTimeout(() => {
-          window.location.href = response.checkoutUrl;
-        }, 1500);
-        return;
-      }
-
-      // For free plan or if no checkout URL (email verification flow)
-      if (response.requiresVerification) {
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account before logging in.",
-          duration: 8000,
-        });
-        
-        // Redirect to login page with verification message
-        setTimeout(() => {
-          setLocation('/baker-login?verification-sent=true&email=' + encodeURIComponent(response.baker.email));
-        }, 2000);
-      } else {
-        // Store the token only if verification is not required
-        if (response.token) {
-          localStorage.setItem("baker_token", response.token);
+    onSuccess: (data: SignupResponse) => {
+      if (data.success) {
+        if (data.requiresVerification) {
+          // Redirect to login with verification message
+          setLocation(`/baker-login?verification-sent=true&email=${encodeURIComponent(formData.email)}`);
+        } else if (data.baker) {
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to Bakewise! Setting up your dashboard...",
+          });
+          setLocation(`/baker/${data.baker.slug}/dashboard`);
         }
-        
+      } else {
         toast({
-          title: "Welcome to Bakewise!",
-          description: "Your account has been created successfully. Redirecting to your dashboard...",
+          title: "Signup Failed",
+          description: data.message || "Please try again.",
+          variant: "destructive",
         });
-        
-        // Redirect to baker dashboard using SEO-friendly slug
-        setTimeout(() => {
-          setLocation(`/baker/${response.baker.slug}/dashboard`);
-        }, 2000);
       }
     },
     onError: (error: any) => {
+      console.error('Signup error:', error);
       toast({
         title: "Signup Failed",
-        description: error.message || "Failed to create account. Please try again.",
+        description: "An error occurred. Please try again.",
         variant: "destructive",
       });
     }
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1) {
+      if (!formData.email || !formData.password || !formData.name) {
+        toast({
+          title: "Please fill in all required fields",
+          description: "Name, email, and password are required.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.bakeryName || !formData.ownerName || !formData.email || !formData.password || !formData.confirmPassword || !formData.city) {
+    if (!formData.bakeryName || !formData.phone || !formData.location) {
       toast({
-        title: "Missing Information", 
-        description: "Please fill in all required fields including your business address.",
+        title: "Please complete all fields",
+        description: "All business information is required.",
         variant: "destructive",
       });
       return;
     }
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match. Please check and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (formData.password.length < 8) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    signupMutation.mutate(formData);
+
+    const finalData = { ...formData, selectedPlan };
+    signupMutation.mutate(finalData);
   };
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOHead 
+        title="Sign Up - Bakewise SaaS Platform for Bakeries"
+        description="Join Bakewise and start growing your bakery business today. Professional tools for customer management, quotes, and marketplace visibility."
+      />
+      
       <NavigationHeader />
       
-      <div className="container mx-auto px-4 py-16 relative z-10">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full blur-lg opacity-30"></div>
-              <ChefHat className="h-16 w-16 text-rose-600 mr-4 relative z-10" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">Join Bakewise</h1>
-              <p className="text-lg text-gray-600">Transform your bakery business</p>
-            </div>
-          </div>
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 pt-20 pb-16">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+            Start Growing Your<br />
+            <span className="text-orange-500">Bakery Business Today</span>
+          </h1>
           
-          <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            🧁 Start Your Sweet Success Story Today
-          </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Join hundreds of bakers who've streamlined their business with our all-in-one platform.
-            From customer management to payment processing—we've got you covered.
+          <p className="text-xl text-gray-600 leading-relaxed mb-8">
+            Join hundreds of successful bakers using our platform to manage customers, 
+            create professional quotes, and grow their business.
           </p>
-        </div>
 
-        {/* Social Proof */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">500+</div>
-              <p className="text-gray-600">Happy Bakers</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">$2M+</div>
-              <p className="text-gray-600">Revenue Processed</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">98%</div>
-              <p className="text-gray-600">Customer Satisfaction</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Pricing Plans */}
-        <div className="mb-16">
-          <h3 className="text-2xl font-bold text-center mb-12 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Choose Your Plan</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.id} 
-                className={`relative backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 ${
-                  plan.highlighted ? 'ring-2 ring-rose-200 scale-105 shadow-rose-200/50' : ''
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-rose-500 to-pink-500 text-white border-0 shadow-lg">Most Popular</Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center">
-                  <div className="mb-4 relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
-                    <div className="relative">{plan.icon}</div>
-                  </div>
-                  <CardTitle className="text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">{plan.price}</span>
-                    <span className="text-gray-600 ml-2">{plan.monthly}</span>
-                  </div>
-                  <CardDescription className="mt-2 text-gray-600">{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <Check className="h-4 w-4 text-emerald-600 mr-3 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full transition-all duration-300 ${
-                      plan.highlighted 
-                        ? 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg' 
-                        : 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                    }`}
-                    variant={plan.highlighted ? 'default' : 'outline'}
-                    onClick={() => setFormData(prev => ({ ...prev, selectedPlan: plan.id }))}
-                  >
-                    {formData.selectedPlan === plan.id ? 'Selected ✓' : 'Choose Plan'}
-                  </Button>
-                </CardContent>
-              </Card>
+          <div className="flex justify-center mb-6">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
             ))}
           </div>
-        </div>
-
-        {/* Signup Form */}
-        <div className="max-w-2xl mx-auto">
-          <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Get Started Today</CardTitle>
-              <CardDescription className="text-gray-600">
-                Fill out the form below to create your Bakewise account.<br/>
-                <span className="text-rose-600 font-medium">Start free or upgrade immediately to unlock advanced features!</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bakeryName">Bakery Name *</Label>
-                  <Input
-                    id="bakeryName"
-                    name="bakeryName"
-                    placeholder="Sweet Dreams Bakery"
-                    value={formData.bakeryName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ownerName">Owner Name *</Label>
-                  <Input
-                    id="ownerName"
-                    name="ownerName"
-                    placeholder="Jane Smith"
-                    value={formData.ownerName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="jane@sweetdreamsbakery.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="At least 8 characters"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Re-enter your password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="city">Business Address *</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  placeholder="Full business address (e.g., 123 Main St, San Francisco, CA 94102)"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This helps customers find you in the marketplace. Include city and state for best results.
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-lg border border-rose-100">
-                <h4 className="font-medium mb-2 text-gray-800">Selected Plan</h4>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">{plans.find(p => p.id === formData.selectedPlan)?.name}</span>
-                  <span className="font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                    {plans.find(p => p.id === formData.selectedPlan)?.price}
-                    {formData.selectedPlan !== 'starter' && '/month'}
-                  </span>
-                </div>
-              </div>
-
-              <Button 
-                type="submit"
-                disabled={signupMutation.isPending}
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg transition-all duration-300" 
-                size="lg"
-              >
-                {signupMutation.isPending ? "Creating Account..." : 
-                 formData.selectedPlan === 'free' ? "Create Free Account" : "Continue to Payment"}
-              </Button>
-              
-                <p className="text-xs text-gray-500 text-center">
-                  {formData.selectedPlan === 'free' 
-                    ? "Free account - no credit card required." 
-                    : "Proceed to secure payment after account creation."
-                  } <br/>
-                  By signing up, you agree to our Terms of Service and Privacy Policy.
-                </p>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Features Highlight */}
-        <div className="mt-16">
-          <h3 className="text-2xl font-bold text-center mb-12 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Everything You Need to Succeed</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
-                  <Users className="h-12 w-12 text-rose-600 mx-auto mb-4 relative" />
-                </div>
-                <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Smart CRM</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600">
-                  Manage customers, track preferences, and never miss a follow-up
-                </CardDescription>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
-                  <FileText className="h-12 w-12 text-rose-600 mx-auto mb-4 relative" />
-                </div>
-                <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Quote Builder</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600">
-                  Create professional quotes in minutes with templates and pricing
-                </CardDescription>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
-                  <UserCheck className="h-12 w-12 text-rose-600 mx-auto mb-4 relative" />
-                </div>
-                <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Digital Contracts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600">
-                  E-signatures, automated workflows, and legal templates
-                </CardDescription>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-pink-400/30 rounded-full blur-lg"></div>
-                  <CreditCard className="h-12 w-12 text-rose-600 mx-auto mb-4 relative" />
-                </div>
-                <CardTitle className="text-lg bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Payment Processing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600">
-                  Collect deposits, manage payment plans, and automate invoicing
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="text-center mt-16">
-          <Button asChild size="lg" className="mr-4 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0 shadow-lg transition-all duration-300">
-            <Link href="/demo-tenant">Try Live Demo</Link>
-          </Button>
-          <Button variant="outline" asChild size="lg" className="border-rose-200 text-rose-600 hover:bg-rose-50">
-            <Link href="/">Learn More</Link>
-          </Button>
+          <p className="text-sm text-gray-500 mb-8">Trusted by 500+ professional bakers</p>
         </div>
       </div>
+
+      {/* Signup Steps */}
+      <div className="container mx-auto px-4 pb-20">
+        <div className="max-w-2xl mx-auto">
+          
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-center mb-8">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+                  currentStep >= step 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div className={`w-20 h-1 mx-2 ${
+                    currentStep > step ? 'bg-orange-500' : 'bg-gray-200'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-4 text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {currentStep === 1 && "Account Information"}
+              {currentStep === 2 && "Business Details"} 
+              {currentStep === 3 && "Choose Your Plan"}
+            </h2>
+            <p className="text-gray-600">
+              {currentStep === 1 && "Create your Bakewise account"}
+              {currentStep === 2 && "Tell us about your bakery"}
+              {currentStep === 3 && "Select the perfect plan for your business"}
+            </p>
+          </div>
+
+          <Card className="border-2 border-gray-200">
+            <CardContent className="p-8">
+              
+              {/* Step 1: Account Information */}
+              {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-gray-700 font-medium">Full Name *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className="h-12"
+                      data-testid="input-name"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-700 font-medium">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="h-12"
+                      data-testid="input-email"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-gray-700 font-medium">Password *</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Choose a secure password"
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      className="h-12"
+                      data-testid="input-password"
+                      required
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={handleNext}
+                    className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                    data-testid="button-next-step1"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Step 2: Business Details */}
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="bakeryName" className="text-gray-700 font-medium">Bakery Name *</Label>
+                    <Input
+                      id="bakeryName"
+                      type="text"
+                      placeholder="Your bakery business name"
+                      value={formData.bakeryName}
+                      onChange={(e) => handleInputChange('bakeryName', e.target.value)}
+                      className="h-12"
+                      data-testid="input-bakery-name"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-gray-700 font-medium">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="h-12"
+                      data-testid="input-phone"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-gray-700 font-medium">Location (City, State) *</Label>
+                    <Input
+                      id="location"
+                      type="text"
+                      placeholder="San Francisco, CA"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="h-12"
+                      data-testid="input-location"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button 
+                      variant="outline"
+                      onClick={handleBack}
+                      className="flex-1 h-12 border-2 border-gray-300"
+                      data-testid="button-back-step2"
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNext}
+                      className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                      data-testid="button-next-step2"
+                    >
+                      Continue
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Plan Selection */}
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {plans.map((plan) => (
+                      <Card 
+                        key={plan.id}
+                        className={`cursor-pointer transition-all duration-300 ${
+                          selectedPlan === plan.id 
+                            ? 'border-2 border-orange-500 shadow-lg' 
+                            : 'border-2 border-gray-200 hover:border-orange-200'
+                        } ${plan.highlighted ? 'relative' : ''}`}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        data-testid={`card-plan-${plan.id}`}
+                      >
+                        {plan.highlighted && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <Badge className="bg-orange-500 text-white">Most Popular</Badge>
+                          </div>
+                        )}
+                        
+                        <CardHeader className="text-center p-4">
+                          <div className="w-12 h-12 mx-auto mb-2 bg-gray-100 rounded-xl flex items-center justify-center">
+                            {plan.icon}
+                          </div>
+                          <CardTitle className="text-lg font-bold text-gray-900">{plan.name}</CardTitle>
+                          <div className="mb-2">
+                            <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
+                            <span className="text-sm text-gray-600 ml-1">{plan.monthly}</span>
+                          </div>
+                          <CardDescription className="text-gray-600">{plan.description}</CardDescription>
+                        </CardHeader>
+
+                        <CardContent className="p-4 pt-0">
+                          <div className="space-y-2">
+                            {plan.features.slice(0, 4).map((feature, index) => (
+                              <div key={index} className="flex items-center text-sm">
+                                <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                                <span className="text-gray-700">{feature}</span>
+                              </div>
+                            ))}
+                            {plan.features.length > 4 && (
+                              <div className="text-sm text-gray-500">
+                                +{plan.features.length - 4} more features
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleSubmit}>
+                    <div className="flex gap-4">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={handleBack}
+                        className="flex-1 h-12 border-2 border-gray-300"
+                        data-testid="button-back-step3"
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        type="submit"
+                        disabled={signupMutation.isPending}
+                        className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                        data-testid="button-create-account"
+                      >
+                        {signupMutation.isPending ? "Creating Account..." : "Create Account"}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+
+          {/* Login Link */}
+          <div className="text-center mt-8">
+            <p className="text-gray-600">
+              Already have an account?{" "}
+              <Link href="/baker-login" className="text-orange-500 hover:text-orange-600 font-medium">
+                Sign in here
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }
