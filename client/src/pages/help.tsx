@@ -245,28 +245,28 @@ export default function Help() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Platform Features */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
                   <Settings className="h-5 w-5 mr-2 text-orange-500" />
                   Platform Features
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/account-setup">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Account Setup & Profile Management
                     </div>
                   </Link>
                   <Link href="/help/subscription-plans">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Subscription Plans & Billing
                     </div>
                   </Link>
                   <Link href="/help/mobile-app">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Mobile App Features
                     </div>
                   </Link>
                   <Link href="/help/notifications">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Notification Settings
                     </div>
                   </Link>
@@ -275,28 +275,28 @@ export default function Help() {
               
               {/* Business Growth */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
                   <TrendingUp className="h-5 w-5 mr-2 text-orange-500" />
                   Business Growth
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/seo-optimization">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       SEO & Online Visibility
                     </div>
                   </Link>
                   <Link href="/help/social-media">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Social Media Integration
                     </div>
                   </Link>
                   <Link href="/help/customer-retention">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Customer Retention Strategies
                     </div>
                   </Link>
                   <Link href="/help/pricing-strategies">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Pricing & Profitability
                     </div>
                   </Link>
@@ -305,28 +305,28 @@ export default function Help() {
               
               {/* Technical Support */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
                   <MessageSquare className="h-5 w-5 mr-2 text-orange-500" />
                   Technical Support
                 </h3>
                 <div className="space-y-2">
                   <Link href="/help/troubleshooting">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Common Issues & Solutions
                     </div>
                   </Link>
                   <Link href="/help/browser-compatibility">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Browser & Device Compatibility
                     </div>
                   </Link>
                   <Link href="/help/data-privacy">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       Privacy & Data Protection
                     </div>
                   </Link>
                   <Link href="/help/api-integration">
-                    <div className="text-sm text-gray-600 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 rounded">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 cursor-pointer p-2 hover:bg-orange-50 dark:hover:bg-gray-700 rounded">
                       API & Third-party Integrations
                     </div>
                   </Link>
@@ -341,29 +341,29 @@ export default function Help() {
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">How do I get started on Bakewise?</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">How do I get started on Bakewise?</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Simply sign up for an account and choose whether you're a baker looking to grow your business or a customer seeking the perfect cake. Our onboarding process will guide you through setup.
                 </p>
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Is my payment information secure?</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Is my payment information secure?</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Yes! We use industry-standard encryption and work with trusted payment processors like Stripe to ensure your financial information is always protected.
                 </p>
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Can I cancel or modify my order?</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Can I cancel or modify my order?</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Cancellation and modification policies vary by baker and are outlined in your contract. Generally, changes are possible with sufficient notice before your event date.
                 </p>
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">How do I become a verified baker?</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">How do I become a verified baker?</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Complete your baker profile with business information, certifications, and portfolio images. Our verification team reviews applications within 2-3 business days.
                 </p>
               </div>
@@ -373,7 +373,7 @@ export default function Help() {
           {/* Contact Section */}
           <div className="mt-16 text-center">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Still Need Help?</h2>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
               Our support team is here to help you succeed on Bakewise
             </p>
             <div className="flex justify-center">
