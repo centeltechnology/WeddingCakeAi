@@ -216,23 +216,83 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Testimonial Section */}
+      {/* Testimonials Section */}
       <div className="bg-gray-50 py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center space-x-6">
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold text-gray-600">SH</span>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">What Bakers Say</h2>
+            <p className="text-xl text-gray-600">Join hundreds of successful bakers growing their business with Bakewise</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Testimonial 1 */}
+            <Card className="border-2 border-gray-200 p-6">
+              <CardContent className="p-0">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xl text-gray-900 italic">
-                  "Bakewise has completely transformed how we run our cake business. It's a game changer!"
+                <p className="text-gray-900 mb-4 italic">
+                  "Bakewise has completely transformed how we run our cake business. I'm booking 3x more orders and spending half the time on admin work!"
                 </p>
-                <p className="text-gray-600 font-medium">Sarah H.</p>
-              </div>
-            </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-lg font-bold text-orange-500">SH</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Sarah Henderson</p>
+                    <p className="text-sm text-gray-600">Sweet Dreams Bakery</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 2 */}
+            <Card className="border-2 border-gray-200 p-6">
+              <CardContent className="p-0">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-900 mb-4 italic">
+                  "The professional quotes and automated booking system helped me scale from a home kitchen to a full bakery. My customers love the seamless experience!"
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-lg font-bold text-orange-500">MR</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Maria Rodriguez</p>
+                    <p className="text-sm text-gray-600">Delicate Delights</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 3 */}
+            <Card className="border-2 border-gray-200 p-6">
+              <CardContent className="p-0">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-900 mb-4 italic">
+                  "Being featured in the marketplace brought me so many new customers. The payment tracking and contract management saves me hours every week."
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-lg font-bold text-orange-500">JC</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">James Chen</p>
+                    <p className="text-sm text-gray-600">Artisan Cake Co.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
