@@ -545,13 +545,17 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     </div>
                     <div>
                       <Label>Facebook Page</Label>
-                      <Input
-                        value={editingProfile ? formData.socialMedia?.facebook || '' : account?.socialMedia?.facebook || ''}
-                        disabled={!editingProfile}
-                        placeholder="facebook.com/yourpage"
-                        onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'facebook')}
-                        data-testid="input-facebook"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">facebook.com/</span>
+                        <Input
+                          value={editingProfile ? formData.socialMedia?.facebook || '' : account?.socialMedia?.facebook || ''}
+                          disabled={!editingProfile}
+                          placeholder="yourpage"
+                          className="pl-24"
+                          onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'facebook')}
+                          data-testid="input-facebook"
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label>TikTok Handle</Label>
@@ -569,13 +573,17 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                     </div>
                     <div>
                       <Label>Pinterest</Label>
-                      <Input
-                        value={editingProfile ? formData.socialMedia?.pinterest || '' : account?.socialMedia?.pinterest || ''}
-                        disabled={!editingProfile}
-                        placeholder="pinterest.com/yourboard"
-                        onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'pinterest')}
-                        data-testid="input-pinterest"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">pinterest.com/</span>
+                        <Input
+                          value={editingProfile ? formData.socialMedia?.pinterest || '' : account?.socialMedia?.pinterest || ''}
+                          disabled={!editingProfile}
+                          placeholder="yourboard"
+                          className="pl-24"
+                          onChange={(e) => handleFieldChange('socialMedia', e.target.value, 'pinterest')}
+                          data-testid="input-pinterest"
+                        />
+                      </div>
                     </div>
                     <div className="md:col-span-2">
                       <Label>Website</Label>
