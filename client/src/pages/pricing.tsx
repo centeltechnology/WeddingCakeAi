@@ -175,37 +175,37 @@ export default function Pricing() {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card className="border-2 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">Is the free plan really free forever?</CardTitle>
+                <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Is the free plan really free forever?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Yes! Our free plan includes essential features forever with no time limit. Upgrade to Professional or Plus anytime for advanced features.</p>
+                <p className="text-white dark:text-white">Yes! Our free plan includes essential features forever with no time limit. Upgrade to Professional or Plus anytime for advanced features.</p>
               </CardContent>
             </Card>
 
             <Card className="border-2 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">Can I cancel my subscription anytime?</CardTitle>
+                <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Can I cancel my subscription anytime?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Absolutely. You can cancel your subscription at any time with no cancellation fees or penalties. Your data remains accessible.</p>
+                <p className="text-white dark:text-white">Absolutely. You can cancel your subscription at any time with no cancellation fees or penalties. Your data remains accessible.</p>
               </CardContent>
             </Card>
 
             <Card className="border-2 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">Can I upgrade or downgrade my plan?</CardTitle>
+                <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Can I upgrade or downgrade my plan?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Yes, you can change your plan at any time. Upgrades take effect immediately, and billing is prorated for fairness.</p>
+                <p className="text-white dark:text-white">Yes, you can change your plan at any time. Upgrades take effect immediately, and billing is prorated for fairness.</p>
               </CardContent>
             </Card>
 
             <Card className="border-2 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">What kind of support do you offer?</CardTitle>
+                <CardTitle className="text-lg text-gray-400 dark:text-gray-300">What kind of support do you offer?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">All plans include email support. Professional and Plus plans get priority support with faster response times.</p>
+                <p className="text-white dark:text-white">All plans include email support. Professional and Plus plans get priority support with faster response times.</p>
               </CardContent>
             </Card>
           </div>
