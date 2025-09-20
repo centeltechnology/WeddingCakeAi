@@ -517,6 +517,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const newBooking = await storage.createBooking(booking);
+      
+      // Send email notifications for new booking
+      try {
+        // Get baker details for email
+        const baker = await storage.getBaker(booking.bakerId);
+        if (baker && baker.email) {
+          // Create booking notification message
+          const bookingMessage = `New booking details:
+- Customer: ${booking.customerName}
+- Email: ${booking.customerEmail}
+- Date: ${new Date(booking.startISO).toLocaleDateString()}
+- Time: ${new Date(booking.startISO).toLocaleTimeString()} - ${new Date(booking.endISO).toLocaleTimeString()}
+- Notes: ${booking.notes || 'No additional notes'}`;
+          
+          // Send notification to baker using existing lead template (adapted for booking)
+          const template = emailTemplates.newLeadNotification(
+            baker.name,
+            booking.customerName,
+            booking.customerEmail,
+            bookingMessage,
+            new Date(booking.startISO).toLocaleDateString()
+          );
+          
+          await sendEmail({
+            to: baker.email,
+            from: 'noreply@weddingcakecalculator.com',
+            fromName: 'Wedding Cake Calculator',
+            subject: template.subject.replace('Inquiry', 'Booking'),
+            textPart: template.textPart.replace('inquiry', 'booking'),
+            htmlPart: template.htmlPart.replace('inquiry', 'booking').replace('Inquiry', 'Booking')
+          });
+          
+          // Send confirmation to customer using existing lead confirmation template
+          const confirmTemplate = emailTemplates.leadConfirmation(
+            booking.customerName,
+            baker.name
+          );
+          
+          await sendEmail({
+            to: booking.customerEmail,
+            from: 'noreply@weddingcakecalculator.com',
+            fromName: 'Wedding Cake Calculator',
+            subject: confirmTemplate.subject.replace('inquiry', 'booking request'),
+            textPart: confirmTemplate.textPart.replace('inquiry', 'booking request'),
+            htmlPart: confirmTemplate.htmlPart.replace('inquiry', 'booking request')
+          });
+        }
+      } catch (emailError: any) {
+        console.error('Failed to send booking notification emails:', emailError);
+        // Don't fail the booking creation if email fails
+      }
+      
       res.json(newBooking);
     } catch (error: any) {
       console.error('Error creating booking:', error);
@@ -2114,12 +2166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { bakerId } = req.params;
       
-      // Fetch from database
-      const templates = await storage.getQuoteTemplatesByBaker(bakerId);
+      // Fetch pricing config from database
+      const pricingConfig = await storage.getPricingConfig(bakerId);
       
-      if (!templates || templates.length === 0) {
-        // Fallback to mock data if no templates found
-        const pricingConfig = {
+      if (!pricingConfig) {
+        // Fallback to default data if no pricing config found
+        const defaultPricingConfig = {
           id: `pricing-${bakerId}`,
           bakerId,
           cakeSizes: [
@@ -2147,60 +2199,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ],
           taxRate: 8.75,
           deliverySettings: { baseDeliveryFee: 50 },
+          profitSettings: { defaultMargin: 55, minimumMargin: 35, laborRate: 25 },
           lastUpdated: new Date().toISOString()
         };
-        return res.json(pricingConfig);
+        return res.json(defaultPricingConfig);
       }
-
-      // Use the first active template
-      const template = templates.find(t => t.isActive) || templates[0];
-      
-      // Transform database data to expected format
-      const pricingConfig = {
-        id: template.id,
-        bakerId,
-        cakeSizes: (template.tiers as any[])?.map((tier: any) => ({
-          size: `${tier.diameter}-inch`,
-          servings: tier.servings,
-          basePrice: tier.basePrice,
-          costToMake: Math.round(tier.basePrice * 0.4), // Estimated 40% cost
-          profitMargin: Math.round(60 - (tier.tierNumber * 2)) // Decreasing margin by size
-        })) || [
-          { size: "8-inch", servings: 24, basePrice: 95, costToMake: 40, profitMargin: 58 }
-        ],
-        shapes: [
-          { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
-          { id: "heart", name: "Heart", baseUpcharge: 15, costToMake: 8, profitMargin: 47 },
-          { id: "square", name: "Square", baseUpcharge: 10, costToMake: 5, profitMargin: 50 }
-        ],
-        flavors: (template.flavorOptions as any[])?.map((flavor: any) => ({
-          id: flavor.id,
-          name: flavor.name,
-          upcharge: flavor.priceModifier || 0,
-          isPremium: (flavor.priceModifier || 0) > 10
-        })) || [],
-        decorations: (template.addOns as any[])?.map((addon: any) => ({
-          id: addon.id,
-          name: addon.name,
-          description: addon.description,
-          price: addon.price,
-          category: addon.category,
-          isActive: true
-        })) || [],
-        taxRate: 8.75, // Default tax rate
-        deliverySettings: {
-          baseDeliveryFee: (template.deliveryOptions as any[])?.find((d: any) => d.id === 'standard')?.price || 50,
-          freeDeliveryMinimum: 250,
-          deliveryRadius: 30,
-          perMileRate: 3.0
-        },
-        profitSettings: {
-          defaultMargin: template.profitMargin || 58,
-          minimumMargin: 40,
-          laborRate: 30
-        },
-        lastUpdated: template.updatedAt?.toISOString() || new Date().toISOString()
-      };
 
       res.json(pricingConfig);
     } catch (error) {
@@ -2219,13 +2222,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUpdated: new Date().toISOString()
       };
 
-      // In real app, save to database
-      console.log('Baker pricing configuration updated:', pricingConfig);
+      // Save to database using new storage methods
+      const savedConfig = await storage.updatePricingConfig(bakerId, pricingConfig);
+      console.log('Baker pricing configuration updated:', savedConfig);
 
       res.json({
         success: true,
         message: 'Pricing configuration updated successfully',
-        config: pricingConfig
+        config: savedConfig
       });
     } catch (error) {
       console.error('Error updating baker pricing:', error);

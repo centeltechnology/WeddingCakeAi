@@ -252,6 +252,11 @@ export interface IStorage {
   // System Operations
   createBackup(): Promise<{success: boolean, backupId?: string}>;
   clearCache(): Promise<{success: boolean}>;
+  
+  // Pricing configuration methods
+  createPricingConfig(pricingConfig: any): Promise<any>;
+  getPricingConfig(bakerId: string): Promise<any | undefined>;
+  updatePricingConfig(bakerId: string, updates: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -293,6 +298,9 @@ export class MemStorage implements IStorage {
   private paymentPlans: Map<string, PaymentPlan>;
   private paymentSchedule: Map<string, PaymentSchedule>;
   private invoices: Map<string, Invoice>;
+  
+  // Pricing configuration storage
+  private pricingConfigs: Map<string, any>;
   
   // Super Admin storage
   private auditLogs: Map<string, AuditLog>;
@@ -368,6 +376,9 @@ export class MemStorage implements IStorage {
     this.paymentPlans = new Map();
     this.paymentSchedule = new Map();
     this.invoices = new Map();
+    
+    // Pricing configuration storage
+    this.pricingConfigs = new Map();
     
     // Super Admin storage
     this.auditLogs = new Map();
@@ -2365,6 +2376,34 @@ export class MemStorage implements IStorage {
     // In-memory storage is the cache, return success without clearing
     return { success: true };
   }
+
+  // Pricing configuration methods
+  async createPricingConfig(pricingConfig: any): Promise<any> {
+    const id = `pricing-${pricingConfig.bakerId}`;
+    const config = {
+      ...pricingConfig,
+      id,
+      lastUpdated: new Date().toISOString()
+    };
+    this.pricingConfigs.set(pricingConfig.bakerId, config);
+    return config;
+  }
+
+  async getPricingConfig(bakerId: string): Promise<any | undefined> {
+    return this.pricingConfigs.get(bakerId);
+  }
+
+  async updatePricingConfig(bakerId: string, updates: any): Promise<any> {
+    const existing = this.pricingConfigs.get(bakerId);
+    const updated = {
+      ...existing,
+      ...updates,
+      bakerId,
+      lastUpdated: new Date().toISOString()
+    };
+    this.pricingConfigs.set(bakerId, updated);
+    return updated;
+  }
 }
 
 // Helper function to convert undefined to null for database operations
@@ -3453,6 +3492,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id))
       .returning();
     return updatedBooking;
+  }
+
+  // Pricing configuration methods (simplified for now - store as JSON in baker table)
+  async createPricingConfig(pricingConfig: any): Promise<any> {
+    const id = `pricing-${pricingConfig.bakerId}`;
+    const config = {
+      ...pricingConfig,
+      id,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    // For now, we'll store this as part of the baker's data
+    // In a real implementation, you'd create a separate pricing_configs table
+    const baker = await this.getBaker(pricingConfig.bakerId);
+    if (baker) {
+      await this.updateBaker(pricingConfig.bakerId, { pricingConfig: config });
+    }
+    
+    return config;
+  }
+
+  async getPricingConfig(bakerId: string): Promise<any | undefined> {
+    const baker = await this.getBaker(bakerId);
+    return baker?.pricingConfig;
+  }
+
+  async updatePricingConfig(bakerId: string, updates: any): Promise<any> {
+    const existing = await this.getPricingConfig(bakerId);
+    const updated = {
+      ...existing,
+      ...updates,
+      bakerId,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await this.updateBaker(bakerId, { pricingConfig: updated });
+    return updated;
   }
 }
 
