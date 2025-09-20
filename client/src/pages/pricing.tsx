@@ -115,13 +115,13 @@ export default function Pricing() {
       </div>
 
       {/* SaaS Benefits */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-gray-50 dark:bg-gray-900 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               What You Get with Our SaaS Platform
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Cloud-based software that grows with your business
             </p>
           </div>
@@ -131,32 +131,32 @@ export default function Pricing() {
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-8 h-8 text-orange-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Always Updated</h3>
-              <p className="text-gray-600">Automatic updates with new features and security patches</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Always Updated</h3>
+              <p className="text-gray-600 dark:text-gray-300">Automatic updates with new features and security patches</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-teal-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">24/7 Access</h3>
-              <p className="text-gray-600">Manage your business from anywhere, anytime</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">24/7 Access</h3>
+              <p className="text-gray-600 dark:text-gray-300">Manage your business from anywhere, anytime</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-green-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Secure & Reliable</h3>
-              <p className="text-gray-600">Enterprise-grade security with 99.9% uptime</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Secure & Reliable</h3>
+              <p className="text-gray-600 dark:text-gray-300">Enterprise-grade security with 99.9% uptime</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-purple-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Scalable</h3>
-              <p className="text-gray-600">Grows from startup to enterprise level</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Scalable</h3>
+              <p className="text-gray-600 dark:text-gray-300">Grows from startup to enterprise level</p>
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function Pricing() {
                 <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Is the free plan really free forever?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-white dark:text-white">Yes! Our free plan includes essential features forever with no time limit. Upgrade to Professional or Plus anytime for advanced features.</p>
+                <p className="text-gray-900 dark:text-white">Yes! Our free plan includes essential features forever with no time limit. Upgrade to Professional or Plus anytime for advanced features.</p>
               </CardContent>
             </Card>
 
@@ -187,7 +187,7 @@ export default function Pricing() {
                 <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Can I cancel my subscription anytime?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-white dark:text-white">Absolutely. You can cancel your subscription at any time with no cancellation fees or penalties. Your data remains accessible.</p>
+                <p className="text-gray-900 dark:text-white">Absolutely. You can cancel your subscription at any time with no cancellation fees or penalties. Your data remains accessible.</p>
               </CardContent>
             </Card>
 
@@ -196,7 +196,7 @@ export default function Pricing() {
                 <CardTitle className="text-lg text-gray-400 dark:text-gray-300">Can I upgrade or downgrade my plan?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-white dark:text-white">Yes, you can change your plan at any time. Upgrades take effect immediately, and billing is prorated for fairness.</p>
+                <p className="text-gray-900 dark:text-white">Yes, you can change your plan at any time. Upgrades take effect immediately, and billing is prorated for fairness.</p>
               </CardContent>
             </Card>
 
@@ -205,7 +205,7 @@ export default function Pricing() {
                 <CardTitle className="text-lg text-gray-400 dark:text-gray-300">What kind of support do you offer?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-white dark:text-white">All plans include email support. Professional and Plus plans get priority support with faster response times.</p>
+                <p className="text-gray-900 dark:text-white">All plans include email support. Professional and Plus plans get priority support with faster response times.</p>
               </CardContent>
             </Card>
           </div>

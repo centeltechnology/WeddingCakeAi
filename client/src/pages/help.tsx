@@ -202,7 +202,7 @@ export default function Help() {
                     <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-dietary-restrictions">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-400 dark:text-gray-300 mb-2">Dietary Restrictions & Allergies</h4>
-                        <p className="text-sm text-white dark:text-white">How to communicate special dietary needs</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">How to communicate special dietary needs</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -211,7 +211,7 @@ export default function Help() {
                     <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-event-planning-tips">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-400 dark:text-gray-300 mb-2">Event Planning Tips</h4>
-                        <p className="text-sm text-white dark:text-white">Making your special occasion perfect</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Making your special occasion perfect</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -220,7 +220,7 @@ export default function Help() {
                     <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-payment-safety">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-400 dark:text-gray-300 mb-2">Payment Safety & Security</h4>
-                        <p className="text-sm text-white dark:text-white">How your payments and data are protected</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">How your payments and data are protected</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -229,7 +229,7 @@ export default function Help() {
                     <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-reviews-and-feedback">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-400 dark:text-gray-300 mb-2">Reviews & Feedback</h4>
-                        <p className="text-sm text-white dark:text-white">How to leave reviews and provide feedback</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">How to leave reviews and provide feedback</p>
                       </CardContent>
                     </Card>
                   </Link>
