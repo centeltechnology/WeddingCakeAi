@@ -294,7 +294,10 @@ export function CrmDashboard({ bakerId }: CrmDashboardProps) {
               </Button>
             </div>
             <div className="flex space-x-2">
-              <Button data-testid="btn-create-quote">
+              <Button 
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                data-testid="btn-create-quote"
+              >
                 Create Quote
               </Button>
               <Button variant="outline" data-testid="btn-view-history">
