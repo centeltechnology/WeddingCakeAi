@@ -1033,6 +1033,57 @@ export type InsertEmailJob = z.infer<typeof insertEmailJobSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
+// Email Campaign Tables for conversion campaigns
+export const emailCampaignEnrollments = pgTable("email_campaign_enrollments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  campaignKey: text("campaign_key").notNull(), // e.g., 'free_to_paid_7day'
+  status: text("status").notNull().default('active'), // active, completed, unsubscribed, converted, bounced
+  lastStepSent: integer("last_step_sent").default(0), // 0-7, tracks progress
+  lastSentAt: timestamp("last_sent_at"),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+  convertedAt: timestamp("converted_at"),
+  convertedPlan: text("converted_plan"), // professional, enterprise
+  sendHour: integer("send_hour").default(16), // UTC hour to send emails (default 4pm)
+  metadata: json("metadata").$type<{
+    enrollmentSource?: string;
+    originalPlan?: string;
+    unsubscribeToken?: string;
+    bounceReason?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailCampaignEvents = pgTable("email_campaign_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enrollmentId: varchar("enrollment_id").notNull().references(() => emailCampaignEnrollments.id),
+  userId: varchar("user_id").references(() => users.id),
+  bakerId: varchar("baker_id").references(() => bakers.id),
+  campaignKey: text("campaign_key").notNull(),
+  step: integer("step").notNull(), // 1-7
+  eventType: text("event_type").notNull(), // sent, opened, clicked, bounced, unsubscribed, converted
+  metadata: json("metadata").$type<{
+    emailSubject?: string;
+    clickUrl?: string;
+    bounceReason?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Email Campaign Schemas
+export const insertEmailCampaignEnrollmentSchema = createInsertSchema(emailCampaignEnrollments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEmailCampaignEventSchema = createInsertSchema(emailCampaignEvents).omit({ id: true, createdAt: true });
+
+export type InsertEmailCampaignEnrollment = z.infer<typeof insertEmailCampaignEnrollmentSchema>;
+export type EmailCampaignEnrollment = typeof emailCampaignEnrollments.$inferSelect;
+
+export type InsertEmailCampaignEvent = z.infer<typeof insertEmailCampaignEventSchema>;
+export type EmailCampaignEvent = typeof emailCampaignEvents.$inferSelect;
+
 // Baker Pricing Configuration Schema (for validation)
 export const bakerPricingSchema = z.object({
   cakeSizes: z.array(z.object({

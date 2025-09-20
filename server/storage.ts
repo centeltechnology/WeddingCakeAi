@@ -11,6 +11,7 @@ import {
   type ContractTemplate, type InsertContractTemplate, type Contract, type InsertContract, type ContractSignature, type InsertContractSignature,
   type PaymentPlan, type InsertPaymentPlan, type PaymentSchedule, type InsertPaymentSchedule, type Invoice, type InsertInvoice,
   type Booking, type InsertBooking,
+  type EmailCampaignEnrollment, type InsertEmailCampaignEnrollment, type EmailCampaignEvent, type InsertEmailCampaignEvent,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
@@ -19,7 +20,7 @@ import {
   type AuditLog, type InsertAuditLog, type SystemAnnouncement, type InsertSystemAnnouncement,
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
   type MaintenanceSchedule, type InsertMaintenanceSchedule,
-  announcements, emailJobs, activityLogs,
+  announcements, emailJobs, activityLogs, emailCampaignEnrollments, emailCampaignEvents,
   type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
   type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -257,6 +258,20 @@ export interface IStorage {
   createPricingConfig(pricingConfig: any): Promise<any>;
   getPricingConfig(bakerId: string): Promise<any | undefined>;
   updatePricingConfig(bakerId: string, updates: any): Promise<any>;
+
+  // Email Campaign operations for conversion campaigns
+  createCampaignEnrollment(enrollment: InsertEmailCampaignEnrollment): Promise<EmailCampaignEnrollment>;
+  getCampaignEnrollment(id: string): Promise<EmailCampaignEnrollment | undefined>;
+  getActiveEnrollmentsDue(campaignKey: string, currentHour: number): Promise<EmailCampaignEnrollment[]>;
+  updateCampaignEnrollment(id: string, updates: Partial<InsertEmailCampaignEnrollment>): Promise<EmailCampaignEnrollment>;
+  markStepSent(enrollmentId: string, step: number): Promise<EmailCampaignEnrollment>;
+  markConverted(enrollmentId: string, plan: string): Promise<EmailCampaignEnrollment>;
+  unsubscribeFromCampaign(token: string): Promise<boolean>;
+  getEnrollmentsByUser(userId?: string, bakerId?: string): Promise<EmailCampaignEnrollment[]>;
+  
+  createCampaignEvent(event: InsertEmailCampaignEvent): Promise<EmailCampaignEvent>;
+  getCampaignEvents(enrollmentId: string): Promise<EmailCampaignEvent[]>;
+  trackCampaignClick(enrollmentId: string, step: number, clickUrl: string): Promise<EmailCampaignEvent>;
 }
 
 export class MemStorage implements IStorage {
