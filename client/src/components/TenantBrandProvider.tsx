@@ -155,7 +155,7 @@ function applyCSSVariables(branding: TenantBranding) {
   const secondaryHSL = hexToHSL(branding.secondaryColor);
   const accentHSL = hexToHSL(branding.accentColor);
   
-  root.style.setProperty('--primary', primaryHSL);
+  root.style.setProperty('--primary', primaryHSL || '14 88% 55%');
   root.style.setProperty('--secondary', secondaryHSL);
   root.style.setProperty('--accent', accentHSL);
   

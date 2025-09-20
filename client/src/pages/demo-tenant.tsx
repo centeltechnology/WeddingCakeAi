@@ -21,7 +21,7 @@ export default function DemoTenant() {
     
     return () => {
       // Reset to default Bakewise styling
-      root.style.setProperty('--primary', '45 74% 39%'); // Gold
+      root.style.setProperty('--primary', '14 88% 55%'); // Professional Orange
       root.style.setProperty('--secondary', '45 100% 85%'); // Light gold
       root.style.setProperty('--accent', '30 30% 45%'); // Brown
     };
