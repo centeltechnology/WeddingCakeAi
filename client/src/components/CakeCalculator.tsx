@@ -134,6 +134,7 @@ const DEFAULT_DECORATION_OPTIONS: DecorationOption[] = [
   // Extra Touches
   { id: "tier-lights", name: "LED Tier Lighting", description: "Subtle LED lights between tiers", price: 65, category: "extras" },
   { id: "cake-stand-rental", name: "Elegant Cake Stand", description: "Beautiful cake stand rental included", price: 35, category: "extras" },
+  { id: "setup-service", name: "Setup Service", description: "Professional cake setup at venue", price: 75, category: "extras" },
   { id: "cutting-set", name: "Engraved Cutting Set", description: "Personalized cake knife and server", price: 85, category: "extras" },
   { id: "preservation-kit", name: "Top Tier Preservation", description: "Professional preservation of top tier", price: 45, category: "extras" }
 ];

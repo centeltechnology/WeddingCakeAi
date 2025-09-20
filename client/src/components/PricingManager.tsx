@@ -129,7 +129,11 @@ const DEFAULT_DECORATIONS: DecorationPricing[] = [
   { id: "buttercream-rosettes", name: "Buttercream Rosettes", description: "Hand-piped roses", price: 35, costToMake: 15, category: "design", isActive: true },
   { id: "fondant-draping", name: "Fondant Draping", description: "Elegant draping", price: 55, costToMake: 25, category: "design", isActive: true },
   { id: "gold-leaf", name: "Gold Leaf Accent", description: "Edible gold leaf", price: 85, costToMake: 45, category: "design", isActive: true },
-  { id: "custom-monogram", name: "Custom Monogram", description: "Personalized monogram", price: 45, costToMake: 15, category: "topper", isActive: true }
+  { id: "custom-monogram", name: "Custom Monogram", description: "Personalized monogram", price: 45, costToMake: 15, category: "topper", isActive: true },
+  { id: "cake-stand-rental", name: "Cake Stand Rental", description: "Beautiful vintage cake stand", price: 25, costToMake: 5, category: "extras", isActive: true },
+  { id: "setup-service", name: "Setup Service", description: "Professional cake setup at venue", price: 75, costToMake: 25, category: "extras", isActive: true },
+  { id: "cake-cutting-set", name: "Cake Cutting Set", description: "Engraved knife and server set", price: 35, costToMake: 20, category: "extras", isActive: true },
+  { id: "preservation-kit", name: "Preservation Kit", description: "Top tier preservation service", price: 45, costToMake: 15, category: "extras", isActive: true }
 ];
 
 export function PricingManager({ bakerId, className }: PricingManagerProps) {
@@ -627,13 +631,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.deliverySettings.baseDeliveryFee}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      deliverySettings: {
-                        ...pricing.deliverySettings,
-                        baseDeliveryFee: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        deliverySettings: {
+                          ...pricing.deliverySettings,
+                          baseDeliveryFee: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-base-delivery-fee"
                   />
                 </div>
@@ -642,13 +649,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.deliverySettings.freeDeliveryMinimum}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      deliverySettings: {
-                        ...pricing.deliverySettings,
-                        freeDeliveryMinimum: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        deliverySettings: {
+                          ...pricing.deliverySettings,
+                          freeDeliveryMinimum: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-free-delivery-minimum"
                   />
                 </div>
@@ -657,13 +667,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.deliverySettings.deliveryRadius}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      deliverySettings: {
-                        ...pricing.deliverySettings,
-                        deliveryRadius: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        deliverySettings: {
+                          ...pricing.deliverySettings,
+                          deliveryRadius: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-delivery-radius"
                   />
                 </div>
@@ -673,13 +686,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                     type="number"
                     step="0.01"
                     value={pricing.deliverySettings.perMileRate}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      deliverySettings: {
-                        ...pricing.deliverySettings,
-                        perMileRate: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        deliverySettings: {
+                          ...pricing.deliverySettings,
+                          perMileRate: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-per-mile-rate"
                   />
                 </div>
@@ -717,13 +733,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.profitSettings.defaultMargin}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      profitSettings: {
-                        ...pricing.profitSettings,
-                        defaultMargin: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        profitSettings: {
+                          ...pricing.profitSettings,
+                          defaultMargin: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-default-margin"
                   />
                 </div>
@@ -732,13 +751,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.profitSettings.minimumMargin}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      profitSettings: {
-                        ...pricing.profitSettings,
-                        minimumMargin: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        profitSettings: {
+                          ...pricing.profitSettings,
+                          minimumMargin: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-minimum-margin"
                   />
                 </div>
@@ -747,13 +769,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                   <Input
                     type="number"
                     value={pricing.profitSettings.laborRate}
-                    onChange={(e) => setPricing({
-                      ...pricing,
-                      profitSettings: {
-                        ...pricing.profitSettings,
-                        laborRate: parseFloat(e.target.value) || 0
-                      }
-                    })}
+                    onChange={(e) => {
+                      setPricing({
+                        ...pricing,
+                        profitSettings: {
+                          ...pricing.profitSettings,
+                          laborRate: parseFloat(e.target.value) || 0
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
                     data-testid="input-labor-rate"
                   />
                 </div>
