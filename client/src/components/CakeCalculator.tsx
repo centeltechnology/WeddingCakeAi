@@ -1085,7 +1085,7 @@ Generated from AI Dream Cake Designer. Please provide a detailed quote for this 
                     href={`https://instagram.com/${(baker as any).socialMedia.instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-pink-500 transition-colors"
+                    className="text-gray-500 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white p-2 rounded-lg transition-all duration-300"
                     data-testid="link-instagram"
                   >
                     <span className="sr-only">Instagram</span>
@@ -1096,10 +1096,21 @@ Generated from AI Dream Cake Designer. Please provide a detailed quote for this 
                 )}
                 {(baker as any).socialMedia.facebook && (
                   <a
-                    href={(baker as any).socialMedia.facebook.startsWith('http') ? (baker as any).socialMedia.facebook : `https://${(baker as any).socialMedia.facebook}`}
+                    href={(() => {
+                      let url = (baker as any).socialMedia.facebook;
+                      // Remove any existing protocol
+                      url = url.replace(/^https?:\/\//, '');
+                      // Remove www. if it exists
+                      url = url.replace(/^www\./, '');
+                      // If it doesn't start with facebook.com, prepend it
+                      if (!url.startsWith('facebook.com/')) {
+                        url = `facebook.com/${url}`;
+                      }
+                      return `https://www.${url}`;
+                    })()} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-blue-600 transition-colors"
+                    className="text-gray-500 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition-all duration-300"
                     data-testid="link-facebook"
                   >
                     <span className="sr-only">Facebook</span>
@@ -1113,7 +1124,7 @@ Generated from AI Dream Cake Designer. Please provide a detailed quote for this 
                     href={`https://tiktok.com/@${(baker as any).socialMedia.tiktok.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-black transition-colors"
+                    className="text-gray-500 hover:bg-black hover:text-white p-2 rounded-lg transition-all duration-300"
                     data-testid="link-tiktok"
                   >
                     <span className="sr-only">TikTok</span>
@@ -1124,10 +1135,21 @@ Generated from AI Dream Cake Designer. Please provide a detailed quote for this 
                 )}
                 {(baker as any).socialMedia.pinterest && (
                   <a
-                    href={(baker as any).socialMedia.pinterest.startsWith('http') ? (baker as any).socialMedia.pinterest : `https://${(baker as any).socialMedia.pinterest}`}
+                    href={(() => {
+                      let url = (baker as any).socialMedia.pinterest;
+                      // Remove any existing protocol
+                      url = url.replace(/^https?:\/\//, '');
+                      // Remove www. if it exists
+                      url = url.replace(/^www\./, '');
+                      // If it doesn't start with pinterest.com, prepend it
+                      if (!url.startsWith('pinterest.com/')) {
+                        url = `pinterest.com/${url}`;
+                      }
+                      return `https://www.${url}`;
+                    })()} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-red-600 transition-colors"
+                    className="text-gray-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition-all duration-300"
                     data-testid="link-pinterest"
                   >
                     <span className="sr-only">Pinterest</span>

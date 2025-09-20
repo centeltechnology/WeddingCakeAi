@@ -51,7 +51,11 @@ export default function BakerProfile() {
                 Bakewise
               </span>
             </div>
-            <Link href={`/baker/${bakerSlug}/calculator`}>
+            <a 
+              href={`/baker/${bakerSlug}/calculator`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Button 
                 variant="default" 
                 size="sm"
@@ -61,7 +65,7 @@ export default function BakerProfile() {
                 <Calculator className="w-4 h-4 mr-2" />
                 Cake Calculator
               </Button>
-            </Link>
+            </a>
           </div>
         </header>
         <main className="flex-1 container mx-auto px-4 py-8">
@@ -99,7 +103,11 @@ export default function BakerProfile() {
                 Bakewise
               </span>
             </div>
-            <Link href={`/baker/${bakerSlug}/calculator`}>
+            <a 
+              href={`/baker/${bakerSlug}/calculator`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Button 
                 variant="default" 
                 size="sm"
@@ -109,7 +117,7 @@ export default function BakerProfile() {
                 <Calculator className="w-4 h-4 mr-2" />
                 Cake Calculator
               </Button>
-            </Link>
+            </a>
           </div>
         </header>
         <main className="flex-1 container mx-auto px-4 py-8 text-center">
@@ -137,7 +145,11 @@ export default function BakerProfile() {
               Bakewise
             </span>
           </div>
-          <Link href="/">
+          <a 
+            href={`/baker/${baker.slug || baker.id}/calculator`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Button 
               variant="default" 
               size="sm"
@@ -147,7 +159,7 @@ export default function BakerProfile() {
               <Calculator className="w-4 h-4 mr-2" />
               Cake Calculator
             </Button>
-          </Link>
+          </a>
         </div>
       </header>
       
