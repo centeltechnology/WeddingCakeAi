@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   CreditCard, 
   Plus, 
@@ -41,8 +42,7 @@ export function PaymentLinksManager({ bakerId }: PaymentLinksManagerProps) {
   const { data: currentLinks, isLoading } = useQuery<PaymentLinks>({
     queryKey: ['/api/bakers', bakerId, 'payment-links'],
     queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}/payment-links`);
-      if (!response.ok) throw new Error('Failed to fetch payment links');
+      const response = await apiRequest('GET', `/api/bakers/${bakerId}/payment-links`);
       const data = await response.json();
       setPaymentLinks(data || {});
       return data;
@@ -52,17 +52,7 @@ export function PaymentLinksManager({ bakerId }: PaymentLinksManagerProps) {
   // Update payment links
   const updateLinksMutation = useMutation({
     mutationFn: async (links: PaymentLinks) => {
-      const response = await fetch(`/api/bakers/${bakerId}/payment-links`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(links),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update payment links');
-      }
-      
+      const response = await apiRequest('PUT', `/api/bakers/${bakerId}/payment-links`, links);
       return response.json();
     },
     onSuccess: () => {
