@@ -15,139 +15,49 @@ export function NavigationHeader() {
     <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Logo and Brand */}
-        <div className="flex items-center space-x-4">
-          <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home-logo">
-            {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt="Logo" className="h-10 w-auto" />
-            ) : (
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                <ChefHat className="h-5 w-5 text-white" />
-              </div>
-            )}
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                {tenant?.name || 'Bakewise'}
-              </h1>
-              {tenant && (
-                <p className="text-xs text-gray-500 font-medium">
-                  Powered by Bakewise
-                </p>
-              )}
-            </div>
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center group" data-testid="link-home-logo">
+            <span className="text-2xl font-bold text-gray-900">
+              <span className="text-orange-500">Bb</span>kewise
+            </span>
           </Link>
-          
-          {tenant && (
-            <Badge variant="secondary" className="hidden sm:inline-flex bg-gray-100 text-gray-700 border-gray-200">
-              {tenant.subscriptionPlan.charAt(0).toUpperCase() + tenant.subscriptionPlan.slice(1)}
-            </Badge>
-          )}
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-1">
+        <nav className="hidden lg:flex items-center space-x-8">
           {!tenant && (
             <>
-              <Button
-                variant={location === '/' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-100 hover:text-gray-900'}
-                data-testid="nav-home"
-              >
-                <Link href="/">
-                  <span>Home</span>
-                </Link>
-              </Button>
-              
-              <Button
-                variant={location === '/features' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/features' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-100 hover:text-gray-900'}
+              <Link 
+                href="/features" 
+                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
                 data-testid="nav-features"
               >
-                <Link href="/features">
-                  <Star className="h-4 w-4 mr-1" />
-                  <span>Features</span>
-                </Link>
-              </Button>
+                Features
+              </Link>
               
-              <Button
-                variant={location === '/marketplace' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/marketplace' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
-                data-testid="nav-marketplace"
-              >
-                <Link href="/marketplace">
-                  <ChefHat className="h-4 w-4 mr-1" />
-                  <span>Find Bakers</span>
-                </Link>
-              </Button>
-              
-              <Button
-                variant={location === '/about' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/about' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
-                data-testid="nav-about"
-              >
-                <Link href="/about">
-                  <Info className="h-4 w-4 mr-1" />
-                  <span>About</span>
-                </Link>
-              </Button>
-              
-              <Button
-                variant={location === '/pricing' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/pricing' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
+              <Link 
+                href="/pricing" 
+                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
                 data-testid="nav-pricing"
               >
-                <Link href="/pricing">
-                  <CreditCard className="h-4 w-4 mr-1" />
-                  <span>Pricing</span>
-                </Link>
-              </Button>
+                Pricing
+              </Link>
               
-              <Button
-                variant={location === '/help' ? 'default' : 'ghost'}
-                size="sm"
-                asChild
-                className={location === '/help' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
-                data-testid="nav-support"
+              <Link 
+                href="/marketplace" 
+                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                data-testid="nav-automate"
               >
-                <Link href="/help">
-                  <HelpCircle className="h-4 w-4 mr-1" />
-                  <span>Support</span>
-                </Link>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-                className="ml-2 border-2 border-blue-200 hover:border-blue-300 bg-blue-50/80 backdrop-blur-sm hover:bg-blue-100 text-blue-700 hover:text-blue-800 font-medium"
-                data-testid="nav-baker-login"
+                Automate
+              </Link>
+              
+              <Link 
+                href="/about" 
+                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                data-testid="nav-integrated"
               >
-                <Link href="/baker-login">
-                  <ChefHat className="h-4 w-4 mr-1" />
-                  <span>Baker Login</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                size="sm"
-                className="ml-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6"
-                data-testid="nav-signup"
-              >
-                <Link href="/signup">
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  <span>Sign Up</span>
-                </Link>
-              </Button>
+                Integrated
+              </Link>
             </>
           )}
 
