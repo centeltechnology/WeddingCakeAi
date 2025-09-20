@@ -2936,7 +2936,19 @@ export class DatabaseStorage implements IStorage {
     const [template] = await db.update(quoteTemplates).set(updates).where(eq(quoteTemplates.id, id)).returning();
     return template;
   }
-  async deleteQuoteTemplate(id: string): Promise<boolean> { return true; }
+  async deleteQuoteTemplate(id: string): Promise<boolean> {
+    try {
+      console.log(`Attempting to delete quote template with id: ${id}`);
+      const result = await db.delete(quoteTemplates).where(eq(quoteTemplates.id, id));
+      console.log(`Delete result:`, result);
+      const success = result.rowCount ? result.rowCount > 0 : false;
+      console.log(`Delete success: ${success}, rowCount: ${result.rowCount}`);
+      return success;
+    } catch (error) {
+      console.error(`Error deleting quote template ${id}:`, error);
+      return false;
+    }
+  }
   async createQuote(quote: InsertQuote): Promise<Quote> {
     const [result] = await db.insert(quotes).values({ ...quote, id: quote.id || randomUUID() }).returning();
     return result;

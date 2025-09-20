@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { users, bakers, bookings, quoteTemplates, type Booking, type InsertBooking } from "@shared/schema";
+import { users, bakers, bookings, quoteTemplates, type Booking, type InsertBooking, type QuoteTemplate, type InsertQuoteTemplate } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { generateUniqueSlug } from "./utils";
+import { randomUUID } from "crypto";
 
 // Database-backed storage implementation
 export class DatabaseStorage {
@@ -326,11 +327,60 @@ export class DatabaseStorage {
   }
 
   // Quote template methods
-  async getQuoteTemplatesByBaker(bakerId: string) {
+  async createQuoteTemplate(template: InsertQuoteTemplate): Promise<QuoteTemplate> {
+    const [result] = await db
+      .insert(quoteTemplates)
+      .values({ ...template, id: template.id || randomUUID() })
+      .returning();
+    return result;
+  }
+
+  async getQuoteTemplate(id: string): Promise<QuoteTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(quoteTemplates)
+      .where(eq(quoteTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getQuoteTemplates(bakerId: string): Promise<QuoteTemplate[]> {
     return await db
       .select()
       .from(quoteTemplates)
       .where(eq(quoteTemplates.bakerId, bakerId));
+  }
+
+  async getQuoteTemplatesByBaker(bakerId: string): Promise<QuoteTemplate[]> {
+    return await db
+      .select()
+      .from(quoteTemplates)
+      .where(eq(quoteTemplates.bakerId, bakerId));
+  }
+
+  async updateQuoteTemplate(id: string, updates: Partial<InsertQuoteTemplate>): Promise<QuoteTemplate> {
+    const [template] = await db
+      .update(quoteTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quoteTemplates.id, id))
+      .returning();
+    if (!template) throw new Error('Quote template not found');
+    return template;
+  }
+
+  async deleteQuoteTemplate(id: string): Promise<boolean> {
+    try {
+      console.log(`Attempting to delete quote template with id: ${id}`);
+      const result = await db
+        .delete(quoteTemplates)
+        .where(eq(quoteTemplates.id, id));
+      console.log(`Delete result:`, result);
+      const success = result.rowCount ? result.rowCount > 0 : false;
+      console.log(`Delete success: ${success}, rowCount: ${result.rowCount}`);
+      return success;
+    } catch (error) {
+      console.error(`Error deleting quote template ${id}:`, error);
+      return false;
+    }
   }
 }
 
