@@ -233,7 +233,7 @@ export default function Home() {
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-900 mb-4 italic">
+                <p className="text-white dark:text-white mb-4 italic">
                   "Bakewise has completely transformed how we run our cake business. I'm booking 3x more orders and spending half the time on admin work!"
                 </p>
                 <div className="flex items-center space-x-3">
@@ -241,8 +241,8 @@ export default function Home() {
                     <span className="text-lg font-bold text-orange-500">SH</span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Sarah Henderson</p>
-                    <p className="text-sm text-gray-600">Sweet Dreams Bakery</p>
+                    <p className="font-medium text-gray-400 dark:text-gray-300">Sarah Henderson</p>
+                    <p className="text-sm text-white dark:text-white">Sweet Dreams Bakery</p>
                   </div>
                 </div>
               </CardContent>
@@ -256,7 +256,7 @@ export default function Home() {
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-900 mb-4 italic">
+                <p className="text-white dark:text-white mb-4 italic">
                   "The professional quotes and automated booking system helped me scale from a home kitchen to a full bakery. My customers love the seamless experience!"
                 </p>
                 <div className="flex items-center space-x-3">
@@ -264,8 +264,8 @@ export default function Home() {
                     <span className="text-lg font-bold text-orange-500">MR</span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Maria Rodriguez</p>
-                    <p className="text-sm text-gray-600">Delicate Delights</p>
+                    <p className="font-medium text-gray-400 dark:text-gray-300">Maria Rodriguez</p>
+                    <p className="text-sm text-white dark:text-white">Delicate Delights</p>
                   </div>
                 </div>
               </CardContent>
@@ -279,7 +279,7 @@ export default function Home() {
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-900 mb-4 italic">
+                <p className="text-white dark:text-white mb-4 italic">
                   "Being featured in the marketplace brought me so many new customers. The payment tracking and contract management saves me hours every week."
                 </p>
                 <div className="flex items-center space-x-3">
@@ -287,8 +287,8 @@ export default function Home() {
                     <span className="text-lg font-bold text-orange-500">JC</span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">James Chen</p>
-                    <p className="text-sm text-gray-600">Artisan Cake Co.</p>
+                    <p className="font-medium text-gray-400 dark:text-gray-300">James Chen</p>
+                    <p className="text-sm text-white dark:text-white">Artisan Cake Co.</p>
                   </div>
                 </div>
               </CardContent>
