@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useParams } from "wouter";
-import { NavigationHeader } from "@/components/NavigationHeader";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MapPin, Star, Phone, Globe, Instagram, Facebook, 
-  Clock, DollarSign, Award, Users, Calendar, MessageSquare, Check
+  Clock, DollarSign, Award, Users, Calendar, MessageSquare, Check, Calculator, ChefHat
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -41,7 +40,30 @@ export default function BakerProfile() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
-        <NavigationHeader />
+        {/* Simple Header with Cake Calculator Button */}
+        <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+                <ChefHat className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Bakewise
+              </span>
+            </div>
+            <Link href="/">
+              <Button 
+                variant="default" 
+                size="sm"
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+                data-testid="button-cake-calculator"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Cake Calculator
+              </Button>
+            </Link>
+          </div>
+        </header>
         <main className="flex-1 container mx-auto px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
@@ -66,7 +88,30 @@ export default function BakerProfile() {
   if (!baker) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
-        <NavigationHeader />
+        {/* Simple Header with Cake Calculator Button */}
+        <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+                <ChefHat className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Bakewise
+              </span>
+            </div>
+            <Link href="/">
+              <Button 
+                variant="default" 
+                size="sm"
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+                data-testid="button-cake-calculator"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Cake Calculator
+              </Button>
+            </Link>
+          </div>
+        </header>
         <main className="flex-1 container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Baker Not Found</h1>
           <p className="text-gray-600 mb-8">The baker you're looking for doesn't exist or has been removed.</p>
@@ -81,7 +126,30 @@ export default function BakerProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
-      <NavigationHeader />
+      {/* Simple Header with Cake Calculator Button */}
+      <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+              <ChefHat className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Bakewise
+            </span>
+          </div>
+          <Link href="/">
+            <Button 
+              variant="default" 
+              size="sm"
+              className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+              data-testid="button-cake-calculator"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              Cake Calculator
+            </Button>
+          </Link>
+        </div>
+      </header>
       
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Header Section */}
