@@ -39,7 +39,7 @@ export async function apiRequest(
   }
   
   // Add baker token for baker API routes
-  if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates')) {
+  if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates') || url.includes('/api/analytics/') || url.includes('/api/branding/') || url.includes('/api/baker-profiles/')) {
     const token = localStorage.getItem("baker_token");
     if (token) {
       headers["x-baker-token"] = token;
@@ -81,7 +81,7 @@ export const getQueryFn: <T>(options: {
     }
     
     // Add baker token for baker API routes
-    if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates')) {
+    if (url.includes('/api/bakers/') || url.includes('/api/leads/') || url.includes('/api/quotes') || url.includes('/api/customers') || url.includes('/api/consultations') || url.includes('/api/quote-templates') || url.includes('/api/analytics/') || url.includes('/api/branding/') || url.includes('/api/baker-profiles/')) {
       const token = localStorage.getItem("baker_token");
       if (token) {
         headers["x-baker-token"] = token;

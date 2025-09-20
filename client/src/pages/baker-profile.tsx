@@ -51,7 +51,7 @@ export default function BakerProfile() {
                 Bakewise
               </span>
             </div>
-            <Link href="/">
+            <Link href={`/baker/${bakerSlug}/calculator`}>
               <Button 
                 variant="default" 
                 size="sm"
@@ -99,7 +99,7 @@ export default function BakerProfile() {
                 Bakewise
               </span>
             </div>
-            <Link href="/">
+            <Link href={`/baker/${bakerSlug}/calculator`}>
               <Button 
                 variant="default" 
                 size="sm"
