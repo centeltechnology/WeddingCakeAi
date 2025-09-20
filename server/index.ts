@@ -112,6 +112,14 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
 
         await storage.updateBaker(bakerId, updateData);
 
+        // Track conversion if user upgraded from starter to paid plan
+        try {
+          const { EmailAutomationService } = await import('./emailAutomation');
+          await EmailAutomationService.trackUserConversion(bakerId, planId);
+        } catch (conversionError) {
+          console.error('Failed to track conversion:', conversionError);
+        }
+
         // Send welcome email
         try {
           const baker = await storage.getBaker(bakerId);
@@ -169,6 +177,17 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
         };
 
         await storage.updateBaker(baker.id, updateData);
+
+        // Track conversion if subscription was updated to active from trialing and it's a paid plan
+        try {
+          if (subscription.status === 'active' && baker.subscriptionPlan && 
+              baker.subscriptionPlan !== 'starter') {
+            const { EmailAutomationService } = await import('./emailAutomation');
+            await EmailAutomationService.trackUserConversion(baker.id, baker.subscriptionPlan);
+          }
+        } catch (conversionError) {
+          console.error('Failed to track conversion on subscription update:', conversionError);
+        }
 
         // Handle status changes
         if (subscription.status === 'canceled') {

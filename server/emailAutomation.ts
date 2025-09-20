@@ -549,6 +549,58 @@ export class EmailAutomationService {
       return false;
     }
   }
+
+  // ====== CONVERSION TRACKING HOOKS ======
+  
+  /**
+   * Check if a user is enrolled in a conversion campaign and mark them as converted
+   * Call this when a user upgrades from starter to pro/plus plans
+   */
+  static async trackUserConversion(bakerId: string, newPlan: string) {
+    try {
+      // Check if baker is enrolled in active conversion campaign
+      const enrollments = await storage.getEnrollmentsByUser(undefined, bakerId);
+      const activeEnrollment = enrollments.find(e => 
+        e.status === 'active' && 
+        e.campaignKey === 'free_to_paid_7day'
+      );
+
+      if (!activeEnrollment) {
+        console.log(`No active conversion campaign found for baker ${bakerId}`);
+        return false;
+      }
+
+      // Check if this is actually a conversion (starter -> pro/plus)
+      const baker = await storage.getBaker(bakerId);
+      const previousPlan = baker?.subscriptionPlan || 'starter';
+      
+      if (previousPlan === 'starter' && (newPlan === 'professional' || newPlan === 'enterprise')) {
+        // This is a valid conversion! Mark it
+        await storage.markConverted(activeEnrollment.id, newPlan);
+        
+        // Track conversion event
+        await storage.createCampaignEvent({
+          enrollmentId: activeEnrollment.id,
+          bakerId: bakerId,
+          campaignKey: activeEnrollment.campaignKey,
+          step: activeEnrollment.lastStepSent || 0,
+          eventType: 'converted',
+          metadata: {
+            emailSubject: `Converted from ${previousPlan} to ${newPlan}`
+          }
+        });
+
+        console.log(`🎉 Conversion tracked: Baker ${bakerId} upgraded from ${previousPlan} to ${newPlan}`);
+        return true;
+      } else {
+        console.log(`Plan change not counted as conversion: ${previousPlan} -> ${newPlan}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error tracking user conversion:', error);
+      return false;
+    }
+  }
 }
 
 // Scheduler function to run email automation periodically

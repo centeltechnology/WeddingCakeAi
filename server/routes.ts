@@ -4698,6 +4698,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionStatus: 'active',
           cancelAtPeriodEnd: false
         });
+
+        // Note: Downgrades to starter are not conversions for our campaign
+        // The conversion campaign targets starter -> pro/plus upgrades
         
         return res.json({ success: true, message: 'Plan changed to Starter' });
       }
