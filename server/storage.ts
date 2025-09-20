@@ -2982,12 +2982,25 @@ export class DatabaseStorage implements IStorage {
     const [template] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, id));
     return template || undefined;
   }
-  async getContractTemplatesByBaker(bakerId: string): Promise<ContractTemplate[]> { return []; }
+  async getContractTemplatesByBaker(bakerId: string): Promise<ContractTemplate[]> {
+    return await db.select().from(contractTemplates).where(eq(contractTemplates.bakerId, bakerId));
+  }
+  async getContractTemplates(bakerId: string): Promise<ContractTemplate[]> {
+    return await db.select().from(contractTemplates).where(eq(contractTemplates.bakerId, bakerId));
+  }
   async updateContractTemplate(id: string, updates: Partial<InsertContractTemplate>): Promise<ContractTemplate> {
     const [template] = await db.update(contractTemplates).set(updates).where(eq(contractTemplates.id, id)).returning();
     return template;
   }
-  async deleteContractTemplate(id: string): Promise<boolean> { return true; }
+  async deleteContractTemplate(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error(`Error deleting contract template ${id}:`, error);
+      return false;
+    }
+  }
   async createContract(contract: InsertContract): Promise<Contract> {
     const [result] = await db.insert(contracts).values({ ...contract, id: contract.id || randomUUID() }).returning();
     return result;
@@ -2996,18 +3009,32 @@ export class DatabaseStorage implements IStorage {
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, id));
     return contract || undefined;
   }
-  async getContractsByCustomer(customerId: string): Promise<Contract[]> { return []; }
-  async getContractsByBaker(bakerId: string): Promise<Contract[]> { return []; }
+  async getContractsByCustomer(customerId: string): Promise<Contract[]> {
+    return await db.select().from(contracts).where(eq(contracts.customerId, customerId));
+  }
+  async getContractsByBaker(bakerId: string): Promise<Contract[]> {
+    return await db.select().from(contracts).where(eq(contracts.bakerId, bakerId));
+  }
   async updateContract(id: string, updates: Partial<InsertContract>): Promise<Contract> {
     const [contract] = await db.update(contracts).set(updates).where(eq(contracts.id, id)).returning();
     return contract;
   }
-  async deleteContract(id: string): Promise<boolean> { return true; }
+  async deleteContract(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(contracts).where(eq(contracts.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error(`Error deleting contract ${id}:`, error);
+      return false;
+    }
+  }
   async createContractSignature(signature: InsertContractSignature): Promise<ContractSignature> {
     const [result] = await db.insert(contractSignatures).values({ ...signature, id: signature.id || randomUUID() }).returning();
     return result;
   }
-  async getContractSignatures(contractId: string): Promise<ContractSignature[]> { return []; }
+  async getContractSignatures(contractId: string): Promise<ContractSignature[]> {
+    return await db.select().from(contractSignatures).where(eq(contractSignatures.contractId, contractId));
+  }
   async createPaymentPlan(plan: InsertPaymentPlan): Promise<PaymentPlan> {
     const [result] = await db.insert(paymentPlans).values({ ...plan, id: plan.id || randomUUID() }).returning();
     return result;

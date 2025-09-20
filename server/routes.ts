@@ -2788,6 +2788,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/contracts/:id', async (req, res) => {
+    try {
+      const contract = await storage.getContract(req.params.id);
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+      res.json(contract);
+    } catch (error) {
+      console.error('Error fetching contract:', error);
+      res.status(500).json({ error: 'Failed to fetch contract' });
+    }
+  });
+
+  app.put('/api/contracts/:id', async (req, res) => {
+    try {
+      const contract = await storage.updateContract(req.params.id, req.body);
+      res.json(contract);
+    } catch (error) {
+      console.error('Error updating contract:', error);
+      res.status(500).json({ error: 'Failed to update contract' });
+    }
+  });
+
+  app.delete('/api/contracts/:id', async (req, res) => {
+    try {
+      const success = await storage.deleteContract(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting contract:', error);
+      res.status(500).json({ error: 'Failed to delete contract' });
+    }
+  });
+
+  // Contract Template API Routes
+  app.get('/api/contract-templates', async (req, res) => {
+    try {
+      const { bakerId } = req.query;
+      if (!bakerId) {
+        return res.status(400).json({ error: 'bakerId is required' });
+      }
+      const templates = await storage.getContractTemplates(bakerId as string);
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching contract templates:', error);
+      res.status(500).json({ error: 'Failed to fetch contract templates' });
+    }
+  });
+
+  app.post('/api/contract-templates', async (req, res) => {
+    try {
+      const template = await storage.createContractTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error('Error creating contract template:', error);
+      res.status(500).json({ error: 'Failed to create contract template' });
+    }
+  });
+
+  app.get('/api/contract-templates/:id', async (req, res) => {
+    try {
+      const template = await storage.getContractTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: 'Contract template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('Error fetching contract template:', error);
+      res.status(500).json({ error: 'Failed to fetch contract template' });
+    }
+  });
+
+  app.put('/api/contract-templates/:id', async (req, res) => {
+    try {
+      const template = await storage.updateContractTemplate(req.params.id, req.body);
+      res.json(template);
+    } catch (error) {
+      console.error('Error updating contract template:', error);
+      res.status(500).json({ error: 'Failed to update contract template' });
+    }
+  });
+
+  app.delete('/api/contract-templates/:id', async (req, res) => {
+    try {
+      const success = await storage.deleteContractTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: 'Contract template not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting contract template:', error);
+      res.status(500).json({ error: 'Failed to delete contract template' });
+    }
+  });
+
+  // Contract sending and signature routes
+  app.post('/api/contracts/:id/send', async (req, res) => {
+    try {
+      const contract = await storage.getContract(req.params.id);
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Update contract status to 'sent'
+      const updatedContract = await storage.updateContract(req.params.id, { 
+        status: 'sent'
+      });
+
+      // TODO: Send contract email to customer using existing email service
+      res.json({ 
+        success: true, 
+        message: 'Contract sent successfully',
+        contract: updatedContract
+      });
+    } catch (error) {
+      console.error('Error sending contract:', error);
+      res.status(500).json({ error: 'Failed to send contract' });
+    }
+  });
+
+  app.post('/api/contracts/:id/sign', async (req, res) => {
+    try {
+      const { signerName, signerEmail, signerType, signatureData } = req.body;
+      
+      // Create contract signature
+      const signature = await storage.createContractSignature({
+        contractId: req.params.id,
+        signerName,
+        signerEmail,
+        signerType,
+        signatureData,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || 'Unknown'
+      });
+
+      // Update contract status to 'signed' and set signed date
+      const updatedContract = await storage.updateContract(req.params.id, {
+        status: 'signed',
+        signedAt: new Date()
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Contract signed successfully',
+        contract: updatedContract,
+        signature
+      });
+    } catch (error) {
+      console.error('Error signing contract:', error);
+      res.status(500).json({ error: 'Failed to sign contract' });
+    }
+  });
+
+  app.get('/api/contracts/:id/signatures', async (req, res) => {
+    try {
+      const signatures = await storage.getContractSignatures(req.params.id);
+      res.json(signatures);
+    } catch (error) {
+      console.error('Error fetching contract signatures:', error);
+      res.status(500).json({ error: 'Failed to fetch contract signatures' });
+    }
+  });
+
   // Payment API Routes
   app.get('/api/payment-plans', async (req, res) => {
     try {

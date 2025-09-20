@@ -61,10 +61,10 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
 
   // Fetch contracts from API
   const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
-    queryKey: [`/api/bakers/${bakerId}/contracts`],
+    queryKey: ['/api/contracts', bakerId],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/bakers/${bakerId}/contracts`);
+        const response = await fetch(`/api/contracts?bakerId=${bakerId}`);
         if (!response.ok) {
           if (response.status === 404) return []; // No contracts yet
           throw new Error('Failed to fetch contracts');
@@ -175,13 +175,94 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                 Generate a professional contract for your customer to sign.
               </DialogDescription>
             </DialogHeader>
-            <div className="text-center py-8">
-              <FileCheck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Contract Builder</h3>
-              <p className="text-muted-foreground mb-4">
-                Advanced contract creation with templates and e-signature integration.
-              </p>
-              <Badge variant="secondary">Coming Soon</Badge>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="contract-title">Contract Title</Label>
+                    <Input 
+                      id="contract-title"
+                      placeholder="e.g., Wedding Cake Contract"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer-name">Customer Name</Label>
+                    <Input 
+                      id="customer-name"
+                      placeholder="e.g., Sarah Johnson"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer-email">Customer Email</Label>
+                    <Input 
+                      id="customer-email"
+                      type="email"
+                      placeholder="sarah@email.com"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="event-date">Event Date</Label>
+                    <Input 
+                      id="event-date"
+                      type="date"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="total-amount">Total Amount</Label>
+                    <Input 
+                      id="total-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="500.00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deposit-amount">Deposit Amount</Label>
+                    <Input 
+                      id="deposit-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="250.00"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="contract-content">Contract Terms</Label>
+                <Textarea 
+                  id="contract-content"
+                  placeholder="Enter contract terms and conditions..."
+                  rows={4}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    // TODO: Implement contract creation
+                    toast({
+                      title: "Contract Creation",
+                      description: "Contract creation functionality will be implemented next!",
+                    });
+                    setIsCreating(false);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Contract
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
