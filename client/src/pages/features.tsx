@@ -70,22 +70,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-orange-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Customer Management</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Customer Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Complete CRM system to track all your customers, their preferences, and order history
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Unlimited customer profiles
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Order history tracking
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Automated follow-ups
                   </div>
@@ -99,22 +99,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-teal-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Professional Quotes</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Professional Quotes</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Generate beautiful, professional quotes with templates and automated pricing
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Professional templates
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Real-time pricing
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     PDF generation
                   </div>
@@ -128,22 +128,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <CreditCard className="w-8 h-8 text-green-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Payment Processing</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Payment Processing</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Flexible payment options with easy setup and tracking
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Multiple payment methods
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Payment tracking
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Automated reminders
                   </div>
@@ -157,22 +157,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-purple-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Online Booking</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Online Booking</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Let customers book consultations directly through your professional website
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Real-time availability
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Automated confirmations
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Calendar integration
                   </div>
@@ -186,22 +186,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Globe className="w-8 h-8 text-blue-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Marketplace Visibility</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Marketplace Visibility</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Get discovered by customers through our public marketplace directory
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Portfolio showcase
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Customer reviews
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Location-based search
                   </div>
@@ -215,22 +215,22 @@ export default function Features() {
                 <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="w-8 h-8 text-indigo-500" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">Business Analytics</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-400 dark:text-gray-300">Business Analytics</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 mb-4">
+                <CardDescription className="text-white dark:text-white mb-4">
                   Track your business performance with detailed analytics and reporting
                 </CardDescription>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Revenue tracking
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Customer insights
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-white dark:text-white">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     Performance metrics
                   </div>
