@@ -39,9 +39,9 @@ export default function Home() {
                 asChild 
                 size="lg" 
                 className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg"
-                data-testid="button-start-trial"
+                data-testid="button-get-started"
               >
-                <Link href="/signup">Start Free Trial</Link>
+                <Link href="/signup">Get Started Free</Link>
               </Button>
               <Button 
                 asChild 
@@ -246,26 +246,26 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Starter Plan */}
+            {/* Free Plan */}
             <Card className="border-2 border-gray-200 rounded-2xl p-8">
               <CardHeader className="text-center space-y-4 pb-8">
-                <CardTitle className="text-2xl font-bold">Starter</CardTitle>
+                <CardTitle className="text-2xl font-bold">Free</CardTitle>
                 <div>
-                  <span className="text-4xl font-bold">$15</span>
-                  <span className="text-gray-600">/mo</span>
+                  <span className="text-4xl font-bold">$0</span>
+                  <span className="text-gray-600">/forever</span>
                 </div>
-                <CardDescription>Basic features</CardDescription>
+                <CardDescription>Perfect for getting started</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-lg">
-                    Start Trial
+                    Get Started
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Pro Plan */}
+            {/* Professional Plan */}
             <Card className="border-2 border-orange-500 rounded-2xl p-8 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium">
@@ -273,36 +273,36 @@ export default function Home() {
                 </span>
               </div>
               <CardHeader className="text-center space-y-4 pb-8">
-                <CardTitle className="text-2xl font-bold">Pro</CardTitle>
+                <CardTitle className="text-2xl font-bold">Professional</CardTitle>
                 <div>
-                  <span className="text-4xl font-bold">$29</span>
+                  <span className="text-4xl font-bold">$19</span>
                   <span className="text-gray-600">/mo</span>
                 </div>
-                <CardDescription>Comprehensive tools</CardDescription>
+                <CardDescription>Perfect for growing cottage bakers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg">
-                    Subscribe
+                    Upgrade
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Premium Plan */}
+            {/* Plus Plan */}
             <Card className="border-2 border-gray-200 rounded-2xl p-8">
               <CardHeader className="text-center space-y-4 pb-8">
-                <CardTitle className="text-2xl font-bold">Premium</CardTitle>
+                <CardTitle className="text-2xl font-bold">Plus</CardTitle>
                 <div>
-                  <span className="text-4xl font-bold">$49</span>
+                  <span className="text-4xl font-bold">$39</span>
                   <span className="text-gray-600">/mo</span>
                 </div>
-                <CardDescription>Advanced features</CardDescription>
+                <CardDescription>For established bakeries scaling up</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <Button variant="outline" className="w-full border-2 border-gray-300 rounded-lg">
-                    Subscribe
+                    Upgrade
                   </Button>
                 </div>
               </CardContent>
@@ -320,7 +320,7 @@ export default function Home() {
             className="bg-white text-orange-600 hover:bg-gray-50 px-12 py-4 text-xl font-bold rounded-2xl shadow-lg"
             data-testid="button-final-cta"
           >
-            <Link href="/signup">Start Free Trial</Link>
+            <Link href="/signup">Get Started Free</Link>
           </Button>
         </div>
       </div>

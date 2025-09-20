@@ -46,18 +46,29 @@ export function NavigationHeader() {
               <Link 
                 href="/marketplace" 
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                data-testid="nav-automate"
+                data-testid="nav-marketplace"
               >
-                Automate
+                Find Bakers
               </Link>
               
               <Link 
-                href="/about" 
+                href="/help" 
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                data-testid="nav-integrated"
+                data-testid="nav-support"
               >
-                Integrated
+                Support
               </Link>
+
+              <Button
+                asChild
+                size="sm"
+                className="ml-4 bg-orange-500 hover:bg-orange-600 text-white px-6"
+                data-testid="nav-signup"
+              >
+                <Link href="/signup">
+                  Get Started
+                </Link>
+              </Button>
             </>
           )}
 
