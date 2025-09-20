@@ -42,7 +42,8 @@ import {
   Cake,
   Archive,
   Calculator,
-  ExternalLink
+  ExternalLink,
+  HelpCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -456,6 +457,16 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 View Profile
               </Button>
               <Button
+                onClick={() => window.open('/help', '_blank')}
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+                data-testid="button-help"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Help
+              </Button>
+              <Button
                 onClick={handleLogout}
                 variant="ghost"
                 size="sm"
@@ -498,6 +509,16 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   }`}>
                     {subscriptionPlan.toUpperCase()} Plan
                   </Badge>
+                  <Button
+                    onClick={() => window.open('/help', '_blank')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-900"
+                    data-testid="button-help-mobile"
+                  >
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Help
+                  </Button>
                   <Button
                     onClick={handleLogout}
                     variant="ghost"
