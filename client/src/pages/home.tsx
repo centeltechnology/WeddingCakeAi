@@ -11,14 +11,8 @@ export default function Home() {
   const { tenant, branding } = useTenant();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-white relative overflow-hidden">
       <SEOHead />
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-pink-200/30 to-rose-300/30 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-200/30 to-pink-300/30 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
-      </div>
       
       <NavigationHeader />
       
@@ -27,40 +21,36 @@ export default function Home() {
         <div className="container mx-auto px-4 py-20">
           <div className="text-center mb-20">
             {/* Modern Hero Badge */}
-            <div className="inline-flex items-center px-4 py-2 mb-8 bg-white/60 backdrop-blur-md border border-pink-200/50 rounded-full shadow-lg">
-              <Star className="h-4 w-4 text-pink-500 mr-2" />
-              <span className="text-sm font-medium text-gray-700">The #1 Platform for Cake Professionals</span>
-              <Sparkles className="h-4 w-4 text-pink-500 ml-2" />
+            <div className="inline-flex items-center px-4 py-2 mb-8 bg-gray-50 border border-gray-200 rounded-full shadow-sm">
+              <ChefHat className="h-4 w-4 text-primary mr-2" />
+              <span className="text-sm font-medium text-gray-700">The Business Platform for Professional Bakeries</span>
             </div>
             
             {/* Modern Title */}
-            <h1 className="text-6xl md:text-7xl font-serif font-bold mb-6 leading-tight">
-              <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
-                From Custom Cakes
-              </span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-gray-900">
+              Smart Cake Pricing &
               <br />
-              <span className="bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 bg-clip-text text-transparent">
-                to Sweet Success
+              <span className="text-primary">
+                Planning Made Simple
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-4xl mx-auto leading-relaxed">
-              The complete marketplace and business platform for cake decorators and bakeries. 
-              <span className="text-pink-600 font-medium">Connect with customers through our public marketplace, manage bookings with advanced scheduling, create quotes, and handle contracts</span>
-              —all in one deliciously simple platform.
+            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+              Bakewise helps cake designers and bakeries price, plan, and scale their business with ease. 
+              <span className="text-gray-800 font-medium">Automate planning and client quotes. Understand margins and boost sales.</span>
             </p>
             
             {/* Modern CTA Buttons */}
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-              <Button asChild size="lg" className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-6 text-lg font-semibold" data-testid="button-start-journey">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-base font-semibold" data-testid="button-start-trial">
                 <Link href="/signup" className="flex items-center">
-                  Start Your Sweet Journey
+                  Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-6 text-lg font-semibold" data-testid="button-explore-marketplace">
-                <Link href="/marketplace">
-                  Explore Marketplace
+              <Button variant="outline" asChild size="lg" className="border-2 border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-300 px-8 py-3 text-base font-semibold" data-testid="button-see-pricing">
+                <Link href="#pricing">
+                  See Pricing
                 </Link>
               </Button>
             </div>
@@ -68,16 +58,16 @@ export default function Home() {
             {/* Trust Indicators */}
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span>500+ Happy Bakers</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>500+ Professional Bakeries</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                <span>$2M+ Revenue Generated</span>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>$2M+ Revenue Tracked</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                <span>10,000+ Quotes Created</span>
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span>40% Average Profit Increase</span>
               </div>
             </div>
           </div>
@@ -88,65 +78,49 @@ export default function Home() {
       <div className="relative py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Everything You Need to Succeed
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
+              All your baking tools in one smart platform
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From customer management to AI-powered cake visualization, we've got every aspect of your cake business covered.
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Manage quotes, track orders, and grow your bakery business with powerful automation and insights.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-            {/* Marketplace Discovery Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-marketplace">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <Globe className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Public Marketplace</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Get discovered by customers through our public marketplace with portfolio showcases and booking integration</CardDescription>
-              </CardContent>
+            {/* Accurate Pricing Card */}
+            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-accurate-pricing">
+              <div className="w-12 h-12 mx-auto mb-4 bg-primary/10 rounded-lg flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Accurate Pricing</CardTitle>
+              <CardDescription className="text-gray-600 text-sm leading-relaxed">AI-powered calculations for every order</CardDescription>
             </Card>
             
-            {/* Advanced Booking Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-booking-system">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <Calendar className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Smart Booking</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Let customers book consultations directly with intelligent scheduling, availability management, and automated reminders</CardDescription>
-              </CardContent>
+            {/* Save Time Card */}
+            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-save-time">
+              <div className="w-12 h-12 mx-auto mb-4 bg-teal-100 rounded-lg flex items-center justify-center">
+                <Zap className="h-6 w-6 text-teal-600" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Save Time</CardTitle>
+              <CardDescription className="text-gray-600 text-sm leading-relaxed">Automate planning and client quotes</CardDescription>
             </Card>
             
-            {/* Smart CRM Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-smart-crm">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <Users className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Smart CRM</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Keep track of all your sweet customers, wedding dates, preferences, and order history in one place</CardDescription>
-              </CardContent>
+            {/* Grow Profit Card */}
+            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-grow-profit">
+              <div className="w-12 h-12 mx-auto mb-4 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-purple-600" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Grow Profit</CardTitle>
+              <CardDescription className="text-gray-600 text-sm leading-relaxed">Understand margins and boost sales</CardDescription>
             </Card>
             
-            {/* Easy Payments Card */}
-            <Card className="group text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-md hover:bg-white/90 transform hover:-translate-y-2" data-testid="card-easy-payments">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <CreditCard className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Easy Payments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600 leading-relaxed">Collect deposits, send invoices, and get paid faster with integrated payment processing</CardDescription>
-              </CardContent>
+            {/* Always Accessible Card */}
+            <Card className="group text-center p-6 border border-gray-200 bg-white hover:shadow-lg transition-all duration-300" data-testid="card-always-accessible">
+              <div className="w-12 h-12 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Globe className="h-6 w-6 text-blue-600" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">Always Accessible</CardTitle>
+              <CardDescription className="text-gray-600 text-sm leading-relaxed">Cloud-based and mobile friendly</CardDescription>
             </Card>
           </div>
         </div>
