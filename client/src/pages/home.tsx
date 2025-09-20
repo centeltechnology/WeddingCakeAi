@@ -126,50 +126,48 @@ export default function Home() {
         </div>
       </div>
 
-      {/* White-label Section */}
-      <div className="relative py-20 bg-white/50 backdrop-blur-sm">
+      {/* Tools Section */}
+      <div className="relative py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <Card className="border-0 bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-md shadow-2xl overflow-hidden" data-testid="card-white-label">
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5"></div>
-            <CardHeader className="text-center pb-6 relative">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl">
-                <Globe className="h-10 w-10 text-white" />
+          <Card className="border border-gray-200 bg-white shadow-lg" data-testid="card-tools">
+            <CardHeader className="text-center pb-6">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-lg flex items-center justify-center">
+                <FileText className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-3xl md:text-4xl font-serif font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Your Professional Website
+              <CardTitle className="text-2xl md:text-3xl font-bold mb-4 text-gray-900">
+                Professional Bakery Tools
               </CardTitle>
-              <CardDescription className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Get a beautiful, branded website that generates leads for your cake business - no existing website required
+              <CardDescription className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Everything you need to run and grow your bakery business efficiently
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center relative">
+            <CardContent className="text-center">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
-                    <Globe className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 mb-4 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="text-gray-800 font-medium">Professional website instantly</span>
+                  <span className="text-gray-800 font-medium">Cake Calculator</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Heart className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 mb-4 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-blue-600" />
                   </div>
-                  <span className="text-gray-800 font-medium">Generate leads 24/7</span>
+                  <span className="text-gray-800 font-medium">Wedding Planner</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 mb-4 bg-green-50 rounded-lg flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-green-600" />
                   </div>
-                  <span className="text-gray-800 font-medium">Your brand, your domain</span>
+                  <span className="text-gray-800 font-medium">Order Tracker</span>
                 </div>
               </div>
-              <p className="text-lg text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Perfect for home and cottage bakers who need a professional online presence. 
-                Get a complete website with quote builder, booking system, and payment processing - all with your own branding and custom domain.
+              <p className="text-base text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Professional tools designed specifically for bakery operations. Track orders, calculate accurate pricing, and manage your wedding projects efficiently.
               </p>
-              <Button variant="outline" asChild size="lg" className="border-2 border-pink-200 hover:border-pink-300 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 hover:text-gray-900 shadow-md hover:shadow-lg transition-all duration-300 px-8 py-3" data-testid="button-see-demo">
+              <Button variant="outline" asChild size="lg" className="border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 px-8 py-3" data-testid="button-see-demo">
                 <a href="/calculator" target="_blank" rel="noopener noreferrer">
-                  See Live Demo
+                  Try Calculator
                 </a>
               </Button>
             </CardContent>
@@ -181,11 +179,11 @@ export default function Home() {
       <div className="relative py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-serif font-bold text-gray-900 mb-4">
-              Trusted by Growing Bakeries
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Trusted by Professional Bakeries
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              See how Bakewise helps cake professionals streamline their business and increase revenue
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+              See how Bakewise helps bakery owners streamline operations and increase profitability
             </p>
           </div>
           

@@ -20,12 +20,12 @@ export function NavigationHeader() {
             {branding.logoUrl ? (
               <img src={branding.logoUrl} alt="Logo" className="h-10 w-auto" />
             ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                <ChefHat className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                <ChefHat className="h-5 w-5 text-white" />
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold text-gray-900">
                 {tenant?.name || 'Bakewise'}
               </h1>
               {tenant && (
@@ -37,7 +37,7 @@ export function NavigationHeader() {
           </Link>
           
           {tenant && (
-            <Badge variant="secondary" className="hidden sm:inline-flex bg-pink-100 text-pink-700 border-pink-200">
+            <Badge variant="secondary" className="hidden sm:inline-flex bg-gray-100 text-gray-700 border-gray-200">
               {tenant.subscriptionPlan.charAt(0).toUpperCase() + tenant.subscriptionPlan.slice(1)}
             </Badge>
           )}
@@ -51,7 +51,7 @@ export function NavigationHeader() {
                 variant={location === '/' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-100 hover:text-gray-900'}
                 data-testid="nav-home"
               >
                 <Link href="/">
@@ -63,7 +63,7 @@ export function NavigationHeader() {
                 variant={location === '/features' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/features' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/features' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-100 hover:text-gray-900'}
                 data-testid="nav-features"
               >
                 <Link href="/features">
