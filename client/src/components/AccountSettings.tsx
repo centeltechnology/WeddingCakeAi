@@ -102,6 +102,47 @@ interface TeamMember {
   lastActive: string;
 }
 
+// Helper function to parse address string into components
+function parseAddress(fullAddress: string) {
+  if (!fullAddress) {
+    return { street: '', city: '', state: '', zipCode: '' };
+  }
+  
+  // Try to parse "Street, City, State, ZIP" format
+  const parts = fullAddress.split(',').map(part => part.trim());
+  
+  if (parts.length >= 4) {
+    return {
+      street: parts[0] || '',
+      city: parts[1] || '',
+      state: parts[2] || '',
+      zipCode: parts[3] || ''
+    };
+  } else if (parts.length === 3) {
+    return {
+      street: parts[0] || '',
+      city: parts[1] || '',
+      state: parts[2] || '',
+      zipCode: ''
+    };
+  } else if (parts.length === 2) {
+    return {
+      street: parts[0] || '',
+      city: parts[1] || '',
+      state: '',
+      zipCode: ''
+    };
+  } else {
+    // If can't parse, put everything in street field
+    return {
+      street: fullAddress,
+      city: '',
+      state: '',
+      zipCode: ''
+    };
+  }
+}
+
 export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -140,12 +181,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         ownerName: baker.name, // Using baker name as owner for now  
         email: baker.email,
         phone: baker.phone || '',
-        address: {
-          street: baker.address || '',
-          city: baker.address || '',
-          state: '',
-          zipCode: ''
-        },
+        address: parseAddress(baker.address || ''),
         socialMedia: {
           facebook: '',
           instagram: '',
@@ -168,7 +204,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
           paymentUpdates: true,
           marketingEmails: false
         },
-        yearsExperience: baker.yearsExperience ?? undefined
+        yearsExperience: (baker as any).yearsExperience ?? undefined
       };
       updateFormData(accountData);
       return accountData;
@@ -278,7 +314,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         return {
           ...prev,
           [field]: {
-            ...prev[field as keyof AccountDetails],
+            ...(prev[field as keyof AccountDetails] as any),
             [nestedField]: value
           }
         };
@@ -321,8 +357,8 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
     }
     
     // Transform description (simple string)
-    if (formData.description) {
-      apiData.description = formData.description;
+    if ((formData as any).description) {
+      apiData.description = (formData as any).description;
     }
     
     // Transform years experience (simple number)
