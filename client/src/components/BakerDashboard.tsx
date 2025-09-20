@@ -788,7 +788,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="about">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-            <CardHeader className="border-b border-rose-100/50">
+            <CardHeader className="border-b border-gray-200">
               <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">About Your Business</h3>
               <p className="text-gray-600 mt-2">
                 Write a compelling description of your business that will appear on your public page. Tell potential customers about your specialties, experience, and what makes your cakes special.
@@ -804,7 +804,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   value={aboutText}
                   onChange={(e) => setAboutText(e.target.value)}
                   placeholder="Tell customers about your business, specialties, and what makes your cakes unique..."
-                  className="w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:border-rose-500 focus:ring-rose-500 resize-vertical"
+                  className="w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:border-primary focus:ring-primary resize-vertical"
                   data-testid="textarea-about"
                 />
                 <p className="text-sm text-gray-500">
@@ -820,7 +820,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 <Button
                   onClick={() => updateAboutMutation.mutate(aboutText)}
                   disabled={updateAboutMutation.isPending || aboutText === baker?.description}
-                  className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+                  className="bg-primary hover:from-rose-600 hover:to-pink-600 text-white"
                   data-testid="button-save-about"
                 >
                   {updateAboutMutation.isPending ? (
@@ -1012,7 +1012,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="leads">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-            <CardHeader className="border-b border-rose-100/50">
+            <CardHeader className="border-b border-gray-200">
               <div className="space-y-4">
                 <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Leads</h3>
                 
@@ -1024,12 +1024,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       placeholder="Search leads..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm"
+                      className="pl-10 w-64 bg-white border-gray-300 focus:border-primary focus:ring-primary shadow-sm"
                       data-testid="input-search-leads"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40 bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm" data-testid="select-status-filter">
+                    <SelectTrigger className="w-40 bg-white border-gray-300 focus:border-primary focus:ring-primary shadow-sm" data-testid="select-status-filter">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1051,12 +1051,12 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       placeholder="Search leads..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-full bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm"
+                      className="pl-10 w-full bg-white border-gray-300 focus:border-primary focus:ring-primary shadow-sm"
                       data-testid="input-search-leads-mobile"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full bg-white border-gray-300 focus:border-rose-500 focus:ring-rose-500 shadow-sm" data-testid="select-status-filter-mobile">
+                    <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary shadow-sm" data-testid="select-status-filter-mobile">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1180,11 +1180,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
                         {/* Enhanced Formatted Lead Details */}
                         {selectedLead === lead.id && (
-                          <div className="mt-6 p-6 bg-gradient-to-br from-rose-50 via-pink-50 to-white dark:from-rose-900/20 dark:via-pink-900/20 dark:to-gray-800 rounded-xl border border-rose-200 shadow-lg">
+                          <div className="mt-6 p-6 bg-white dark:from-rose-900/20 dark:via-pink-900/20 dark:to-gray-800 rounded-xl border border-gray-200 shadow-lg">
                             {/* Header with Lead Info */}
                             <div className="flex items-center justify-between mb-6">
                               <div className="flex items-center space-x-3">
-                                <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
                                   {lead.customerName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
@@ -1209,7 +1209,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                               <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
                                 <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
-                                  <Mail className="w-4 h-4 mr-2 text-rose-500" />
+                                  <Mail className="w-4 h-4 mr-2 text-primary" />
                                   Contact Information
                                 </h6>
                                 <div className="space-y-2 text-sm">
@@ -1233,7 +1233,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               {/* Event Details Card */}
                               <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
                                 <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
-                                  <Calendar className="w-4 h-4 mr-2 text-rose-500" />
+                                  <Calendar className="w-4 h-4 mr-2 text-primary" />
                                   Event Details
                                 </h6>
                                 <div className="space-y-2 text-sm">
@@ -1268,7 +1268,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                             {lead.message && (
                               <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 mb-6">
                                 <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
-                                  <MessageSquare className="w-4 h-4 mr-2 text-rose-500" />
+                                  <MessageSquare className="w-4 h-4 mr-2 text-primary" />
                                   Customer Message
                                 </h6>
                                 <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-600 p-4 rounded-lg">
@@ -1360,7 +1360,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                             {lead.estimateId && (
                               <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 mb-6">
                                 <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
-                                  <Calculator className="w-4 h-4 mr-2 text-rose-500" />
+                                  <Calculator className="w-4 h-4 mr-2 text-primary" />
                                   Calculator Estimate
                                 </h6>
                                 <div className="text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
@@ -1381,7 +1381,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                                     description: "Navigate to Quotes section and convert this lead to create a customized quote.",
                                   });
                                 }}
-                                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-lg"
+                                className="bg-primary hover:from-rose-600 hover:to-pink-600 text-white shadow-lg"
                                 data-testid={`button-create-quote-${lead.id}`}
                               >
                                 <FileText className="w-4 h-4 mr-2" />
@@ -1516,7 +1516,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="domain">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-            <CardHeader className="border-b border-rose-100/50">
+            <CardHeader className="border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Domain Settings</h3>
                 <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">

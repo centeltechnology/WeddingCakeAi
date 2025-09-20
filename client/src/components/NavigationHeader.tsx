@@ -76,7 +76,7 @@ export function NavigationHeader() {
                 variant={location === '/marketplace' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/marketplace' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/marketplace' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-marketplace"
               >
                 <Link href="/marketplace">
@@ -89,7 +89,7 @@ export function NavigationHeader() {
                 variant={location === '/about' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/about' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/about' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-about"
               >
                 <Link href="/about">
@@ -102,7 +102,7 @@ export function NavigationHeader() {
                 variant={location === '/pricing' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/pricing' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/pricing' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-pricing"
               >
                 <Link href="/pricing">
@@ -115,7 +115,7 @@ export function NavigationHeader() {
                 variant={location === '/help' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/help' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/help' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-support"
               >
                 <Link href="/help">
@@ -140,7 +140,7 @@ export function NavigationHeader() {
               <Button
                 asChild
                 size="sm"
-                className="ml-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6"
+                className="ml-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6"
                 data-testid="nav-signup"
               >
                 <Link href="/signup">
@@ -157,7 +157,7 @@ export function NavigationHeader() {
                 variant={location === '/admin' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/admin' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/admin' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-my-bakery"
               >
                 <Link href="/admin" className="flex items-center space-x-2">
@@ -170,7 +170,7 @@ export function NavigationHeader() {
                 variant={location === '/help' ? 'default' : 'ghost'}
                 size="sm"
                 asChild
-                className={location === '/help' ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white' : 'hover:bg-pink-50 hover:text-pink-700'}
+                className={location === '/help' ? 'bg-primary hover:bg-primary/90 text-white' : 'hover:bg-gray-50 hover:text-gray-700'}
                 data-testid="nav-baker-support"
               >
                 <Link href="/help" className="flex items-center space-x-2">
@@ -342,7 +342,7 @@ export function NavigationHeader() {
                 {!tenant && (
                   <Link 
                     href="/demo-tenant" 
-                    className="flex items-center space-x-3 p-3 rounded-lg border border-pink-200 text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors"
+                    className="flex items-center space-x-3 p-3 rounded-lg border border-pink-200 text-gray-700 hover:bg-gray-50 hover:text-gray-700 transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                     data-testid="mobile-nav-demo"
                   >

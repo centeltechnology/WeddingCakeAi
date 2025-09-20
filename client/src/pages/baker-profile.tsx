@@ -39,12 +39,12 @@ export default function BakerProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         {/* Simple Header with Cake Calculator Button */}
         <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
                 <ChefHat className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -59,7 +59,7 @@ export default function BakerProfile() {
               <Button 
                 variant="default" 
                 size="sm"
-                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+                className="bg-primary hover:bg-primary/90 text-white"
                 data-testid="button-cake-calculator"
               >
                 <Calculator className="w-4 h-4 mr-2" />
@@ -91,12 +91,12 @@ export default function BakerProfile() {
 
   if (!baker) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         {/* Simple Header with Cake Calculator Button */}
         <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
                 <ChefHat className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -111,7 +111,7 @@ export default function BakerProfile() {
               <Button 
                 variant="default" 
                 size="sm"
-                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+                className="bg-primary hover:bg-primary/90 text-white"
                 data-testid="button-cake-calculator"
               >
                 <Calculator className="w-4 h-4 mr-2" />
@@ -133,12 +133,12 @@ export default function BakerProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Simple Header with Cake Calculator Button */}
       <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
               <ChefHat className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -153,7 +153,7 @@ export default function BakerProfile() {
             <Button 
               variant="default" 
               size="sm"
-              className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
               data-testid="button-cake-calculator"
             >
               <Calculator className="w-4 h-4 mr-2" />
@@ -168,7 +168,7 @@ export default function BakerProfile() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-shrink-0">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
                 {baker.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
               </div>
             </div>
@@ -457,14 +457,14 @@ export default function BakerProfile() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href={`/baker/${baker.id}/calculator`}>
-                  <Button className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold" data-testid="button-get-quote-sidebar">
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-get-quote-sidebar">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Get Price Quote
                   </Button>
                 </Link>
                 <Button 
                   variant="outline" 
-                  className="w-full border-rose-300 text-rose-600 hover:bg-rose-50" 
+                  className="w-full border-gray-300 text-gray-700 hover:bg-gray-50" 
                   data-testid="button-send-message"
                   onClick={() => {
                     const subject = encodeURIComponent(`Inquiry about ${baker.businessName || baker.name}`);
@@ -504,7 +504,7 @@ export default function BakerProfile() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50"
+                    className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
                     data-testid="button-view-on-map"
                     onClick={() => {
                       if (baker.address) {
@@ -783,7 +783,7 @@ function ReviewsSection({ bakerId }: { bakerId: string }) {
                     <Button
                       type="submit"
                       disabled={submitReviewMutation.isPending}
-                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
+                      className="bg-primary hover:bg-primary/90"
                       data-testid="button-submit-review"
                     >
                       {submitReviewMutation.isPending ? "Submitting..." : "Submit Review"}

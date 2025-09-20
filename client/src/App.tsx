@@ -101,6 +101,27 @@ function Router() {
           </BakerAuthWrapper>
         )}
       </Route>
+      <Route path="/baker/dashboard">
+        {() => {
+          // Redirect to proper dashboard route after checking authentication
+          const token = localStorage.getItem("baker_token");
+          if (token) {
+            try {
+              const decoded = atob(token);
+              const bakerIdMatch = decoded.match(/baker:([^:]+):/);
+              if (bakerIdMatch) {
+                const bakerId = bakerIdMatch[1];
+                window.location.href = `/dashboard/${bakerId}`;
+                return null;
+              }
+            } catch (e) {
+              // Invalid token, redirect to login
+            }
+          }
+          window.location.href = '/baker-login';
+          return null;
+        }}
+      </Route>
       <Route path="/baker-login" component={BakerLogin} />
       <Route path="/login" component={BakerLogin} />
       <Route path="/verify-email" component={VerifyEmail} />

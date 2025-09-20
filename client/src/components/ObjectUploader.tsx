@@ -169,7 +169,7 @@ export function ObjectUploader({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold border-0"
+                    className="bg-primary hover:bg-primary/90 text-white font-semibold border-0"
                   >
                     📁 Choose Images
                   </Button>
@@ -192,7 +192,7 @@ export function ObjectUploader({
                     <div className="flex space-x-2 mt-4">
                       <Button 
                         onClick={handleUpload} 
-                        className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold border-0"
+                        className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold border-0"
                       >
                         📸 Upload
                       </Button>
