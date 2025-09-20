@@ -55,12 +55,26 @@ export function PaymentLinksManager({ bakerId }: PaymentLinksManagerProps) {
       const response = await apiRequest('PUT', `/api/bakers/${bakerId}/payment-links`, links);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: 'Payment Links Updated',
         description: 'Your payment information has been saved successfully.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'payment-links'] });
+      
+      // Also invalidate baker data and profile cache
+      await queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
+      // Invalidate all baker profile queries to ensure payment links update on profile
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && 
+                 typeof key[0] === 'string' && 
+                 key[0].startsWith('/baker/') &&
+                 key[0].includes('/info');
+        },
+        refetchType: 'all'
+      });
     },
     onError: (error: any) => {
       toast({

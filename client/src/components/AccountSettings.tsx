@@ -185,7 +185,7 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         socialMedia: {
           facebook: baker.socialMedia?.facebook || '',
           instagram: baker.socialMedia?.instagram || '',
-          twitter: baker.socialMedia?.twitter || '',
+          twitter: '', // Twitter not in current schema
           website: baker.socialMedia?.website || '',
           tiktok: baker.socialMedia?.tiktok || '',
           pinterest: baker.socialMedia?.pinterest || ''
@@ -272,6 +272,19 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
       // Then invalidate and wait for data to refetch
       await queryClient.invalidateQueries({ queryKey: [`/api/bakers`, bakerId] });
       await queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/account`] });
+      
+      // Also invalidate baker profile cache (for social media updates to show)
+      // Use predicate to match any baker profile queries
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && 
+                 typeof key[0] === 'string' && 
+                 key[0].startsWith('/baker/') &&
+                 key[0].includes('/info');
+        },
+        refetchType: 'all'
+      });
       
       // Finally set editing to false (this allows the updateFormData to work properly)
       setEditingProfile(false);
