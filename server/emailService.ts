@@ -793,5 +793,236 @@ Best regards,<br>
 <strong>The Bakewise Security Team</strong>
 </p>
 </div>`
+  }),
+
+  // Seven-Day Onboarding Email Sequence
+  onboardingDay1: (name: string, dashboardUrl: string) => ({
+    subject: '🎂 Complete your bakery profile - Day 1 with Bakewise',
+    textPart: `Hi ${name},
+
+Welcome to Day 1 of your Bakewise journey! 
+
+Let's get your bakery profile set up so customers can find and connect with you.
+
+Complete these quick steps:
+• Add your bakery name and description
+• Set your location and service areas  
+• Add your contact information
+• Upload a profile photo
+
+Complete your profile: ${dashboardUrl}
+
+Tomorrow we'll help you set up your pricing and specialties.
+
+Best regards,
+The Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Day 1: Complete Your Profile 🎂</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Welcome to Day 1 of your Bakewise journey! Let's get your bakery profile set up so customers can find and connect with you.
+</p>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0; margin-bottom: 15px;">📝 Quick Setup Checklist:</h3>
+<ul style="margin: 0; padding-left: 20px; color: #333;">
+<li style="margin-bottom: 8px;">Add your bakery name and description</li>
+<li style="margin-bottom: 8px;">Set your location and service areas</li>
+<li style="margin-bottom: 8px;">Add your contact information</li>
+<li style="margin-bottom: 8px;">Upload a profile photo</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Complete Your Profile
+</a>
+</div>
+
+<p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+💡 <strong>Tomorrow:</strong> We'll help you set up your pricing and specialties
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Team</strong>
+</p>
+</div>`
+  }),
+
+  onboardingDay2: (name: string, dashboardUrl: string) => ({
+    subject: '💰 Set up your pricing strategy - Day 2 with Bakewise',
+    textPart: `Hi ${name},
+
+Day 2: Let's set up your pricing and specialties!
+
+Configure these important settings:
+• Base pricing for different cake sizes
+• Special dietary options (gluten-free, vegan, etc.)
+• Your signature flavors and decorating styles
+• Delivery and setup fees
+
+Set up pricing: ${dashboardUrl}
+
+This helps customers get accurate quotes and shows your expertise.
+
+Best regards,
+The Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Day 2: Pricing & Specialties 💰</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Time to set up your pricing and specialties! This helps customers get accurate quotes and showcases your expertise.
+</p>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0; margin-bottom: 15px;">💰 Pricing Setup:</h3>
+<ul style="margin: 0; padding-left: 20px; color: #333;">
+<li style="margin-bottom: 8px;">Base pricing for different cake sizes</li>
+<li style="margin-bottom: 8px;">Special dietary options (gluten-free, vegan, etc.)</li>
+<li style="margin-bottom: 8px;">Your signature flavors and decorating styles</li>
+<li style="margin-bottom: 8px;">Delivery and setup fees</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Configure Pricing
+</a>
+</div>
+
+<p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+📸 <strong>Tomorrow:</strong> We'll help you upload your portfolio photos
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Team</strong>
+</p>
+</div>`
+  }),
+
+  onboardingDay3: (name: string, dashboardUrl: string) => ({
+    subject: '📸 Showcase your work - Day 3 with Bakewise',
+    textPart: `Hi ${name},
+
+Day 3: Time to showcase your beautiful work!
+
+Upload photos that will wow potential customers:
+• Your best wedding cakes and desserts
+• Before and after transformation shots
+• Behind-the-scenes baking process
+• Happy customers with their cakes
+
+Upload photos: ${dashboardUrl}
+
+Great photos are your best marketing tool - they sell your services before you even talk to the customer!
+
+Best regards,
+The Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Day 3: Showcase Your Work 📸</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Time to showcase your beautiful work! Great photos are your best marketing tool - they sell your services before you even talk to the customer.
+</p>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0; margin-bottom: 15px;">📸 Photo Ideas:</h3>
+<ul style="margin: 0; padding-left: 20px; color: #333;">
+<li style="margin-bottom: 8px;">Your best wedding cakes and desserts</li>
+<li style="margin-bottom: 8px;">Before and after transformation shots</li>
+<li style="margin-bottom: 8px;">Behind-the-scenes baking process</li>
+<li style="margin-bottom: 8px;">Happy customers with their cakes</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Upload Photos
+</a>
+</div>
+
+<p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+📋 <strong>Tomorrow:</strong> Learn about managing customer leads and orders
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Team</strong>
+</p>
+</div>`
+  }),
+
+  onboardingDay7: (name: string, dashboardUrl: string, supportUrl: string) => ({
+    subject: '🎉 You made it! Welcome to the Bakewise community',
+    textPart: `Hi ${name},
+
+Congratulations! You've completed your 7-day Bakewise setup journey! 🎉
+
+You're now ready to:
+• Receive and manage customer inquiries
+• Send professional quotes and contracts
+• Track your business growth with analytics
+• Connect with our community of successful bakers
+
+Access your dashboard: ${dashboardUrl}
+Need help? Contact us: ${supportUrl}
+
+Here's to your sweet success!
+
+Best regards,
+The Bakewise Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Welcome to the Community! 🎉</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Congratulations! You've completed your 7-day Bakewise setup journey! You're now fully equipped to grow your bakery business.
+</p>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0; margin-bottom: 15px;">🚀 You're Ready To:</h3>
+<ul style="margin: 0; padding-left: 20px; color: #333;">
+<li style="margin-bottom: 8px;">Receive and manage customer inquiries</li>
+<li style="margin-bottom: 8px;">Send professional quotes and contracts</li>
+<li style="margin-bottom: 8px;">Track your business growth with analytics</li>
+<li style="margin-bottom: 8px;">Connect with our community of successful bakers</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 10px;">
+Go to Dashboard
+</a>
+<a href="${supportUrl}" style="background-color: #7c2d12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Get Support
+</a>
+</div>
+
+<p style="font-size: 16px; color: #7c2d12; text-align: center; font-weight: 600; margin: 30px 0;">
+Here's to your sweet success! 🎂
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The Bakewise Team</strong>
+</p>
+</div>`
   })
 };
