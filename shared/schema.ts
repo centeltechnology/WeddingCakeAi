@@ -1032,3 +1032,51 @@ export type EmailJob = typeof emailJobs.$inferSelect;
 export type InsertEmailJob = z.infer<typeof insertEmailJobSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
+// Baker Pricing Configuration Schema (for validation)
+export const bakerPricingSchema = z.object({
+  cakeSizes: z.array(z.object({
+    id: z.string(),
+    size: z.string(),
+    servings: z.number(),
+    basePrice: z.number(),
+    costToMake: z.number(),
+    profitMargin: z.number()
+  })).optional(),
+  shapes: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    baseUpcharge: z.number(),
+    costToMake: z.number(),
+    profitMargin: z.number()
+  })).optional(),
+  flavors: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    upcharge: z.number(),
+    isPremium: z.boolean()
+  })).optional(),
+  decorations: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    price: z.number(),
+    category: z.string(),
+    isActive: z.boolean()
+  })).optional(),
+  taxRate: z.number().optional(),
+  deliverySettings: z.object({
+    baseDeliveryFee: z.number(),
+    freeDeliveryMinimum: z.number().optional(),
+    deliveryRadius: z.number().optional(),
+    perMileRate: z.number().optional()
+  }).optional(),
+  profitSettings: z.object({
+    defaultMargin: z.number(),
+    minimumMargin: z.number(),
+    laborRate: z.number()
+  }).optional(),
+  lastUpdated: z.string().optional()
+});
+
+export type BakerPricing = z.infer<typeof bakerPricingSchema>;

@@ -3494,28 +3494,26 @@ export class DatabaseStorage implements IStorage {
     return updatedBooking;
   }
 
-  // Pricing configuration methods (simplified for now - store as JSON in baker table)
-  async createPricingConfig(pricingConfig: any): Promise<any> {
-    const id = `pricing-${pricingConfig.bakerId}`;
+  // Pricing configuration methods - use existing pricing field in baker table  
+  async createPricingConfig(bakerId: string, pricingConfig: any): Promise<any> {
     const config = {
       ...pricingConfig,
-      id,
       lastUpdated: new Date().toISOString()
     };
     
-    // For now, we'll store this as part of the baker's data
-    // In a real implementation, you'd create a separate pricing_configs table
-    const baker = await this.getBaker(pricingConfig.bakerId);
-    if (baker) {
-      await this.updateBaker(pricingConfig.bakerId, { pricingConfig: config });
-    }
+    // Store in the existing pricing field
+    const [updatedBaker] = await db
+      .update(bakers)
+      .set({ pricing: config })
+      .where(eq(bakers.id, bakerId))
+      .returning();
     
-    return config;
+    return updatedBaker?.pricing || config;
   }
 
   async getPricingConfig(bakerId: string): Promise<any | undefined> {
     const baker = await this.getBaker(bakerId);
-    return baker?.pricingConfig;
+    return baker?.pricing;
   }
 
   async updatePricingConfig(bakerId: string, updates: any): Promise<any> {
@@ -3523,12 +3521,16 @@ export class DatabaseStorage implements IStorage {
     const updated = {
       ...existing,
       ...updates,
-      bakerId,
       lastUpdated: new Date().toISOString()
     };
     
-    await this.updateBaker(bakerId, { pricingConfig: updated });
-    return updated;
+    const [updatedBaker] = await db
+      .update(bakers)
+      .set({ pricing: updated })
+      .where(eq(bakers.id, bakerId))
+      .returning();
+    
+    return updatedBaker?.pricing || updated;
   }
 }
 

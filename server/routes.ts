@@ -8,7 +8,7 @@ import {
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertConsultationSchema, insertAnalyticsSchema, insertBakerProfileSchema,
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
-  paymentLinksSchema, type Booking, type InsertBooking
+  paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
 import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
@@ -2162,7 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Baker Pricing Configuration API
-  app.get('/api/bakers/:bakerId/pricing', async (req, res) => {
+  app.get('/api/bakers/:bakerId/pricing', authenticateJWT, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
       
@@ -2212,13 +2212,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/bakers/:bakerId/pricing', async (req, res) => {
+  app.put('/api/bakers/:bakerId/pricing', authenticateJWT, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
+      
+      // Validate request body using Zod schema
+      const validationResult = bakerPricingSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid pricing configuration', 
+          details: validationResult.error.issues 
+        });
+      }
+
       const pricingConfig = {
-        ...req.body,
-        id: `pricing-${bakerId}`,
-        bakerId,
+        ...validationResult.data,
         lastUpdated: new Date().toISOString()
       };
 
