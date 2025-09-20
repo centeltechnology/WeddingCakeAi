@@ -119,13 +119,21 @@ ${weddingDate ? `<li><strong>Wedding Date:</strong> ${weddingDate}</li>` : ''}
 </div>`
   }),
 
-  emailVerification: (name: string, verificationUrl: string) => ({
+  emailVerification: (name: string, verificationUrl: string, loginUrl: string = '/login') => ({
     subject: 'Please verify your Bakewise account',
     textPart: `Hi ${name},
 
 Welcome to Bakewise! Please verify your email address to complete your account setup.
 
 Click here to verify: ${verificationUrl}
+
+Once verified, you can log in at: ${loginUrl}
+
+Quick Tips to Get Started:
+• Set up your bakery profile with photos and specialties
+• Configure your pricing and availability
+• Connect with customers looking for wedding cakes
+• Track orders and manage your business efficiently
 
 If you didn't create this account, you can safely ignore this email.
 
@@ -149,6 +157,23 @@ To complete your account setup and start managing your cake business, please ver
 <div style="text-align: center; margin: 30px 0;">
 <a href="${verificationUrl}" style="background-color: #7c2d12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
 Verify Email Address
+</a>
+</div>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0; margin-bottom: 15px;">🚀 Quick Tips to Get Started:</h3>
+<ul style="margin: 0; padding-left: 20px; color: #333;">
+<li style="margin-bottom: 8px;"><strong>Set up your bakery profile</strong> with photos and specialties</li>
+<li style="margin-bottom: 8px;"><strong>Configure your pricing</strong> and availability</li>
+<li style="margin-bottom: 8px;"><strong>Connect with customers</strong> looking for wedding cakes</li>
+<li style="margin-bottom: 8px;"><strong>Track orders</strong> and manage your business efficiently</li>
+</ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<p style="font-size: 16px; color: #333; margin-bottom: 10px;">After verification, access your dashboard:</p>
+<a href="${loginUrl}" style="background-color: #f97316; color: white; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Go to Login
 </a>
 </div>
 
