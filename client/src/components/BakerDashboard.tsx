@@ -43,7 +43,9 @@ import {
   Archive,
   Calculator,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Bell,
+  CalendarCheck
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -443,6 +445,55 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               }`}>
                 {subscriptionPlan.toUpperCase()} Plan
               </Badge>
+              
+              {/* Notification Indicators */}
+              <div className="flex items-center space-x-2">
+                {/* New Leads Notification */}
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-blue-600 relative"
+                    data-testid="notification-leads"
+                    onClick={() => setActiveTab("leads")}
+                  >
+                    <Bell className="w-5 h-5" />
+                    {leadStats.new > 0 && (
+                      <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-blue-500 text-white text-xs flex items-center justify-center">
+                        {leadStats.new}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
+                
+                {/* New Bookings Notification */}
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-green-600 relative"
+                    data-testid="notification-bookings"
+                    onClick={() => setActiveTab("bookings")}
+                  >
+                    <CalendarCheck className="w-5 h-5" />
+                    {/* TODO: Add booking count when bookings data is available */}
+                  </Button>
+                </div>
+                
+                {/* New Contracts Notification */}
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-purple-600 relative"
+                    data-testid="notification-contracts"
+                    onClick={() => setActiveTab("contracts")}
+                  >
+                    <FileText className="w-5 h-5" />
+                    {/* TODO: Add contract count when contracts data is available */}
+                  </Button>
+                </div>
+              </div>
               <Button
                 onClick={() => {
                   // Always use internal route for now since external subdomains aren't set up
