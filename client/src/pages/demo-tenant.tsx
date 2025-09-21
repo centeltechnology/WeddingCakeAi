@@ -428,7 +428,7 @@ export default function DemoTenant() {
 
           {/* Contracts Tab - Using Functional ContractManager */}
           <TabsContent value="contracts" className="space-y-6">
-            <ContractManager bakerId="demo-baker-sweet-dreams" />
+            <ContractManager bakerId="test-baker-123" />
           </TabsContent>
 
           {/* Payments Tab */}

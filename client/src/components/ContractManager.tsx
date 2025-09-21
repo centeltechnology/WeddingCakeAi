@@ -58,6 +58,17 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [showNewTemplate, setShowNewTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
+  
+  // Contract creation form state
+  const [contractForm, setContractForm] = useState({
+    title: '',
+    customerName: '',
+    customerEmail: '',
+    eventDate: '',
+    totalAmount: '',
+    depositAmount: '',
+    content: ''
+  });
 
   // Fetch contracts from API
   const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
@@ -107,6 +118,62 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
       description: `Contract sent to ${contract.customerName} for e-signature.`,
     });
   };
+
+  // Contract creation mutation
+  const createContractMutation = useMutation({
+    mutationFn: async (contractData: any) => {
+      // First, create the customer
+      const customerResponse = await apiRequest('POST', '/api/customers', {
+        name: contractData.customerName,
+        email: contractData.customerEmail,
+        bakerId,
+        status: 'prospect'
+      });
+      
+      if (!customerResponse.ok) throw new Error('Failed to create customer');
+      const customer = await customerResponse.json();
+      
+      // Then, create the contract with the customer ID
+      const response = await apiRequest('POST', '/api/contracts', {
+        bakerId,
+        customerId: customer.id,
+        contractNumber: `CON-${Date.now()}`,
+        title: contractData.title,
+        content: contractData.content || `Contract for ${contractData.title}`,
+        totalAmount: contractData.totalAmount,
+        depositAmount: contractData.depositAmount,
+        remainingBalance: (parseFloat(contractData.totalAmount || '0') - parseFloat(contractData.depositAmount || '0')).toString(),
+        eventDate: contractData.eventDate,
+        status: 'draft'
+      });
+      if (!response.ok) throw new Error('Failed to create contract');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts', bakerId] });
+      toast({
+        title: "Contract Created",
+        description: "Contract has been created successfully!",
+      });
+      setIsCreating(false);
+      setContractForm({
+        title: '',
+        customerName: '',
+        customerEmail: '',
+        eventDate: '',
+        totalAmount: '',
+        depositAmount: '',
+        content: ''
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Calculate contract statistics
   const contractStats = {
@@ -182,6 +249,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     <Label htmlFor="contract-title">Contract Title</Label>
                     <Input 
                       id="contract-title"
+                      value={contractForm.title}
+                      onChange={(e) => setContractForm({...contractForm, title: e.target.value})}
                       placeholder="e.g., Wedding Cake Contract"
                       className="mt-1"
                     />
@@ -190,6 +259,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     <Label htmlFor="customer-name">Customer Name</Label>
                     <Input 
                       id="customer-name"
+                      value={contractForm.customerName}
+                      onChange={(e) => setContractForm({...contractForm, customerName: e.target.value})}
                       placeholder="e.g., Sarah Johnson"
                       className="mt-1"
                     />
@@ -199,6 +270,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     <Input 
                       id="customer-email"
                       type="email"
+                      value={contractForm.customerEmail}
+                      onChange={(e) => setContractForm({...contractForm, customerEmail: e.target.value})}
                       placeholder="sarah@email.com"
                       className="mt-1"
                     />
@@ -210,6 +283,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                     <Input 
                       id="event-date"
                       type="date"
+                      value={contractForm.eventDate}
+                      onChange={(e) => setContractForm({...contractForm, eventDate: e.target.value})}
                       className="mt-1"
                     />
                   </div>
@@ -219,6 +294,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                       id="total-amount"
                       type="number"
                       step="0.01"
+                      value={contractForm.totalAmount}
+                      onChange={(e) => setContractForm({...contractForm, totalAmount: e.target.value})}
                       placeholder="500.00"
                       className="mt-1"
                     />
@@ -229,6 +306,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                       id="deposit-amount"
                       type="number"
                       step="0.01"
+                      value={contractForm.depositAmount}
+                      onChange={(e) => setContractForm({...contractForm, depositAmount: e.target.value})}
                       placeholder="250.00"
                       className="mt-1"
                     />
@@ -239,6 +318,8 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                 <Label htmlFor="contract-content">Contract Terms</Label>
                 <Textarea 
                   id="contract-content"
+                  value={contractForm.content}
+                  onChange={(e) => setContractForm({...contractForm, content: e.target.value})}
                   placeholder="Enter contract terms and conditions..."
                   rows={4}
                   className="mt-1"
@@ -250,17 +331,17 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
                 </Button>
                 <Button 
                   className="bg-primary hover:bg-primary/90"
-                  onClick={() => {
-                    // TODO: Implement contract creation
-                    toast({
-                      title: "Contract Creation",
-                      description: "Contract creation functionality will be implemented next!",
-                    });
-                    setIsCreating(false);
-                  }}
+                  disabled={createContractMutation.isPending || !contractForm.title || !contractForm.customerName}
+                  onClick={() => createContractMutation.mutate(contractForm)}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Contract
+                  {createContractMutation.isPending ? (
+                    <>Loading...</>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Contract
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
