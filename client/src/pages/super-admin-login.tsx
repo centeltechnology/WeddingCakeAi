@@ -39,7 +39,7 @@ export default function SuperAdminLogin() {
 
     try {
       const response = await import('@/lib/csrf').then(({ makeAuthenticatedRequest }) => 
-        makeAuthenticatedRequest("/api/clean-auth/super-admin/login", {
+        makeAuthenticatedRequest("/api/super-admin/login", {
           method: "POST",
           body: JSON.stringify(data),
         })

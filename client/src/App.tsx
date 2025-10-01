@@ -17,7 +17,7 @@ import CustomerLogin from "@/pages/customer-login";
 import CustomerPortal from "@/pages/customer-portal";
 import BakerDashboard from "@/components/BakerDashboard";
 import { VenueAdminDashboard } from "@/components/VenueAdminDashboard";
-import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
+import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import { CakeCalculator } from "@/components/CakeCalculator";
 import NotFound from "@/pages/not-found";
 import Terms from "@/pages/terms";

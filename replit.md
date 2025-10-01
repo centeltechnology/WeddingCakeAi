@@ -8,6 +8,17 @@ A professional SaaS business platform for bakeries featuring modern design with 
 
 ## Recent Changes
 
+**October 1, 2025** - Super Admin Dashboard Implementation
+- Built comprehensive Super Admin Dashboard at /super-admin route with platform management capabilities
+- Platform statistics: totalBakers, activeBakers, MRR, freeUsers, paidUsers, trialUsers, churnRate
+- Baker management table with search, filtering (all/active/suspended/free/paid), and actions
+- Detail modal for viewing baker information and updating subscription plans
+- API endpoints: GET /api/super-admin/stats, GET /api/super-admin/tenants, PATCH /api/super-admin/tenants/:id/status, PATCH /api/super-admin/tenants/:id/plan
+- JWT-based authentication with token stored in localStorage
+- Plan taxonomy unified: 'free', 'pro' ($47/mo), 'plus' ($97/mo)
+- Filter logic treats null/undefined subscriptionPlan as 'free' for consistency
+- Super Admin credentials: username "bwadmin", password "@@leXander001"
+
 **October 1, 2025** - Baker Password Reset Implementation
 - Added complete password reset flow for baker accounts
 - Database schema updated with reset token fields (resetTokenHash, resetTokenExpiresAt, resetTokenUsedAt)
