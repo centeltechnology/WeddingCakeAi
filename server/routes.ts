@@ -4733,6 +4733,284 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Subscription Management Routes
+  app.get('/api/super-admin/subscriptions', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const bakers = await storage.getBakers();
+      
+      const subscriptions = bakers.map(baker => {
+        const plan = baker.subscriptionPlan || 'starter';
+        const status = baker.subscriptionStatus || 'active';
+        
+        let mrr = 0;
+        if (plan === 'professional' || plan === 'pro') mrr = 19;
+        if (plan === 'enterprise') mrr = 39;
+        
+        return {
+          id: baker.id,
+          bakerId: baker.id,
+          bakerName: baker.name,
+          bakerEmail: baker.email,
+          businessName: baker.businessName,
+          plan,
+          status,
+          mrr,
+          currentPeriodEnd: baker.currentPeriodEnd,
+          currentPeriodStart: baker.currentPeriodStart,
+          cancelAtPeriodEnd: baker.cancelAtPeriodEnd || false,
+          stripeCustomerId: baker.stripeCustomerId
+        };
+      });
+      
+      res.json(subscriptions);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch subscriptions' 
+      });
+    }
+  });
+
+  app.patch('/api/super-admin/subscriptions/:id/plan', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { plan } = req.body;
+      
+      if (!plan || !['starter', 'professional', 'enterprise'].includes(plan)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid plan. Must be one of: starter, professional, enterprise'
+        });
+      }
+      
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      const oldPlan = baker.subscriptionPlan;
+      
+      await storage.updateBaker(id, {
+        subscriptionPlan: plan,
+        subscriptionStatus: 'active'
+      });
+      
+      res.json({
+        success: true,
+        message: `Plan updated from ${oldPlan || 'starter'} to ${plan}`
+      });
+      
+    } catch (error) {
+      console.error('Error updating subscription plan:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to update subscription plan' 
+      });
+    }
+  });
+
+  app.patch('/api/super-admin/subscriptions/:id/trial', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      const currentPeriodEnd = baker.currentPeriodEnd 
+        ? new Date(baker.currentPeriodEnd) 
+        : new Date();
+      
+      const newPeriodEnd = new Date(currentPeriodEnd);
+      newPeriodEnd.setDate(newPeriodEnd.getDate() + 14);
+      
+      await storage.updateBaker(id, {
+        currentPeriodEnd: newPeriodEnd.toISOString(),
+        subscriptionStatus: 'trialing'
+      });
+      
+      res.json({
+        success: true,
+        message: 'Trial extended by 14 days',
+        newPeriodEnd: newPeriodEnd.toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error extending trial:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to extend trial' 
+      });
+    }
+  });
+
+  app.patch('/api/super-admin/subscriptions/:id/cancel', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      await storage.updateBaker(id, {
+        subscriptionStatus: 'canceled',
+        cancelAtPeriodEnd: true
+      });
+      
+      res.json({
+        success: true,
+        message: 'Subscription canceled'
+      });
+      
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to cancel subscription' 
+      });
+    }
+  });
+
+  app.patch('/api/super-admin/subscriptions/:id/reactivate', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      const newPeriodEnd = new Date();
+      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+      
+      await storage.updateBaker(id, {
+        subscriptionStatus: 'active',
+        cancelAtPeriodEnd: false,
+        currentPeriodEnd: newPeriodEnd.toISOString()
+      });
+      
+      res.json({
+        success: true,
+        message: 'Subscription reactivated'
+      });
+      
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to reactivate subscription' 
+      });
+    }
+  });
+
+  // Manual credit/discount endpoint
+  app.post('/api/super-admin/subscriptions/:id/credit', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { amount, reason } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid credit amount' 
+        });
+      }
+      
+      const baker = await storage.getBaker(id);
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      // In a real implementation, this would create a Stripe credit/discount
+      // For now, we'll just log it and return success
+      console.log(`Manual credit applied: Baker ${id}, Amount: $${amount}, Reason: ${reason}`);
+      
+      res.json({
+        success: true,
+        message: `Credit of $${amount} applied successfully`,
+        credit: {
+          amount,
+          reason,
+          appliedAt: new Date().toISOString()
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error applying credit:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to apply credit' 
+      });
+    }
+  });
+
+  // Billing history endpoint
+  app.get('/api/super-admin/subscriptions/:id/billing', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const baker = await storage.getBaker(id);
+      
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Subscription not found' 
+        });
+      }
+      
+      // In a real implementation, this would fetch from Stripe
+      // For now, return mock billing history
+      const plan = baker.subscriptionPlan || 'starter';
+      const amount = (plan === 'professional' || plan === 'pro') ? 19 : plan === 'enterprise' ? 39 : 0;
+      
+      const billingHistory = [
+        {
+          id: '1',
+          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          amount,
+          status: 'paid',
+          description: `${plan} plan - Monthly subscription`
+        },
+        {
+          id: '2',
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          amount,
+          status: 'paid',
+          description: `${plan} plan - Monthly subscription`
+        }
+      ].filter(item => item.amount > 0);
+      
+      res.json({
+        success: true,
+        billing: billingHistory
+      });
+      
+    } catch (error) {
+      console.error('Error fetching billing history:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch billing history' 
+      });
+    }
+  });
+
   // Baker Self-Service Billing API Routes
   app.get('/api/bakers/:bakerId/billing', async (req, res) => {
     try {

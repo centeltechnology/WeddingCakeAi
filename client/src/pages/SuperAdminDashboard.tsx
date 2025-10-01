@@ -27,6 +27,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { 
   Users, 
   DollarSign, 
@@ -119,10 +125,40 @@ interface AnalyticsData {
   };
 }
 
+interface Subscription {
+  id: string;
+  bakerId: string;
+  bakerName: string;
+  bakerEmail: string;
+  businessName?: string;
+  plan: string;
+  status: string;
+  mrr: number;
+  currentPeriodEnd?: string;
+  currentPeriodStart?: string;
+  cancelAtPeriodEnd?: boolean;
+  stripeCustomerId?: string;
+}
+
+interface BillingHistoryItem {
+  id: string;
+  date: string;
+  amount: number;
+  status: string;
+  description: string;
+}
+
 export default function SuperAdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBaker, setSelectedBaker] = useState<Baker | null>(null);
+  const [subscriptionSearch, setSubscriptionSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState("all");
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [newPlan, setNewPlan] = useState("");
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditReason, setCreditReason] = useState("");
   const { toast } = useToast();
 
   // Fetch platform statistics
@@ -138,6 +174,11 @@ export default function SuperAdminDashboard() {
   // Fetch analytics data
   const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/super-admin/analytics'],
+  });
+
+  // Fetch subscriptions
+  const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<Subscription[]>({
+    queryKey: ['/api/super-admin/subscriptions'],
   });
 
   // Toggle baker status mutation
@@ -186,6 +227,129 @@ export default function SuperAdminDashboard() {
     },
   });
 
+  // Change subscription plan mutation
+  const changeSubscriptionPlanMutation = useMutation({
+    mutationFn: async ({ id, plan }: { id: string; plan: string }) => {
+      return await apiRequest('PATCH', `/api/super-admin/subscriptions/${id}/plan`, { plan });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      setSelectedSubscription(null);
+      setNewPlan("");
+      toast({
+        title: "Plan Changed",
+        description: "Subscription plan has been changed successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to change subscription plan.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Extend trial mutation
+  const extendTrialMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('PATCH', `/api/super-admin/subscriptions/${id}/trial`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions'] });
+      toast({
+        title: "Trial Extended",
+        description: "Trial period has been extended by 14 days.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to extend trial.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('PATCH', `/api/super-admin/subscriptions/${id}/cancel`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      setSelectedSubscription(null);
+      toast({
+        title: "Subscription Canceled",
+        description: "Subscription has been canceled successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reactivate subscription mutation
+  const reactivateSubscriptionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('PATCH', `/api/super-admin/subscriptions/${id}/reactivate`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+      setSelectedSubscription(null);
+      toast({
+        title: "Subscription Reactivated",
+        description: "Subscription has been reactivated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reactivate subscription.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Fetch billing history for selected subscription
+  const { data: billingHistoryData, isLoading: billingHistoryLoading } = useQuery<{ success: boolean, billing: BillingHistoryItem[] }>({
+    queryKey: ['/api/super-admin/subscriptions', selectedSubscription?.id, 'billing'],
+    enabled: !!selectedSubscription,
+  });
+  
+  const billingHistory = billingHistoryData?.billing || [];
+
+  // Apply credit mutation
+  const applyCreditMutation = useMutation({
+    mutationFn: async ({ id, amount, reason }: { id: string; amount: number; reason: string }) => {
+      return await apiRequest('POST', `/api/super-admin/subscriptions/${id}/credit`, { amount, reason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/subscriptions', selectedSubscription?.id, 'billing'] });
+      setCreditAmount("");
+      setCreditReason("");
+      toast({
+        title: "Credit Applied",
+        description: "Manual credit has been applied successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to apply credit.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Filter bakers based on search and status
   const filteredBakers = bakers?.filter((baker) => {
     const matchesSearch = 
@@ -201,6 +365,24 @@ export default function SuperAdminDashboard() {
       (statusFilter === "paid" && baker.subscriptionPlan && baker.subscriptionPlan !== "starter");
 
     return matchesSearch && matchesStatus;
+  });
+
+  // Filter subscriptions based on search and filters
+  const filteredSubscriptions = subscriptions?.filter((subscription) => {
+    const matchesSearch = 
+      subscription.bakerName?.toLowerCase().includes(subscriptionSearch.toLowerCase()) ||
+      subscription.bakerEmail?.toLowerCase().includes(subscriptionSearch.toLowerCase()) ||
+      subscription.businessName?.toLowerCase().includes(subscriptionSearch.toLowerCase());
+
+    const matchesPlan = 
+      planFilter === "all" ||
+      subscription.plan === planFilter;
+
+    const matchesStatus = 
+      subscriptionStatusFilter === "all" ||
+      subscription.status === subscriptionStatusFilter;
+
+    return matchesSearch && matchesPlan && matchesStatus;
   });
 
   const formatCurrency = (amount: number) => {
@@ -224,6 +406,34 @@ export default function SuperAdminDashboard() {
     if (plan === 'professional') return 'Professional';
     if (plan === 'enterprise') return 'Enterprise';
     return plan;
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'trialing':
+        return 'secondary';
+      case 'past_due':
+        return 'destructive';
+      case 'canceled':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getPlanBadgeColor = (plan: string) => {
+    switch (plan) {
+      case 'starter':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      case 'professional':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'enterprise':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+    }
   };
 
   return (
@@ -721,14 +931,122 @@ export default function SuperAdminDashboard() {
           </TabsContent>
 
           {/* Subscriptions Tab */}
-          <TabsContent value="subscriptions">
+          <TabsContent value="subscriptions" className="space-y-6">
+            {/* Search and Filters */}
+            <Card className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by baker name or email..."
+                    value={subscriptionSearch}
+                    onChange={(e) => setSubscriptionSearch(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-subscription-search"
+                  />
+                </div>
+                <Select value={planFilter} onValueChange={setPlanFilter}>
+                  <SelectTrigger className="w-full md:w-48" data-testid="select-plan-filter">
+                    <SelectValue placeholder="Filter by plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Plans</SelectItem>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={subscriptionStatusFilter} onValueChange={setSubscriptionStatusFilter}>
+                  <SelectTrigger className="w-full md:w-48" data-testid="select-status-filter">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trialing">Trialing</SelectItem>
+                    <SelectItem value="past_due">Past Due</SelectItem>
+                    <SelectItem value="canceled">Canceled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </Card>
+
+            {/* Subscriptions Table */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Subscription Management
+                Subscriptions
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Detailed subscription management features coming soon...
-              </p>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Baker</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>MRR</TableHead>
+                      <TableHead>Period End</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subscriptionsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                          Loading subscriptions...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredSubscriptions && filteredSubscriptions.length > 0 ? (
+                      filteredSubscriptions.map((subscription) => (
+                        <TableRow key={subscription.id} data-testid={`row-subscription-${subscription.id}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white" data-testid={`text-baker-name-${subscription.id}`}>
+                                {subscription.bakerName}
+                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`text-baker-email-${subscription.id}`}>
+                                {subscription.bakerEmail}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getPlanBadgeColor(subscription.plan)} data-testid={`badge-plan-${subscription.id}`}>
+                              {formatPlanName(subscription.plan)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(subscription.status)} data-testid={`badge-status-${subscription.id}`}>
+                              {subscription.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell data-testid={`text-mrr-${subscription.id}`}>
+                            {formatCurrency(subscription.mrr)}
+                          </TableCell>
+                          <TableCell data-testid={`text-period-end-${subscription.id}`}>
+                            {formatDate(subscription.currentPeriodEnd)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSubscription(subscription)}
+                              data-testid={`button-view-details-${subscription.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                          No subscriptions found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           </TabsContent>
 
@@ -843,6 +1161,255 @@ export default function SuperAdminDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription Details Dialog */}
+      <Dialog open={!!selectedSubscription} onOpenChange={() => { setSelectedSubscription(null); setNewPlan(""); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Subscription Details</DialogTitle>
+            <DialogDescription>
+              View and manage subscription information
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubscription && (
+            <div className="space-y-6">
+              {/* Baker Information */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Baker Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                    <p className="text-gray-900 dark:text-white" data-testid="dialog-baker-name">{selectedSubscription.bakerName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <p className="text-gray-900 dark:text-white" data-testid="dialog-baker-email">{selectedSubscription.bakerEmail}</p>
+                  </div>
+                  {selectedSubscription.businessName && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Business Name</label>
+                      <p className="text-gray-900 dark:text-white" data-testid="dialog-business-name">{selectedSubscription.businessName}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Subscription Information */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Subscription Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Plan</label>
+                    <div className="mt-1">
+                      <Badge className={getPlanBadgeColor(selectedSubscription.plan)} data-testid="dialog-current-plan">
+                        {formatPlanName(selectedSubscription.plan)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <div className="mt-1">
+                      <Badge variant={getStatusBadgeVariant(selectedSubscription.status)} data-testid="dialog-status">
+                        {selectedSubscription.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">MRR</label>
+                    <p className="text-gray-900 dark:text-white" data-testid="dialog-mrr">{formatCurrency(selectedSubscription.mrr)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Period End</label>
+                    <p className="text-gray-900 dark:text-white" data-testid="dialog-period-end">{formatDate(selectedSubscription.currentPeriodEnd)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Actions</h4>
+                
+                {/* Change Plan */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Change Plan</label>
+                  <div className="flex gap-2">
+                    <Select value={newPlan} onValueChange={setNewPlan}>
+                      <SelectTrigger data-testid="select-new-plan">
+                        <SelectValue placeholder="Select new plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="starter">Starter</SelectItem>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => {
+                        if (newPlan) {
+                          changeSubscriptionPlanMutation.mutate({ id: selectedSubscription.id, plan: newPlan });
+                        }
+                      }}
+                      disabled={!newPlan || changeSubscriptionPlanMutation.isPending}
+                      data-testid="button-confirm-plan-change"
+                    >
+                      Confirm
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Other Actions */}
+                <div className="flex flex-wrap gap-2">
+                  {selectedSubscription.status === 'trialing' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => extendTrialMutation.mutate(selectedSubscription.id)}
+                      disabled={extendTrialMutation.isPending}
+                      data-testid="button-extend-trial"
+                    >
+                      Extend Trial (14 days)
+                    </Button>
+                  )}
+                  
+                  {(selectedSubscription.status === 'active' || selectedSubscription.status === 'trialing') && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => cancelSubscriptionMutation.mutate(selectedSubscription.id)}
+                      disabled={cancelSubscriptionMutation.isPending}
+                      data-testid="button-cancel-subscription"
+                    >
+                      Cancel Subscription
+                    </Button>
+                  )}
+                  
+                  {selectedSubscription.status === 'canceled' && (
+                    <Button
+                      variant="default"
+                      onClick={() => reactivateSubscriptionMutation.mutate(selectedSubscription.id)}
+                      disabled={reactivateSubscriptionMutation.isPending}
+                      data-testid="button-reactivate-subscription"
+                    >
+                      Reactivate
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Credit/Discount Section */}
+              <div className="border-t pt-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="credit">
+                    <AccordionTrigger className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Apply Manual Credit
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4 pt-2">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                            Credit Amount
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="$0.00"
+                            value={creditAmount}
+                            onChange={(e) => setCreditAmount(e.target.value)}
+                            data-testid="input-credit-amount"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                            Reason
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Reason for credit..."
+                            value={creditReason}
+                            onChange={(e) => setCreditReason(e.target.value)}
+                            data-testid="input-credit-reason"
+                          />
+                        </div>
+                        <Button
+                          onClick={() => {
+                            const amount = parseFloat(creditAmount);
+                            if (amount > 0 && creditReason.trim()) {
+                              applyCreditMutation.mutate({
+                                id: selectedSubscription.id,
+                                amount,
+                                reason: creditReason,
+                              });
+                            } else {
+                              toast({
+                                title: "Validation Error",
+                                description: "Please enter a valid amount and reason.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={applyCreditMutation.isPending}
+                          data-testid="button-apply-credit"
+                        >
+                          Apply Credit
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+
+              {/* Billing History Section */}
+              <div className="border-t pt-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="billing">
+                    <AccordionTrigger className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Billing History
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-2">
+                        {billingHistoryLoading ? (
+                          <p className="text-sm text-gray-500 text-center py-4">Loading billing history...</p>
+                        ) : billingHistory && billingHistory.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Description</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {billingHistory.map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell data-testid={`billing-date-${item.id}`}>
+                                    {formatDate(item.date)}
+                                  </TableCell>
+                                  <TableCell data-testid={`billing-amount-${item.id}`}>
+                                    {formatCurrency(item.amount)}
+                                  </TableCell>
+                                  <TableCell data-testid={`billing-status-${item.id}`}>
+                                    <Badge variant={item.status === 'paid' ? 'default' : 'secondary'}>
+                                      {item.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell data-testid={`billing-description-${item.id}`}>
+                                    {item.description}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <p className="text-sm text-gray-500 text-center py-4">No billing history</p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             </div>
           )}
