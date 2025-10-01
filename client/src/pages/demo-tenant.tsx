@@ -7,8 +7,9 @@ import { NavigationHeader } from '@/components/NavigationHeader';
 import { CrmDashboard } from '@/components/CrmDashboard';
 import { ContractManager } from '@/components/ContractManager';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
+import { ConsultationsManager } from '@/components/ConsultationsManager';
 import { Link } from 'wouter';
-import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send, CalendarDays, Calendar } from 'lucide-react';
 
 export default function DemoTenant() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -58,7 +59,7 @@ export default function DemoTenant() {
 
         {/* Functional Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" data-testid="tab-overview">
               <Palette className="h-4 w-4 mr-2" />
               Overview
@@ -78,6 +79,10 @@ export default function DemoTenant() {
             <TabsTrigger value="schedule" data-testid="tab-schedule">
               <CalendarDays className="h-4 w-4 mr-2" />
               Schedule
+            </TabsTrigger>
+            <TabsTrigger value="bookings" data-testid="tab-bookings">
+              <Calendar className="h-4 w-4 mr-2" />
+              Bookings
             </TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">
               <CreditCard className="h-4 w-4 mr-2" />
@@ -439,6 +444,11 @@ export default function DemoTenant() {
           {/* Schedule Tab - Availability Management */}
           <TabsContent value="schedule" className="space-y-6">
             <AvailabilitySettings bakerId="sweet-dreams-bakery" />
+          </TabsContent>
+
+          {/* Bookings Tab - Consultations/Appointments */}
+          <TabsContent value="bookings" className="space-y-6">
+            <ConsultationsManager bakerId="sweet-dreams-bakery" />
           </TabsContent>
 
           {/* Payments Tab */}
