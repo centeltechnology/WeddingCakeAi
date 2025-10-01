@@ -169,9 +169,12 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         }
       }
       
+      // Open the quote creation dialog so user can review and edit
+      setIsCreating(true);
+      
       toast({
         title: "Lead Converted & Quote Pre-filled",
-        description: "Lead converted to customer and quote pre-populated with calculator pricing data.",
+        description: "Lead converted to customer. Review and customize the quote below.",
       });
     },
     onError: () => {
