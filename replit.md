@@ -6,6 +6,19 @@ A professional SaaS business platform for bakeries featuring modern design with 
 
 **Domain**: bakeriq.app
 
+## Recent Changes
+
+**October 1, 2025** - Baker Password Reset Implementation
+- Added complete password reset flow for baker accounts
+- Database schema updated with reset token fields (resetTokenHash, resetTokenExpiresAt, resetTokenUsedAt)
+- Implemented secure token generation with SHA-256 hashing and 15-minute expiry
+- Created baker-specific storage methods: createBakerResetToken, findBakerByResetTokenHash, consumeBakerResetToken
+- Added API endpoints: POST /api/bakers/forgot-password and POST /api/bakers/reset-password
+- Integrated email template for password reset notifications with branded design
+- Added frontend routes: /baker/forgot-password and /baker-reset-password
+- Security features: single-use tokens, email enumeration prevention, proper error handling
+- End-to-end tested and verified
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -37,6 +50,7 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: Express sessions with PostgreSQL session store (connect-pg-simple)
 - **User System**: Basic user registration and authentication framework in place
 - **Profile Association**: User profiles linked to individual wedding planning accounts
+- **Password Reset**: Secure password reset flow for bakers with token-based email verification (15-minute expiry, single-use tokens, SHA-256 hashing)
 
 ### External Service Integrations
 - **PDF Generation**: jsPDF for creating professional estimate documents

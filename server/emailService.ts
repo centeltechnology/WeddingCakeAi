@@ -1024,5 +1024,63 @@ Best regards,<br>
 <strong>The BakerIQ Team</strong>
 </p>
 </div>`
+  }),
+
+  bakerPasswordReset: (name: string, resetUrl: string) => ({
+    subject: 'Reset your BakerIQ password',
+    textPart: `Hi ${name},
+
+We received a request to reset your BakerIQ account password.
+
+Click here to reset your password: ${resetUrl}
+
+This link will expire in 15 minutes for security reasons.
+
+If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+
+Best regards,
+The BakerIQ Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #7c2d12; margin: 0;">Reset Your Password 🔐</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+We received a request to reset your BakerIQ account password.
+</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Click the button below to create a new password:
+</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${resetUrl}" style="background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+Reset Password
+</a>
+</div>
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
+<p style="margin: 0; color: #7c2d12; font-weight: 600;">⚠️ Security Notice</p>
+<p style="margin: 10px 0 0 0; color: #333; font-size: 14px;">
+This link will expire in 15 minutes for security reasons. If you need a new link, you can request another password reset.
+</p>
+</div>
+
+<p style="font-size: 14px; line-height: 1.5; color: #666; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+If the button doesn't work, you can copy and paste this link into your browser:<br>
+<a href="${resetUrl}" style="color: #7c2d12; word-break: break-all;">${resetUrl}</a>
+</p>
+
+<p style="font-size: 14px; color: #666;">
+If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+</p>
+
+<p style="font-size: 14px; color: #666;">
+Best regards,<br>
+<strong>The BakerIQ Team</strong>
+</p>
+</div>`
   })
 };

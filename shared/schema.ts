@@ -246,6 +246,10 @@ export const bakers = pgTable("bakers", {
   emailVerified: boolean("email_verified").default(false),
   verificationToken: varchar("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
+  // Password reset
+  resetTokenHash: varchar("reset_token_hash"),
+  resetTokenExpiresAt: timestamp("reset_token_expires_at"),
+  resetTokenUsedAt: timestamp("reset_token_used_at"),
   // Social media handles
   socialMedia: json("social_media").$type<{
     instagram?: string;

@@ -300,6 +300,43 @@ export class DatabaseStorage {
     return userByUsername;
   }
 
+  // Baker password reset methods (similar to user methods but for bakers)
+  async createBakerResetToken(bakerId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    await db
+      .update(bakers)
+      .set({
+        resetTokenHash: tokenHash,
+        resetTokenExpiresAt: expiresAt,
+        resetTokenUsedAt: null,
+      })
+      .where(eq(bakers.id, bakerId));
+  }
+
+  async findBakerByResetTokenHash(tokenHash: string) {
+    const [baker] = await db
+      .select()
+      .from(bakers)
+      .where(eq(bakers.resetTokenHash, tokenHash))
+      .limit(1);
+    return baker;
+  }
+
+  async consumeBakerResetToken(bakerId: string): Promise<void> {
+    await db
+      .update(bakers)
+      .set({
+        resetTokenUsedAt: new Date(),
+      })
+      .where(eq(bakers.id, bakerId));
+  }
+
+  async updateBakerPassword(bakerId: string, hashedPassword: string): Promise<void> {
+    await db
+      .update(bakers)
+      .set({ password: hashedPassword })
+      .where(eq(bakers.id, bakerId));
+  }
+
 
   // Booking methods for simplified booking system
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {

@@ -58,6 +58,8 @@ import SuperAdminSetup from "@/pages/super-admin-setup";
 import SuperAdminForgotPassword from "@/pages/super-admin-forgot-password";
 import SuperAdminResetPassword from "@/pages/super-admin-reset-password";
 import BakerLogin from "@/pages/baker-login";
+import BakerForgotPassword from "@/pages/baker-forgot-password";
+import BakerResetPassword from "@/pages/baker-reset-password";
 import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
 import VerifyEmail from "@/pages/verify-email";
@@ -126,6 +128,10 @@ function Router() {
         }}
       </Route>
       <Route path="/baker-login" component={BakerLogin} />
+      <Route path="/baker/forgot-password" component={BakerForgotPassword} />
+      <Route path="/baker-forgot-password" component={BakerForgotPassword} />
+      <Route path="/baker/reset-password" component={BakerResetPassword} />
+      <Route path="/baker-reset-password" component={BakerResetPassword} />
       <Route path="/login" component={BakerLogin} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/auth-test" component={AuthTest} />

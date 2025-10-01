@@ -707,6 +707,143 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
+  // Baker Password Reset
+  app.post('/api/bakers/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      // Always return success to prevent user enumeration attacks
+      const successResponse = {
+        success: true,
+        message: 'If an account exists with that email, a password reset email has been sent.'
+      };
+
+      // Find baker by email
+      const baker = await databaseStorage.getBakerByEmail(email.trim());
+      
+      // Only process if baker exists and is active
+      if (baker && baker.isActive) {
+        // Generate secure token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expiresAt = databaseStorage.createResetTokenExpiry();
+
+        // Store hashed token in database
+        await databaseStorage.createBakerResetToken(baker.id, tokenHash, expiresAt);
+
+        // Create reset URL
+        const resetUrl = `${req.protocol}://${req.get('host')}/baker-reset-password?token=${resetToken}`;
+
+        // Send password reset email
+        const emailTemplate = emailTemplates.bakerPasswordReset(baker.name, resetUrl);
+        const emailSent = await sendEmail({
+          to: baker.email,
+          toName: baker.name,
+          subject: emailTemplate.subject,
+          textPart: emailTemplate.textPart,
+          htmlPart: emailTemplate.htmlPart,
+        });
+
+        // In development, also log the reset URL for testing
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('🔐 Baker Password Reset URL (DEV ONLY):', resetUrl);
+          console.log('Reset token expires in 15 minutes');
+        }
+
+        if (!emailSent) {
+          console.error('Failed to send password reset email to:', baker.email);
+        }
+      }
+
+      // Always return success response regardless of whether baker was found
+      res.json(successResponse);
+
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'An error occurred while processing your request'
+      });
+    }
+  });
+
+  app.post('/api/bakers/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token and new password are required'
+        });
+      }
+
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 8 characters long'
+        });
+      }
+
+      // Hash the provided token to compare with database
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Find baker by token hash
+      const baker = await databaseStorage.findBakerByResetTokenHash(tokenHash);
+
+      if (!baker) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Validate baker account status
+      if (!baker.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Check token validity (expiry and usage)
+      if (!databaseStorage.isResetTokenValid(baker)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+      }
+
+      // Hash the new password
+      const hashedPassword = await databaseStorage.hashPassword(newPassword);
+
+      // Update password and mark token as used
+      await databaseStorage.updateBakerPassword(baker.id, hashedPassword);
+      await databaseStorage.consumeBakerResetToken(baker.id);
+
+      console.log(`Baker password reset completed for: ${baker.email}`);
+
+      res.json({
+        success: true,
+        message: 'Password has been reset successfully. You can now log in with your new password.'
+      });
+
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'An error occurred while resetting your password'
+      });
+    }
+  });
 
   // Get baker info by slug (for frontend routing)
   app.get('/baker/:slug/info', async (req, res) => {
