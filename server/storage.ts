@@ -12,6 +12,7 @@ import {
   type PaymentPlan, type InsertPaymentPlan, type PaymentSchedule, type InsertPaymentSchedule, type Invoice, type InsertInvoice,
   type Booking, type InsertBooking,
   type EmailCampaignEnrollment, type InsertEmailCampaignEnrollment, type EmailCampaignEvent, type InsertEmailCampaignEvent,
+  type SuperAdminCampaign, type InsertSuperAdminCampaign, type SuperAdminCampaignSend, type InsertSuperAdminCampaignSend,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
@@ -21,6 +22,7 @@ import {
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
   type MaintenanceSchedule, type InsertMaintenanceSchedule,
   announcements, emailJobs, activityLogs, emailCampaignEnrollments, emailCampaignEvents,
+  superAdminCampaigns, superAdminCampaignSends,
   type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
   type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -272,6 +274,15 @@ export interface IStorage {
   createCampaignEvent(event: InsertEmailCampaignEvent): Promise<EmailCampaignEvent>;
   getCampaignEvents(enrollmentId: string): Promise<EmailCampaignEvent[]>;
   trackCampaignClick(enrollmentId: string, step: number, clickUrl: string): Promise<EmailCampaignEvent>;
+  
+  // Super Admin Email Campaign operations
+  createSuperAdminCampaign(campaign: InsertSuperAdminCampaign): Promise<SuperAdminCampaign>;
+  getSuperAdminCampaigns(): Promise<SuperAdminCampaign[]>;
+  getSuperAdminCampaign(id: string): Promise<SuperAdminCampaign | undefined>;
+  updateSuperAdminCampaign(id: string, updates: Partial<InsertSuperAdminCampaign>): Promise<SuperAdminCampaign>;
+  deleteSuperAdminCampaign(id: string): Promise<boolean>;
+  sendSuperAdminCampaign(campaignId: string): Promise<SuperAdminCampaign>;
+  getSuperAdminCampaignStats(campaignId: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -3726,6 +3737,149 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  async createSuperAdminCampaign(campaign: InsertSuperAdminCampaign): Promise<SuperAdminCampaign> {
+    const [result] = await db
+      .insert(superAdminCampaigns)
+      .values({ ...campaign, id: randomUUID() })
+      .returning();
+    return result;
+  }
+
+  async getSuperAdminCampaigns(): Promise<SuperAdminCampaign[]> {
+    return await db
+      .select()
+      .from(superAdminCampaigns)
+      .orderBy(desc(superAdminCampaigns.createdAt));
+  }
+
+  async getSuperAdminCampaign(id: string): Promise<SuperAdminCampaign | undefined> {
+    const [result] = await db
+      .select()
+      .from(superAdminCampaigns)
+      .where(eq(superAdminCampaigns.id, id));
+    return result;
+  }
+
+  async updateSuperAdminCampaign(id: string, updates: Partial<InsertSuperAdminCampaign>): Promise<SuperAdminCampaign> {
+    const [result] = await db
+      .update(superAdminCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(superAdminCampaigns.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteSuperAdminCampaign(id: string): Promise<boolean> {
+    const result = await db
+      .delete(superAdminCampaigns)
+      .where(eq(superAdminCampaigns.id, id));
+    return result.rowCount > 0;
+  }
+
+  async sendSuperAdminCampaign(campaignId: string): Promise<SuperAdminCampaign> {
+    const campaign = await this.getSuperAdminCampaign(campaignId);
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    const allBakers = await this.getBakers();
+    const filter = campaign.segmentFilter || {};
+    
+    let filteredBakers = allBakers.filter(baker => {
+      if (filter.plans && filter.plans.length > 0) {
+        const plan = baker.subscriptionPlan || 'starter';
+        const normalizedPlan = plan === 'pro' ? 'professional' : plan;
+        if (!filter.plans.includes(normalizedPlan)) return false;
+      }
+
+      if (filter.statuses && filter.statuses.length > 0) {
+        const status = baker.subscriptionStatus || 'active';
+        if (!filter.statuses.includes(status)) return false;
+      }
+
+      if (filter.hasBusinessName !== undefined) {
+        const hasName = !!baker.businessName;
+        if (filter.hasBusinessName !== hasName) return false;
+      }
+
+      return true;
+    });
+
+    const stats = {
+      totalRecipients: filteredBakers.length,
+      sent: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
+      bounced: 0,
+      unsubscribed: 0
+    };
+
+    for (const baker of filteredBakers) {
+      await db.insert(superAdminCampaignSends).values({
+        id: randomUUID(),
+        campaignId: campaign.id,
+        bakerId: baker.id,
+        status: 'sent',
+        sentAt: new Date()
+      });
+      stats.sent++;
+    }
+
+    const [updated] = await db
+      .update(superAdminCampaigns)
+      .set({
+        status: 'sent',
+        sentAt: new Date(),
+        stats,
+        updatedAt: new Date()
+      })
+      .where(eq(superAdminCampaigns.id, campaignId))
+      .returning();
+
+    return updated;
+  }
+
+  async getSuperAdminCampaignStats(campaignId: string): Promise<any> {
+    const campaign = await this.getSuperAdminCampaign(campaignId);
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    const sends = await db
+      .select()
+      .from(superAdminCampaignSends)
+      .where(eq(superAdminCampaignSends.campaignId, campaignId));
+
+    const stats = {
+      totalRecipients: sends.length,
+      sent: sends.filter(s => s.sentAt).length,
+      delivered: sends.filter(s => s.deliveredAt).length,
+      opened: sends.filter(s => s.openedAt).length,
+      clicked: sends.filter(s => s.clickedAt).length,
+      bounced: sends.filter(s => s.bouncedAt).length,
+      failed: sends.filter(s => s.failedAt).length,
+      openRate: 0,
+      clickRate: 0,
+      bounceRate: 0
+    };
+
+    if (stats.delivered > 0) {
+      stats.openRate = (stats.opened / stats.delivered) * 100;
+      stats.clickRate = (stats.clicked / stats.delivered) * 100;
+    }
+    
+    if (stats.sent > 0) {
+      stats.bounceRate = (stats.bounced / stats.sent) * 100;
+    }
+
+    return {
+      campaign,
+      stats,
+      sends: sends.slice(0, 100)
+    };
   }
 }
 

@@ -5056,6 +5056,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Email Campaign Routes
+  app.get('/api/super-admin/campaigns', verifySuperAdminToken, async (req, res) => {
+    try {
+      const campaigns = await storage.getSuperAdminCampaigns();
+      res.json({ success: true, campaigns });
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch campaigns' });
+    }
+  });
+
+  app.get('/api/super-admin/campaigns/:id', verifySuperAdminToken, async (req, res) => {
+    try {
+      const campaign = await storage.getSuperAdminCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ success: false, message: 'Campaign not found' });
+      }
+      res.json({ success: true, campaign });
+    } catch (error) {
+      console.error('Error fetching campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch campaign' });
+    }
+  });
+
+  app.post('/api/super-admin/campaigns', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const campaign = await storage.createSuperAdminCampaign({
+        ...req.body,
+        createdBy: req.user.userId
+      });
+      res.json({ success: true, campaign });
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to create campaign' });
+    }
+  });
+
+  app.patch('/api/super-admin/campaigns/:id', verifySuperAdminToken, async (req, res) => {
+    try {
+      const campaign = await storage.updateSuperAdminCampaign(req.params.id, req.body);
+      res.json({ success: true, campaign });
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to update campaign' });
+    }
+  });
+
+  app.delete('/api/super-admin/campaigns/:id', verifySuperAdminToken, async (req, res) => {
+    try {
+      const deleted = await storage.deleteSuperAdminCampaign(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: 'Campaign not found' });
+      }
+      res.json({ success: true, message: 'Campaign deleted' });
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete campaign' });
+    }
+  });
+
+  app.post('/api/super-admin/campaigns/:id/send', verifySuperAdminToken, async (req, res) => {
+    try {
+      const campaign = await storage.sendSuperAdminCampaign(req.params.id);
+      res.json({ success: true, campaign });
+    } catch (error) {
+      console.error('Error sending campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to send campaign' });
+    }
+  });
+
+  app.get('/api/super-admin/campaigns/:id/stats', verifySuperAdminToken, async (req, res) => {
+    try {
+      const stats = await storage.getSuperAdminCampaignStats(req.params.id);
+      res.json({ success: true, ...stats });
+    } catch (error) {
+      console.error('Error fetching campaign stats:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch campaign stats' });
+    }
+  });
+
   // Baker Self-Service Billing API Routes
   app.get('/api/bakers/:bakerId/billing', async (req, res) => {
     try {
