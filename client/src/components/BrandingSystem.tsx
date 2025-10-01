@@ -277,6 +277,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                   src={brandingConfig.logoUrl}
                   alt="Brand Logo"
                   className="h-12 mx-auto object-contain"
+                  data-testid="preview-brand-logo"
                 />
               )}
               <h2
@@ -337,12 +338,13 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 {brandingConfig.logoUrl ? (
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-lg" data-testid="logo-display-container">
                     <div className="flex items-center space-x-3">
                       <img
                         src={brandingConfig.logoUrl}
                         alt="Current Logo"
                         className="h-12 w-12 object-contain border rounded"
+                        data-testid="current-brand-logo"
                       />
                       <div>
                         <p className="font-medium">Current Logo</p>
