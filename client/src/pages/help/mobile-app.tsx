@@ -26,7 +26,7 @@ export default function MobileApp() {
               <Smartphone className="h-10 w-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Mobile App Features</h1>
-            <p className="text-lg text-gray-600">Access Bakewise on the go with our mobile-optimized platform</p>
+            <p className="text-lg text-gray-600">Access BakerIQ on the go with our mobile-optimized platform</p>
           </div>
 
           <div className="space-y-8">

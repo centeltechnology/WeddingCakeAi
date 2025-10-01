@@ -161,15 +161,15 @@ export default function VerifyEmail() {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-pink-100">
               <Sparkles className="h-4 w-4 text-pink-500" />
-              <span className="text-sm font-medium text-gray-700">Bakewise Platform</span>
+              <span className="text-sm font-medium text-gray-700">BakerIQ Platform</span>
             </div>
             
             <h1 className="text-4xl sm:text-5xl font-serif font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
               Email Verification
             </h1>
             <p className="text-lg text-gray-600 max-w-md mx-auto">
-              {verificationState === 'loading' && "Verifying your account with Bakewise"}
-              {verificationState === 'success' && "Welcome to the Bakewise community!"}
+              {verificationState === 'loading' && "Verifying your account with BakerIQ"}
+              {verificationState === 'success' && "Welcome to the BakerIQ community!"}
               {verificationState === 'expired' && "Let's get you verified"}
               {verificationState === 'error' && "Having trouble? We're here to help"}
             </p>
@@ -227,7 +227,7 @@ export default function VerifyEmail() {
                         Welcome, {verificationResult.baker.name}!
                       </span>
                     )}
-                    Your Bakewise account is now active and ready to use. You can start building your bakery business right away.
+                    Your BakerIQ account is now active and ready to use. You can start building your bakery business right away.
                   </CardDescription>
                   <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                     <CheckCircle className="h-3 w-3 mr-1" />
@@ -388,7 +388,7 @@ export default function VerifyEmail() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
                   <Button variant="link" size="sm" asChild className="text-pink-600 hover:text-pink-700">
-                    <a href="mailto:support@bakewiseapp.com">
+                    <a href="mailto:support@bakeriq.app">
                       <Mail className="h-3 w-3 mr-1" />
                       Email Support
                     </a>
@@ -410,7 +410,7 @@ export default function VerifyEmail() {
           <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-gray-800 transition-colors" data-testid="button-back-home-footer">
             <Link href="/">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Bakewise Platform
+              Back to BakerIQ Platform
             </Link>
           </Button>
         </div>

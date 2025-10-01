@@ -127,9 +127,9 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
             await sendEmail({
               to: baker.email,
               subject: `Welcome to ${plan.name} Plan!`,
-              text: `Welcome to Bakewise! Your ${plan.name} subscription is now active. You can access all premium features from your dashboard.`,
+              text: `Welcome to BakerIQ! Your ${plan.name} subscription is now active. You can access all premium features from your dashboard.`,
               htmlPart: `
-                <h2>Welcome to Bakewise!</h2>
+                <h2>Welcome to BakerIQ!</h2>
                 <p>Your <strong>${plan.name}</strong> subscription is now active.</p>
                 <p>You can now access all premium features including:</p>
                 <ul>
@@ -197,7 +197,7 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
               await sendEmail({
                 to: baker.email,
                 subject: 'Subscription Canceled',
-                text: 'Your Bakewise subscription has been canceled. You can continue using your account until your current period ends.',
+                text: 'Your BakerIQ subscription has been canceled. You can continue using your account until your current period ends.',
               });
             }
           } catch (emailError) {

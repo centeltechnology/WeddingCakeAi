@@ -286,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         baker: updatedBaker,
         message: subdomain ? 
-          `Subdomain updated to ${subdomain}.bakewiseapp.com` : 
+          `Subdomain updated to ${subdomain}.bakeriq.app` : 
           'Custom domain configuration updated'
       });
     } catch (error) {
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         tenant: updatedTenant,
         message: subdomain ? 
-          `Subdomain updated to ${subdomain}.bakewiseapp.com` : 
+          `Subdomain updated to ${subdomain}.bakeriq.app` : 
           'Custom domain configuration updated'
       });
     } catch (error) {
@@ -612,9 +612,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         available,
         subdomain: subdomain,
-        url: available ? `${subdomain}.bakewiseapp.com` : null,
+        url: available ? `${subdomain}.bakeriq.app` : null,
         message: available ? 
-          `${subdomain}.bakewiseapp.com is available!` : 
+          `${subdomain}.bakeriq.app is available!` : 
           'This subdomain is already taken'
       });
     } catch (error) {
@@ -5269,7 +5269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <!DOCTYPE html>
           <html>
             <head>
-              <title>Unsubscribed - Bakewise</title>
+              <title>Unsubscribed - BakerIQ</title>
               <style>
                 body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
                 .success { color: #4CAF50; }
@@ -5279,7 +5279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <h1 class="success">Successfully Unsubscribed</h1>
               <p>You have been unsubscribed from our conversion email campaign.</p>
               <p>You will no longer receive these promotional emails.</p>
-              <p><a href="/">Return to Bakewise</a></p>
+              <p><a href="/">Return to BakerIQ</a></p>
             </body>
           </html>
         `);
@@ -5288,7 +5288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <!DOCTYPE html>
           <html>
             <head>
-              <title>Invalid Link - Bakewise</title>
+              <title>Invalid Link - BakerIQ</title>
               <style>
                 body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
                 .error { color: #f44336; }
@@ -5297,7 +5297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <h1 class="error">Invalid Unsubscribe Link</h1>
               <p>This unsubscribe link is invalid or has already been used.</p>
-              <p><a href="/">Return to Bakewise</a></p>
+              <p><a href="/">Return to BakerIQ</a></p>
             </body>
           </html>
         `);

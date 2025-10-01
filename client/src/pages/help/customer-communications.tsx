@@ -135,7 +135,7 @@ export default function CustomerCommunications() {
                 
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mt-6">
                   <p className="text-sm text-yellow-800">
-                    <strong>Pro Tip:</strong> Always use the Bakewise platform messaging as your primary communication method. 
+                    <strong>Pro Tip:</strong> Always use the BakerIQ platform messaging as your primary communication method. 
                     This ensures payment protection, maintains order history, and provides both parties with documented conversations.
                   </p>
                 </div>
@@ -347,7 +347,7 @@ export default function CustomerCommunications() {
                   <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                     <h4 className="font-semibold text-red-900 mb-2">When to Escalate</h4>
                     <p className="text-sm text-red-800 mb-2">
-                      Contact Bakewise support if you encounter:
+                      Contact BakerIQ support if you encounter:
                     </p>
                     <ul className="text-xs text-red-700 space-y-1">
                       <li>• Threats or abusive language from customers</li>

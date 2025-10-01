@@ -26,7 +26,7 @@ export default function AccountSetup() {
               <User className="h-10 w-10 text-blue-600" />
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Account Setup & Profile Management</h1>
-            <p className="text-lg text-gray-600">Complete guide to setting up and managing your Bakewise account</p>
+            <p className="text-lg text-gray-600">Complete guide to setting up and managing your BakerIQ account</p>
           </div>
 
           <div className="space-y-8">

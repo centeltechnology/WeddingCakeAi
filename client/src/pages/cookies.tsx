@@ -17,7 +17,7 @@ export default function Cookies() {
               </p>
               
               <p className="text-gray-700 leading-relaxed">
-                This Cookie Policy explains how Bakewise uses cookies and similar technologies to enhance your experience on our platform.
+                This Cookie Policy explains how BakerIQ uses cookies and similar technologies to enhance your experience on our platform.
               </p>
             </div>
 
@@ -136,7 +136,7 @@ export default function Cookies() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Contact Us</h2>
               <p className="text-gray-700 leading-relaxed">
-                For questions about our cookie practices, email us at <a href="mailto:privacy@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">privacy@bakewiseapp.com</a>.
+                For questions about our cookie practices, email us at <a href="mailto:privacy@bakeriq.app" className="text-pink-600 hover:text-pink-800">privacy@bakeriq.app</a>.
               </p>
             </section>
           </div>

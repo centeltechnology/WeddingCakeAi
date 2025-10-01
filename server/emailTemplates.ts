@@ -14,12 +14,12 @@ export interface CampaignEmailTemplates {
 // 7-Day Free-to-Paid Conversion Campaign Templates
 export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
   step1: {
-    subject: "Welcome to Bakewise - Let's grow your bakery business! 🎂",
+    subject: "Welcome to BakerIQ - Let's grow your bakery business! 🎂",
     body: `
       <html>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fef7ed;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #f97316; font-size: 28px; margin-bottom: 10px;">Welcome to Bakewise!</h1>
+            <h1 style="color: #f97316; font-size: 28px; margin-bottom: 10px;">Welcome to BakerIQ!</h1>
             <p style="color: #78716c; font-size: 16px;">The professional platform that helps bakeries grow and thrive</p>
           </div>
           
@@ -27,7 +27,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             <h2 style="color: #292524; margin-bottom: 20px;">Ready to take your bakery to the next level?</h2>
             
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 20px;">
-              Hi there! I'm excited to welcome you to Bakewise. You've just joined thousands of successful bakers who use our platform to:
+              Hi there! I'm excited to welcome you to BakerIQ. You've just joined thousands of successful bakers who use our platform to:
             </p>
             
             <ul style="color: #44403c; line-height: 1.8; margin-bottom: 25px;">
@@ -39,7 +39,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             
             <div style="background: #fef7ed; padding: 20px; border-radius: 8px; border-left: 4px solid #f97316; margin-bottom: 25px;">
               <p style="color: #78716c; margin: 0; font-style: italic;">
-                "Since using Bakewise, my revenue has increased by 40% and I save 10 hours per week on administrative tasks." - Sarah M., Custom Cake Designer
+                "Since using BakerIQ, my revenue has increased by 40% and I save 10 hours per week on administrative tasks." - Sarah M., Custom Cake Designer
               </p>
             </div>
             
@@ -78,7 +78,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
           
           <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
-              Hi! Yesterday I shared how Bakewise can help grow your bakery. Today, let me show you exactly what our Professional plan includes:
+              Hi! Yesterday I shared how BakerIQ can help grow your bakery. Today, let me show you exactly what our Professional plan includes:
             </p>
             
             <div style="margin-bottom: 30px;">
@@ -173,7 +173,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             </div>
             
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
-              Does any of this sound familiar? I designed Bakewise specifically to solve these exact problems.
+              Does any of this sound familiar? I designed BakerIQ specifically to solve these exact problems.
             </p>
             
             <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
@@ -187,7 +187,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             </div>
             
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
-              <strong>Still on the fence?</strong> I'm offering a risk-free 30-day trial. If Bakewise doesn't transform your business, get a full refund.
+              <strong>Still on the fence?</strong> I'm offering a risk-free 30-day trial. If BakerIQ doesn't transform your business, get a full refund.
             </p>
           </div>
           
@@ -223,7 +223,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
               <h3 style="color: #1e40af; margin-bottom: 15px;">Emma's Sweet Success</h3>
               <p style="color: #1e3a8a; font-style: italic; margin-bottom: 15px;">
-                "I was skeptical about paying for business software, but Bakewise literally transformed my small home bakery into a thriving business."
+                "I was skeptical about paying for business software, but BakerIQ literally transformed my small home bakery into a thriving business."
               </p>
               <p style="color: #1e3a8a; margin: 0; font-weight: bold;">
                 - Emma Rodriguez, Sweet Delights Bakery
@@ -233,7 +233,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             <h3 style="color: #292524; margin-bottom: 20px;">Emma's Journey:</h3>
             
             <div style="margin-bottom: 25px;">
-              <h4 style="color: #f97316; margin-bottom: 10px;">📉 Before Bakewise (Struggling):</h4>
+              <h4 style="color: #f97316; margin-bottom: 10px;">📉 Before BakerIQ (Struggling):</h4>
               <ul style="color: #44403c; line-height: 1.8;">
                 <li>Working 70+ hours per week</li>
                 <li>$3,200 monthly revenue</li>
@@ -306,7 +306,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
           
           <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
-              Hi! I hope you've been getting value from the Bakewise emails I've been sending. 
+              Hi! I hope you've been getting value from the BakerIQ emails I've been sending. 
             </p>
             
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
@@ -340,7 +340,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
             <div style="background: #dcfce7; padding: 20px; border-radius: 8px; border-left: 4px solid #16a34a; margin-bottom: 25px;">
               <h4 style="color: #166534; margin-bottom: 10px;">✅ Remember: 30-Day Money-Back Guarantee</h4>
               <p style="color: #166534; margin: 0;">
-                If Bakewise doesn't improve your business within 30 days, I'll personally refund every penny. No questions asked.
+                If BakerIQ doesn't improve your business within 30 days, I'll personally refund every penny. No questions asked.
               </p>
             </div>
             
@@ -383,7 +383,7 @@ export const FREE_TO_PAID_CAMPAIGN: CampaignEmailTemplates = {
           
           <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">
             <p style="color: #44403c; line-height: 1.6; margin-bottom: 25px;">
-              This is it - your last chance to get Bakewise Professional at the special introductory price.
+              This is it - your last chance to get BakerIQ Professional at the special introductory price.
             </p>
             
             <div style="background: #fee2e2; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 25px;">

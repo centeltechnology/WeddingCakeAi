@@ -75,7 +75,7 @@ export default function SuperAdminForgotPassword() {
             </div>
           </div>
           <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-            Bakewise
+            BakerIQ
           </h1>
           <p className="text-gray-600 mt-2">Super Admin Portal</p>
         </div>

@@ -197,7 +197,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
   };
 
   const copyEmbedCode = () => {
-    const embedCode = `<iframe src="https://${tenantId}.bakewiseapp.com/widget" width="400" height="600" frameborder="0"></iframe>`;
+    const embedCode = `<iframe src="https://${tenantId}.bakeriq.app/widget" width="400" height="600" frameborder="0"></iframe>`;
     navigator.clipboard.writeText(embedCode);
     toast({
       title: "Embed code copied!",
@@ -671,14 +671,14 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                 <Badge variant="secondary">Premium</Badge>
               </CardTitle>
               <CardDescription>
-                Remove Bakewise branding and create a fully white-labeled experience
+                Remove BakerIQ branding and create a fully white-labeled experience
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Enable White Label</Label>
-                  <p className="text-sm text-muted-foreground">Remove all Bakewise branding</p>
+                  <p className="text-sm text-muted-foreground">Remove all BakerIQ branding</p>
                 </div>
                 <Switch
                   checked={brandingConfig.whiteLabel.enabled}
@@ -693,7 +693,7 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                 <>
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Hide "Powered by Bakewise"</Label>
+                      <Label>Hide "Powered by BakerIQ"</Label>
                       <p className="text-sm text-muted-foreground">Remove footer attribution</p>
                     </div>
                     <Switch
@@ -758,14 +758,14 @@ export function BrandingSystem({ tenantId }: BrandingSystemProps) {
                     <CardContent className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Input
-                          value={`https://${tenantId}.bakewiseapp.com/widget`}
+                          value={`https://${tenantId}.bakeriq.app/widget`}
                           readOnly
                           className="font-mono text-sm"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`https://${tenantId}.bakewiseapp.com/widget`, '_blank')}
+                          onClick={() => window.open(`https://${tenantId}.bakeriq.app/widget`, '_blank')}
                           data-testid="button-open-widget"
                         >
                           <ExternalLink className="h-4 w-4" />

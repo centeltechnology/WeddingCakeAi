@@ -26,7 +26,7 @@ export default function BrowserCompatibility() {
               <Monitor className="h-10 w-10 text-blue-600" />
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Browser & Device Compatibility</h1>
-            <p className="text-lg text-gray-600">Supported browsers and devices for the best Bakewise experience</p>
+            <p className="text-lg text-gray-600">Supported browsers and devices for the best BakerIQ experience</p>
           </div>
 
           <div className="space-y-8">

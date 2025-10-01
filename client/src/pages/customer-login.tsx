@@ -102,7 +102,7 @@ export default function CustomerLogin() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Customer Login - Bakewise Portal"
+        title="Customer Login - BakerIQ Portal"
         description="Sign in to your customer portal to view quotes, manage orders, and track your cake project progress."
       />
       

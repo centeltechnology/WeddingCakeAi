@@ -29,7 +29,7 @@ export default function PaymentSafety() {
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Payment Safety & Security</h1>
             <p className="text-lg text-gray-600">
-              How your payments and personal data are protected when using Bakewise
+              How your payments and personal data are protected when using BakerIQ
             </p>
           </div>
 
@@ -327,7 +327,7 @@ export default function PaymentSafety() {
                       <ul className="space-y-2 text-sm text-gray-600">
                         <li className="flex items-start">
                           <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>Keep all communication within the Bakewise platform</span>
+                          <span>Keep all communication within the BakerIQ platform</span>
                         </li>
                         <li className="flex items-start">
                           <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />

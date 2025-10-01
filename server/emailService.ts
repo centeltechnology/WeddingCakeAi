@@ -31,7 +31,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
 
   try {
     const emailParams = {
-      Source: `${params.fromName || 'Bakewise'} <${params.from || 'noreply@bakewiseapp.com'}>`,
+      Source: `${params.fromName || 'BakerIQ'} <${params.from || 'noreply@bakeriq.app'}>`,
       Destination: {
         ToAddresses: [
           params.toName 
@@ -120,10 +120,10 @@ ${weddingDate ? `<li><strong>Wedding Date:</strong> ${weddingDate}</li>` : ''}
   }),
 
   emailVerification: (name: string, verificationUrl: string, loginUrl: string = '/login') => ({
-    subject: 'Please verify your Bakewise account',
+    subject: 'Please verify your BakerIQ account',
     textPart: `Hi ${name},
 
-Welcome to Bakewise! Please verify your email address to complete your account setup.
+Welcome to BakerIQ! Please verify your email address to complete your account setup.
 
 Click here to verify: ${verificationUrl}
 
@@ -138,16 +138,16 @@ Quick Tips to Get Started:
 If you didn't create this account, you can safely ignore this email.
 
 Best regards,
-The Bakewise Team`,
+The BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
-<h1 style="color: #7c2d12; margin: 0;">Welcome to Bakewise! 🎂</h1>
+<h1 style="color: #7c2d12; margin: 0;">Welcome to BakerIQ! 🎂</h1>
 </div>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">
-Welcome to Bakewise! We're excited to have you join our community of talented bakers.
+Welcome to BakerIQ! We're excited to have you join our community of talented bakers.
 </p>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">
@@ -188,7 +188,7 @@ If you didn't create this account, you can safely ignore this email.
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Team</strong>
+<strong>The BakerIQ Team</strong>
 </p>
 </div>`
   }),
@@ -322,7 +322,7 @@ Next Steps:
 You can view the full quote details in your dashboard.
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #10b981;">Quote Approved! 🎉</h2>
 <p>Hi <strong>${bakerName}</strong>,</p>
@@ -343,7 +343,7 @@ Bakewise Team`,
 
 <p>You can view the full quote details in your dashboard.</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
@@ -361,7 +361,7 @@ Please review the contract terms and sign electronically through your customer p
 If you have any questions about the contract terms, please contact ${bakerName} directly.
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #8b5cf6;">Contract Ready for Signature! 📝</h2>
 <p>Hi <strong>${customerName}</strong>,</p>
@@ -379,7 +379,7 @@ Bakewise Team`,
 
 <p>If you have any questions about the contract terms, please contact <strong>${bakerName}</strong> directly.</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
@@ -397,7 +397,7 @@ The contract is now legally binding and you can proceed with:
 You can download the signed contract from your dashboard.
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #10b981;">Contract Signed! ✅</h2>
 <p>Hi <strong>${bakerName}</strong>,</p>
@@ -418,7 +418,7 @@ Bakewise Team`,
 
 <p>You can download the signed contract from your dashboard.</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
@@ -434,7 +434,7 @@ You can easily make your payment through your customer portal using our secure p
 If you have any questions about your payment, please contact ${bakerName} directly.
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #f59e0b;">Payment Reminder 💳</h2>
 <p>Hi <strong>${customerName}</strong>,</p>
@@ -448,7 +448,7 @@ Bakewise Team`,
 
 <p>If you have any questions about your payment, please contact <strong>${bakerName}</strong> directly.</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
@@ -467,7 +467,7 @@ Payment Details:
 Thank you for your payment. ${bakerName} will be notified and will contact you regarding next steps.
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #10b981;">Payment Confirmed! ✅</h2>
 <p>Hi <strong>${customerName}</strong>,</p>
@@ -485,7 +485,7 @@ Bakewise Team`,
 
 <p>Thank you for your payment. <strong>${bakerName}</strong> will be notified and will contact you regarding next steps.</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
@@ -507,7 +507,7 @@ Consider reaching out to:
 Consistent follow-up helps convert inquiries into bookings!
 
 Best regards,
-Bakewise Team`,
+BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 <h2 style="color: #f59e0b;">Follow-up Reminder 📞</h2>
 <p>Hi <strong>${bakerName}</strong>,</p>
@@ -529,16 +529,16 @@ Bakewise Team`,
 
 <p>Consistent follow-up helps convert inquiries into bookings!</p>
 
-<p>Best regards,<br><strong>Bakewise Team</strong></p>
+<p>Best regards,<br><strong>BakerIQ Team</strong></p>
 </div>`
   }),
 
   // Trial and Subscription Lifecycle Email Templates
   trialWelcome: (bakerName: string, trialEndDate: string) => ({
-    subject: `🎉 Welcome to Bakewise! Your 14-day trial has started`,
+    subject: `🎉 Welcome to BakerIQ! Your 14-day trial has started`,
     htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #fef7f0 0%, #fdf2f8 100%); border-radius: 12px; overflow: hidden;">
 <div style="background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); padding: 40px 30px; text-align: center;">
-  <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to Bakewise! 🎂</h1>
+  <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to BakerIQ! 🎂</h1>
   <p style="color: #fef7f0; margin: 10px 0 0 0; font-size: 18px;">Your premium trial is now active</p>
 </div>
 
@@ -546,7 +546,7 @@ Bakewise Team`,
   <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
   
   <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-    Welcome to Bakewise! We're thrilled to have you join our community of successful cake decorators and bakeries. Your <strong>14-day premium trial</strong> has started, giving you full access to all our powerful tools.
+    Welcome to BakerIQ! We're thrilled to have you join our community of successful cake decorators and bakeries. Your <strong>14-day premium trial</strong> has started, giving you full access to all our powerful tools.
   </p>
 
   <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
@@ -572,17 +572,17 @@ Bakewise Team`,
   </div>
 
   <div style="text-align: center; margin: 40px 0;">
-    <a href="https://bakewise.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+    <a href="https://bakeriq.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
       Start Building Your Business →
     </a>
   </div>
 
   <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
-    Need help getting started? Reply to this email or check out our <a href="https://bakewise.app/help" style="color: #f97316;">getting started guide</a>.
+    Need help getting started? Reply to this email or check out our <a href="https://bakeriq.app/help" style="color: #f97316;">getting started guide</a>.
   </p>
 </div>
 </div>`,
-    textPart: `Welcome to Bakewise, ${bakerName}! Your 14-day premium trial has started and expires on ${new Date(trialEndDate).toLocaleDateString()}. During your trial, you have access to unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Get started at https://bakewise.app/dashboard`
+    textPart: `Welcome to BakerIQ, ${bakerName}! Your 14-day premium trial has started and expires on ${new Date(trialEndDate).toLocaleDateString()}. During your trial, you have access to unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Get started at https://bakeriq.app/dashboard`
   }),
 
   trialExpirationWarning: (bakerName: string, daysLeft: number, trialEndDate: string) => {
@@ -604,9 +604,9 @@ Bakewise Team`,
   
   <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 20px; margin: 20px 0; border-radius: 8px;">
     <p style="color: #991b1b; margin: 0; font-size: 16px; text-align: center; font-weight: 600;">
-      ${daysLeft === 0 ? 'Your Bakewise trial expires today!' : 
-        daysLeft === 1 ? 'Your Bakewise trial expires tomorrow!' : 
-        `Your Bakewise trial expires in ${daysLeft} days`}
+      ${daysLeft === 0 ? 'Your BakerIQ trial expires today!' : 
+        daysLeft === 1 ? 'Your BakerIQ trial expires tomorrow!' : 
+        `Your BakerIQ trial expires in ${daysLeft} days`}
     </p>
     <p style="color: #7f1d1d; margin: 10px 0 0 0; font-size: 14px; text-align: center;">
       Trial ends: ${new Date(trialEndDate).toLocaleDateString('en-US', { 
@@ -621,26 +621,26 @@ Bakewise Team`,
   <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 20px 0;">
     ${daysLeft === 0 ? 
       'Don\'t lose access to your premium features! Upgrade now to continue growing your cake business with unlimited leads, advanced analytics, and priority support.' :
-      `We hope you\'re loving Bakewise! To continue using all premium features like unlimited leads, advanced analytics, and custom branding, upgrade before your trial expires.`}
+      `We hope you\'re loving BakerIQ! To continue using all premium features like unlimited leads, advanced analytics, and custom branding, upgrade before your trial expires.`}
   </p>
 
   <div style="text-align: center; margin: 30px 0;">
-    <a href="https://bakewise.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
+    <a href="https://bakeriq.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
       Upgrade Now →
     </a>
   </div>
 
   <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
-    Questions? Reply to this email or visit our <a href="https://bakewise.app/help" style="color: #f97316;">help center</a>.
+    Questions? Reply to this email or visit our <a href="https://bakeriq.app/help" style="color: #f97316;">help center</a>.
   </p>
 </div>
 </div>`,
-      textPart: `Hi ${bakerName}, your Bakewise trial ${daysLeft === 0 ? 'expires today' : `expires in ${daysLeft} days`} on ${new Date(trialEndDate).toLocaleDateString()}. Upgrade now at https://bakewise.app/billing to continue using premium features.`
+      textPart: `Hi ${bakerName}, your BakerIQ trial ${daysLeft === 0 ? 'expires today' : `expires in ${daysLeft} days`} on ${new Date(trialEndDate).toLocaleDateString()}. Upgrade now at https://bakeriq.app/billing to continue using premium features.`
     };
   },
 
   trialExpired: (bakerName: string) => ({
-    subject: `😟 Your Bakewise trial has expired - Upgrade to continue`,
+    subject: `😟 Your BakerIQ trial has expired - Upgrade to continue`,
     htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
 <div style="background: #dc2626; padding: 30px; text-align: center;">
   <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">
@@ -652,7 +652,7 @@ Bakewise Team`,
   <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${bakerName},</p>
   
   <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-    Your Bakewise premium trial has expired, but don't worry - your account is still active! However, you now have limited access to premium features.
+    Your BakerIQ premium trial has expired, but don't worry - your account is still active! However, you now have limited access to premium features.
   </p>
 
   <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 20px; margin: 20px 0; border-radius: 8px;">
@@ -677,17 +677,17 @@ Bakewise Team`,
   </div>
 
   <div style="text-align: center; margin: 30px 0;">
-    <a href="https://bakewise.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+    <a href="https://bakeriq.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
       Upgrade Now - Starting at $29/month →
     </a>
   </div>
 
   <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
-    Still have questions? <a href="https://bakewise.app/contact" style="color: #f97316;">Contact our team</a> - we're here to help!
+    Still have questions? <a href="https://bakeriq.app/contact" style="color: #f97316;">Contact our team</a> - we're here to help!
   </p>
 </div>
 </div>`,
-    textPart: `Hi ${bakerName}, your Bakewise trial has expired. You now have limited access to features. Upgrade at https://bakewise.app/billing starting at $29/month to unlock unlimited leads, portfolio images, advanced analytics, and more.`
+    textPart: `Hi ${bakerName}, your BakerIQ trial has expired. You now have limited access to features. Upgrade at https://bakeriq.app/billing starting at $29/month to unlock unlimited leads, portfolio images, advanced analytics, and more.`
   }),
 
   subscriptionSuccess: (bakerName: string, planName: string) => ({
@@ -717,24 +717,24 @@ Bakewise Team`,
   </div>
 
   <div style="text-align: center; margin: 40px 0;">
-    <a href="https://bakewise.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+    <a href="https://bakeriq.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
       Access Your Dashboard →
     </a>
   </div>
 
   <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
-    Thank you for choosing Bakewise! We're excited to help you grow your business.
+    Thank you for choosing BakerIQ! We're excited to help you grow your business.
   </p>
 </div>
 </div>`,
-    textPart: `Hi ${bakerName}, congratulations! Your ${planName} subscription is now active with unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Access your dashboard at https://bakewise.app/dashboard`
+    textPart: `Hi ${bakerName}, congratulations! Your ${planName} subscription is now active with unlimited leads, advanced analytics, unlimited portfolio images, custom branding, and priority support. Access your dashboard at https://bakeriq.app/dashboard`
   }),
 
   superAdminPasswordReset: (resetUrl: string) => ({
-    subject: 'Reset your Bakewise Super Admin password',
+    subject: 'Reset your BakerIQ Super Admin password',
     textPart: `Password Reset Request
 
-You have requested to reset your Bakewise Super Admin password.
+You have requested to reset your BakerIQ Super Admin password.
 
 Click here to reset your password: ${resetUrl}
 
@@ -748,14 +748,14 @@ For security reasons:
 • You must set a new password immediately after clicking the link
 
 Best regards,
-The Bakewise Security Team`,
+The BakerIQ Security Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
 <h1 style="color: #7c2d12; margin: 0;">🔐 Password Reset Request</h1>
 </div>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">
-You have requested to reset your <strong>Bakewise Super Admin</strong> password.
+You have requested to reset your <strong>BakerIQ Super Admin</strong> password.
 </p>
 
 <div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
@@ -790,17 +790,17 @@ If the button doesn't work, you can copy and paste this link into your browser:<
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Security Team</strong>
+<strong>The BakerIQ Security Team</strong>
 </p>
 </div>`
   }),
 
   // Seven-Day Onboarding Email Sequence
   onboardingDay1: (name: string, dashboardUrl: string) => ({
-    subject: '🎂 Complete your bakery profile - Day 1 with Bakewise',
+    subject: '🎂 Complete your bakery profile - Day 1 with BakerIQ',
     textPart: `Hi ${name},
 
-Welcome to Day 1 of your Bakewise journey! 
+Welcome to Day 1 of your BakerIQ journey! 
 
 Let's get your bakery profile set up so customers can find and connect with you.
 
@@ -815,7 +815,7 @@ Complete your profile: ${dashboardUrl}
 Tomorrow we'll help you set up your pricing and specialties.
 
 Best regards,
-The Bakewise Team`,
+The BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
 <h1 style="color: #7c2d12; margin: 0;">Day 1: Complete Your Profile 🎂</h1>
@@ -824,7 +824,7 @@ The Bakewise Team`,
 <p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">
-Welcome to Day 1 of your Bakewise journey! Let's get your bakery profile set up so customers can find and connect with you.
+Welcome to Day 1 of your BakerIQ journey! Let's get your bakery profile set up so customers can find and connect with you.
 </p>
 
 <div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
@@ -849,13 +849,13 @@ Complete Your Profile
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Team</strong>
+<strong>The BakerIQ Team</strong>
 </p>
 </div>`
   }),
 
   onboardingDay2: (name: string, dashboardUrl: string) => ({
-    subject: '💰 Set up your pricing strategy - Day 2 with Bakewise',
+    subject: '💰 Set up your pricing strategy - Day 2 with BakerIQ',
     textPart: `Hi ${name},
 
 Day 2: Let's set up your pricing and specialties!
@@ -871,7 +871,7 @@ Set up pricing: ${dashboardUrl}
 This helps customers get accurate quotes and shows your expertise.
 
 Best regards,
-The Bakewise Team`,
+The BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
 <h1 style="color: #7c2d12; margin: 0;">Day 2: Pricing & Specialties 💰</h1>
@@ -905,13 +905,13 @@ Configure Pricing
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Team</strong>
+<strong>The BakerIQ Team</strong>
 </p>
 </div>`
   }),
 
   onboardingDay3: (name: string, dashboardUrl: string) => ({
-    subject: '📸 Showcase your work - Day 3 with Bakewise',
+    subject: '📸 Showcase your work - Day 3 with BakerIQ',
     textPart: `Hi ${name},
 
 Day 3: Time to showcase your beautiful work!
@@ -927,7 +927,7 @@ Upload photos: ${dashboardUrl}
 Great photos are your best marketing tool - they sell your services before you even talk to the customer!
 
 Best regards,
-The Bakewise Team`,
+The BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
 <h1 style="color: #7c2d12; margin: 0;">Day 3: Showcase Your Work 📸</h1>
@@ -961,16 +961,16 @@ Upload Photos
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Team</strong>
+<strong>The BakerIQ Team</strong>
 </p>
 </div>`
   }),
 
   onboardingDay7: (name: string, dashboardUrl: string, supportUrl: string) => ({
-    subject: '🎉 You made it! Welcome to the Bakewise community',
+    subject: '🎉 You made it! Welcome to the BakerIQ community',
     textPart: `Hi ${name},
 
-Congratulations! You've completed your 7-day Bakewise setup journey! 🎉
+Congratulations! You've completed your 7-day BakerIQ setup journey! 🎉
 
 You're now ready to:
 • Receive and manage customer inquiries
@@ -984,7 +984,7 @@ Need help? Contact us: ${supportUrl}
 Here's to your sweet success!
 
 Best regards,
-The Bakewise Team`,
+The BakerIQ Team`,
     htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 <div style="text-align: center; margin-bottom: 30px;">
 <h1 style="color: #7c2d12; margin: 0;">Welcome to the Community! 🎉</h1>
@@ -993,7 +993,7 @@ The Bakewise Team`,
 <p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${name}</strong>,</p>
 
 <p style="font-size: 16px; line-height: 1.5; color: #333;">
-Congratulations! You've completed your 7-day Bakewise setup journey! You're now fully equipped to grow your bakery business.
+Congratulations! You've completed your 7-day BakerIQ setup journey! You're now fully equipped to grow your bakery business.
 </p>
 
 <div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #f97316;">
@@ -1021,7 +1021,7 @@ Here's to your sweet success! 🎂
 
 <p style="font-size: 14px; color: #666;">
 Best regards,<br>
-<strong>The Bakewise Team</strong>
+<strong>The BakerIQ Team</strong>
 </p>
 </div>`
   })

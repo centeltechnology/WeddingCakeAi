@@ -11,8 +11,8 @@ export default function Help() {
   return (
     <div className="min-h-screen bg-white dark:bg-black flex flex-col">
       <SEOHead 
-        title="Help Center - Bakewise Support"
-        description="Find answers to common questions, get support, and learn how to maximize your bakery business with Bakewise platform features."
+        title="Help Center - BakerIQ Support"
+        description="Find answers to common questions, get support, and learn how to maximize your bakery business with BakerIQ platform features."
       />
       
       <NavigationHeader />
@@ -26,7 +26,7 @@ export default function Help() {
             </div>
             <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6" data-testid="text-help-center">Help Center</h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Find answers to common questions and get support for your Bakewise experience
+              Find answers to common questions and get support for your BakerIQ experience
             </p>
             
             {/* Search Bar */}
@@ -54,7 +54,7 @@ export default function Help() {
                 <Button 
                   className="bg-orange-500 hover:bg-orange-600 text-white" 
                   data-testid="button-contact-support"
-                  onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Bakewise Support Request'}
+                  onClick={() => window.location.href = 'mailto:support@bakeriq.app?subject=BakerIQ Support Request'}
                 >
                   Send Message
                 </Button>
@@ -97,7 +97,7 @@ export default function Help() {
                   variant="outline" 
                   className="border-2 border-orange-500 text-orange-500 hover:bg-orange-50" 
                   data-testid="button-account-help"
-                  onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Account Help Request&body=Please describe your account issue:'}
+                  onClick={() => window.location.href = 'mailto:support@bakeriq.app?subject=Account Help Request&body=Please describe your account issue:'}
                 >
                   Get Help
                 </Button>
@@ -121,7 +121,7 @@ export default function Help() {
                     <Card className="border-2 border-gray-200 dark:border-gray-700 hover:border-orange-200 hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-gray-900" data-testid="link-topic-subdomain-setup">
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Setting Up Your Subdomain</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Learn how to claim your professional bakewiseapp.com subdomain</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Learn how to claim your professional bakeriq.app subdomain</p>
                       </CardContent>
                     </Card>
                   </Link>
@@ -341,7 +341,7 @@ export default function Help() {
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">How do I get started on Bakewise?</h3>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">How do I get started on BakerIQ?</h3>
                 <p className="text-gray-600 dark:text-gray-300">
                   Simply sign up for an account and choose whether you're a baker looking to grow your business or a customer seeking the perfect cake. Our onboarding process will guide you through setup.
                 </p>
@@ -374,14 +374,14 @@ export default function Help() {
           <div className="mt-16 text-center">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Still Need Help?</h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Our support team is here to help you succeed on Bakewise
+              Our support team is here to help you succeed on BakerIQ
             </p>
             <div className="flex justify-center">
               <Button 
                 size="lg" 
                 className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg" 
                 data-testid="button-email-support"
-                onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Support Request&body=Hi Bakewise Team,%0A%0APlease describe how we can help you:'}
+                onClick={() => window.location.href = 'mailto:support@bakeriq.app?subject=Support Request&body=Hi BakerIQ Team,%0A%0APlease describe how we can help you:'}
               >
                 Email Support
               </Button>

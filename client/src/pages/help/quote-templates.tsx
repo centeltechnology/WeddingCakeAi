@@ -255,7 +255,7 @@ export default function QuoteTemplates() {
             <p className="text-gray-600 mb-4">Need help setting up your quote templates?</p>
             <Button 
               className="bg-pink-600 hover:bg-pink-700"
-              onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Quote Template Help'}
+              onClick={() => window.location.href = 'mailto:support@bakeriq.app?subject=Quote Template Help'}
               data-testid="button-contact-template-support"
             >
               Contact Support

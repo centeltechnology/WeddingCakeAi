@@ -332,7 +332,7 @@ export default function ReviewsAndFeedback() {
                         </div>
                         <div className="border border-gray-200 p-3 rounded">
                           <h5 className="font-medium text-gray-800">User Experience</h5>
-                          <p className="text-sm text-gray-600">Share your overall experience using Bakewise</p>
+                          <p className="text-sm text-gray-600">Share your overall experience using BakerIQ</p>
                         </div>
                       </div>
                     </div>
@@ -361,7 +361,7 @@ export default function ReviewsAndFeedback() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-800">
                       <div>
                         <p className="font-medium">Email Support</p>
-                        <p>support@bakewiseapp.com</p>
+                        <p>support@bakeriq.app</p>
                       </div>
                       <div>
                         <p className="font-medium">In-App Feedback</p>

@@ -162,8 +162,8 @@ export function ResendVerificationEmail({
         </p>
         <p className="text-xs text-gray-500 mt-2">
           Still having trouble? Contact support at{' '}
-          <a href="mailto:support@bakewiseapp.com" className="text-rose-600 hover:underline">
-            support@bakewiseapp.com
+          <a href="mailto:support@bakeriq.app" className="text-rose-600 hover:underline">
+            support@bakeriq.app
           </a>
         </p>
       </div>

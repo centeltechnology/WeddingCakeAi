@@ -17,14 +17,14 @@ export default function AcceptableUse() {
               </p>
               
               <p className="text-gray-700 leading-relaxed">
-                This Acceptable Use Policy governs your use of Bakewise and outlines prohibited activities to ensure a safe, professional environment for all users.
+                This Acceptable Use Policy governs your use of BakerIQ and outlines prohibited activities to ensure a safe, professional environment for all users.
               </p>
             </div>
 
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Permitted Uses</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Bakewise is designed for legitimate business purposes:
+                BakerIQ is designed for legitimate business purposes:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Connecting customers with professional bakers</li>
@@ -99,7 +99,7 @@ export default function AcceptableUse() {
                 If you encounter violations of this policy, please report them immediately:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>Email: <a href="mailto:abuse@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">abuse@bakewiseapp.com</a></li>
+                <li>Email: <a href="mailto:abuse@bakeriq.app" className="text-pink-600 hover:text-pink-800">abuse@bakeriq.app</a></li>
                 <li>Use the "Report" function within the platform</li>
                 <li>Contact customer support for urgent safety concerns</li>
               </ul>
@@ -122,7 +122,7 @@ export default function AcceptableUse() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Appeals Process</h2>
               <p className="text-gray-700 leading-relaxed">
-                If you believe enforcement action was taken in error, you may appeal by emailing <a href="mailto:appeals@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">appeals@bakewiseapp.com</a> within 30 days of the action. Include relevant evidence and a detailed explanation.
+                If you believe enforcement action was taken in error, you may appeal by emailing <a href="mailto:appeals@bakeriq.app" className="text-pink-600 hover:text-pink-800">appeals@bakeriq.app</a> within 30 days of the action. Include relevant evidence and a detailed explanation.
               </p>
             </section>
 
@@ -136,7 +136,7 @@ export default function AcceptableUse() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Contact Information</h2>
               <p className="text-gray-700 leading-relaxed">
-                Questions about this policy? Contact us at <a href="mailto:legal@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">legal@bakewiseapp.com</a>.
+                Questions about this policy? Contact us at <a href="mailto:legal@bakeriq.app" className="text-pink-600 hover:text-pink-800">legal@bakeriq.app</a>.
               </p>
             </section>
           </div>

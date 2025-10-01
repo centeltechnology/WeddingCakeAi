@@ -1,4 +1,4 @@
-// Bakewise PWA Service Worker
+// BakerIQ PWA Service Worker
 const CACHE_VERSION = 'v1.1.0';
 const STATIC_CACHE = `bakewise-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `bakewise-dynamic-${CACHE_VERSION}`;
@@ -26,27 +26,27 @@ const shouldBypass = (url) => {
 
 // Install event - cache core assets
 self.addEventListener('install', (event) => {
-  console.log('Bakewise SW: Installing...');
+  console.log('BakerIQ SW: Installing...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('Bakewise SW: Caching core assets');
+        console.log('BakerIQ SW: Caching core assets');
         return cache.addAll(CORE_ASSETS);
       })
       .then(() => {
-        console.log('Bakewise SW: Core assets cached');
+        console.log('BakerIQ SW: Core assets cached');
         self.skipWaiting();
       })
       .catch((error) => {
-        console.error('Bakewise SW: Error caching core assets:', error);
+        console.error('BakerIQ SW: Error caching core assets:', error);
       })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Bakewise SW: Activating...');
+  console.log('BakerIQ SW: Activating...');
   
   event.waitUntil(
     caches.keys()
@@ -54,14 +54,14 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-              console.log('Bakewise SW: Deleting old cache:', cacheName);
+              console.log('BakerIQ SW: Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(() => {
-        console.log('Bakewise SW: Activated');
+        console.log('BakerIQ SW: Activated');
         self.clients.claim();
       })
   );
@@ -79,7 +79,7 @@ self.addEventListener('fetch', (event) => {
 
   // Bypass service worker for development and API requests
   if (shouldBypass(url)) {
-    console.log('Bakewise SW: Bypassing SW for:', url.pathname);
+    console.log('BakerIQ SW: Bypassing SW for:', url.pathname);
     return; // Let the request go directly to network
   }
 
@@ -118,7 +118,7 @@ async function handleApiRequest(request) {
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('Bakewise SW: Serving API from cache:', url.pathname);
+      console.log('BakerIQ SW: Serving API from cache:', url.pathname);
       
       // Fetch in background to update cache
       fetch(request).then(response => {
@@ -142,7 +142,7 @@ async function handleApiRequest(request) {
     return response;
     
   } catch (error) {
-    console.log('Bakewise SW: Network failed, checking cache for:', url.pathname);
+    console.log('BakerIQ SW: Network failed, checking cache for:', url.pathname);
     
     const cache = await caches.open(DYNAMIC_CACHE);
     const cachedResponse = await cache.match(request);
@@ -164,7 +164,7 @@ async function handleApiRequest(request) {
 // Handle navigation requests (pages) - ALWAYS network-first, never cache index.html
 async function handleNavigationRequest(request) {
   try {
-    console.log('Bakewise SW: Network-first navigation request:', request.url);
+    console.log('BakerIQ SW: Network-first navigation request:', request.url);
     // Always try network first for navigation to ensure fresh app shell
     const response = await fetch(request);
     
@@ -177,7 +177,7 @@ async function handleNavigationRequest(request) {
     throw new Error('Network response not ok');
     
   } catch (error) {
-    console.log('Bakewise SW: Network failed for navigation, checking offline status');
+    console.log('BakerIQ SW: Network failed for navigation, checking offline status');
     
     // Only serve offline fallback if truly offline
     if (!navigator.onLine) {
@@ -185,7 +185,7 @@ async function handleNavigationRequest(request) {
       const offlinePage = await cache.match('/offline.html');
       
       if (offlinePage) {
-        console.log('Bakewise SW: Serving offline fallback');
+        console.log('BakerIQ SW: Serving offline fallback');
         return offlinePage;
       }
     }
@@ -223,7 +223,7 @@ async function handleStaticRequest(request) {
 
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
-  console.log('Bakewise SW: Background sync triggered:', event.tag);
+  console.log('BakerIQ SW: Background sync triggered:', event.tag);
   
   if (event.tag === 'sync-quotes') {
     event.waitUntil(syncOfflineQuotes());
@@ -252,12 +252,12 @@ async function syncOfflineQuotes() {
         await removeOfflineQuote(quote.tempId);
         
       } catch (error) {
-        console.error('Bakewise SW: Failed to sync quote:', error);
+        console.error('BakerIQ SW: Failed to sync quote:', error);
       }
     }
     
   } catch (error) {
-    console.error('Bakewise SW: Background sync failed:', error);
+    console.error('BakerIQ SW: Background sync failed:', error);
   }
 }
 
@@ -277,12 +277,12 @@ async function syncOfflineCustomers() {
         await removeOfflineCustomer(customer.tempId);
         
       } catch (error) {
-        console.error('Bakewise SW: Failed to sync customer:', error);
+        console.error('BakerIQ SW: Failed to sync customer:', error);
       }
     }
     
   } catch (error) {
-    console.error('Bakewise SW: Background sync failed:', error);
+    console.error('BakerIQ SW: Background sync failed:', error);
   }
 }
 
@@ -307,10 +307,10 @@ async function removeOfflineCustomer(tempId) {
 
 // Push notification handling for real-time updates
 self.addEventListener('push', (event) => {
-  console.log('Bakewise SW: Push notification received');
+  console.log('BakerIQ SW: Push notification received');
   
   const options = {
-    title: 'Bakewise',
+    title: 'BakerIQ',
     body: 'You have new activity in your bakery dashboard',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
@@ -337,7 +337,7 @@ self.addEventListener('push', (event) => {
       options.body = payload.body || options.body;
       options.data.url = payload.url || options.data.url;
     } catch (error) {
-      console.error('Bakewise SW: Error parsing push data:', error);
+      console.error('BakerIQ SW: Error parsing push data:', error);
     }
   }
   
@@ -371,4 +371,4 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-console.log('Bakewise SW: Service Worker loaded successfully');
+console.log('BakerIQ SW: Service Worker loaded successfully');

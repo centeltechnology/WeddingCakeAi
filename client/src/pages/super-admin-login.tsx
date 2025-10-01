@@ -53,7 +53,7 @@ export default function SuperAdminLogin() {
         
         toast({
           title: "Login successful",
-          description: "Welcome to the Bakewise Super Admin Dashboard",
+          description: "Welcome to the BakerIQ Super Admin Dashboard",
         });
 
         // Redirect to super admin dashboard
@@ -80,7 +80,7 @@ export default function SuperAdminLogin() {
             </div>
           </div>
           <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-            Bakewise
+            BakerIQ
           </h1>
           <p className="text-gray-600 mt-2">Super Admin Portal</p>
         </div>
@@ -186,7 +186,7 @@ export default function SuperAdminLogin() {
             </div>
 
             <div className="text-center text-sm text-gray-500">
-              <p>Secure admin access to Bakewise platform</p>
+              <p>Secure admin access to BakerIQ platform</p>
             </div>
           </CardContent>
         </Card>

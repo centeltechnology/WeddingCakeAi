@@ -2198,11 +2198,11 @@ export function SuperAdminDashboard({ className }: SuperAdminDashboardProps) {
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Platform Name</Label>
-                      <Input defaultValue="Bakewise" data-testid="input-platform-name" />
+                      <Input defaultValue="BakerIQ" data-testid="input-platform-name" />
                     </div>
                     <div className="space-y-2">
                       <Label>Support Email</Label>
-                      <Input defaultValue="support@bakewiseapp.com" data-testid="input-support-email" />
+                      <Input defaultValue="support@bakeriq.app" data-testid="input-support-email" />
                     </div>
                     <div className="space-y-2">
                       <Label>Max Users per Tenant</Label>

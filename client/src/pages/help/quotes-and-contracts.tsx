@@ -141,7 +141,7 @@ export default function QuotesAndContracts() {
                       <h4 className="font-semibold text-blue-900 mb-2">Your Protection</h4>
                       <p className="text-sm text-blue-800">
                         All contracts include buyer protection guarantees. If your baker fails to deliver as promised, 
-                        Bakewise will work to find a replacement or provide a full refund according to our service guarantee.
+                        BakerIQ will work to find a replacement or provide a full refund according to our service guarantee.
                       </p>
                     </div>
                   </div>

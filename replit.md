@@ -1,8 +1,10 @@
-# Wedding Cake Calculator
+# BakerIQ
 
 ## Overview
 
-A comprehensive web application designed for wedding cake pricing and baker discovery. The platform enables couples to calculate custom cake costs, maintain detailed wedding profiles, and connect with local bakers. Built as a full-stack TypeScript application with modern React frontend and Express backend, featuring real-time pricing calculations, baker search functionality, and PDF estimate generation.
+A professional SaaS business platform for bakeries featuring modern design with clean white backgrounds, orange accent colors (#f97316), and comprehensive dark mode support. The platform emphasizes software business management capabilities including CRM, quotes, contracts, payments, and email automation features with streamlined baker-centric navigation.
+
+**Domain**: bakeriq.app
 
 ## User Preferences
 

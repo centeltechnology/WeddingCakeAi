@@ -25,8 +25,8 @@ export class EmailAutomationService {
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewiseapp.com',
-        fromName: 'Bakewise Team',
+        from: 'noreply@bakeriq.app',
+        fromName: 'BakerIQ Team',
         subject: template.subject,
         htmlPart: template.htmlPart,
         textPart: template.textPart
@@ -89,8 +89,8 @@ export class EmailAutomationService {
         const success = await sendEmail({
           to: baker.email,
           toName: baker.name,
-          from: 'noreply@bakewiseapp.com',
-          fromName: 'Bakewise Team',
+          from: 'noreply@bakeriq.app',
+          fromName: 'BakerIQ Team',
           subject: template.subject,
           htmlPart: template.htmlPart,
           textPart: template.textPart
@@ -142,8 +142,8 @@ export class EmailAutomationService {
         const success = await sendEmail({
           to: baker.email,
           toName: baker.name,
-          from: 'noreply@bakewiseapp.com',
-          fromName: 'Bakewise Team',
+          from: 'noreply@bakeriq.app',
+          fromName: 'BakerIQ Team',
           subject: template.subject,
           htmlPart: template.htmlPart,
           textPart: template.textPart
@@ -176,8 +176,8 @@ export class EmailAutomationService {
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewiseapp.com',
-        fromName: 'Bakewise Team',
+        from: 'noreply@bakeriq.app',
+        fromName: 'BakerIQ Team',
         subject: template.subject,
         htmlPart: template.htmlPart,
         textPart: template.textPart
@@ -255,7 +255,7 @@ export class EmailAutomationService {
   private static async sendDowngradeNotification(baker: any) {
     try {
       const template = {
-        subject: `Account Downgraded - You're still welcome at Bakewise`,
+        subject: `Account Downgraded - You're still welcome at BakerIQ`,
         htmlPart: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
 <div style="background: #6b7280; padding: 30px; text-align: center;">
   <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">
@@ -267,7 +267,7 @@ export class EmailAutomationService {
   <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hi ${baker.name},</p>
   
   <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-    Your trial has expired and your account has been moved to our free tier. Don't worry - you can still use Bakewise with some limitations.
+    Your trial has expired and your account has been moved to our free tier. Don't worry - you can still use BakerIQ with some limitations.
   </p>
 
   <div style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 20px; margin: 20px 0; border-radius: 8px;">
@@ -281,27 +281,27 @@ export class EmailAutomationService {
   </div>
 
   <div style="text-align: center; margin: 30px 0;">
-    <a href="https://bakewise.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
+    <a href="https://bakeriq.app/billing" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
       Upgrade Anytime →
     </a>
-    <a href="https://bakewise.app/dashboard" style="display: inline-block; background: transparent; color: #6b7280; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; border: 1px solid #d1d5db;">
+    <a href="https://bakeriq.app/dashboard" style="display: inline-block; background: transparent; color: #6b7280; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; border: 1px solid #d1d5db;">
       Continue with Free
     </a>
   </div>
 
   <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 30px 0 0 0;">
-    Ready to unlock premium features? <a href="https://bakewise.app/billing" style="color: #f97316;">Upgrade your plan</a> anytime.
+    Ready to unlock premium features? <a href="https://bakeriq.app/billing" style="color: #f97316;">Upgrade your plan</a> anytime.
   </p>
 </div>
 </div>`,
-        textPart: `Hi ${baker.name}, your trial has expired and your account has been moved to our free tier. You can still use Bakewise with 5 portfolio images, basic lead management, and essential analytics. Upgrade anytime at https://bakewise.app/billing`
+        textPart: `Hi ${baker.name}, your trial has expired and your account has been moved to our free tier. You can still use BakerIQ with 5 portfolio images, basic lead management, and essential analytics. Upgrade anytime at https://bakeriq.app/billing`
       };
 
       const success = await sendEmail({
         to: baker.email,
         toName: baker.name,
-        from: 'noreply@bakewiseapp.com',
-        fromName: 'Bakewise Team',
+        from: 'noreply@bakeriq.app',
+        fromName: 'BakerIQ Team',
         subject: template.subject,
         htmlPart: template.htmlPart,
         textPart: template.textPart
@@ -398,8 +398,8 @@ export class EmailAutomationService {
           // Interpolate template with user data
           const unsubscribeToken = enrollment.metadata?.unsubscribeToken || randomUUID();
           const interpolated = interpolateEmailTemplate(template, {
-            upgradeUrl: `https://bakewiseapp.com/pricing?utm_source=email&utm_campaign=free_to_paid&utm_content=step${nextStep}&token=${enrollment.id}`,
-            unsubscribeUrl: `https://bakewiseapp.com/unsubscribe?token=${unsubscribeToken}`,
+            upgradeUrl: `https://bakeriq.app/pricing?utm_source=email&utm_campaign=free_to_paid&utm_content=step${nextStep}&token=${enrollment.id}`,
+            unsubscribeUrl: `https://bakeriq.app/unsubscribe?token=${unsubscribeToken}`,
             userName: baker.name,
             bakeryName: baker.name
           });
@@ -408,8 +408,8 @@ export class EmailAutomationService {
           const success = await sendEmail({
             to: baker.email,
             toName: baker.name,
-            from: 'noreply@bakewiseapp.com',
-            fromName: 'Bakewise Team',
+            from: 'noreply@bakeriq.app',
+            fromName: 'BakerIQ Team',
             subject: interpolated.subject,
             htmlPart: interpolated.body,
             textPart: this.htmlToText(interpolated.body)

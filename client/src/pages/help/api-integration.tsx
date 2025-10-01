@@ -26,7 +26,7 @@ export default function ApiIntegration() {
               <Code className="h-10 w-10 text-purple-600" />
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">API & Third-party Integrations</h1>
-            <p className="text-lg text-gray-600">Connect Bakewise with your existing tools and workflows</p>
+            <p className="text-lg text-gray-600">Connect BakerIQ with your existing tools and workflows</p>
           </div>
 
           <div className="space-y-8">

@@ -71,7 +71,7 @@ export default function About() {
                   that's as beautiful and intuitive as their work.
                 </p>
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  That's why we built Bakewise - to eliminate the business complexity and let you 
+                  That's why we built BakerIQ - to eliminate the business complexity and let you 
                   focus on what you do best: creating unforgettable cakes and experiences.
                 </p>
               </CardContent>

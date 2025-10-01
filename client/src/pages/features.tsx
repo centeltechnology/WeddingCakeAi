@@ -24,7 +24,7 @@ export default function Features() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Features - Bakewise SaaS Platform for Bakeries"
+        title="Features - BakerIQ SaaS Platform for Bakeries"
         description="Powerful SaaS tools for bakery businesses. Manage customers, create quotes, process payments, and grow your bakery business efficiently."
       />
       
@@ -296,7 +296,7 @@ export default function Features() {
                 Get Your Professional Website Instantly
               </h2>
               <p className="text-xl text-gray-600 mb-6">
-                Every Bakewise account includes a beautiful, professional website that generates 
+                Every BakerIQ account includes a beautiful, professional website that generates 
                 leads for your bakery business 24/7.
               </p>
               <div className="space-y-4 mb-8">

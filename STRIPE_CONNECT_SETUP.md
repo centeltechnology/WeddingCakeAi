@@ -9,14 +9,14 @@ The "Platform Configuration Required" error means your Stripe Connect platform n
 2. Click "Settings" → "Connect Platform Profile"
 3. Fill in all required fields:
    - Business name: "Bakewise"
-   - Business website: "https://bakewiseapp.com"
+   - Business website: "https://bakeriq.app"
    - Business description: "Wedding cake marketplace platform"
    - Support email and phone
    - Business address
 
 ### 2. Configure Webhook Endpoints
 1. Go to [Stripe Webhooks](https://dashboard.stripe.com/webhooks)
-2. Add endpoint: `https://bakewiseapp.com/webhooks/stripe`
+2. Add endpoint: `https://bakeriq.app/webhooks/stripe`
 3. Select events:
    - `payment_intent.succeeded`
    - `account.updated`
@@ -24,8 +24,8 @@ The "Platform Configuration Required" error means your Stripe Connect platform n
 
 ### 3. Set Redirect URLs
 1. In Connect settings, add:
-   - **Redirect URI**: `https://bakewiseapp.com/baker-dashboard`
-   - **Refresh URL**: `https://bakewiseapp.com/baker-dashboard?refresh=true`
+   - **Redirect URI**: `https://bakeriq.app/baker-dashboard`
+   - **Refresh URL**: `https://bakeriq.app/baker-dashboard?refresh=true`
 
 ### 4. Enable Express Accounts
 1. Go to Connect → Settings

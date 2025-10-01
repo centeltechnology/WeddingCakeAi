@@ -38,7 +38,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead 
-        title="Calculator Settings - Bakewise"
+        title="Calculator Settings - BakerIQ"
         description="Customize your calculator themes and appearance settings"
       />
       <NavigationHeader />

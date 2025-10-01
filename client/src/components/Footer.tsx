@@ -13,7 +13,7 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <h3 className="text-lg font-serif font-bold text-gray-900">
-              {tenant?.name || 'Bakewise'}
+              {tenant?.name || 'BakerIQ'}
             </h3>
             <p className="text-sm text-gray-600">
               Professional cake ordering and baker management platform. 
@@ -53,7 +53,7 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@bakewiseapp.com" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-contact">
+                <a href="mailto:support@bakeriq.app" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-contact">
                   Contact Support
                 </a>
               </li>
@@ -63,7 +63,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@bakewiseapp.com" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-business">
+                <a href="mailto:hello@bakeriq.app" className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer block py-1" data-testid="footer-business">
                   Business Inquiries
                 </a>
               </li>
@@ -103,7 +103,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-sm text-gray-600">
-            © {currentYear} {tenant?.name || 'Bakewise'}. All rights reserved.
+            © {currentYear} {tenant?.name || 'BakerIQ'}. All rights reserved.
           </div>
           
           <div className="flex items-center space-x-6 text-sm text-gray-600">

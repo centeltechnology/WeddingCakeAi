@@ -26,7 +26,7 @@ export default function DemoTenant() {
     root.style.setProperty('--accent', '340 65% 57%'); // Medium pink
     
     return () => {
-      // Reset to default Bakewise styling
+      // Reset to default BakerIQ styling
       root.style.setProperty('--primary', '14 88% 55%'); // Professional Orange
       root.style.setProperty('--secondary', '45 100% 85%'); // Light gold
       root.style.setProperty('--accent', '30 30% 45%'); // Brown
@@ -45,7 +45,7 @@ export default function DemoTenant() {
               <ChefHat className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-primary">Sweet Dreams Bakery</h1>
-                <p className="text-sm text-muted-foreground">Demo Baker Dashboard on Bakewise</p>
+                <p className="text-sm text-muted-foreground">Demo Baker Dashboard on BakerIQ</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -53,7 +53,7 @@ export default function DemoTenant() {
               <Button variant="outline" asChild size="sm">
                 <Link href="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Bakewise
+                  Back to BakerIQ
                 </Link>
               </Button>
             </div>
@@ -102,7 +102,7 @@ export default function DemoTenant() {
                   <span>Demo: Baker Business Dashboard</span>
                 </CardTitle>
                 <CardDescription>
-                  This is a live demo of Bakewise's business management tools for bakers.
+                  This is a live demo of BakerIQ's business management tools for bakers.
                   Click the tabs above to explore the CRM, quotes, contracts, and payment features.
                 </CardDescription>
               </CardHeader>
@@ -210,7 +210,7 @@ export default function DemoTenant() {
                   </p>
                   <div className="space-y-2 text-sm">
                     <div className="bg-muted p-2 rounded font-mono">
-                      sweetdreams.bakewiseapp.com
+                      sweetdreams.bakeriq.app
                     </div>
                     <div className="bg-muted p-2 rounded font-mono">
                       orders.sweetdreamsbakery.com

@@ -21,7 +21,7 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Pricing - Bakewise SaaS Platform for Bakeries"
+        title="Pricing - BakerIQ SaaS Platform for Bakeries"
         description="Simple, transparent pricing for bakery businesses. Free plan available. Professional at $19/mo and Plus at $39/mo with advanced features."
       />
       

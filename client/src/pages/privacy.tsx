@@ -17,7 +17,7 @@ export default function Privacy() {
               </p>
               
               <p className="text-gray-700 leading-relaxed">
-                This Privacy Policy describes how Bakewise collects, uses, and protects your personal information when you use our cake ordering and baker management platform.
+                This Privacy Policy describes how BakerIQ collects, uses, and protects your personal information when you use our cake ordering and baker management platform.
               </p>
             </div>
 
@@ -109,7 +109,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Contact Us</h2>
               <p className="text-gray-700 leading-relaxed">
-                For privacy-related questions or requests, contact us at <a href="mailto:privacy@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">privacy@bakewiseapp.com</a>.
+                For privacy-related questions or requests, contact us at <a href="mailto:privacy@bakeriq.app" className="text-pink-600 hover:text-pink-800">privacy@bakeriq.app</a>.
               </p>
             </section>
           </div>

@@ -24,7 +24,7 @@ export default function CustomCakeOrdering() {
           <div className="mb-8">
             <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">How to Order a Custom Cake</h1>
             <p className="text-xl text-gray-600">
-              Step-by-step guide to ordering your perfect custom cake through Bakewise
+              Step-by-step guide to ordering your perfect custom cake through BakerIQ
             </p>
           </div>
 
@@ -261,7 +261,7 @@ export default function CustomCakeOrdering() {
             <p className="text-gray-600 mb-4">Questions about ordering? We're here to help!</p>
             <Button 
               className="bg-pink-600 hover:bg-pink-700"
-              onClick={() => window.location.href = 'mailto:support@bakewiseapp.com?subject=Custom Cake Ordering Help'}
+              onClick={() => window.location.href = 'mailto:support@bakeriq.app?subject=Custom Cake Ordering Help'}
               data-testid="button-contact-ordering-support"
             >
               Contact Support

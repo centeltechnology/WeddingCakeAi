@@ -426,7 +426,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Bakewise</h1>
+                  <h1 className="text-xl font-bold text-gray-900">BakerIQ</h1>
                   <p className="text-sm text-gray-500">
                     {baker?.name || 'Baker Dashboard'}
                   </p>
@@ -1581,7 +1581,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 <CardHeader>
                   <h4 className="text-lg font-semibold text-blue-800 flex items-center">
                     <Globe className="w-5 h-5 mr-2" />
-                    Your Bakewise URL
+                    Your BakerIQ URL
                   </h4>
                   <p className="text-sm text-blue-600">Create your professional bakery URL</p>
                 </CardHeader>
@@ -1589,7 +1589,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-blue-800">Choose your URL slug (no spaces):</label>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">bakewiseapp.com/baker/</span>
+                      <span className="text-sm text-gray-600">bakeriq.app/baker/</span>
                       <Input 
                         placeholder="yourbakery" 
                         className="flex-1"
@@ -1598,7 +1598,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                         data-testid="input-subdomain"
                       />
                     </div>
-                    <p className="text-xs text-blue-600">Your professional URL: bakewiseapp.com/baker/{subdomainInput || 'yourbakery'}</p>
+                    <p className="text-xs text-blue-600">Your professional URL: bakeriq.app/baker/{subdomainInput || 'yourbakery'}</p>
                     <p className="text-xs text-orange-600 font-medium">⚠️ Use only lowercase letters, numbers, and hyphens. No spaces allowed!</p>
                   </div>
                   <Button 
@@ -1624,7 +1624,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                         <p className="font-medium text-green-800">Active URL</p>
                         <p className="text-sm text-green-600">
                           {domainConfig?.customDomain || 
-                           (domainConfig?.subdomain ? `bakewiseapp.com/baker/${domainConfig.subdomain}/calculator` : 
+                           (domainConfig?.subdomain ? `bakeriq.app/baker/${domainConfig.subdomain}/calculator` : 
                             'No URL configured')}
                         </p>
                       </div>

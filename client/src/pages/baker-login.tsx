@@ -105,8 +105,8 @@ export default function BakerLogin() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Baker Login - Bakewise SaaS Platform"
-        description="Sign in to your Bakewise baker account to access your business dashboard, manage customers, and grow your bakery business."
+        title="Baker Login - BakerIQ SaaS Platform"
+        description="Sign in to your BakerIQ baker account to access your business dashboard, manage customers, and grow your bakery business."
       />
       
       <NavigationHeader />
@@ -123,7 +123,7 @@ export default function BakerLogin() {
               Baker Login
             </h1>
             <p className="text-gray-600">
-              Access your Bakewise business dashboard
+              Access your BakerIQ business dashboard
             </p>
           </div>
 

@@ -138,7 +138,7 @@ function Router() {
         </SuperAdminAuthWrapper>
       )} />
       <Route path="/super-admin/reset-password" component={SuperAdminResetPassword} />
-      {/* Tenant-based calculator route (e.g. /baker/bakewise-test-2/calculator) */}
+      {/* Tenant-based calculator route (e.g. /baker/sweet-dreams-bakery/calculator) */}
       <Route path="/baker/:slug/calculator">
         {(params) => (
           <BakerSlugWrapper slug={params.slug}>

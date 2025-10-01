@@ -17,21 +17,21 @@ export default function Terms() {
               </p>
               
               <p className="text-gray-700 leading-relaxed">
-                Welcome to Bakewise. These Terms of Service ("Terms") govern your use of our platform that connects customers with professional bakers for custom cake orders and related services.
+                Welcome to BakerIQ. These Terms of Service ("Terms") govern your use of our platform that connects customers with professional bakers for custom cake orders and related services.
               </p>
             </div>
 
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-700 leading-relaxed">
-                By accessing or using Bakewise, you agree to be bound by these Terms. If you disagree with any part of these terms, you may not access the service.
+                By accessing or using BakerIQ, you agree to be bound by these Terms. If you disagree with any part of these terms, you may not access the service.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">2. Description of Service</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Bakewise is a marketplace platform that:
+                BakerIQ is a marketplace platform that:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Connects customers with professional bakers</li>
@@ -84,7 +84,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">6. Payments and Refunds</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Payment terms are established between customers and bakers. Bakewise facilitates secure payment processing but is not responsible for:
+                Payment terms are established between customers and bakers. BakerIQ facilitates secure payment processing but is not responsible for:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Disputes over order quality or specifications</li>
@@ -96,14 +96,14 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">7. Intellectual Property</h2>
               <p className="text-gray-700 leading-relaxed">
-                Bakewise retains ownership of our platform, design, and technology. Bakers retain rights to their original cake designs and recipes. Users grant us license to use submitted content for platform operation and marketing purposes.
+                BakerIQ retains ownership of our platform, design, and technology. Bakers retain rights to their original cake designs and recipes. Users grant us license to use submitted content for platform operation and marketing purposes.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">8. Limitation of Liability</h2>
               <p className="text-gray-700 leading-relaxed">
-                Bakewise serves as a marketplace platform. We are not liable for the quality, safety, or legality of items offered by bakers, or the ability of bakers to complete orders. Our liability is limited to the maximum extent permitted by law.
+                BakerIQ serves as a marketplace platform. We are not liable for the quality, safety, or legality of items offered by bakers, or the ability of bakers to complete orders. Our liability is limited to the maximum extent permitted by law.
               </p>
             </section>
 
@@ -117,7 +117,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">10. Contact Information</h2>
               <p className="text-gray-700 leading-relaxed">
-                For questions about these Terms, please contact us at <a href="mailto:legal@bakewiseapp.com" className="text-pink-600 hover:text-pink-800">legal@bakewiseapp.com</a>.
+                For questions about these Terms, please contact us at <a href="mailto:legal@bakeriq.app" className="text-pink-600 hover:text-pink-800">legal@bakeriq.app</a>.
               </p>
             </section>
           </div>

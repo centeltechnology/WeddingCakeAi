@@ -10,10 +10,10 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-  title = "Bakewise - Complete Business Management Platform for Cake Decorators & Bakeries",
-  description = "Streamline your cake decorating business with Bakewise's all-in-one platform. Features CRM, quote builder, AI cake calculator, payment processing, and digital contracts for bakeries and specialty dessert vendors.",
-  image = "/bakewise-og.png",
-  url = "https://bakewiseapp.com",
+  title = "BakerIQ - Complete Business Management Platform for Cake Decorators & Bakeries",
+  description = "Streamline your cake decorating business with BakerIQ's all-in-one platform. Features CRM, quote builder, AI cake calculator, payment processing, and digital contracts for bakeries and specialty dessert vendors.",
+  image = "/bakeriq-og.png",
+  url = "https://bakeriq.app",
   type = "website",
   keywords = "cake decorating business, bakery management software, cake pricing calculator, bakery CRM, custom cake quotes, wedding cake business, cake decorator tools, bakery payment processing"
 }: SEOHeadProps) {
@@ -40,7 +40,7 @@ export default function SEOHead({
     // Basic meta tags
     updateMetaTag('description', description);
     updateMetaTag('keywords', keywords);
-    updateMetaTag('author', 'Bakewise');
+    updateMetaTag('author', 'BakerIQ');
     updateMetaTag('robots', 'index, follow');
     updateMetaTag('viewport', 'width=device-width, initial-scale=1.0');
 
@@ -53,7 +53,7 @@ export default function SEOHead({
     updateMetaTag('og:image:type', 'image/png', 'property');
     updateMetaTag('og:url', url, 'property');
     updateMetaTag('og:type', type, 'property');
-    updateMetaTag('og:site_name', 'Bakewise', 'property');
+    updateMetaTag('og:site_name', 'BakerIQ', 'property');
     updateMetaTag('og:locale', 'en_US', 'property');
 
     // Twitter meta tags
@@ -66,13 +66,13 @@ export default function SEOHead({
     updateMetaTag('theme-color', '#f43f5e');
     updateMetaTag('apple-mobile-web-app-capable', 'yes');
     updateMetaTag('apple-mobile-web-app-status-bar-style', 'default');
-    updateMetaTag('apple-mobile-web-app-title', 'Bakewise');
+    updateMetaTag('apple-mobile-web-app-title', 'BakerIQ');
 
     // Structured data for rich snippets
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "Bakewise",
+      "name": "BakerIQ",
       "url": url,
       "description": description,
       "applicationCategory": "BusinessApplication",
@@ -97,12 +97,12 @@ export default function SEOHead({
       },
       "author": {
         "@type": "Organization",
-        "name": "Bakewise",
+        "name": "BakerIQ",
         "url": url
       },
       "provider": {
         "@type": "Organization",
-        "name": "Bakewise",
+        "name": "BakerIQ",
         "url": url
       }
     };

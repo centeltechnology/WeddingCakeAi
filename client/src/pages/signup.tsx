@@ -134,7 +134,7 @@ export default function Signup() {
         } else if (data.baker) {
           toast({
             title: "Account created successfully!",
-            description: "Welcome to Bakewise! Setting up your dashboard...",
+            description: "Welcome to BakerIQ! Setting up your dashboard...",
           });
           setLocation(`/baker/${data.baker.slug}/dashboard`);
         }
@@ -202,8 +202,8 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Sign Up - Bakewise SaaS Platform for Bakeries"
-        description="Join Bakewise and start growing your bakery business today. Professional tools for customer management, quotes, and marketplace visibility."
+        title="Sign Up - BakerIQ SaaS Platform for Bakeries"
+        description="Join BakerIQ and start growing your bakery business today. Professional tools for customer management, quotes, and marketplace visibility."
       />
       
       <NavigationHeader />
@@ -261,7 +261,7 @@ export default function Signup() {
               {currentStep === 3 && "Choose Your Plan"}
             </h2>
             <p className="text-gray-600">
-              {currentStep === 1 && "Create your Bakewise account"}
+              {currentStep === 1 && "Create your BakerIQ account"}
               {currentStep === 2 && "Tell us about your bakery"}
               {currentStep === 3 && "Select the perfect plan for your business"}
             </p>

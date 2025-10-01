@@ -26,7 +26,7 @@ export default function Notifications() {
               <Bell className="h-10 w-10 text-yellow-600" />
             </div>
             <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Notification Settings</h1>
-            <p className="text-lg text-gray-600">Manage how and when you receive updates from Bakewise</p>
+            <p className="text-lg text-gray-600">Manage how and when you receive updates from BakerIQ</p>
           </div>
 
           <div className="space-y-8">

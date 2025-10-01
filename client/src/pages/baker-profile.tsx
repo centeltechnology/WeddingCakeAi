@@ -48,7 +48,7 @@ export default function BakerProfile() {
                 <ChefHat className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Bakewise
+                BakerIQ
               </span>
             </div>
             <a 
@@ -100,7 +100,7 @@ export default function BakerProfile() {
                 <ChefHat className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Bakewise
+                BakerIQ
               </span>
             </div>
             <a 
@@ -142,7 +142,7 @@ export default function BakerProfile() {
               <ChefHat className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-serif font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Bakewise
+              BakerIQ
             </span>
           </div>
           <a 

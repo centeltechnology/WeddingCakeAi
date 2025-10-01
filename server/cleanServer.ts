@@ -46,9 +46,9 @@ app.use('*', (req, res) => {
   res.status(200).send(`
     <!DOCTYPE html>
     <html>
-    <head><title>Bakewise</title></head>
+    <head><title>BakerIQ</title></head>
     <body>
-      <h1>Bakewise Authentication Test</h1>
+      <h1>BakerIQ Authentication Test</h1>
       <p>Clean auth server is running. API routes are working.</p>
       <p>Current route: ${req.originalUrl}</p>
     </body>

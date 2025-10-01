@@ -13,8 +13,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="Bakewise - Smart Cake Pricing & Planning Made Simple"
-        description="Bakewise helps cake designers and bakeries price, plan, and scale their business with ease. Automate planning and client quotes."
+        title="BakerIQ - Smart Cake Pricing & Planning Made Simple"
+        description="BakerIQ helps cake designers and bakeries price, plan, and scale their business with ease. Automate planning and client quotes."
       />
       
       <NavigationHeader />
@@ -30,7 +30,7 @@ export default function Home() {
             </h1>
             
             <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
-              Bakewise helps cake designers and bakeries price, plan, and scale 
+              BakerIQ helps cake designers and bakeries price, plan, and scale 
               their business with ease.
             </p>
             
@@ -221,7 +221,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">What Bakers Say</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">Join hundreds of successful bakers growing their business with Bakewise</p>
+            <p className="text-xl text-gray-600 dark:text-gray-300">Join hundreds of successful bakers growing their business with BakerIQ</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -234,7 +234,7 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-gray-900 dark:text-white mb-4 italic">
-                  "Bakewise has completely transformed how we run our cake business. I'm booking 3x more orders and spending half the time on admin work!"
+                  "BakerIQ has completely transformed how we run our cake business. I'm booking 3x more orders and spending half the time on admin work!"
                 </p>
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">

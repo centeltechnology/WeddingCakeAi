@@ -93,7 +93,7 @@ export function StripeConnectOnboarding({ bakerId }: StripeConnectOnboardingProp
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => window.open('mailto:support@bakewiseapp.com?subject=Stripe Connect Setup Required', '_blank')}
+              onClick={() => window.open('mailto:support@bakeriq.app?subject=Stripe Connect Setup Required', '_blank')}
             >
               Contact Support
             </Button>
