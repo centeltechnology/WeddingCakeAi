@@ -26,6 +26,7 @@ import type { Customer } from '@shared/schema';
 
 interface CrmDashboardProps {
   bakerId: string;
+  onCreateQuote?: (customer: Customer) => void;
 }
 
 const statusColors = {
@@ -42,7 +43,7 @@ const priorityColors = {
   low: 'bg-gray-100 text-gray-800',
 };
 
-export function CrmDashboard({ bakerId }: CrmDashboardProps) {
+export function CrmDashboard({ bakerId, onCreateQuote }: CrmDashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [activeTab, setActiveTab] = useState('all');
@@ -297,6 +298,11 @@ export function CrmDashboard({ bakerId }: CrmDashboardProps) {
               <Button 
                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
                 data-testid="btn-create-quote"
+                onClick={() => {
+                  if (selectedCustomer && onCreateQuote) {
+                    onCreateQuote(selectedCustomer);
+                  }
+                }}
               >
                 Create Quote
               </Button>

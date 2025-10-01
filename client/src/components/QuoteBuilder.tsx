@@ -36,9 +36,11 @@ import { calculateAdvancedPrice } from '@/lib/advancedCalculator';
 
 interface QuoteBuilderProps {
   bakerId: string;
+  prefilledCustomer?: Customer | null;
+  onCustomerUsed?: () => void;
 }
 
-export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
+export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: QuoteBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('quotes');
@@ -180,6 +182,26 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       });
     }
   });
+
+  // Handle prefilled customer from CRM
+  useEffect(() => {
+    if (prefilledCustomer) {
+      setNewQuote(prev => ({
+        ...prev,
+        customerId: prefilledCustomer.id,
+        title: `${prefilledCustomer.eventType ? prefilledCustomer.eventType.charAt(0).toUpperCase() + prefilledCustomer.eventType.slice(1) : 'Event'} for ${prefilledCustomer.name}`,
+        eventDate: prefilledCustomer.eventDate || '',
+        guestCount: prefilledCustomer.guestCount || 100,
+        eventType: prefilledCustomer.eventType || 'wedding',
+        deliveryAddress: prefilledCustomer.venueAddress || prefilledCustomer.address || '',
+        customerNotes: '',
+      }));
+      setIsCreating(true);
+      if (onCustomerUsed) {
+        onCustomerUsed();
+      }
+    }
+  }, [prefilledCustomer, onCustomerUsed]);
 
   // Create quote mutation
   const createQuoteMutation = useMutation({

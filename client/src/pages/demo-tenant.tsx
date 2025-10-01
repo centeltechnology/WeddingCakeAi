@@ -15,6 +15,7 @@ import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserChe
 
 export default function DemoTenant() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [customerForQuote, setCustomerForQuote] = useState<any>(null);
   
   // Simulate tenant context for demo
   useEffect(() => {
@@ -242,12 +243,22 @@ export default function DemoTenant() {
 
           {/* CRM Tab - Live functional CRM */}
           <TabsContent value="crm" className="space-y-6">
-            <CrmDashboard bakerId="baker-1" />
+            <CrmDashboard 
+              bakerId="baker-1" 
+              onCreateQuote={(customer) => {
+                setCustomerForQuote(customer);
+                setActiveTab('quotes');
+              }}
+            />
           </TabsContent>
 
           {/* Quotes Tab */}
           <TabsContent value="quotes" className="space-y-6">
-            <QuoteBuilder bakerId="fb636c62-39b4-4f18-9ffe-f215308170b4" />
+            <QuoteBuilder 
+              bakerId="fb636c62-39b4-4f18-9ffe-f215308170b4" 
+              prefilledCustomer={customerForQuote}
+              onCustomerUsed={() => setCustomerForQuote(null)}
+            />
 
             <div className="space-y-4">
               <Card className="hover:shadow-md transition-shadow">
