@@ -5011,6 +5011,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Impersonation Route
+  app.post('/api/super-admin/impersonate/:bakerId', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const { bakerId } = req.params;
+      const baker = await storage.getBaker(bakerId);
+      
+      if (!baker) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Baker not found' 
+        });
+      }
+      
+      // Generate a JWT token for the baker
+      const token = jwt.sign(
+        {
+          userId: baker.id,
+          username: baker.email,
+          role: 'baker',
+          impersonatedBy: req.user.username // Track who initiated impersonation
+        },
+        process.env.JWT_SECRET || 'fallback_secret_key_for_development',
+        { expiresIn: '2h' } // Impersonation sessions expire after 2 hours
+      );
+      
+      res.json({
+        success: true,
+        token,
+        baker: {
+          id: baker.id,
+          name: baker.name,
+          email: baker.email,
+          businessName: baker.businessName
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error creating impersonation token:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create impersonation token' 
+        });
+    }
+  });
+
   // Baker Self-Service Billing API Routes
   app.get('/api/bakers/:bakerId/billing', async (req, res) => {
     try {

@@ -350,6 +350,41 @@ export default function SuperAdminDashboard() {
     },
   });
 
+  // Impersonate baker mutation
+  const impersonateMutation = useMutation({
+    mutationFn: async ({ bakerId }: { bakerId: string }) => {
+      const res = await apiRequest('POST', `/api/super-admin/impersonate/${bakerId}`, {});
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      if (data?.success && data?.token && data?.baker) {
+        const currentToken = localStorage.getItem('super_admin_token') || localStorage.getItem('token');
+        if (currentToken) {
+          localStorage.setItem('admin_token_backup', currentToken);
+        }
+        localStorage.setItem('baker_token', data.token);
+        localStorage.setItem('impersonation_active', JSON.stringify({
+          bakerId: data.baker.id,
+          bakerName: data.baker.name
+        }));
+        
+        window.open(`/demo/${data.baker.businessName || data.baker.id}`, '_blank');
+        
+        toast({
+          title: "Impersonation Active",
+          description: `Now viewing as ${data.baker.name}. New tab opened.`,
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to impersonate baker.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Filter bakers based on search and status
   const filteredBakers = bakers?.filter((baker) => {
     const matchesSearch = 
@@ -1161,6 +1196,19 @@ export default function SuperAdminDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => impersonateMutation.mutate({ bakerId: selectedBaker.id })}
+                  disabled={impersonateMutation.isPending}
+                  data-testid="button-impersonate"
+                  className="w-full"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {impersonateMutation.isPending ? "Impersonating..." : "Impersonate Baker"}
+                </Button>
               </div>
             </div>
           )}
