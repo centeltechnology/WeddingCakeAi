@@ -121,8 +121,8 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       const selectedLead = leads.find(lead => lead.id === leadId);
       
       // Pre-populate quote with customer and calculator pricing data
-      if (customer && customer.id) {
-        const quoteTitleSuffix = selectedLead?.weddingDate 
+      if (customer && customer.id && selectedLead) {
+        const quoteTitleSuffix = selectedLead.weddingDate 
           ? `Wedding Cake for ${selectedLead.customerName}`
           : `Cake for ${selectedLead.customerName}`;
         
@@ -249,6 +249,54 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
       toast({
         title: "Error",
         description: "Failed to send quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Create contract from quote mutation
+  const createContractFromQuoteMutation = useMutation({
+    mutationFn: async (quote: Quote) => {
+      const customer = customers.find(c => c.id === quote.customerId);
+      if (!customer) {
+        throw new Error('Customer not found');
+      }
+
+      const contractData = {
+        bakerId,
+        customerId: quote.customerId,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerPhone: customer.phone || '',
+        eventType: quote.eventType || 'wedding',
+        eventDate: quote.eventDate || '',
+        eventLocation: quote.deliveryAddress || '',
+        guestCount: quote.guestCount || 100,
+        cakeDetails: quote.description || '',
+        deliverySetup: quote.setupTime || 'Standard delivery and setup included',
+        totalAmount: quote.total || '0.00',
+        depositAmount: quote.depositAmount || '0.00',
+        depositDueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        finalPaymentDate: quote.eventDate ? new Date(new Date(quote.eventDate).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '',
+        cancellationPolicy: 'Deposits are non-refundable. Cancellations made within 14 days of the event will result in forfeiture of the deposit.',
+        terms: quote.terms || '50% deposit required to secure date. Final payment due 7 days before event.',
+        status: 'draft',
+        contractNumber: `C${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+      };
+
+      return apiRequest('POST', '/api/contracts', contractData);
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/contracts`] });
+      toast({
+        title: "Contract Created!",
+        description: "Contract has been created from the quote. You can now send it for signature in the Contracts tab.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create contract. Please try again.",
         variant: "destructive",
       });
     }
@@ -787,7 +835,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                         ${quote.total || '0.00'} total
                       </div>
                       
-                      <div className="flex space-x-2 pt-2">
+                      <div className="flex flex-wrap gap-2 pt-2">
                         <Button variant="outline" size="sm" onClick={() => setSelectedQuote(quote)}>
                           <Eye className="h-3 w-3 mr-1" />
                           View
@@ -802,6 +850,19 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                           >
                             <Send className="h-3 w-3 mr-1" />
                             Send
+                          </Button>
+                        )}
+                        {(quote.status === 'sent' || quote.status === 'viewed' || quote.status === 'approved') && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => createContractFromQuoteMutation.mutate(quote)}
+                            disabled={createContractFromQuoteMutation.isPending}
+                            data-testid={`button-create-contract-${quote.id}`}
+                            className="bg-orange-500 hover:bg-orange-600"
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            {createContractFromQuoteMutation.isPending ? 'Creating...' : 'Send Contract'}
                           </Button>
                         )}
                         <Button variant="outline" size="sm" onClick={() => generatePDF(quote)}>
