@@ -38,10 +38,32 @@ import {
   Check,
   Settings,
   BarChart3,
-  Eye
+  Eye,
+  Activity,
+  PieChart
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar,
+  AreaChart,
+  Area,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  Legend,
+  ResponsiveContainer,
+  FunnelChart,
+  Funnel,
+  LabelList
+} from "recharts";
 
 interface Baker {
   id: string;
@@ -68,6 +90,35 @@ interface PlatformStats {
   churnRate: number;
 }
 
+interface AnalyticsData {
+  revenueOverTime: Array<{
+    month: string;
+    mrr: number;
+    arr: number;
+    newSignups: number;
+  }>;
+  userGrowth: Array<{
+    month: string;
+    total: number;
+    free: number;
+    paid: number;
+  }>;
+  conversionFunnel: Array<{
+    stage: string;
+    count: number;
+    percentage: number;
+  }>;
+  planDistribution: Array<{
+    plan: string;
+    count: number;
+  }>;
+  metrics: {
+    arpu: number;
+    conversionRate: number;
+    trialConversionRate: number;
+  };
+}
+
 export default function SuperAdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -82,6 +133,11 @@ export default function SuperAdminDashboard() {
   // Fetch all bakers
   const { data: bakers, isLoading: bakersLoading } = useQuery<Baker[]>({
     queryKey: ['/api/super-admin/tenants'],
+  });
+
+  // Fetch analytics data
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
+    queryKey: ['/api/super-admin/analytics'],
   });
 
   // Toggle baker status mutation
@@ -201,6 +257,10 @@ export default function SuperAdminDashboard() {
               <BarChart3 className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
+            <TabsTrigger value="analytics" data-testid="tab-analytics">
+              <Activity className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="bakers" data-testid="tab-bakers">
               <Users className="h-4 w-4 mr-2" />
               Baker Management
@@ -309,6 +369,220 @@ export default function SuperAdminDashboard() {
                 </Button>
               </div>
             </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            {analyticsLoading ? (
+              <Card className="p-8">
+                <p className="text-center text-gray-500">Loading analytics data...</p>
+              </Card>
+            ) : (
+              <>
+                {/* Key Metrics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">ARPU</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2" data-testid="metric-arpu">
+                          {formatCurrency(analytics?.metrics.arpu || 0)}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                        <DollarSign className="h-6 w-6 text-green-600" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                      Average Revenue Per User
+                    </p>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2" data-testid="metric-conversion-rate">
+                          {((analytics?.metrics.conversionRate || 0) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                        <TrendingUp className="h-6 w-6 text-blue-600" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                      Overall conversion to paid
+                    </p>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Trial Conversion</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2" data-testid="metric-trial-conversion">
+                          {((analytics?.metrics.trialConversionRate || 0) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                        <Activity className="h-6 w-6 text-orange-600" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                      Trial to paid conversion
+                    </p>
+                  </Card>
+                </div>
+
+                {/* Revenue Over Time Chart */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Revenue Over Time
+                  </h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={analytics?.revenueOverTime || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <RechartsTooltip 
+                        formatter={(value: number) => formatCurrency(value)}
+                      />
+                      <Legend />
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="mrr" 
+                        stroke="#f97316" 
+                        strokeWidth={2}
+                        name="MRR"
+                        data-testid="chart-line-mrr"
+                      />
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="arr" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        name="ARR"
+                        data-testid="chart-line-arr"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+
+                {/* User Growth Chart */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    User Growth
+                  </h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={analytics?.userGrowth || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Area 
+                        type="monotone" 
+                        dataKey="paid" 
+                        stackId="1"
+                        stroke="#3b82f6" 
+                        fill="#3b82f6" 
+                        name="Paid Users"
+                        data-testid="chart-area-paid"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="free" 
+                        stackId="1"
+                        stroke="#6b7280" 
+                        fill="#6b7280" 
+                        name="Free Users"
+                        data-testid="chart-area-free"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="total" 
+                        stackId="2"
+                        stroke="#8b5cf6" 
+                        fill="transparent" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        name="Total Users"
+                        data-testid="chart-area-total"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Card>
+
+                {/* Conversion Funnel and Plan Distribution */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Conversion Funnel */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Conversion Funnel
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={analytics?.conversionFunnel || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="stage" />
+                        <YAxis />
+                        <RechartsTooltip 
+                          formatter={(value: number, name: string) => {
+                            if (name === 'count') return value;
+                            return `${(value * 100).toFixed(1)}%`;
+                          }}
+                        />
+                        <Legend />
+                        <Bar 
+                          dataKey="count" 
+                          fill="#3b82f6" 
+                          name="Count"
+                          data-testid="chart-bar-count"
+                        >
+                          <LabelList 
+                            dataKey="percentage" 
+                            position="top"
+                            formatter={(value: number) => `${(value * 100).toFixed(1)}%`}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+
+                  {/* Plan Distribution */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Plan Distribution
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={analytics?.planDistribution || []}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ plan, count }) => `${plan}: ${count}`}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="count"
+                          data-testid="chart-pie-distribution"
+                        >
+                          {(analytics?.planDistribution || []).map((entry, index) => {
+                            let color = '#6b7280';
+                            if (entry.plan.toLowerCase() === 'professional') color = '#f97316';
+                            if (entry.plan.toLowerCase() === 'enterprise') color = '#3b82f6';
+                            return <Cell key={`cell-${index}`} fill={color} />;
+                          })}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* Baker Management Tab */}

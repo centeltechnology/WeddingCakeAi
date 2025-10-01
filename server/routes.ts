@@ -3589,6 +3589,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/super-admin/analytics', verifySuperAdminToken, async (req, res) => {
+    try {
+      const allBakers = await storage.getBakers();
+      
+      // Generate revenue over time (last 12 months)
+      const revenueData = [];
+      const userGrowthData = [];
+      const now = new Date();
+      
+      for (let i = 11; i >= 0; i--) {
+        const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        const monthName = month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        
+        // Calculate bakers active in this month (include entire month, not just first day)
+        const bakersInMonth = allBakers.filter(b => {
+          const createdDate = new Date(b.createdAt || 0);
+          return createdDate < nextMonth;
+        });
+        
+        // Calculate MRR for this month
+        const mrr = bakersInMonth.reduce((total, baker) => {
+          if (baker.subscriptionPlan === 'professional') return total + 19;
+          if (baker.subscriptionPlan === 'enterprise') return total + 39;
+          return total;
+        }, 0);
+        
+        revenueData.push({
+          month: monthName,
+          mrr: mrr,
+          arr: mrr * 12,
+          newSignups: allBakers.filter(b => {
+            const created = new Date(b.createdAt || 0);
+            return created.getMonth() === month.getMonth() && created.getFullYear() === month.getFullYear();
+          }).length
+        });
+        
+        userGrowthData.push({
+          month: monthName,
+          total: bakersInMonth.length,
+          free: bakersInMonth.filter(b => !b.subscriptionPlan || b.subscriptionPlan === 'starter').length,
+          paid: bakersInMonth.filter(b => b.subscriptionPlan && b.subscriptionPlan !== 'starter').length
+        });
+      }
+      
+      // Conversion funnel
+      const totalSignups = allBakers.length;
+      const trialUsers = allBakers.filter(b => b.subscriptionStatus === 'trialing').length;
+      const paidUsers = allBakers.filter(b => b.subscriptionPlan && b.subscriptionPlan !== 'starter').length;
+      
+      const conversionFunnel = [
+        { stage: 'Signups', count: totalSignups, percentage: 100 },
+        { stage: 'Trials', count: trialUsers, percentage: totalSignups > 0 ? (trialUsers / totalSignups * 100) : 0 },
+        { stage: 'Paid', count: paidUsers, percentage: totalSignups > 0 ? (paidUsers / totalSignups * 100) : 0 }
+      ];
+      
+      // Plan distribution
+      const planDistribution = [
+        { plan: 'Starter', count: allBakers.filter(b => !b.subscriptionPlan || b.subscriptionPlan === 'starter').length },
+        { plan: 'Professional', count: allBakers.filter(b => b.subscriptionPlan === 'professional').length },
+        { plan: 'Enterprise', count: allBakers.filter(b => b.subscriptionPlan === 'enterprise').length }
+      ];
+      
+      res.json({
+        revenueOverTime: revenueData,
+        userGrowth: userGrowthData,
+        conversionFunnel,
+        planDistribution,
+        metrics: {
+          arpu: paidUsers > 0 ? (revenueData[revenueData.length - 1]?.mrr || 0) / paidUsers : 0,
+          conversionRate: totalSignups > 0 ? (paidUsers / totalSignups * 100) : 0,
+          trialConversionRate: trialUsers > 0 ? (paidUsers / trialUsers * 100) : 0
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
   app.get('/api/super-admin/tenants', verifySuperAdminToken, async (req, res) => {
     try {
       // Get all baker data for Super Admin dashboard
