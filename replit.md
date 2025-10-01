@@ -8,18 +8,16 @@ A professional SaaS business platform for bakeries featuring modern design with 
 
 ## Recent Changes
 
-**October 1, 2025** - Super Admin Dashboard Implementation
-- Built comprehensive Super Admin Dashboard at /super-admin route with platform management capabilities
-- Platform statistics: totalBakers, activeBakers, MRR, freeUsers, paidUsers, trialUsers, churnRate
-- Baker management table with search, filtering (all/active/suspended/free/paid), and actions
-- Detail modal for viewing baker information and updating subscription plans
-- API endpoints: GET /api/super-admin/stats, GET /api/super-admin/tenants, PATCH /api/super-admin/tenants/:id/status, PATCH /api/super-admin/tenants/:id/plan
-- JWT-based authentication with token stored in localStorage
-- Plan taxonomy aligned with platform: 'starter' (free), 'professional' ($19/mo), 'enterprise' ($39/mo)
-- Filter logic treats null/undefined subscriptionPlan as 'starter' (free) for consistency
-- MRR calculation: professional=$19, enterprise=$39
-- Authorization headers automatically added by queryClient for all /api/super-admin/ routes
-- Super Admin credentials: username "bwadmin", password "@@leXander001"
+**October 1, 2025** - Super Admin Dashboard Rebuild (Multi-tenant Control & Revenue Tooling)
+- **Analytics Dashboard**: Revenue charts (MRR/ARR over time), user growth visualization, conversion funnel, plan distribution, key metrics (ARPU, conversion rate, trial conversion rate). Fixed month-boundary filtering bug for accurate date-range analytics.
+- **Subscription Management**: Full subscription CRUD with search/filters, plan changes, trial extensions, cancellation/reactivation, manual credits/discounts, and billing history view. MRR calculation handles 'pro' plan synonym correctly. Billing history displays subscription events chronologically.
+- **Baker Impersonation**: Support tooling allowing super admins to impersonate bakers via JWT token generation (2-hour expiry). POST /api/super-admin/impersonate/:bakerId generates baker tokens with impersonatedBy tracking. Frontend stores admin_token_backup, baker_token, and impersonation_active flags in localStorage. Navigation opens new tab to baker dashboard. Known limitation: demo route expects business name slugs; bakers without businessName fall back to IDs which demo route doesn't handle (pre-existing routing behavior).
+- **Platform Overview**: Dashboard displays totalBakers, activeBakers, MRR, freeUsers, paidUsers, trialUsers, churnRate
+- **Baker Management**: Table with search, filtering (all/active/suspended/free/paid), status changes, and plan updates
+- **API Endpoints**: GET /api/super-admin/stats, GET /api/super-admin/analytics, GET /api/super-admin/tenants, PATCH /api/super-admin/tenants/:id/status, PATCH /api/super-admin/tenants/:id/plan, POST /api/super-admin/impersonate/:bakerId
+- **Authentication**: JWT-based authentication with tokens stored in localStorage. Authorization headers automatically added by queryClient for all /api/super-admin/ routes
+- **Plan Taxonomy**: 'starter' (free), 'professional' ($19/mo), 'enterprise' ($39/mo). 'pro' treated as synonym for 'professional'. Filter logic treats null/undefined subscriptionPlan as 'starter'.
+- **Super Admin Credentials**: username "bwadmin", password "@@leXander001"
 
 **October 1, 2025** - Baker Password Reset Implementation
 - Added complete password reset flow for baker accounts
