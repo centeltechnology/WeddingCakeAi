@@ -24,7 +24,9 @@ import {
   Calendar,
   MapPin,
   Clock,
-  Edit
+  Edit,
+  Mail,
+  CheckCircle2
 } from 'lucide-react';
 import type { Quote, QuoteTemplate, Customer, QuoteItem, Lead } from '@shared/schema';
 import jsPDF from 'jspdf';
@@ -40,6 +42,7 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('quotes');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newQuote, setNewQuote] = useState({
@@ -788,23 +791,93 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
         </TabsList>
 
         <TabsContent value="quotes" className="space-y-4">
-          {quotes.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Quotes Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first quote to get started with the quote builder.
-                </p>
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Quote
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quotes.map((quote) => {
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <Button 
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+              data-testid="filter-all"
+              className={statusFilter === 'all' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              All ({quotes.length})
+            </Button>
+            <Button 
+              variant={statusFilter === 'draft' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('draft')}
+              data-testid="filter-draft"
+              className={statusFilter === 'draft' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              Draft ({quotes.filter(q => q.status === 'draft').length})
+            </Button>
+            <Button 
+              variant={statusFilter === 'sent' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('sent')}
+              data-testid="filter-sent"
+              className={statusFilter === 'sent' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              Sent ({quotes.filter(q => q.status === 'sent').length})
+            </Button>
+            <Button 
+              variant={statusFilter === 'viewed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('viewed')}
+              data-testid="filter-viewed"
+              className={statusFilter === 'viewed' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              Viewed ({quotes.filter(q => q.status === 'viewed').length})
+            </Button>
+            <Button 
+              variant={statusFilter === 'approved' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('approved')}
+              data-testid="filter-approved"
+              className={statusFilter === 'approved' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              Approved ({quotes.filter(q => q.status === 'approved').length})
+            </Button>
+            <Button 
+              variant={statusFilter === 'rejected' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('rejected')}
+              data-testid="filter-rejected"
+              className={statusFilter === 'rejected' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              Rejected ({quotes.filter(q => q.status === 'rejected').length})
+            </Button>
+          </div>
+
+          {(() => {
+            const filteredQuotes = statusFilter === 'all' 
+              ? quotes 
+              : quotes.filter(q => q.status === statusFilter);
+            
+            return filteredQuotes.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    {quotes.length === 0 ? 'No Quotes Yet' : `No ${statusFilter === 'all' ? '' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Quotes`}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {quotes.length === 0 
+                      ? 'Create your first quote to get started with the quote builder.' 
+                      : `You don't have any ${statusFilter === 'all' ? '' : statusFilter} quotes at the moment.`
+                    }
+                  </p>
+                  {quotes.length === 0 && (
+                    <Button onClick={() => setIsCreating(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Quote
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredQuotes.map((quote) => {
                 const customer = customers.find(c => c.id === quote.customerId);
                 return (
                   <Card key={quote.id} className="hover:shadow-md transition-shadow">
@@ -834,6 +907,12 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                         <DollarSign className="h-4 w-4 mr-2" />
                         ${quote.total || '0.00'} total
                       </div>
+                      {quote.sentAt && (
+                        <div className="flex items-center text-sm text-emerald-600 dark:text-emerald-400" data-testid={`email-sent-${quote.id}`}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Emailed {new Date(quote.sentAt).toLocaleString()}
+                        </div>
+                      )}
                       
                       <div className="flex flex-wrap gap-2 pt-2">
                         <Button variant="outline" size="sm" onClick={() => setSelectedQuote(quote)}>
@@ -885,7 +964,8 @@ export function QuoteBuilder({ bakerId }: QuoteBuilderProps) {
                 );
               })}
             </div>
-          )}
+          );
+          })()}
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
