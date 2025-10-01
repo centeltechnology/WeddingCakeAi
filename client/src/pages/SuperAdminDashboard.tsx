@@ -160,6 +160,11 @@ export default function SuperAdminDashboard() {
   const [newPlan, setNewPlan] = useState("");
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
+  const [showCampaignDialog, setShowCampaignDialog] = useState(false);
+  const [campaignName, setCampaignName] = useState("");
+  const [campaignSubject, setCampaignSubject] = useState("");
+  const [campaignContent, setCampaignContent] = useState("");
+  const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Fetch platform statistics
@@ -391,6 +396,53 @@ export default function SuperAdminDashboard() {
       });
     },
   });
+
+  // Create campaign mutation
+  const createCampaignMutation = useMutation({
+    mutationFn: async (campaign: { name: string; subject: string; content: string; segmentFilter: any }) => {
+      const res = await apiRequest('POST', '/api/super-admin/campaigns', campaign);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/campaigns'] });
+      setShowCampaignDialog(false);
+      setCampaignName("");
+      setCampaignSubject("");
+      setCampaignContent("");
+      setSelectedPlans([]);
+      toast({
+        title: "Campaign Created",
+        description: "Email campaign has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create campaign.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateCampaign = () => {
+    if (!campaignName || !campaignSubject || !campaignContent) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCampaignMutation.mutate({
+      name: campaignName,
+      subject: campaignSubject,
+      content: campaignContent,
+      segmentFilter: {
+        plans: selectedPlans.length > 0 ? selectedPlans : undefined
+      }
+    });
+  };
 
   // Filter bakers based on search and status
   const filteredBakers = bakers?.filter((baker) => {
@@ -1103,7 +1155,7 @@ export default function SuperAdminDashboard() {
                   Send targeted email campaigns to your bakers
                 </p>
               </div>
-              <Button data-testid="button-create-campaign">
+              <Button onClick={() => setShowCampaignDialog(true)} data-testid="button-create-campaign">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Campaign
               </Button>
@@ -1567,6 +1619,135 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Campaign Dialog */}
+      <Dialog open={showCampaignDialog} onOpenChange={setShowCampaignDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create Email Campaign</DialogTitle>
+            <DialogDescription>
+              Create a new email campaign to send to your bakers
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                Campaign Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                placeholder="e.g., February Product Update"
+                data-testid="input-campaign-name"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                Email Subject <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={campaignSubject}
+                onChange={(e) => setCampaignSubject(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                placeholder="e.g., New Features Available Now!"
+                data-testid="input-campaign-subject"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                Email Content <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={campaignContent}
+                onChange={(e) => setCampaignContent(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                placeholder="Write your email content here..."
+                data-testid="textarea-campaign-content"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                Target Audience (leave empty for all bakers)
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlans.includes('starter')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPlans([...selectedPlans, 'starter']);
+                      } else {
+                        setSelectedPlans(selectedPlans.filter(p => p !== 'starter'));
+                      }
+                    }}
+                    className="mr-2"
+                    data-testid="checkbox-plan-starter"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Starter Plan (Free)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlans.includes('professional')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPlans([...selectedPlans, 'professional']);
+                      } else {
+                        setSelectedPlans(selectedPlans.filter(p => p !== 'professional'));
+                      }
+                    }}
+                    className="mr-2"
+                    data-testid="checkbox-plan-professional"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Professional Plan ($19/mo)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlans.includes('enterprise')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPlans([...selectedPlans, 'enterprise']);
+                      } else {
+                        setSelectedPlans(selectedPlans.filter(p => p !== 'enterprise'));
+                      }
+                    }}
+                    className="mr-2"
+                    data-testid="checkbox-plan-enterprise"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Enterprise Plan ($39/mo)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCampaignDialog(false)}
+                data-testid="button-cancel-campaign"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateCampaign}
+                disabled={createCampaignMutation.isPending}
+                data-testid="button-save-campaign"
+              >
+                {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
