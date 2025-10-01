@@ -46,7 +46,8 @@ import {
   BarChart3,
   Eye,
   Activity,
-  PieChart
+  PieChart,
+  Plus
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -180,6 +181,12 @@ export default function SuperAdminDashboard() {
   const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<Subscription[]>({
     queryKey: ['/api/super-admin/subscriptions'],
   });
+
+  // Fetch email campaigns
+  const { data: campaignsData, isLoading: campaignsLoading } = useQuery<{ success: boolean; campaigns: any[] }>({
+    queryKey: ['/api/super-admin/campaigns'],
+  });
+  const campaigns = campaignsData?.campaigns || [];
 
   // Toggle baker status mutation
   const toggleStatusMutation = useMutation({
@@ -1086,14 +1093,113 @@ export default function SuperAdminDashboard() {
           </TabsContent>
 
           {/* Email Campaigns Tab */}
-          <TabsContent value="emails">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Email Campaign Management
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Email campaign analytics and controls coming soon...
-              </p>
+          <TabsContent value="emails" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Email Campaigns
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Send targeted email campaigns to your bakers
+                </p>
+              </div>
+              <Button data-testid="button-create-campaign">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Campaign
+              </Button>
+            </div>
+
+            <Card>
+              <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Campaign management interface - Create and send targeted emails to segmented baker groups
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Campaign Name</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Recipients</TableHead>
+                      <TableHead>Sent</TableHead>
+                      <TableHead>Stats</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {campaignsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          Loading campaigns...
+                        </TableCell>
+                      </TableRow>
+                    ) : campaigns.length > 0 ? (
+                      campaigns.map((campaign: any) => (
+                        <TableRow key={campaign.id} data-testid={`row-campaign-${campaign.id}`}>
+                          <TableCell className="font-medium">{campaign.name}</TableCell>
+                          <TableCell>{campaign.subject}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              campaign.status === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              campaign.status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                              campaign.status === 'scheduled' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' :
+                              'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                            }`}>
+                              {campaign.status}
+                            </span>
+                          </TableCell>
+                          <TableCell>{campaign.stats?.totalRecipients || 0}</TableCell>
+                          <TableCell>
+                            {campaign.sentAt ? new Date(campaign.sentAt).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {campaign.stats?.sent > 0 ? (
+                              <div className="text-sm">
+                                <div>Sent: {campaign.stats.sent}</div>
+                                {campaign.stats.opened > 0 && (
+                                  <div className="text-gray-500">
+                                    Open: {Math.round((campaign.stats.opened / campaign.stats.delivered) * 100)}%
+                                  </div>
+                                )}
+                              </div>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {campaign.status === 'draft' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  data-testid={`button-send-${campaign.id}`}
+                                >
+                                  Send
+                                </Button>
+                              )}
+                              {campaign.status === 'sent' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  data-testid={`button-stats-${campaign.id}`}
+                                >
+                                  View Stats
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          No campaigns yet. Create your first campaign to get started.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
