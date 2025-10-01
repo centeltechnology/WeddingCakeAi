@@ -1088,6 +1088,63 @@ export type EmailCampaignEnrollment = typeof emailCampaignEnrollments.$inferSele
 export type InsertEmailCampaignEvent = z.infer<typeof insertEmailCampaignEventSchema>;
 export type EmailCampaignEvent = typeof emailCampaignEvents.$inferSelect;
 
+// Super Admin Broadcast Email Campaigns
+export const superAdminCampaigns = pgTable("super_admin_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(), // HTML content
+  segmentFilter: json("segment_filter").$type<{
+    plans?: string[]; // ['starter', 'professional', 'enterprise']
+    statuses?: string[]; // ['active', 'suspended']
+    hasBusinessName?: boolean;
+    dateRange?: { start: string; end: string };
+  }>().default({}),
+  status: text("status").notNull().default('draft'), // draft, scheduled, sending, sent, failed
+  scheduledAt: timestamp("scheduled_at"),
+  sentAt: timestamp("sent_at"),
+  stats: json("stats").$type<{
+    totalRecipients?: number;
+    sent?: number;
+    delivered?: number;
+    opened?: number;
+    clicked?: number;
+    bounced?: number;
+    unsubscribed?: number;
+  }>().default({}),
+  createdBy: varchar("created_by").notNull(), // super admin user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const superAdminCampaignSends = pgTable("super_admin_campaign_sends", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => superAdminCampaigns.id),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  status: text("status").notNull().default('pending'), // pending, sent, delivered, opened, clicked, bounced, failed
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  bouncedAt: timestamp("bounced_at"),
+  failedAt: timestamp("failed_at"),
+  errorMessage: text("error_message"),
+  metadata: json("metadata").$type<{
+    userAgent?: string;
+    clickUrl?: string;
+    bounceReason?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSuperAdminCampaignSchema = createInsertSchema(superAdminCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSuperAdminCampaignSendSchema = createInsertSchema(superAdminCampaignSends).omit({ id: true, createdAt: true });
+
+export type SuperAdminCampaign = typeof superAdminCampaigns.$inferSelect;
+export type InsertSuperAdminCampaign = z.infer<typeof insertSuperAdminCampaignSchema>;
+export type SuperAdminCampaignSend = typeof superAdminCampaignSends.$inferSelect;
+export type InsertSuperAdminCampaignSend = z.infer<typeof insertSuperAdminCampaignSendSchema>;
+
 // Baker Pricing Configuration Schema (for validation)
 export const bakerPricingSchema = z.object({
   cakeSizes: z.array(z.object({
