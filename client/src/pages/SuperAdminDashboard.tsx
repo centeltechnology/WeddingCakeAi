@@ -165,6 +165,8 @@ export default function SuperAdminDashboard() {
   const [campaignSubject, setCampaignSubject] = useState("");
   const [campaignContent, setCampaignContent] = useState("");
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [showStatsDialog, setShowStatsDialog] = useState(false);
   const { toast } = useToast();
 
   // Fetch platform statistics
@@ -442,6 +444,33 @@ export default function SuperAdminDashboard() {
         plans: selectedPlans.length > 0 ? selectedPlans : undefined
       }
     });
+  };
+
+  // Send campaign mutation
+  const sendCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      const res = await apiRequest('POST', `/api/super-admin/campaigns/${campaignId}/send`, {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/campaigns'] });
+      toast({
+        title: "Campaign Sent",
+        description: `Campaign sent to ${data.recipientCount || 0} recipients.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send campaign.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleViewStats = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setShowStatsDialog(true);
   };
 
   // Filter bakers based on search and status
@@ -1224,15 +1253,18 @@ export default function SuperAdminDashboard() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => sendCampaignMutation.mutate(campaign.id)}
+                                  disabled={sendCampaignMutation.isPending}
                                   data-testid={`button-send-${campaign.id}`}
                                 >
-                                  Send
+                                  {sendCampaignMutation.isPending ? "Sending..." : "Send"}
                                 </Button>
                               )}
                               {campaign.status === 'sent' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleViewStats(campaign)}
                                   data-testid={`button-stats-${campaign.id}`}
                                 >
                                   View Stats
@@ -1748,6 +1780,144 @@ export default function SuperAdminDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign Stats Dialog */}
+      <Dialog open={showStatsDialog} onOpenChange={setShowStatsDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Campaign Statistics</DialogTitle>
+            <DialogDescription>
+              View detailed statistics for this email campaign
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCampaign && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Campaign Name
+                  </label>
+                  <p className="text-gray-900 dark:text-white">{selectedCampaign.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Subject
+                  </label>
+                  <p className="text-gray-900 dark:text-white">{selectedCampaign.subject}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Status
+                  </label>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedCampaign.status === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                    selectedCampaign.status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                    selectedCampaign.status === 'scheduled' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {selectedCampaign.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Sent At
+                  </label>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedCampaign.sentAt ? new Date(selectedCampaign.sentAt).toLocaleString() : 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Send Statistics</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Recipients</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                      {selectedCampaign.stats?.totalRecipients || 0}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Sent</div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                      {selectedCampaign.stats?.sent || 0}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Delivered</div>
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                      {selectedCampaign.stats?.delivered || 0}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Failed</div>
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
+                      {selectedCampaign.stats?.failed || 0}
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
+              {selectedCampaign.stats?.opened > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Engagement</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Opened</div>
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+                        {selectedCampaign.stats?.opened || 0}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {selectedCampaign.stats?.delivered > 0 
+                          ? `${Math.round((selectedCampaign.stats.opened / selectedCampaign.stats.delivered) * 100)}% open rate`
+                          : '0% open rate'}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Clicked</div>
+                      <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+                        {selectedCampaign.stats?.clicked || 0}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {selectedCampaign.stats?.delivered > 0 
+                          ? `${Math.round((selectedCampaign.stats.clicked / selectedCampaign.stats.delivered) * 100)}% click rate`
+                          : '0% click rate'}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Bounced</div>
+                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
+                        {selectedCampaign.stats?.bounced || 0}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {selectedCampaign.stats?.sent > 0 
+                          ? `${Math.round((selectedCampaign.stats.bounced / selectedCampaign.stats.sent) * 100)}% bounce rate`
+                          : '0% bounce rate'}
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Email Content</h3>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {selectedCampaign.content}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={() => setShowStatsDialog(false)} data-testid="button-close-stats">
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
