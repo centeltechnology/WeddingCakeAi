@@ -75,6 +75,13 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/signup" component={Signup} />
       <Route path="/demo-tenant" component={DemoTenant} />
+      <Route path="/demo/:slug">
+        {(params) => (
+          <BakerSlugWrapper slug={params.slug}>
+            <DemoTenant />
+          </BakerSlugWrapper>
+        )}
+      </Route>
       {/* Customer login routes removed per user request */}
       <Route path="/baker/:slug/dashboard">
         {(params) => (

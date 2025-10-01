@@ -9,6 +9,7 @@ import { ContractManager } from '@/components/ContractManager';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
 import { ConsultationsManager } from '@/components/ConsultationsManager';
 import { MonthlyCommitmentsCalendar } from '@/components/MonthlyCommitmentsCalendar';
+import { QuoteBuilder } from '@/components/QuoteBuilder';
 import { Link } from 'wouter';
 import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send, CalendarDays, Calendar } from 'lucide-react';
 
@@ -246,51 +247,7 @@ export default function DemoTenant() {
 
           {/* Quotes Tab */}
           <TabsContent value="quotes" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Quotes</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">28</div>
-                  <p className="text-xs text-muted-foreground">+4 this week</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">12</div>
-                  <p className="text-xs text-muted-foreground">Awaiting response</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Accepted</CardTitle>
-                  <Star className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">9</div>
-                  <p className="text-xs text-muted-foreground">75% conversion</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Quote Value</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$18.2k</div>
-                  <p className="text-xs text-muted-foreground">Total pending</p>
-                </CardContent>
-              </Card>
-            </div>
+            <QuoteBuilder bakerId="fb636c62-39b4-4f18-9ffe-f215308170b4" />
 
             <div className="space-y-4">
               <Card className="hover:shadow-md transition-shadow">
