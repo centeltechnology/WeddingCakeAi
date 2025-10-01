@@ -15,8 +15,10 @@ A professional SaaS business platform for bakeries featuring modern design with 
 - Detail modal for viewing baker information and updating subscription plans
 - API endpoints: GET /api/super-admin/stats, GET /api/super-admin/tenants, PATCH /api/super-admin/tenants/:id/status, PATCH /api/super-admin/tenants/:id/plan
 - JWT-based authentication with token stored in localStorage
-- Plan taxonomy unified: 'free', 'pro' ($47/mo), 'plus' ($97/mo)
-- Filter logic treats null/undefined subscriptionPlan as 'free' for consistency
+- Plan taxonomy aligned with platform: 'starter' (free), 'professional' ($19/mo), 'enterprise' ($39/mo)
+- Filter logic treats null/undefined subscriptionPlan as 'starter' (free) for consistency
+- MRR calculation: professional=$19, enterprise=$39
+- Authorization headers automatically added by queryClient for all /api/super-admin/ routes
 - Super Admin credentials: username "bwadmin", password "@@leXander001"
 
 **October 1, 2025** - Baker Password Reset Implementation

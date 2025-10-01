@@ -3557,16 +3557,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeBakers = allBakers.filter(b => b.isActive && 
         (!b.subscriptionStatus || b.subscriptionStatus === 'active' || b.subscriptionStatus === 'trialing'));
       
-      // Count users by subscription plan
-      const freeUsers = allBakers.filter(b => !b.subscriptionPlan || b.subscriptionPlan === 'free').length;
-      const paidUsers = allBakers.filter(b => b.subscriptionPlan && b.subscriptionPlan !== 'free').length;
+      // Count users by subscription plan (using actual plan values: starter, professional, enterprise)
+      const freeUsers = allBakers.filter(b => !b.subscriptionPlan || b.subscriptionPlan === 'starter').length;
+      const paidUsers = allBakers.filter(b => b.subscriptionPlan && b.subscriptionPlan !== 'starter').length;
       const trialUsers = allBakers.filter(b => b.subscriptionStatus === 'trialing').length;
       
       // Calculate MRR (Monthly Recurring Revenue)
-      // Assuming Pro = $47/month, Plus = $97/month
+      // Professional = $19/month, Enterprise = $39/month (from subscriptionConfig.ts)
       const mrr = allBakers.reduce((total, baker) => {
-        if (baker.subscriptionPlan === 'pro') return total + 47;
-        if (baker.subscriptionPlan === 'plus') return total + 97;
+        if (baker.subscriptionPlan === 'professional') return total + 19;
+        if (baker.subscriptionPlan === 'enterprise') return total + 39;
         return total;
       }, 0);
       
@@ -4376,10 +4376,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { plan } = req.body;
       
-      if (!plan || !['free', 'pro', 'plus'].includes(plan)) {
+      if (!plan || !['starter', 'professional', 'enterprise'].includes(plan)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid plan. Must be one of: free, pro, plus'
+          message: 'Invalid plan. Must be one of: starter, professional, enterprise'
         });
       }
       
@@ -4400,7 +4400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         success: true,
-        message: `Baker plan updated from ${oldPlan} to ${plan}`
+        message: `Baker plan updated from ${oldPlan || 'starter'} to ${plan}`
       });
       
     } catch (error) {

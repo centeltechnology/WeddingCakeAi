@@ -141,8 +141,8 @@ export default function SuperAdminDashboard() {
       statusFilter === "all" ||
       (statusFilter === "active" && baker.isActive) ||
       (statusFilter === "suspended" && !baker.isActive) ||
-      (statusFilter === "free" && (!baker.subscriptionPlan || baker.subscriptionPlan === "free")) ||
-      (statusFilter === "paid" && baker.subscriptionPlan && baker.subscriptionPlan !== "free");
+      (statusFilter === "free" && (!baker.subscriptionPlan || baker.subscriptionPlan === "starter")) ||
+      (statusFilter === "paid" && baker.subscriptionPlan && baker.subscriptionPlan !== "starter");
 
     return matchesSearch && matchesStatus;
   });
@@ -161,6 +161,13 @@ export default function SuperAdminDashboard() {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const formatPlanName = (plan: string | null | undefined) => {
+    if (!plan || plan === 'starter') return 'Starter';
+    if (plan === 'professional') return 'Professional';
+    if (plan === 'enterprise') return 'Enterprise';
+    return plan;
   };
 
   return (
@@ -376,12 +383,12 @@ export default function SuperAdminDashboard() {
                           <TableCell>
                             <Badge
                               variant={
-                                !baker.subscriptionPlan || baker.subscriptionPlan === "free"
+                                !baker.subscriptionPlan || baker.subscriptionPlan === "starter"
                                   ? "secondary"
                                   : "default"
                               }
                             >
-                              {baker.subscriptionPlan || "free"}
+                              {formatPlanName(baker.subscriptionPlan)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -510,8 +517,8 @@ export default function SuperAdminDashboard() {
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Current Plan
                   </label>
-                  <p className="text-gray-900 dark:text-white capitalize">
-                    {selectedBaker.subscriptionPlan || "free"}
+                  <p className="text-gray-900 dark:text-white">
+                    {formatPlanName(selectedBaker.subscriptionPlan)}
                   </p>
                 </div>
                 <div>
@@ -546,7 +553,7 @@ export default function SuperAdminDashboard() {
                 </label>
                 <div className="flex gap-2">
                   <Select
-                    defaultValue={selectedBaker.subscriptionPlan || "free"}
+                    defaultValue={selectedBaker.subscriptionPlan || "starter"}
                     onValueChange={(plan) =>
                       updatePlanMutation.mutate({ bakerId: selectedBaker.id, plan })
                     }
@@ -556,9 +563,9 @@ export default function SuperAdminDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="free">Free</SelectItem>
-                      <SelectItem value="pro">Professional</SelectItem>
-                      <SelectItem value="plus">Plus</SelectItem>
+                      <SelectItem value="starter">Starter (Free)</SelectItem>
+                      <SelectItem value="professional">Professional ($19/mo)</SelectItem>
+                      <SelectItem value="enterprise">Enterprise ($39/mo)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
