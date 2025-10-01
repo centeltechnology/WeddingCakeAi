@@ -8,6 +8,7 @@ import { CrmDashboard } from '@/components/CrmDashboard';
 import { ContractManager } from '@/components/ContractManager';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
 import { ConsultationsManager } from '@/components/ConsultationsManager';
+import { MonthlyCommitmentsCalendar } from '@/components/MonthlyCommitmentsCalendar';
 import { Link } from 'wouter';
 import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send, CalendarDays, Calendar } from 'lucide-react';
 
@@ -233,6 +234,9 @@ export default function DemoTenant() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Monthly Commitments Calendar */}
+            <MonthlyCommitmentsCalendar bakerId="sweet-dreams-bakery" />
           </TabsContent>
 
           {/* CRM Tab - Live functional CRM */}
