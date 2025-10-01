@@ -18,7 +18,7 @@ export function NavigationHeader() {
         <div className="flex items-center">
           <Link href="/" className="flex items-center group" data-testid="link-home-logo">
             <span className="text-2xl font-bold text-gray-900">
-              <span className="text-orange-500">B</span>akewise
+              <span className="text-orange-500">B</span>akerIQ
             </span>
           </Link>
         </div>
