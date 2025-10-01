@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { CrmDashboard } from '@/components/CrmDashboard';
 import { ContractManager } from '@/components/ContractManager';
+import { AvailabilitySettings } from '@/components/AvailabilitySettings';
 import { Link } from 'wouter';
-import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send } from 'lucide-react';
+import { ArrowLeft, Palette, ChefHat, Users, FileText, CreditCard, Star, UserCheck, Clock, Send, CalendarDays } from 'lucide-react';
 
 export default function DemoTenant() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -57,7 +58,7 @@ export default function DemoTenant() {
 
         {/* Functional Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" data-testid="tab-overview">
               <Palette className="h-4 w-4 mr-2" />
               Overview
@@ -73,6 +74,10 @@ export default function DemoTenant() {
             <TabsTrigger value="contracts" data-testid="tab-contracts">
               <UserCheck className="h-4 w-4 mr-2" />
               Contracts
+            </TabsTrigger>
+            <TabsTrigger value="schedule" data-testid="tab-schedule">
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Schedule
             </TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">
               <CreditCard className="h-4 w-4 mr-2" />
@@ -428,7 +433,12 @@ export default function DemoTenant() {
 
           {/* Contracts Tab - Using Functional ContractManager */}
           <TabsContent value="contracts" className="space-y-6">
-            <ContractManager bakerId="test-baker-123" />
+            <ContractManager bakerId="sweet-dreams-bakery" />
+          </TabsContent>
+
+          {/* Schedule Tab - Availability Management */}
+          <TabsContent value="schedule" className="space-y-6">
+            <AvailabilitySettings bakerId="sweet-dreams-bakery" />
           </TabsContent>
 
           {/* Payments Tab */}
