@@ -2957,8 +2957,12 @@ export class DatabaseStorage implements IStorage {
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
     return quote || undefined;
   }
-  async getQuotesByCustomer(customerId: string): Promise<Quote[]> { return []; }
-  async getQuotesByBaker(bakerId: string): Promise<Quote[]> { return []; }
+  async getQuotesByCustomer(customerId: string): Promise<Quote[]> {
+    return await db.select().from(quotes).where(eq(quotes.customerId, customerId));
+  }
+  async getQuotesByBaker(bakerId: string): Promise<Quote[]> {
+    return await db.select().from(quotes).where(eq(quotes.bakerId, bakerId));
+  }
   async updateQuote(id: string, updates: Partial<InsertQuote>): Promise<Quote> {
     const [quote] = await db.update(quotes).set(updates).where(eq(quotes.id, id)).returning();
     return quote;
@@ -2968,7 +2972,9 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.insert(quoteItems).values({ ...item, id: item.id || randomUUID() }).returning();
     return result;
   }
-  async getQuoteItems(quoteId: string): Promise<QuoteItem[]> { return []; }
+  async getQuoteItems(quoteId: string): Promise<QuoteItem[]> {
+    return await db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId));
+  }
   async updateQuoteItem(id: string, updates: Partial<InsertQuoteItem>): Promise<QuoteItem> {
     const [item] = await db.update(quoteItems).set(updates).where(eq(quoteItems.id, id)).returning();
     return item;
