@@ -4,7 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, User, Phone, Mail, MapPin, Users, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, Clock, User, Phone, Mail, MapPin, Users, DollarSign, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -46,6 +50,26 @@ export function ConsultationsManager({ bakerId }: ConsultationsManagerProps) {
     }
   });
 
+  const editConsultationMutation = useMutation({
+    mutationFn: (data: { id: string; updates: Partial<Consultation> }) =>
+      apiRequest('PUT', `/api/consultations/${data.id}`, data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/consultations`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/consultations/upcoming`] });
+      toast({
+        title: "Consultation Updated",
+        description: "Consultation details have been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update consultation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const getStatusColor = (status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800';
     
@@ -59,22 +83,168 @@ export function ConsultationsManager({ bakerId }: ConsultationsManagerProps) {
     }
   };
 
-  const ConsultationCard = ({ consultation }: { consultation: Consultation }) => (
-    <Card key={consultation.id} data-testid={`consultation-${consultation.id}`}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{consultation.customerName}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(consultation.date), 'MMMM d, yyyy')} at {consultation.timeSlot}
-            </CardDescription>
+  const ConsultationCard = ({ consultation }: { consultation: Consultation }) => {
+    const [open, setOpen] = useState(false);
+    
+    const formatDateForInput = (date: string) => {
+      try {
+        const d = new Date(date);
+        return format(d, 'yyyy-MM-dd');
+      } catch {
+        return date;
+      }
+    };
+
+    const formatTimeForInput = (time: string) => {
+      if (!time) return '09:00';
+      
+      if (time.match(/^\d{2}:\d{2}$/)) {
+        return time;
+      }
+      
+      try {
+        const timeParts = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (timeParts) {
+          let hours = parseInt(timeParts[1]);
+          const minutes = timeParts[2];
+          const meridiem = timeParts[3].toUpperCase();
+          
+          if (meridiem === 'PM' && hours !== 12) {
+            hours += 12;
+          } else if (meridiem === 'AM' && hours === 12) {
+            hours = 0;
+          }
+          
+          return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+        
+        return time;
+      } catch {
+        return time;
+      }
+    };
+
+    const [editData, setEditData] = useState({
+      date: formatDateForInput(consultation.date),
+      timeSlot: formatTimeForInput(consultation.timeSlot),
+      duration: consultation.duration,
+      notes: consultation.notes || ''
+    });
+
+    const handleSaveEdit = () => {
+      if (!editData.duration || editData.duration < 1) {
+        toast({
+          title: "Invalid Duration",
+          description: "Duration must be at least 1 minute.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      editConsultationMutation.mutate({
+        id: consultation.id,
+        updates: editData
+      }, {
+        onSuccess: () => setOpen(false)
+      });
+    };
+
+    return (
+      <Card key={consultation.id} data-testid={`consultation-${consultation.id}`}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="text-lg">{consultation.customerName}</CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {format(new Date(consultation.date), 'MMMM d, yyyy')} at {consultation.timeSlot}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusColor(consultation.status)}>
+                {consultation.status ? consultation.status.charAt(0).toUpperCase() + consultation.status.slice(1) : 'Unknown'}
+              </Badge>
+              {consultation.status !== 'cancelled' && consultation.status !== 'completed' && (
+                <Dialog open={open} onOpenChange={setOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" data-testid={`button-edit-${consultation.id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent data-testid="dialog-edit-consultation">
+                    <DialogHeader>
+                      <DialogTitle>Edit Consultation</DialogTitle>
+                      <DialogDescription>
+                        Update the booking details for {consultation.customerName}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-date">Date</Label>
+                        <Input
+                          id="edit-date"
+                          type="date"
+                          value={editData.date}
+                          onChange={(e) => setEditData({...editData, date: e.target.value})}
+                          data-testid="input-edit-date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-time">Time</Label>
+                        <Input
+                          id="edit-time"
+                          type="time"
+                          value={editData.timeSlot}
+                          onChange={(e) => setEditData({...editData, timeSlot: e.target.value})}
+                          data-testid="input-edit-time"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-duration">Duration (minutes)</Label>
+                        <Input
+                          id="edit-duration"
+                          type="number"
+                          min="1"
+                          value={editData.duration}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val > 0) {
+                              setEditData({...editData, duration: val});
+                            }
+                          }}
+                          data-testid="input-edit-duration"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-notes">Notes</Label>
+                        <Textarea
+                          id="edit-notes"
+                          value={editData.notes}
+                          onChange={(e) => setEditData({...editData, notes: e.target.value})}
+                          placeholder="Add notes about the consultation..."
+                          data-testid="input-edit-notes"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setOpen(false)} data-testid="button-cancel-edit">
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSaveEdit} 
+                        disabled={editConsultationMutation.isPending}
+                        className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600"
+                        data-testid="button-save-edit"
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
-          <Badge className={getStatusColor(consultation.status)}>
-            {consultation.status ? consultation.status.charAt(0).toUpperCase() + consultation.status.slice(1) : 'Unknown'}
-          </Badge>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -163,7 +333,8 @@ export function ConsultationsManager({ bakerId }: ConsultationsManagerProps) {
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   if (isLoading || isLoadingUpcoming) {
     return (
