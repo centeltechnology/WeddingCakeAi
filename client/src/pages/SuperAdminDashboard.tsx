@@ -47,7 +47,8 @@ import {
   Eye,
   Activity,
   PieChart,
-  Plus
+  Plus,
+  Download
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -949,6 +950,20 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* Bakers Table */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                All Bakers ({filteredBakers?.length || 0})
+              </h3>
+              <Button
+                onClick={() => {
+                  window.location.href = '/api/super-admin/export/bakers';
+                }}
+                data-testid="button-export-bakers"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
             <Card>
               <div className="overflow-x-auto">
                 <Table>

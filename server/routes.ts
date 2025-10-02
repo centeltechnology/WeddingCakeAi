@@ -5136,6 +5136,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export baker data as CSV
+  app.get('/api/super-admin/export/bakers', verifySuperAdminToken, async (req, res) => {
+    try {
+      const bakers = await storage.getBakers();
+      
+      // Helper function to escape CSV values
+      const escapeCsvValue = (value: string | null | undefined): string => {
+        if (!value) return '';
+        // Replace all double quotes with doubled double quotes for CSV safety
+        return value.replace(/"/g, '""');
+      };
+      
+      // Get all leads for each baker
+      const leadsByBaker = new Map();
+      for (const baker of bakers) {
+        const leads = await storage.getLeadsByBaker(baker.id);
+        leadsByBaker.set(baker.id, leads || []);
+      }
+      
+      // Build CSV content
+      const headers = ['Baker Name', 'Baker Email', 'Business Name', 'Phone', 'Location', 'Subscription Plan', 'Status', 'Lead Name', 'Lead Email', 'Lead Phone', 'Lead Wedding Date', 'Lead Message', 'Lead Status'];
+      const rows = [headers.join(',')];
+      
+      for (const baker of bakers) {
+        const leads = leadsByBaker.get(baker.id) || [];
+        const location = baker.location ? `${baker.location.city || ''} ${baker.location.state || ''}`.trim() : '';
+        const plan = baker.subscriptionPlan || 'starter';
+        const status = baker.isActive ? 'active' : 'suspended';
+        
+        if (leads.length === 0) {
+          // Baker with no leads
+          rows.push([
+            `"${escapeCsvValue(baker.name)}"`,
+            `"${escapeCsvValue(baker.email)}"`,
+            `"${escapeCsvValue(baker.businessName)}"`,
+            `"${escapeCsvValue(baker.phone)}"`,
+            `"${escapeCsvValue(location)}"`,
+            `"${escapeCsvValue(plan)}"`,
+            `"${escapeCsvValue(status)}"`,
+            '', '', '', '', '', ''
+          ].join(','));
+        } else {
+          // Baker with leads
+          for (const lead of leads) {
+            rows.push([
+              `"${escapeCsvValue(baker.name)}"`,
+              `"${escapeCsvValue(baker.email)}"`,
+              `"${escapeCsvValue(baker.businessName)}"`,
+              `"${escapeCsvValue(baker.phone)}"`,
+              `"${escapeCsvValue(location)}"`,
+              `"${escapeCsvValue(plan)}"`,
+              `"${escapeCsvValue(status)}"`,
+              `"${escapeCsvValue(lead.customerName)}"`,
+              `"${escapeCsvValue(lead.customerEmail)}"`,
+              `"${escapeCsvValue(lead.customerPhone)}"`,
+              `"${escapeCsvValue(lead.weddingDate)}"`,
+              `"${escapeCsvValue(lead.message)}"`,
+              `"${escapeCsvValue(lead.status)}"`,
+            ].join(','));
+          }
+        }
+      }
+      
+      const csv = rows.join('\n');
+      
+      // Set headers for CSV download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="baker-export-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Error exporting baker data:', error);
+      res.status(500).json({ success: false, message: 'Failed to export data' });
+    }
+  });
+
   // Baker Self-Service Billing API Routes
   app.get('/api/bakers/:bakerId/billing', async (req, res) => {
     try {
