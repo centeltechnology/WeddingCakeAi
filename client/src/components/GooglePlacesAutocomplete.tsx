@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, Loader2 } from 'lucide-react';
+import { loadGoogleMaps } from '@/lib/googleMaps';
 
 interface GooglePlacesAutocompleteProps {
   value: string;
@@ -28,47 +29,64 @@ export function GooglePlacesAutocomplete({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if Google Maps API is loaded
-    if (!window.google?.maps?.places) {
-      setError('Google Maps API not loaded');
-      setIsLoading(false);
-      return;
-    }
+    let isMounted = true;
 
-    if (!inputRef.current) return;
+    const initializeAutocomplete = async () => {
+      try {
+        // Wait for Google Maps API to load
+        await loadGoogleMaps();
 
-    try {
-      // Initialize autocomplete
-      autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'],
-        fields: ['formatted_address', 'geometry', 'address_components', 'name'],
-      });
+        if (!isMounted) return;
 
-      // Listen for place selection
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current?.getPlace();
-        
-        if (!place?.geometry?.location) {
-          setError('No location data available for this address');
+        // Double-check that the API is available
+        if (!window.google?.maps?.places) {
+          setError('Google Maps API not available');
+          setIsLoading(false);
           return;
         }
 
-        const address = place.formatted_address || place.name || '';
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
+        if (!inputRef.current) return;
 
-        onChange(address, lat, lng);
-        setError(null);
-      });
+        // Initialize autocomplete
+        autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+          types: ['address'],
+          fields: ['formatted_address', 'geometry', 'address_components', 'name'],
+        });
 
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Error initializing Google Places:', err);
-      setError('Failed to initialize address autocomplete');
-      setIsLoading(false);
-    }
+        // Listen for place selection
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current?.getPlace();
+          
+          if (!place?.geometry?.location) {
+            setError('No location data available for this address');
+            return;
+          }
+
+          const address = place.formatted_address || place.name || '';
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+
+          onChange(address, lat, lng);
+          setError(null);
+        });
+
+        if (isMounted) {
+          setIsLoading(false);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error initializing Google Places:', err);
+        if (isMounted) {
+          setError('Failed to initialize address autocomplete');
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAutocomplete();
 
     return () => {
+      isMounted = false;
       if (autocompleteRef.current) {
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
