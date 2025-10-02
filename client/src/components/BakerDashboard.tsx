@@ -1460,7 +1460,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                                   setActiveTab('quotes');
                                   setSelectedLead(null);
                                 }}
-                                className="bg-primary hover:from-rose-600 hover:to-pink-600 text-white shadow-lg"
+                                className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600 dark:text-white shadow-lg"
                                 data-testid={`button-create-quote-${lead.id}`}
                               >
                                 <FileText className="w-4 h-4 mr-2" />
