@@ -136,6 +136,7 @@ export function ConsultationsManager({ bakerId }: ConsultationsManagerProps) {
           <div className="flex gap-2 pt-3">
             <Button
               size="sm"
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600"
               onClick={() => updateConsultationMutation.mutate({ 
                 id: consultation.id, 
                 status: 'confirmed' 

@@ -269,7 +269,7 @@ Wedding Cake Calculator Team`,
   }),
 
   // Quote-related email templates
-  quoteSent: (customerName: string, bakerName: string, quoteNumber: string, amount: string, validUntil: string) => ({
+  quoteSent: (customerName: string, bakerName: string, quoteNumber: string, amount: string, validUntil: string, quoteUrl: string) => ({
     subject: `Your Custom Quote from ${bakerName} - Quote #${quoteNumber}`,
     textPart: `Hi ${customerName},
 
@@ -279,6 +279,8 @@ Quote Details:
 - Quote Number: #${quoteNumber}
 - Total Amount: $${amount}
 - Valid Until: ${validUntil}
+
+View your quote: ${quoteUrl}
 
 Please review your quote and let us know if you have any questions. You can view the full details and accept the quote through your customer portal.
 
@@ -299,7 +301,7 @@ ${bakerName}`,
 </div>
 
 <div style="text-align: center; margin: 30px 0;">
-<a href="#" style="background-color: #f472b6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Quote Details</a>
+<a href="${quoteUrl}" style="background-color: #f472b6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Quote Details</a>
 </div>
 
 <p>Please review your quote and let us know if you have any questions. You can view the full details and accept the quote through your customer portal.</p>

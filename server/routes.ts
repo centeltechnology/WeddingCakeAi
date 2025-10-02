@@ -1546,6 +1546,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Failed to track consultation booking analytics:', analyticsError);
       }
       
+      // Send email notification to baker (non-blocking)
+      try {
+        if (consultation && consultation.bakerId) {
+          const baker = await storage.getBaker(consultation.bakerId);
+          if (baker && baker.email) {
+            const emailContent = emailTemplates.newLeadNotification(
+              baker.name,
+              consultation.customerName,
+              consultation.customerEmail,
+              consultation.notes || 'No additional notes',
+              consultation.eventDate || undefined
+            );
+            
+            await sendEmail({
+              to: baker.email,
+              toName: baker.name,
+              ...emailContent
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send consultation notification email:', emailError);
+      }
+      
       res.status(201).json(consultation);
     } catch (error: any) {
       console.error('Consultation booking error:', error);
@@ -2965,12 +2989,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notification first before updating status
       try {
+        // Generate quote URL for customer
+        const quoteUrl = `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://bakeriq.app'}/quotes/${quote.id}/view`;
+        
         const emailContent = emailTemplates.quoteSent(
           customer.name,
           baker.businessName || baker.name,
           quote.quoteNumber,
           quote.total || '0.00',
-          quote.validUntil || 'No expiration'
+          quote.validUntil || 'No expiration',
+          quoteUrl
         );
 
         const emailResult = await sendEmail({

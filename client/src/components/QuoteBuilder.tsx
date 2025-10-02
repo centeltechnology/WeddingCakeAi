@@ -1084,6 +1084,161 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Quote View Dialog */}
+      <Dialog open={!!selectedQuote} onOpenChange={() => setSelectedQuote(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quote Details</DialogTitle>
+            <DialogDescription>
+              {selectedQuote && `Quote #${selectedQuote.quoteNumber || selectedQuote.id.slice(0, 8)}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedQuote && (
+            <div className="space-y-6">
+              {/* Header Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Quote Information</h3>
+                  <div className="space-y-1 text-sm">
+                    <div><span className="text-muted-foreground">Title:</span> {selectedQuote.title}</div>
+                    <div><span className="text-muted-foreground">Status:</span> <Badge className="ml-2">{selectedQuote.status}</Badge></div>
+                    {selectedQuote.eventDate && (
+                      <div><span className="text-muted-foreground">Event Date:</span> {selectedQuote.eventDate}</div>
+                    )}
+                    {selectedQuote.validUntil && (
+                      <div><span className="text-muted-foreground">Valid Until:</span> {new Date(selectedQuote.validUntil).toLocaleDateString()}</div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-2">Customer</h3>
+                  <div className="space-y-1 text-sm">
+                    <div>{customers.find(c => c.id === selectedQuote.customerId)?.name || 'N/A'}</div>
+                    <div className="text-muted-foreground">{customers.find(c => c.id === selectedQuote.customerId)?.email || 'N/A'}</div>
+                    {customers.find(c => c.id === selectedQuote.customerId)?.phone && (
+                      <div className="text-muted-foreground">{customers.find(c => c.id === selectedQuote.customerId)?.phone}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedQuote.description && (
+                <div>
+                  <h3 className="font-semibold mb-2">Description</h3>
+                  <p className="text-sm text-muted-foreground">{selectedQuote.description}</p>
+                </div>
+              )}
+
+              {/* Pricing */}
+              <div>
+                <h3 className="font-semibold mb-2">Pricing</h3>
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>${selectedQuote.subtotal}</span>
+                  </div>
+                  {selectedQuote.taxAmount && parseFloat(selectedQuote.taxAmount) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Tax ({(parseFloat(selectedQuote.taxRate || '0') * 100).toFixed(1)}%)</span>
+                      <span>${selectedQuote.taxAmount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+                    <span>Total</span>
+                    <span>${selectedQuote.total}</span>
+                  </div>
+                  {selectedQuote.depositAmount && (
+                    <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
+                      <span>Deposit Required</span>
+                      <span>${selectedQuote.depositAmount}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Event Details */}
+              {(selectedQuote.eventType || selectedQuote.guestCount || selectedQuote.deliveryAddress) && (
+                <div>
+                  <h3 className="font-semibold mb-2">Event Details</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {selectedQuote.eventType && (
+                      <div><span className="text-muted-foreground">Event Type:</span> {selectedQuote.eventType}</div>
+                    )}
+                    {selectedQuote.guestCount && (
+                      <div><span className="text-muted-foreground">Guest Count:</span> {selectedQuote.guestCount}</div>
+                    )}
+                    {selectedQuote.deliveryAddress && (
+                      <div className="col-span-2"><span className="text-muted-foreground">Delivery Address:</span> {selectedQuote.deliveryAddress}</div>
+                    )}
+                    {selectedQuote.setupTime && (
+                      <div><span className="text-muted-foreground">Setup Time:</span> {selectedQuote.setupTime}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedQuote.customerNotes && (
+                <div>
+                  <h3 className="font-semibold mb-2">Customer Notes</h3>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">{selectedQuote.customerNotes}</p>
+                </div>
+              )}
+
+              {/* Terms */}
+              {selectedQuote.terms && (
+                <div>
+                  <h3 className="font-semibold mb-2">Terms & Conditions</h3>
+                  <p className="text-sm text-muted-foreground">{selectedQuote.terms}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    generatePDF(selectedQuote);
+                    toast({
+                      title: "PDF Downloaded",
+                      description: "Quote has been downloaded as PDF",
+                    });
+                  }}
+                  data-testid="button-download-quote-pdf"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+                {selectedQuote.status === 'draft' && (
+                  <Button 
+                    onClick={() => {
+                      sendQuoteMutation.mutate(selectedQuote.id);
+                      setSelectedQuote(null);
+                    }}
+                    disabled={sendQuoteMutation.isPending}
+                    className="bg-orange-500 hover:bg-orange-600"
+                    data-testid="button-send-quote"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send to Customer
+                  </Button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedQuote(null)}
+                  data-testid="button-close-quote-dialog"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
