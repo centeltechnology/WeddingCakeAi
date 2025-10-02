@@ -30,6 +30,10 @@ interface CakeConfiguration {
     flowers: boolean;
     goldAccents: boolean;
     customTopper: boolean;
+    pipingBorders: boolean;
+    edibleGlitter: boolean;
+    handPainted: boolean;
+    sugarFlowers: boolean;
   };
   delivery: string;
   distance: string;
@@ -57,6 +61,10 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       flowers: false,
       goldAccents: true,
       customTopper: false,
+      pipingBorders: false,
+      edibleGlitter: false,
+      handPainted: false,
+      sugarFlowers: false,
     },
     delivery: 'standard',
     distance: 'extended',
@@ -373,6 +381,54 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                     <Label htmlFor="customTopper" className="font-semibold">Custom Cake Topper</Label>
                   </div>
                   <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$50</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="pipingBorders"
+                      checked={config.decorations.pipingBorders}
+                      onCheckedChange={(checked) => handleDecorationChange('pipingBorders', checked as boolean)}
+                      data-testid="checkbox-piping-borders"
+                    />
+                    <Label htmlFor="pipingBorders" className="font-semibold">Piping & Borders</Label>
+                  </div>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$40</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="edibleGlitter"
+                      checked={config.decorations.edibleGlitter}
+                      onCheckedChange={(checked) => handleDecorationChange('edibleGlitter', checked as boolean)}
+                      data-testid="checkbox-edible-glitter"
+                    />
+                    <Label htmlFor="edibleGlitter" className="font-semibold">Edible Glitter</Label>
+                  </div>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$30</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="handPainted"
+                      checked={config.decorations.handPainted}
+                      onCheckedChange={(checked) => handleDecorationChange('handPainted', checked as boolean)}
+                      data-testid="checkbox-hand-painted"
+                    />
+                    <Label htmlFor="handPainted" className="font-semibold">Hand-painted Design</Label>
+                  </div>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$125</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/50 dark:from-card dark:to-muted/50 rounded-xl border border-border hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="sugarFlowers"
+                      checked={config.decorations.sugarFlowers}
+                      onCheckedChange={(checked) => handleDecorationChange('sugarFlowers', checked as boolean)}
+                      data-testid="checkbox-sugar-flowers"
+                    />
+                    <Label htmlFor="sugarFlowers" className="font-semibold">Sugar Flowers</Label>
+                  </div>
+                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">+$90</span>
                 </div>
               </div>
             </div>

@@ -10,6 +10,10 @@ interface CakeConfiguration {
     flowers: boolean;
     goldAccents: boolean;
     customTopper: boolean;
+    pipingBorders: boolean;
+    edibleGlitter: boolean;
+    handPainted: boolean;
+    sugarFlowers: boolean;
   };
   delivery: string;
   distance: string;
@@ -63,6 +67,10 @@ const BASE_PRICES = {
     flowers: 75,
     goldAccents: 100,
     customTopper: 50,
+    pipingBorders: 40,
+    edibleGlitter: 30,
+    handPainted: 125,
+    sugarFlowers: 90,
   },
   delivery: {
     pickup: 0,
