@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TenantBrandProvider } from "@/components/TenantBrandProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { loadGoogleMaps } from "@/lib/googleMaps";
 import Home from "@/pages/home";
 import Features from "@/pages/features";
 import About from "@/pages/about";
@@ -199,6 +200,12 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    loadGoogleMaps().catch(error => {
+      console.error('Failed to load Google Maps:', error);
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

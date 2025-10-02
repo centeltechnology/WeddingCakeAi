@@ -1650,6 +1650,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
         phone: z.string().max(20, 'Phone number too long').optional(),
         address: z.string().max(500, 'Address too long').optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        socialMedia: z.object({
+          instagram: z.string().optional(),
+          facebook: z.string().optional(),
+          tiktok: z.string().optional(),
+          pinterest: z.string().optional(),
+          website: z.string().optional()
+        }).optional(),
         yearsExperience: z.number().int().min(0).max(50).optional()
       });
       
@@ -1661,7 +1670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { description, specialties, cakeTypes, services, pricing, name, phone, address, yearsExperience } = validation.data;
+      const { description, specialties, cakeTypes, services, pricing, name, phone, address, latitude, longitude, socialMedia, yearsExperience } = validation.data;
       
       // Validate baker exists
       const baker = await storage.getBaker(id);
@@ -1709,6 +1718,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (address !== undefined) {
         updates.address = address.trim();
+      }
+      if (latitude !== undefined) {
+        updates.latitude = latitude;
+      }
+      if (longitude !== undefined) {
+        updates.longitude = longitude;
+      }
+      if (socialMedia !== undefined) {
+        updates.socialMedia = socialMedia;
       }
 
       // Update baker profile

@@ -14,6 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { BillingDashboard } from '@/components/BillingDashboard';
 import CalculatorThemeSelector, { calculatorThemes } from '@/components/CalculatorThemeSelector';
 import { useCalculatorTheme } from '@/hooks/useCalculatorTheme';
+import { GooglePlacesAutocomplete } from '@/components/GooglePlacesAutocomplete';
 import {
   User,
   Mail,
@@ -47,12 +48,9 @@ interface AccountDetails {
   ownerName: string;
   email: string;
   phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  address: string;
+  latitude?: number;
+  longitude?: number;
   socialMedia: {
     facebook: string;
     instagram: string;
@@ -102,46 +100,6 @@ interface TeamMember {
   lastActive: string;
 }
 
-// Helper function to parse address string into components
-function parseAddress(fullAddress: string) {
-  if (!fullAddress) {
-    return { street: '', city: '', state: '', zipCode: '' };
-  }
-  
-  // Try to parse "Street, City, State, ZIP" format
-  const parts = fullAddress.split(',').map(part => part.trim());
-  
-  if (parts.length >= 4) {
-    return {
-      street: parts[0] || '',
-      city: parts[1] || '',
-      state: parts[2] || '',
-      zipCode: parts[3] || ''
-    };
-  } else if (parts.length === 3) {
-    return {
-      street: parts[0] || '',
-      city: parts[1] || '',
-      state: parts[2] || '',
-      zipCode: ''
-    };
-  } else if (parts.length === 2) {
-    return {
-      street: parts[0] || '',
-      city: parts[1] || '',
-      state: '',
-      zipCode: ''
-    };
-  } else {
-    // If can't parse, put everything in street field
-    return {
-      street: fullAddress,
-      city: '',
-      state: '',
-      zipCode: ''
-    };
-  }
-}
 
 export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
   const { toast } = useToast();
@@ -181,7 +139,9 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
         ownerName: baker.name, // Using baker name as owner for now  
         email: baker.email,
         phone: baker.phone || '',
-        address: parseAddress(baker.address || ''),
+        address: baker.address || '',
+        latitude: baker.latitude ? parseFloat(baker.latitude as string) : undefined,
+        longitude: baker.longitude ? parseFloat(baker.longitude as string) : undefined,
         socialMedia: {
           facebook: baker.socialMedia?.facebook || '',
           instagram: baker.socialMedia?.instagram || '',
@@ -356,17 +316,17 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
       apiData.phone = formData.phone;
     }
     
-    // Transform nested address object into simple string
+    // Transform address (simple string)
     if (formData.address) {
-      const addressParts = [
-        formData.address.street,
-        formData.address.city,
-        formData.address.state,
-        formData.address.zipCode
-      ].filter(Boolean);
-      if (addressParts.length > 0) {
-        apiData.address = addressParts.join(', ');
-      }
+      apiData.address = formData.address;
+    }
+    
+    // Include latitude and longitude if available
+    if (formData.latitude !== undefined) {
+      apiData.latitude = formData.latitude;
+    }
+    if (formData.longitude !== undefined) {
+      apiData.longitude = formData.longitude;
     }
     
     // Transform description (simple string)
@@ -649,45 +609,27 @@ export function AccountSettings({ bakerId, className }: AccountSettingsProps) {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Street Address</Label>
-                  <Input
-                    value={editingProfile ? formData.address?.street || '' : account?.address?.street || ''}
-                    disabled={!editingProfile}
-                    onChange={(e) => handleFieldChange('address', e.target.value, 'street')}
-                    data-testid="input-street"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label>City</Label>
-                    <Input
-                      value={editingProfile ? formData.address?.city || '' : account?.address?.city || ''}
-                      disabled={!editingProfile}
-                      onChange={(e) => handleFieldChange('address', e.target.value, 'city')}
-                      data-testid="input-city"
-                    />
-                  </div>
-                  <div>
-                    <Label>State</Label>
-                    <Input
-                      value={editingProfile ? formData.address?.state || '' : account?.address?.state || ''}
-                      disabled={!editingProfile}
-                      onChange={(e) => handleFieldChange('address', e.target.value, 'state')}
-                      data-testid="input-state"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>ZIP Code</Label>
-                  <Input
-                    value={editingProfile ? formData.address?.zipCode || '' : account?.address?.zipCode || ''}
-                    disabled={!editingProfile}
-                    onChange={(e) => handleFieldChange('address', e.target.value, 'zipCode')}
-                    data-testid="input-zip"
-                  />
-                </div>
+              <CardContent>
+                <GooglePlacesAutocomplete
+                  value={editingProfile ? formData.address || '' : account?.address || ''}
+                  onChange={(address: string, lat?: number, lng?: number) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      address,
+                      latitude: lat,
+                      longitude: lng
+                    }));
+                  }}
+                  label="Business Address"
+                  placeholder="Enter your business address..."
+                  disabled={!editingProfile}
+                  data-testid="input-address"
+                />
+                {formData.latitude && formData.longitude && editingProfile && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Location: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
