@@ -8,6 +8,10 @@ A professional SaaS business platform for bakeries featuring modern design with 
 
 ## Recent Changes
 
+**October 2, 2025** - Sendy Integration & Data Export
+- **CSV Data Export**: Added CSV export functionality for baker and lead data. Export endpoint GET /api/super-admin/export/bakers generates CSV file with proper escaping for quotes and special characters. Includes baker data (name, email, business, phone, location, plan, status) and lead data (customer name, email, phone, wedding date, message, status). Export button integrated into Super Admin Baker Management tab. Successfully tested with edge cases containing quotes and commas.
+- **Sendy Email Marketing Integration**: Complete integration with Sendy self-hosted email platform for automated list management. Features include: (1) Sendy service wrapper (server/sendy.ts) with subscribe/unsubscribe/status methods, (2) Database schema for plan-to-list mappings (sendySettings table), (3) API endpoints: GET/POST /api/super-admin/sendy/settings, POST /api/super-admin/sendy/sync, (4) Configuration UI in Integrations tab with status indicator, plan mapping inputs, last sync display, and manual sync button, (5) Automatic baker segmentation by subscription plan with syncing to corresponding Sendy lists. Environment variables: SENDY_API_KEY and SENDY_BASE_URL. State management uses useEffect for fetching settings sync, controlled inputs with explicit null handling for cleared mappings. End-to-end tested and architect-approved.
+
 **October 1, 2025** - Super Admin Dashboard Rebuild (Multi-tenant Control & Revenue Tooling)
 - **Analytics Dashboard**: Revenue charts (MRR/ARR over time), user growth visualization, conversion funnel, plan distribution, key metrics (ARPU, conversion rate, trial conversion rate). Fixed month-boundary filtering bug for accurate date-range analytics.
 - **Subscription Management**: Full subscription CRUD with search/filters, plan changes, trial extensions, cancellation/reactivation, manual credits/discounts, and billing history view. MRR calculation handles 'pro' plan synonym correctly. Billing history displays subscription events chronologically.
