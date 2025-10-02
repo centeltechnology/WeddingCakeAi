@@ -10,7 +10,7 @@ import {
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
   paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
-import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, type AuthenticatedRequest } from "./authMiddleware";
+import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, requireFeature, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -1960,6 +1960,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error converting lead to customer:', error);
       res.status(500).json({ error: 'Failed to convert lead to customer' });
+    }
+  });
+
+  // Bulk email to leads (Enterprise only)
+  app.post('/api/leads/bulk-email', authenticateJWT, requireFeature('bulk_email'), async (req, res) => {
+    try {
+      const { leadIds, subject, body } = req.body;
+      const bakerId = req.user!.userId;
+
+      if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
+        return res.status(400).json({ error: 'leadIds array is required and must not be empty' });
+      }
+
+      if (!subject || !body) {
+        return res.status(400).json({ error: 'subject and body are required' });
+      }
+
+      // Fetch the leads
+      const leads = await Promise.all(
+        leadIds.map(async (leadId) => {
+          const lead = await storage.getLead(leadId);
+          // Verify the lead belongs to the authenticated baker
+          if (lead && lead.bakerId === bakerId) {
+            return lead;
+          }
+          return null;
+        })
+      );
+
+      // Filter out null leads (invalid or unauthorized)
+      const validLeads = leads.filter((lead) => lead !== null);
+
+      if (validLeads.length === 0) {
+        return res.status(400).json({ error: 'No valid leads found' });
+      }
+
+      // Send emails
+      const emailResults = await Promise.all(
+        validLeads.map(async (lead) => {
+          try {
+            // Replace merge fields in subject and body
+            let personalizedSubject = subject.replace(/\{\{customerName\}\}/g, lead!.customerName);
+            let personalizedBody = body
+              .replace(/\{\{customerName\}\}/g, lead!.customerName)
+              .replace(/\{\{weddingDate\}\}/g, lead!.weddingDate || 'TBD');
+
+            const success = await sendEmail({
+              to: lead!.customerEmail,
+              toName: lead!.customerName,
+              from: 'noreply@bakeriq.app',
+              fromName: 'BakerIQ',
+              subject: personalizedSubject,
+              textPart: personalizedBody,
+              htmlPart: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${personalizedBody.replace(/\n/g, '<br>')}</div>`,
+            });
+
+            return {
+              leadId: lead!.id,
+              email: lead!.customerEmail,
+              success,
+            };
+          } catch (error) {
+            console.error(`Error sending email to lead ${lead!.id}:`, error);
+            return {
+              leadId: lead!.id,
+              email: lead!.customerEmail,
+              success: false,
+            };
+          }
+        })
+      );
+
+      const successCount = emailResults.filter((r) => r.success).length;
+      const failureCount = emailResults.filter((r) => !r.success).length;
+
+      res.json({
+        success: true,
+        totalSent: successCount,
+        totalFailed: failureCount,
+        results: emailResults,
+      });
+    } catch (error) {
+      console.error('Error sending bulk emails:', error);
+      res.status(500).json({ error: 'Failed to send bulk emails' });
     }
   });
 
