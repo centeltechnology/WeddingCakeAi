@@ -59,7 +59,7 @@ export default function BakerProfile() {
               <Button 
                 variant="default" 
                 size="sm"
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600 dark:text-white"
                 data-testid="button-cake-calculator"
               >
                 <Calculator className="w-4 h-4 mr-2" />
@@ -111,7 +111,7 @@ export default function BakerProfile() {
               <Button 
                 variant="default" 
                 size="sm"
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600 dark:text-white"
                 data-testid="button-cake-calculator"
               >
                 <Calculator className="w-4 h-4 mr-2" />
@@ -153,7 +153,7 @@ export default function BakerProfile() {
             <Button 
               variant="default" 
               size="sm"
-              className="bg-primary hover:bg-primary/90 text-white"
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-500 dark:hover:bg-orange-600 dark:text-white"
               data-testid="button-cake-calculator"
             >
               <Calculator className="w-4 h-4 mr-2" />

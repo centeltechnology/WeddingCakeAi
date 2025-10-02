@@ -62,10 +62,10 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
       
       // Show success toast
       toast({
-        title: "Consultation Booked!",
+        title: "Booking Request Sent!",
         description: bookedDate && bookedTimeSlot 
-          ? `Your consultation with ${baker.businessName || baker.name} has been successfully booked for ${format(bookedDate, 'MMMM d, yyyy')} at ${bookedTimeSlot}.`
-          : `Your consultation with ${baker.businessName || baker.name} has been successfully booked!`,
+          ? `Your consultation request with ${baker.businessName || baker.name} has been sent for ${format(bookedDate, 'MMMM d, yyyy')} at ${bookedTimeSlot}. The baker will review and confirm your booking.`
+          : `Your consultation request with ${baker.businessName || baker.name} has been sent for approval.`,
       });
       
       if (onBookingComplete) {
@@ -556,6 +556,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
               <Button 
                 onClick={handleNextStep}
                 disabled={!selectedDate || !selectedTimeSlot}
+                className="bg-pink-600 hover:bg-pink-700 text-white dark:bg-pink-600 dark:hover:bg-pink-700 dark:text-white"
                 data-testid="button-next-step-1"
               >
                 Next Step
@@ -783,7 +784,7 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
                 className="bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-confirm-booking"
               >
-                {bookConsultationMutation.isPending ? "Booking..." : "Confirm Booking"}
+                {bookConsultationMutation.isPending ? "Sending..." : "Request Booking"}
               </Button>
             </div>
           </div>
