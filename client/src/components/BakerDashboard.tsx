@@ -51,6 +51,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PortfolioUploader from "./PortfolioUploader";
 import { QuoteBuilder } from "./QuoteBuilder";
+import { QuoteTemplateManager } from "./QuoteTemplateManager";
 import { ContractManager } from "./ContractManager";
 import { PaymentManager } from "./PaymentManager";
 import { BrandingSystem } from "./BrandingSystem";
@@ -699,6 +700,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
               <FileText className="w-5 h-5" />
               <span>Quotes</span>
             </TabsTrigger>
+            <TabsTrigger value="templates" className="flex-col h-20 gap-2 text-xs">
+              <Cake className="w-5 h-5" />
+              <span>Templates</span>
+            </TabsTrigger>
             <TabsTrigger value="contracts" className="flex-col h-20 gap-2 text-xs">
               <FileCheck className="w-5 h-5" />
               <span>Contracts</span>
@@ -753,6 +758,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 <TabsTrigger value="quotes" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <FileText className="w-4 h-4 mr-2" />
                   Quotes
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
+                  <Cake className="w-4 h-4 mr-2" />
+                  Templates
                 </TabsTrigger>
                 <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
                   <FileCheck className="w-4 h-4 mr-2" />
@@ -1532,6 +1541,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         <TabsContent value="quotes">
           <QuoteBuilder bakerId={bakerId} />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <QuoteTemplateManager bakerId={bakerId} />
         </TabsContent>
 
         <TabsContent value="contracts">
