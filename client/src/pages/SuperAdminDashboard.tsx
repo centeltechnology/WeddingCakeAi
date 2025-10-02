@@ -167,6 +167,7 @@ function SendyIntegrationPanel() {
   const [starterList, setStarterList] = useState("");
   const [professionalList, setProfessionalList] = useState("");
   const [enterpriseList, setEnterpriseList] = useState("");
+  const [lastSyncErrors, setLastSyncErrors] = useState<string[]>([]);
 
   const { data: sendyData, isLoading: settingsLoading } = useQuery<{
     success: boolean;
@@ -214,9 +215,13 @@ function SendyIntegrationPanel() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sendy/settings'] });
+      setLastSyncErrors(data.errors || []);
+      
+      const variant = data.errorCount === 0 ? "default" : (data.successCount > 0 ? "default" : "destructive");
       toast({
-        title: "Sync Complete",
+        title: data.errorCount === 0 ? "Sync Complete" : "Sync Completed with Errors",
         description: `Synced ${data.successCount} of ${data.total} bakers. ${data.errorCount} errors.`,
+        variant,
       });
     },
     onError: (error: any) => {
@@ -369,6 +374,28 @@ function SendyIntegrationPanel() {
               </div>
             )}
           </div>
+
+          {/* Sync Error Details */}
+          {lastSyncErrors.length > 0 && (
+            <Accordion type="single" collapsible className="w-full mt-4">
+              <AccordionItem value="errors">
+                <AccordionTrigger className="text-sm font-medium text-red-600 dark:text-red-400">
+                  View Error Details ({lastSyncErrors.length} errors)
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <ul className="space-y-2">
+                      {lastSyncErrors.map((error, index) => (
+                        <li key={index} className="text-sm text-red-800 dark:text-red-300 font-mono">
+                          {error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
         </div>
       )}
 

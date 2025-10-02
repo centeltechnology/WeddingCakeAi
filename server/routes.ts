@@ -5192,14 +5192,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errors: string[] = [];
 
       for (const baker of bakers) {
+        const plan = baker.subscriptionPlan || 'starter';
+        const normalizedPlan = plan === 'pro' ? 'professional' : plan;
+
         try {
-          const plan = baker.subscriptionPlan || 'starter';
-          const normalizedPlan = plan === 'pro' ? 'professional' : plan;
-          
           const listId = settings.planMappings[normalizedPlan as keyof typeof settings.planMappings];
           
           if (!listId) {
-            errors.push(`No list mapping for plan: ${normalizedPlan} (baker: ${baker.email})`);
+            errors.push(`${baker.email} (plan: ${normalizedPlan}): No list mapping configured`);
             errorCount++;
             continue;
           }
@@ -5215,11 +5215,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             successCount++;
           } else {
             errorCount++;
-            errors.push(`${baker.email}: ${result.message}`);
+            const errorMsg = result.message || 'Unknown error';
+            errors.push(`${baker.email} (plan: ${normalizedPlan}): ${errorMsg}`);
           }
         } catch (error: any) {
           errorCount++;
-          errors.push(`${baker.email}: ${error.message}`);
+          const errorMsg = error?.message || 'Unknown error';
+          errors.push(`${baker.email} (plan: ${normalizedPlan}): ${errorMsg}`);
         }
       }
 
