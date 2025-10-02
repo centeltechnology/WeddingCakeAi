@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   User, 
   Mail, 
@@ -82,6 +85,9 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("leads");
   const [leadForQuote, setLeadForQuote] = useState<Lead | null>(null);
+  const [consultationDialogOpen, setConsultationDialogOpen] = useState(false);
+  const [consultationLead, setConsultationLead] = useState<Lead | null>(null);
+  const [consultationMessage, setConsultationMessage] = useState("");
 
   const handleLogout = () => {
     // Clear authentication tokens using centralized token manager
@@ -137,6 +143,34 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
       toast({
         title: "Lead Updated",
         description: "Lead status has been updated successfully!",
+      });
+    }
+  });
+
+  const sendConsultationRequestMutation = useMutation({
+    mutationFn: async ({ leadId, message }: { leadId: string; message: string }) => {
+      const { makeAuthenticatedRequest } = await import('@/lib/csrf');
+      const response = await makeAuthenticatedRequest(`/api/leads/${leadId}/consultation`, {
+        method: 'POST',
+        body: JSON.stringify({ message })
+      });
+      if (!response.ok) throw new Error('Failed to send consultation request');
+      return response.json();
+    },
+    onSuccess: () => {
+      setConsultationDialogOpen(false);
+      setConsultationMessage("");
+      setConsultationLead(null);
+      toast({
+        title: "Consultation Request Sent",
+        description: "Your consultation request has been sent to the customer via email.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send consultation request. Please try again.",
+        variant: "destructive",
       });
     }
   });
@@ -1470,17 +1504,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                               <Button
                                 variant="outline"
                                 onClick={() => {
-                                  // Open email client or consultation booking
-                                  const subject = encodeURIComponent(`Consultation Request - ${lead.customerName} Wedding Cake`);
-                                  const body = encodeURIComponent(`Hi ${lead.customerName},\n\nI'd love to schedule a consultation to discuss your wedding cake requirements in more detail.\n\nWhen would be a good time for you?\n\nBest regards,\n${baker?.name || 'Your Baker'}`);
-                                  window.open(`mailto:${lead.customerEmail}?subject=${subject}&body=${body}`);
-                                  
-                                  toast({
-                                    title: "Email Client Opened",
-                                    description: "Consultation request email template has been prepared.",
-                                  });
+                                  setConsultationLead(lead);
+                                  setConsultationMessage(`Hi ${lead.customerName},\n\nI'd love to schedule a consultation to discuss your wedding cake requirements in more detail.\n\nWhen would be a good time for you?\n\nBest regards,\n${baker?.name || 'Your Baker'}`);
+                                  setConsultationDialogOpen(true);
                                 }}
-                                className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-950"
                                 data-testid={`button-request-consultation-${lead.id}`}
                               >
                                 <Phone className="w-4 h-4 mr-2" />
@@ -1716,6 +1744,70 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
       </Tabs>
       </div>
+
+      {/* Consultation Request Dialog */}
+      <Dialog open={consultationDialogOpen} onOpenChange={setConsultationDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Request Consultation</DialogTitle>
+            <DialogDescription>
+              Send a consultation request to {consultationLead?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="consultation-message">Your Message</Label>
+              <Textarea
+                id="consultation-message"
+                value={consultationMessage}
+                onChange={(e) => setConsultationMessage(e.target.value)}
+                placeholder="Compose your consultation request message..."
+                rows={8}
+                className="mt-2"
+                data-testid="textarea-consultation-message"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConsultationDialogOpen(false);
+                  setConsultationMessage("");
+                  setConsultationLead(null);
+                }}
+                data-testid="button-cancel-consultation"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (consultationLead?.id) {
+                    sendConsultationRequestMutation.mutate({
+                      leadId: consultationLead.id,
+                      message: consultationMessage
+                    });
+                  }
+                }}
+                disabled={!consultationMessage.trim() || sendConsultationRequestMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="button-send-consultation"
+              >
+                {sendConsultationRequestMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Request
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
