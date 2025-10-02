@@ -42,11 +42,12 @@ export class SendyService {
 
       const result = response.data;
       
-      if (result === '1' || result === 'Already subscribed.') {
-        return { success: true, message: result === '1' ? 'Subscribed' : 'Already subscribed' };
+      // Sendy returns 1 (number or string) on success, or 'Already subscribed.' if already in list
+      if (result === 1 || result === '1' || result === 'Already subscribed.') {
+        return { success: true, message: result === 1 || result === '1' ? 'Subscribed' : 'Already subscribed' };
       }
       
-      return { success: false, message: result };
+      return { success: false, message: String(result) };
     } catch (error: any) {
       console.error('Sendy subscribe error:', error.message);
       return { success: false, message: error.message };
