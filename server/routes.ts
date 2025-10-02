@@ -1964,7 +1964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk email to leads (Enterprise only)
-  app.post('/api/leads/bulk-email', authenticateJWT, requireFeature('bulk_email'), async (req, res) => {
+  app.post('/api/leads/bulk-email', authenticateJWT, requireFeature('bulk_email'), async (req: AuthenticatedRequest, res) => {
     try {
       const { leadIds, subject, body } = req.body;
       const bakerId = req.user!.userId;
@@ -2044,6 +2044,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error sending bulk emails:', error);
       res.status(500).json({ error: 'Failed to send bulk emails' });
+    }
+  });
+
+  // CSV export for leads (Enterprise only)
+  app.get('/api/leads/export', authenticateJWT, requireFeature('csv_export'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bakerId = req.user!.userId;
+
+      // Get all leads for this baker
+      const leads = await storage.getLeadsByBaker(bakerId);
+
+      if (leads.length === 0) {
+        return res.status(404).json({ error: 'No leads found to export' });
+      }
+
+      // Helper function to escape CSV fields
+      const escapeCsvField = (field: any): string => {
+        if (field === null || field === undefined) return '';
+        const str = String(field);
+        // If field contains comma, quote, or newline, wrap in quotes and escape existing quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      // CSV header
+      const csvHeader = [
+        'Name',
+        'Email',
+        'Phone',
+        'Wedding Date',
+        'Guest Count',
+        'Budget',
+        'Status',
+        'Message',
+        'Created At',
+      ].join(',');
+
+      // CSV rows
+      const csvRows = leads.map((lead) => {
+        return [
+          escapeCsvField(lead.customerName),
+          escapeCsvField(lead.customerEmail),
+          escapeCsvField(lead.customerPhone || ''),
+          escapeCsvField(lead.weddingDate || ''),
+          escapeCsvField(lead.guestCount || ''),
+          escapeCsvField(lead.budget || ''),
+          escapeCsvField(lead.status || 'new'),
+          escapeCsvField(lead.message || ''),
+          escapeCsvField(lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : ''),
+        ].join(',');
+      });
+
+      const csv = [csvHeader, ...csvRows].join('\n');
+
+      // Set response headers for file download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="leads-export-${Date.now()}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Error exporting leads:', error);
+      res.status(500).json({ error: 'Failed to export leads' });
     }
   });
 
