@@ -299,7 +299,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const pricing = calculatePricing();
     const quoteRequest: QuoteRequest = {
       customerName: customerInfo.name,
@@ -318,6 +318,27 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
       contactPreference: customerInfo.contactPreference,
       timeline: customerInfo.timeline
     };
+
+    // Save calculator lead
+    try {
+      await apiRequest("POST", "/api/calculator-leads", {
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
+        eventDate: customerInfo.eventDate,
+        cakeConfiguration: {
+          tiers,
+          decorations: selectedDecorations,
+          specialRequests,
+          guestCount: customerInfo.guestCount,
+          venue: customerInfo.venue
+        },
+        estimatedPrice: pricing.total.toString()
+      });
+    } catch (error) {
+      console.error("Failed to save calculator lead:", error);
+      // Don't fail the quote request if lead save fails
+    }
 
     submitQuoteRequest.mutate(quoteRequest);
   };
