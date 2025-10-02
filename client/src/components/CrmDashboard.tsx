@@ -23,6 +23,8 @@ import {
 import { apiRequest } from '@/lib/queryClient';
 import { formatDistanceToNow } from 'date-fns';
 import type { Customer } from '@shared/schema';
+import BulkEmailLeads from './BulkEmailLeads';
+import LeadsExportButton from './LeadsExportButton';
 
 interface CrmDashboardProps {
   bakerId: string;
@@ -396,6 +398,14 @@ export function CrmDashboard({ bakerId, onCreateQuote }: CrmDashboardProps) {
           <Filter className="h-4 w-4 mr-2" />
           Filter
         </Button>
+        <BulkEmailLeads 
+          bakerId={bakerId} 
+          userPlan="enterprise"
+        />
+        <LeadsExportButton 
+          bakerId={bakerId}
+          userPlan="enterprise"
+        />
       </div>
 
       {/* Customer List with Tabs */}

@@ -166,23 +166,33 @@ export default function BulkEmailLeads({
     });
   };
 
+  const [mainDialogOpen, setMainDialogOpen] = useState(false);
+
   // Upgrade prompt for non-enterprise users
   if (!hasAccess) {
     return (
-      <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-        <CardContent className="p-12">
-          <div className="text-center max-w-md mx-auto">
-            <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-orange-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+      <Dialog open={mainDialogOpen} onOpenChange={setMainDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            className="border-orange-300 text-orange-600 hover:bg-orange-50"
+            data-testid="bulk-email-button"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Bulk Email
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Lock className="w-5 h-5 text-orange-600 mr-2" />
               Enterprise Feature
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Bulk email to leads is available on the{" "}
-              <strong>Enterprise plan</strong>. Upgrade to unlock this powerful
-              marketing tool and reach all your leads at once.
-            </p>
+            </DialogTitle>
+            <DialogDescription>
+              Bulk email to leads is available on the Enterprise plan
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
             <div className="bg-orange-50 p-4 rounded-lg mb-6">
               <div className="flex items-center justify-center mb-2">
                 <Crown className="w-5 h-5 text-orange-600 mr-2" />
@@ -200,21 +210,41 @@ export default function BulkEmailLeads({
             </div>
             <Button
               onClick={() => (window.location.href = "/billing")}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
               data-testid="button-upgrade-bulk-email"
             >
               <Crown className="w-4 h-4 mr-2" />
               Upgrade to Enterprise
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     );
   }
 
-  // Main bulk email interface
+  // Main bulk email interface for enterprise users
   return (
-    <div className="space-y-6">
+    <Dialog open={mainDialogOpen} onOpenChange={setMainDialogOpen}>
+      <DialogTrigger asChild>
+        <Button
+          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+          data-testid="bulk-email-button"
+        >
+          <Mail className="w-4 h-4 mr-2" />
+          Bulk Email
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center">
+            <Mail className="w-5 h-5 text-orange-600 mr-2" />
+            Bulk Email Leads
+          </DialogTitle>
+          <DialogDescription>
+            Send targeted emails to multiple leads at once
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
       <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
         <CardHeader className="border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -422,6 +452,8 @@ You can use these merge fields:
           )}
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

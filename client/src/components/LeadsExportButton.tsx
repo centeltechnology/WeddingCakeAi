@@ -74,7 +74,7 @@ export default function LeadsExportButton({ bakerId, userPlan = "starter" }: Lea
         variant="outline"
         onClick={handleExport}
         disabled={isExporting}
-        data-testid="button-export-leads"
+        data-testid="export-csv-button"
       >
         {isExporting ? (
           <>Exporting...</>
