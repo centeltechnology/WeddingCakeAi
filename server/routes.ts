@@ -2964,6 +2964,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate approval link for quote (baker-only)
+  app.post('/api/quotes/:id/generate-approval-link', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const quote = await storage.getQuote(id);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      
+      // Verify baker owns this quote
+      if (user.role === 'baker' && user.userId !== quote.bakerId) {
+        return res.status(403).json({ error: 'Access forbidden' });
+      }
+      
+      // Generate approval token (expires in 30 days)
+      const { token, expiresAt } = await storage.generateQuoteApprovalToken(id, 30);
+      
+      // Construct approval URL
+      const approvalUrl = `${req.protocol}://${req.get('host')}/quote-approval/${token}`;
+      
+      res.json({
+        success: true,
+        approvalUrl,
+        token,
+        expiresAt
+      });
+    } catch (error) {
+      console.error('Error generating approval link:', error);
+      res.status(500).json({ error: 'Failed to generate approval link' });
+    }
+  });
+
+  // Get quote by approval token (customer-facing, no auth required)
+  app.get('/api/quotes/approve/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const quote = await storage.getQuoteByApprovalToken(token);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found or link expired' });
+      }
+      
+      // Check if token is expired
+      if (quote.approvalTokenExpiresAt && new Date() > new Date(quote.approvalTokenExpiresAt)) {
+        return res.status(410).json({ error: 'Approval link has expired' });
+      }
+      
+      // Get quote items
+      const items = await storage.getQuoteItems(quote.id);
+      
+      // Get baker details
+      const baker = await storage.getBaker(quote.bakerId || '');
+      
+      // Mark quote as viewed if not already
+      if (!quote.viewedAt) {
+        await storage.updateQuote(quote.id, { 
+          viewedAt: new Date(),
+          status: 'viewed'
+        });
+      }
+      
+      res.json({
+        quote: {
+          ...quote,
+          items
+        },
+        baker: baker ? {
+          id: baker.id,
+          name: baker.name,
+          businessName: baker.businessName,
+          email: baker.email,
+          phone: baker.phone
+        } : null
+      });
+    } catch (error) {
+      console.error('Error fetching quote by token:', error);
+      res.status(500).json({ error: 'Failed to fetch quote' });
+    }
+  });
+
+  // Approve quote (customer-facing, no auth required)
+  app.post('/api/quotes/approve/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const quote = await storage.getQuoteByApprovalToken(token);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      
+      // Check if token is expired
+      if (quote.approvalTokenExpiresAt && new Date() > new Date(quote.approvalTokenExpiresAt)) {
+        return res.status(410).json({ error: 'Approval link has expired' });
+      }
+      
+      // Check if quote is already approved or declined
+      if (quote.status === 'approved') {
+        return res.status(409).json({ error: 'Quote has already been approved' });
+      }
+      
+      if (quote.status === 'rejected' || quote.declinedAt) {
+        return res.status(409).json({ error: 'Quote has been declined and cannot be approved' });
+      }
+      
+      // Update quote status to approved
+      const updatedQuote = await storage.updateQuote(quote.id, {
+        status: 'approved',
+        approvedAt: new Date()
+      });
+      
+      // Send notification email to baker
+      try {
+        const baker = await storage.getBaker(quote.bakerId || '');
+        if (baker) {
+          await sendEmail({
+            to: baker.email,
+            toName: baker.name,
+            from: 'noreply@bakeriq.app',
+            fromName: 'BakerIQ',
+            subject: `Quote #${quote.quoteNumber} Approved!`,
+            textPart: `Great news! Your quote #${quote.quoteNumber} has been approved by the customer.`,
+            htmlPart: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2 style="color: #f97316;">Quote Approved!</h2>
+              <p>Great news! Your quote <strong>#${quote.quoteNumber}</strong> has been approved by the customer.</p>
+              <p><strong>Total Amount:</strong> $${quote.total}</p>
+              <p>Please log in to your baker dashboard to proceed with the next steps.</p>
+            </div>`
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send approval notification:', emailError);
+        // Don't fail the request if email fails
+      }
+      
+      res.json({
+        success: true,
+        message: 'Quote approved successfully',
+        quote: updatedQuote
+      });
+    } catch (error) {
+      console.error('Error approving quote:', error);
+      res.status(500).json({ error: 'Failed to approve quote' });
+    }
+  });
+
+  // Decline quote (customer-facing, no auth required)
+  app.post('/api/quotes/decline/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { reason } = req.body;
+      
+      const quote = await storage.getQuoteByApprovalToken(token);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      
+      // Check if token is expired
+      if (quote.approvalTokenExpiresAt && new Date() > new Date(quote.approvalTokenExpiresAt)) {
+        return res.status(410).json({ error: 'Approval link has expired' });
+      }
+      
+      // Check if quote is already approved or declined
+      if (quote.status === 'approved' || quote.approvedAt) {
+        return res.status(409).json({ error: 'Quote has already been approved and cannot be declined' });
+      }
+      
+      if (quote.status === 'rejected' || quote.declinedAt) {
+        return res.status(409).json({ error: 'Quote has already been declined' });
+      }
+      
+      // Update quote status to rejected
+      const updatedQuote = await storage.updateQuote(quote.id, {
+        status: 'rejected',
+        declinedAt: new Date(),
+        declineReason: reason || null
+      });
+      
+      // Send notification email to baker
+      try {
+        const baker = await storage.getBaker(quote.bakerId || '');
+        if (baker) {
+          await sendEmail({
+            to: baker.email,
+            toName: baker.name,
+            from: 'noreply@bakeriq.app',
+            fromName: 'BakerIQ',
+            subject: `Quote #${quote.quoteNumber} Declined`,
+            textPart: `Your quote #${quote.quoteNumber} has been declined by the customer.${reason ? ` Reason: ${reason}` : ''}`,
+            htmlPart: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2 style="color: #666;">Quote Declined</h2>
+              <p>Your quote <strong>#${quote.quoteNumber}</strong> has been declined by the customer.</p>
+              ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+              <p>You can reach out to the customer to discuss their concerns or create a revised quote.</p>
+            </div>`
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send decline notification:', emailError);
+        // Don't fail the request if email fails
+      }
+      
+      res.json({
+        success: true,
+        message: 'Quote declined',
+        quote: updatedQuote
+      });
+    } catch (error) {
+      console.error('Error declining quote:', error);
+      res.status(500).json({ error: 'Failed to decline quote' });
+    }
+  });
+
   // Contract API Routes
   app.get('/api/contracts', async (req, res) => {
     try {
