@@ -465,6 +465,7 @@ export default function SuperAdminDashboard() {
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [showStatsDialog, setShowStatsDialog] = useState(false);
+  const [showViewCampaignDialog, setShowViewCampaignDialog] = useState(false);
   const { toast } = useToast();
 
   // Fetch platform statistics
@@ -769,6 +770,36 @@ export default function SuperAdminDashboard() {
   const handleViewStats = (campaign: any) => {
     setSelectedCampaign(campaign);
     setShowStatsDialog(true);
+  };
+
+  const handleViewCampaign = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setShowViewCampaignDialog(true);
+  };
+
+  const duplicateCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      const res = await apiRequest('POST', `/api/super-admin/campaigns/${campaignId}/duplicate`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/campaigns'] });
+      toast({
+        title: "Campaign Duplicated",
+        description: "Campaign has been duplicated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to duplicate campaign.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDuplicateCampaign = (campaign: any) => {
+    duplicateCampaignMutation.mutate(campaign.id);
   };
 
   // Filter bakers based on search and status
@@ -1565,6 +1596,22 @@ export default function SuperAdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewCampaign(campaign)}
+                                data-testid={`button-view-${campaign.id}`}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDuplicateCampaign(campaign)}
+                                data-testid={`button-duplicate-${campaign.id}`}
+                              >
+                                Duplicate
+                              </Button>
                               {campaign.status === 'draft' && (
                                 <Button
                                   variant="outline"
@@ -1583,12 +1630,11 @@ export default function SuperAdminDashboard() {
                                   onClick={() => handleViewStats(campaign)}
                                   data-testid={`button-stats-${campaign.id}`}
                                 >
-                                  View Stats
+                                  Stats
                                 </Button>
                               )}
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </TableCell>                        </TableRow>
                       ))
                     ) : (
                       <TableRow>
@@ -2245,6 +2291,99 @@ export default function SuperAdminDashboard() {
 
               <div className="flex justify-end">
                 <Button onClick={() => setShowStatsDialog(false)} data-testid="button-close-stats">
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Campaign Dialog */}
+      <Dialog open={showViewCampaignDialog} onOpenChange={setShowViewCampaignDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>View Campaign</DialogTitle>
+            <DialogDescription>
+              View campaign details and content
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCampaign && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Campaign Name
+                  </label>
+                  <p className="text-gray-900 dark:text-white">{selectedCampaign.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                    Status
+                  </label>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedCampaign.status === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                    selectedCampaign.status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                    selectedCampaign.status === 'scheduled' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {selectedCampaign.status}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
+                  Subject
+                </label>
+                <p className="text-gray-900 dark:text-white">{selectedCampaign.subject}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                  Target Audience
+                </label>
+                <div className="flex gap-2">
+                  {selectedCampaign.segmentFilter?.plans?.includes('starter') && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                      Starter Plan
+                    </span>
+                  )}
+                  {selectedCampaign.segmentFilter?.plans?.includes('professional') && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                      Professional Plan
+                    </span>
+                  )}
+                  {selectedCampaign.segmentFilter?.plans?.includes('enterprise') && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                      Enterprise Plan
+                    </span>
+                  )}
+                  {(!selectedCampaign.segmentFilter?.plans || selectedCampaign.segmentFilter.plans.length === 0) && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                      All Bakers
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Email Content</h3>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md max-h-96 overflow-y-auto">
+                  <div 
+                    className="text-sm text-gray-700 dark:text-gray-300"
+                    dangerouslySetInnerHTML={{ __html: selectedCampaign.content }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowViewCampaignDialog(false)} 
+                  data-testid="button-close-view"
+                >
                   Close
                 </Button>
               </div>

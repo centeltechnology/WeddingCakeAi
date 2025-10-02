@@ -5168,6 +5168,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/super-admin/campaigns/:id/duplicate', verifySuperAdminToken, async (req: any, res) => {
+    try {
+      const originalCampaign = await storage.getSuperAdminCampaign(req.params.id);
+      if (!originalCampaign) {
+        return res.status(404).json({ success: false, message: 'Campaign not found' });
+      }
+
+      const duplicatedCampaign = await storage.createSuperAdminCampaign({
+        name: `${originalCampaign.name} (Copy)`,
+        subject: originalCampaign.subject,
+        content: originalCampaign.content,
+        segmentFilter: originalCampaign.segmentFilter,
+        status: 'draft',
+        createdBy: req.user.userId,
+      });
+
+      res.json({ success: true, campaign: duplicatedCampaign });
+    } catch (error) {
+      console.error('Error duplicating campaign:', error);
+      res.status(500).json({ success: false, message: 'Failed to duplicate campaign' });
+    }
+  });
+
   app.get('/api/super-admin/campaigns/:id/stats', verifySuperAdminToken, async (req, res) => {
     try {
       const stats = await storage.getSuperAdminCampaignStats(req.params.id);
@@ -5240,8 +5263,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const listId = settings.planMappings[normalizedPlan as keyof typeof settings.planMappings];
           
-          console.log(`[Sendy Sync] Baker: ${baker.email}, Original Plan: ${plan}, Normalized: ${normalizedPlan}, List ID: ${listId}`);
-          
           if (!listId) {
             errors.push(`${baker.email} (plan: ${normalizedPlan}): No list mapping configured`);
             errorCount++;
@@ -5255,8 +5276,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             boolean: true
           });
 
-          console.log(`[Sendy Sync] Result for ${baker.email}:`, result);
-
           if (result.success) {
             successCount++;
           } else {
@@ -5268,7 +5287,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorCount++;
           const errorMsg = error?.message || 'Unknown error';
           errors.push(`${baker.email} (plan: ${normalizedPlan}): ${errorMsg}`);
-          console.error(`[Sendy Sync] Error for ${baker.email}:`, error);
         }
       }
 
