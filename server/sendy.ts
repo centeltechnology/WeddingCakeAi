@@ -23,24 +23,32 @@ export class SendyService {
 
   async subscribe(subscriber: SendySubscriber): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await axios.post(`${this.baseUrl}/subscribe`, {
+      const payload = {
         api_key: this.apiKey,
         name: subscriber.name,
         email: subscriber.email,
         list: subscriber.list,
         boolean: subscriber.boolean || true, // Silent subscription (no double opt-in)
-      }, {
+      };
+      
+      console.log(`[Sendy API] Subscribing ${subscriber.email} to list: ${subscriber.list}`);
+      console.log(`[Sendy API] Payload:`, JSON.stringify(payload, null, 2));
+      
+      const response = await axios.post(`${this.baseUrl}/subscribe`, payload, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         transformRequest: [(data) => {
-          return Object.keys(data)
+          const formData = Object.keys(data)
             .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
             .join('&');
+          console.log(`[Sendy API] Form-encoded data:`, formData);
+          return formData;
         }],
       });
 
       const result = response.data;
+      console.log(`[Sendy API] Response for ${subscriber.email}:`, result);
       
       // Sendy returns 1 (number or string) on success, or 'Already subscribed.' if already in list
       if (result === 1 || result === '1' || result === 'Already subscribed.') {
