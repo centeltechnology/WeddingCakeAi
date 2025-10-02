@@ -1127,7 +1127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { message } = req.body;
       
       const lead = await storage.getLead(leadId);
-      if (!lead) {
+      if (!lead || !lead.bakerId) {
         return res.status(404).json({ message: "Lead not found" });
       }
 
@@ -1137,46 +1137,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Send consultation request email to customer
-      if (process.env.MAILJET_API_KEY && process.env.MAILJET_SECRET_KEY) {
-        const mailjet = Mailjet.apiConnect(
-          process.env.MAILJET_API_KEY,
-          process.env.MAILJET_SECRET_KEY
-        );
-
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #f97316;">Consultation Request from ${baker.name}</h2>
-            <p>Hi ${lead.customerName},</p>
-            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              ${message.replace(/\n/g, '<br>')}
+      try {
+        await sendEmail({
+          to: lead.customerEmail,
+          from: 'noreply@bakeriq.app',
+          fromName: baker.name,
+          replyTo: baker.email,
+          subject: `Consultation Request - ${baker.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #f97316;">Consultation Request from ${baker.name}</h2>
+              <p>Hi ${lead.customerName},</p>
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                ${message.replace(/\n/g, '<br>')}
+              </div>
+              <p>Please reply to this email to schedule your consultation.</p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                Best regards,<br>
+                ${baker.name}
+              </p>
             </div>
-            <p>Please reply to this email to schedule your consultation.</p>
-            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-              Best regards,<br>
-              ${baker.name}
-            </p>
-          </div>
-        `;
-
-        await mailjet.post('send', { version: 'v3.1' }).request({
-          Messages: [{
-            From: {
-              Email: 'noreply@bakeriq.app',
-              Name: baker.name
-            },
-            To: [{
-              Email: lead.customerEmail,
-              Name: lead.customerName
-            }],
-            ReplyTo: {
-              Email: baker.email,
-              Name: baker.name
-            },
-            Subject: `Consultation Request - ${baker.name}`,
-            HTMLPart: emailHtml,
-            TextPart: message
-          }]
+          `,
+          text: message
         });
+      } catch (emailError) {
+        console.error("Error sending consultation email:", emailError);
+        // Don't fail the request if email fails
       }
 
       res.json({ success: true, message: "Consultation request sent successfully" });
