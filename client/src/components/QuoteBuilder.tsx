@@ -343,6 +343,8 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
     const quoteData = {
       ...newQuote,
       bakerId,
+      // Convert empty string to null for templateId (foreign key constraint)
+      templateId: newQuote.templateId || null,
       quoteNumber: `Q${new Date().getFullYear()}-${String(quotes.length + 1).padStart(3, '0')}`,
       status: 'draft',
       // Preserve pre-populated values from lead/template, fallback to defaults
