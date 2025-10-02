@@ -279,6 +279,7 @@ export const leads = pgTable("leads", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Old messages table (kept for backward compatibility)
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   leadId: varchar("lead_id").references(() => leads.id),
@@ -515,6 +516,37 @@ export const customerSessions = pgTable("customer_sessions", {
   customerId: varchar("customer_id").notNull().references(() => customers.id),
   sessionToken: varchar("session_token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Conversations to group messages between bakers and customers
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  customerEmail: text("customer_email").notNull(), // For non-registered customers
+  leadId: varchar("lead_id").references(() => leads.id),
+  quoteId: varchar("quote_id"),
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  subject: text("subject"),
+  status: varchar("status").default('active'), // active, archived, closed
+  lastMessageAt: timestamp("last_message_at"),
+  unreadCountBaker: integer("unread_count_baker").default(0),
+  unreadCountCustomer: integer("unread_count_customer").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Messages within conversations
+export const conversationMessages = pgTable("conversation_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id),
+  senderId: varchar("sender_id"), // baker or customer ID
+  senderType: text("sender_type").notNull(), // 'baker' or 'customer'
+  senderName: text("sender_name"),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -855,6 +887,8 @@ export const insertBakerProfileSchema = createInsertSchema(bakerProfiles).omit({
 // CRM schemas
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCustomerNoteSchema = createInsertSchema(customerNotes).omit({ id: true, createdAt: true });
+export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertConversationMessageSchema = createInsertSchema(conversationMessages).omit({ id: true, createdAt: true });
 
 // Quote schemas
 export const insertQuoteTemplateSchema = createInsertSchema(quoteTemplates).omit({ id: true, createdAt: true, updatedAt: true });
@@ -906,6 +940,10 @@ export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type CustomerNote = typeof customerNotes.$inferSelect;
 export type InsertCustomerNote = z.infer<typeof insertCustomerNoteSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type ConversationMessage = typeof conversationMessages.$inferSelect;
+export type InsertConversationMessage = z.infer<typeof insertConversationMessageSchema>;
 
 // Quote types
 export type QuoteTemplate = typeof quoteTemplates.$inferSelect;
