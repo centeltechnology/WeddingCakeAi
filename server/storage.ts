@@ -168,6 +168,8 @@ export interface IStorage {
   getQuotesByBaker(bakerId: string): Promise<Quote[]>;
   getQuotesByCustomer(customerId: string): Promise<Quote[]>;
   updateQuote(id: string, updates: Partial<InsertQuote>): Promise<Quote>;
+  getQuoteByApprovalToken(token: string): Promise<Quote | undefined>;
+  generateQuoteApprovalToken(quoteId: string, expiresInDays: number): Promise<{ token: string; expiresAt: Date }>;
   
   createQuoteItem(item: InsertQuoteItem): Promise<QuoteItem>;
   getQuoteItems(quoteId: string): Promise<QuoteItem[]>;
@@ -1602,6 +1604,31 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async getQuoteByApprovalToken(token: string): Promise<Quote | undefined> {
+    return Array.from(this.quotes.values()).find(q => q.approvalToken === token);
+  }
+
+  async generateQuoteApprovalToken(quoteId: string, expiresInDays: number = 30): Promise<{ token: string; expiresAt: Date }> {
+    const quote = this.quotes.get(quoteId);
+    if (!quote) throw new Error('Quote not found');
+    
+    // Generate a secure random token
+    const token = randomUUID() + '-' + Date.now().toString(36);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    // Update the quote with the approval token
+    const updated: Quote = { 
+      ...quote, 
+      approvalToken: token,
+      approvalTokenExpiresAt: expiresAt,
+      updatedAt: new Date()
+    };
+    this.quotes.set(quoteId, updated);
+    
+    return { token, expiresAt };
+  }
+
   async createQuoteItem(itemData: InsertQuoteItem): Promise<QuoteItem> {
     const id = randomUUID();
     const item: QuoteItem = { id, ...itemData };
@@ -2992,6 +3019,27 @@ export class DatabaseStorage implements IStorage {
     return quote;
   }
   async deleteQuote(id: string): Promise<boolean> { return true; }
+  async getQuoteByApprovalToken(token: string): Promise<Quote | undefined> {
+    const [quote] = await db.select().from(quotes).where(eq(quotes.approvalToken, token));
+    return quote || undefined;
+  }
+  async generateQuoteApprovalToken(quoteId: string, expiresInDays: number = 30): Promise<{ token: string; expiresAt: Date }> {
+    // Generate a secure random token
+    const token = randomUUID() + '-' + Date.now().toString(36);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    // Update the quote with the approval token
+    await db.update(quotes)
+      .set({ 
+        approvalToken: token,
+        approvalTokenExpiresAt: expiresAt,
+        updatedAt: new Date()
+      })
+      .where(eq(quotes.id, quoteId));
+    
+    return { token, expiresAt };
+  }
   async createQuoteItem(item: InsertQuoteItem): Promise<QuoteItem> {
     const [result] = await db.insert(quoteItems).values({ ...item, id: item.id || randomUUID() }).returning();
     return result;
