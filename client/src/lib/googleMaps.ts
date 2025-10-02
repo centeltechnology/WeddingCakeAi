@@ -1,40 +1,40 @@
-import { Loader } from '@googlemaps/js-api-loader';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
-let loaderInstance: Loader | null = null;
-let loadPromise: Promise<typeof google> | null = null;
+let isInitialized = false;
+let loadPromise: Promise<void> | null = null;
 
-export function getGoogleMapsLoader(): Loader {
-  if (!loaderInstance) {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('Google Maps API key not configured');
-    }
-
-    loaderInstance = new Loader({
-      apiKey,
-      version: 'weekly',
-      libraries: ['places', 'geometry', 'geocoding'],
-    });
-  }
-
-  return loaderInstance;
-}
-
-export async function loadGoogleMaps(): Promise<typeof google> {
+export async function loadGoogleMaps(): Promise<void> {
   if (loadPromise) {
     return loadPromise;
   }
 
-  const loader = getGoogleMapsLoader();
-  loadPromise = loader.load();
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
+  if (!apiKey) {
+    throw new Error('Google Maps API key not configured');
+  }
+
+  if (!isInitialized) {
+    setOptions({
+      apiKey,
+      version: 'weekly',
+    });
+    isInitialized = true;
+  }
+
+  loadPromise = (async () => {
+    await importLibrary('maps');
+    await importLibrary('places');
+    await importLibrary('geometry');
+    await importLibrary('geocoding');
+  })();
+
   return loadPromise;
 }
 
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    const google = await loadGoogleMaps();
+    await loadGoogleMaps();
     const geocoder = new google.maps.Geocoder();
 
     return new Promise((resolve) => {
@@ -59,7 +59,7 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
-    const google = await loadGoogleMaps();
+    await loadGoogleMaps();
     const geocoder = new google.maps.Geocoder();
     const latlng = { lat, lng };
 

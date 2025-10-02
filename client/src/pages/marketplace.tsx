@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, Star, Phone, Globe, Instagram, Facebook, Filter, Search, Locate, Loader2, Map, Grid3X3 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import MarketplaceMap from "@/components/MarketplaceMap";
+import GoogleMarketplaceMap from "@/components/GoogleMarketplaceMap";
 import type { Baker } from "@shared/schema";
 
 export default function Marketplace() {
@@ -331,7 +331,7 @@ export default function Marketplace() {
         {/* Map View */}
         {viewMode === 'map' && (
           <div className="mb-8">
-            <MarketplaceMap 
+            <GoogleMarketplaceMap 
               bakers={sortedBakers}
               onBakerSelect={(baker) => {
                 // Scroll to baker card or open profile
