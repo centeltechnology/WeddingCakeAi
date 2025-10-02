@@ -36,7 +36,7 @@ const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
     id: 'enterprise',
     name: 'Enterprise', 
     stripePriceId: process.env.STRIPE_PRICE_ID_ENTERPRISE || '',
-    features: ['Everything in Professional', 'Priority placement', 'Advanced analytics', 'API access'],
+    features: ['Everything in Professional', 'Bulk email to leads', 'CSV data export', 'Priority placement', 'Advanced analytics', 'API access'],
     monthlyPrice: 39,
     trialDays: 14
   }
@@ -152,6 +152,44 @@ export class SubscriptionManager {
     }
 
     return normalized;
+  }
+
+  // Feature gating: Check if a plan has access to a specific feature
+  hasFeatureAccess(planId: string | null | undefined, feature: string): boolean {
+    const normalizedPlanId = planId ? this.normalizePlanId(planId) : 'starter';
+    
+    // Define feature access matrix
+    const featureAccess: Record<string, string[]> = {
+      'bulk_email': ['enterprise'],
+      'csv_export': ['enterprise'],
+      'quote_templates': ['professional', 'enterprise'],
+      'contract_management': ['professional', 'enterprise'],
+      'payment_processing': ['professional', 'enterprise'],
+      'email_automation': ['professional', 'enterprise'],
+      'advanced_analytics': ['enterprise'],
+      'api_access': ['enterprise'],
+      'priority_placement': ['enterprise']
+    };
+
+    const allowedPlans = featureAccess[feature];
+    if (!allowedPlans) {
+      console.warn(`⚠️ Unknown feature requested: ${feature}`);
+      return false;
+    }
+
+    return allowedPlans.includes(normalizedPlanId);
+  }
+
+  // Check if a plan is enterprise tier
+  isEnterprisePlan(planId: string | null | undefined): boolean {
+    const normalizedPlanId = planId ? this.normalizePlanId(planId) : 'starter';
+    return normalizedPlanId === 'enterprise';
+  }
+
+  // Check if a plan is professional or higher
+  isProfessionalOrHigher(planId: string | null | undefined): boolean {
+    const normalizedPlanId = planId ? this.normalizePlanId(planId) : 'starter';
+    return normalizedPlanId === 'professional' || normalizedPlanId === 'enterprise';
   }
 
   // Generate secure plan metadata for Stripe
