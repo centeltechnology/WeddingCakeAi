@@ -157,6 +157,7 @@ interface SendySettings {
     professional?: string;
     enterprise?: string;
   };
+  calculatorLeadsListId?: string;
   lastSyncAt?: string;
   lastSyncStatus?: string;
   lastSyncMessage?: string;
@@ -167,6 +168,7 @@ function SendyIntegrationPanel() {
   const [starterList, setStarterList] = useState("");
   const [professionalList, setProfessionalList] = useState("");
   const [enterpriseList, setEnterpriseList] = useState("");
+  const [calculatorLeadsList, setCalculatorLeadsList] = useState("");
   const [lastSyncErrors, setLastSyncErrors] = useState<string[]>([]);
 
   const { data: sendyData, isLoading: settingsLoading } = useQuery<{
@@ -187,11 +189,14 @@ function SendyIntegrationPanel() {
       setProfessionalList(settings.planMappings.professional || "");
       setEnterpriseList(settings.planMappings.enterprise || "");
     }
+    if (settings?.calculatorLeadsListId) {
+      setCalculatorLeadsList(settings.calculatorLeadsListId);
+    }
   }, [settings]);
 
   const updateSettingsMutation = useMutation({
-    mutationFn: async (planMappings: any) => {
-      return await apiRequest('POST', '/api/super-admin/sendy/settings', { planMappings });
+    mutationFn: async (payload: any) => {
+      return await apiRequest('POST', '/api/super-admin/sendy/settings', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sendy/settings'] });
@@ -234,13 +239,16 @@ function SendyIntegrationPanel() {
   });
 
   const handleSaveSettings = () => {
-    const planMappings = {
-      starter: starterList || null,
-      professional: professionalList || null,
-      enterprise: enterpriseList || null,
+    const payload = {
+      planMappings: {
+        starter: starterList || null,
+        professional: professionalList || null,
+        enterprise: enterpriseList || null,
+      },
+      calculatorLeadsListId: calculatorLeadsList || null,
     };
 
-    updateSettingsMutation.mutate(planMappings);
+    updateSettingsMutation.mutate(payload);
   };
 
   const handleSync = () => {
@@ -335,6 +343,27 @@ function SendyIntegrationPanel() {
               value={enterpriseList}
               onChange={(e) => setEnterpriseList(e.target.value)}
               data-testid="input-enterprise-list"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
+            Calculator Leads List
+          </h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            People who use the pricing calculator will be automatically added to this list.
+          </p>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              Calculator Leads List ID
+            </label>
+            <Input
+              type="text"
+              placeholder="List ID for calculator users (brides/customers)"
+              value={calculatorLeadsList}
+              onChange={(e) => setCalculatorLeadsList(e.target.value)}
+              data-testid="input-calculator-leads-list"
             />
           </div>
         </div>
