@@ -5240,6 +5240,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const listId = settings.planMappings[normalizedPlan as keyof typeof settings.planMappings];
           
+          console.log(`[Sendy Sync] Baker: ${baker.email}, Original Plan: ${plan}, Normalized: ${normalizedPlan}, List ID: ${listId}`);
+          
           if (!listId) {
             errors.push(`${baker.email} (plan: ${normalizedPlan}): No list mapping configured`);
             errorCount++;
@@ -5253,17 +5255,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             boolean: true
           });
 
+          console.log(`[Sendy Sync] Result for ${baker.email}:`, result);
+
           if (result.success) {
             successCount++;
           } else {
             errorCount++;
             const errorMsg = result.message || 'Unknown error';
-            errors.push(`${baker.email} (plan: ${normalizedPlan}): ${errorMsg}`);
+            errors.push(`${baker.email} (plan: ${normalizedPlan}, list: ${listId}): ${errorMsg}`);
           }
         } catch (error: any) {
           errorCount++;
           const errorMsg = error?.message || 'Unknown error';
           errors.push(`${baker.email} (plan: ${normalizedPlan}): ${errorMsg}`);
+          console.error(`[Sendy Sync] Error for ${baker.email}:`, error);
         }
       }
 
