@@ -14,6 +14,7 @@ import {
   type EmailCampaignEnrollment, type InsertEmailCampaignEnrollment, type EmailCampaignEvent, type InsertEmailCampaignEvent,
   type SuperAdminCampaign, type InsertSuperAdminCampaign, type SuperAdminCampaignSend, type InsertSuperAdminCampaignSend,
   type SendySettings, type InsertSendySettings,
+  type CalculatorLead, type InsertCalculatorLead,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
@@ -23,7 +24,7 @@ import {
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
   type MaintenanceSchedule, type InsertMaintenanceSchedule,
   announcements, emailJobs, activityLogs, emailCampaignEnrollments, emailCampaignEvents,
-  superAdminCampaigns, superAdminCampaignSends, sendySettings,
+  superAdminCampaigns, superAdminCampaignSends, sendySettings, calculatorLeads,
   type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
   type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -285,6 +286,12 @@ export interface IStorage {
   sendSuperAdminCampaign(campaignId: string): Promise<SuperAdminCampaign>;
   getSuperAdminCampaignStats(campaignId: string): Promise<any>;
   
+  // Calculator Leads operations
+  createCalculatorLead(lead: any): Promise<any>;
+  getCalculatorLeads(): Promise<any[]>;
+  getUnsyncedCalculatorLeads(): Promise<any[]>;
+  markCalculatorLeadSynced(id: string, listId: string): Promise<void>;
+
   // Sendy Integration operations
   getSendySettings(): Promise<SendySettings | undefined>;
   updateSendySettings(updates: Partial<InsertSendySettings>): Promise<SendySettings>;
@@ -3886,6 +3893,37 @@ export class DatabaseStorage implements IStorage {
       stats,
       sends: sends.slice(0, 100)
     };
+  }
+
+  async createCalculatorLead(lead: any): Promise<any> {
+    const [result] = await db.insert(calculatorLeads).values(lead).returning();
+    return result;
+  }
+
+  async getCalculatorLeads(): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(calculatorLeads)
+      .orderBy(desc(calculatorLeads.createdAt));
+    return results;
+  }
+
+  async getUnsyncedCalculatorLeads(): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(calculatorLeads)
+      .where(eq(calculatorLeads.syncedToSendy, false));
+    return results;
+  }
+
+  async markCalculatorLeadSynced(id: string, listId: string): Promise<void> {
+    await db
+      .update(calculatorLeads)
+      .set({
+        syncedToSendy: true,
+        sendyListId: listId
+      })
+      .where(eq(calculatorLeads.id, id));
   }
 
   async getSendySettings(): Promise<SendySettings | undefined> {

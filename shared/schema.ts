@@ -304,6 +304,30 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const calculatorLeads = pgTable("calculator_leads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  eventDate: text("event_date"),
+  cakeConfiguration: json("cake_configuration").$type<{
+    guestCount?: number;
+    tiers?: number;
+    baseSize?: number;
+    shape?: string;
+    cakeFlavor?: string;
+    filling?: string;
+    decorations?: any;
+    delivery?: string;
+    distance?: string;
+    specialRequests?: string;
+  }>(),
+  estimatedPrice: decimal("estimated_price", { precision: 10, scale: 2 }),
+  syncedToSendy: boolean("synced_to_sendy").default(false),
+  sendyListId: text("sendy_list_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true });
 export const insertEstimateSchema = createInsertSchema(estimates).omit({ id: true, createdAt: true });
@@ -315,6 +339,7 @@ export const insertBakerSchema = createInsertSchema(bakers).omit({ id: true, cre
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCalculatorLeadSchema = createInsertSchema(calculatorLeads).omit({ id: true, createdAt: true });
 
 // Multi-tenancy schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({ id: true, createdAt: true, updatedAt: true });
@@ -329,6 +354,7 @@ export type InsertBaker = z.infer<typeof insertBakerSchema>;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type InsertCalculatorLead = z.infer<typeof insertCalculatorLeadSchema>;
 
 // Multi-tenancy types
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -343,6 +369,7 @@ export type Baker = typeof bakers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;
+export type CalculatorLead = typeof calculatorLeads.$inferSelect;
 
 // Multi-tenancy types
 export type Tenant = typeof tenants.$inferSelect;
@@ -1153,6 +1180,7 @@ export const sendySettings = pgTable("sendy_settings", {
     professional?: string; // Sendy list ID for professional plan
     enterprise?: string; // Sendy list ID for enterprise plan
   }>().default({}),
+  calculatorLeadsListId: text("calculator_leads_list_id"), // Sendy list ID for calculator leads
   syncEnabled: boolean("sync_enabled").default(false),
   lastSyncAt: timestamp("last_sync_at"),
   lastSyncStatus: text("last_sync_status"), // success, failed, running
