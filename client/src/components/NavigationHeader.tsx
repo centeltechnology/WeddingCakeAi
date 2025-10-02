@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useTenant } from './TenantBrandProvider';
+import { ThemeToggle } from './theme-toggle';
 import { ChefHat, Settings, Home, BarChart3, Sparkles, Star, Info, CreditCard, UserPlus, Menu, X, HelpCircle } from 'lucide-react';
 
 export function NavigationHeader() {
@@ -12,12 +13,12 @@ export function NavigationHeader() {
   const { tenant, branding } = useTenant();
 
   return (
-    <header className="border-0 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <header className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center group" data-testid="link-home-logo">
-            <span className="text-2xl font-bold text-gray-900">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">
               <span className="text-orange-500">B</span>akerIQ
             </span>
           </Link>
@@ -29,7 +30,7 @@ export function NavigationHeader() {
             <>
               <Link 
                 href="/features" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
                 data-testid="nav-features"
               >
                 Features
@@ -37,7 +38,7 @@ export function NavigationHeader() {
               
               <Link 
                 href="/pricing" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
                 data-testid="nav-pricing"
               >
                 Pricing
@@ -45,7 +46,7 @@ export function NavigationHeader() {
               
               <Link 
                 href="/marketplace" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
                 data-testid="nav-marketplace"
               >
                 Find Bakers
@@ -53,7 +54,7 @@ export function NavigationHeader() {
               
               <Link 
                 href="/help" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
                 data-testid="nav-support"
               >
                 Support
@@ -81,6 +82,10 @@ export function NavigationHeader() {
                   Get Started
                 </Link>
               </Button>
+              
+              <div className="ml-4">
+                <ThemeToggle />
+              </div>
             </>
           )}
 
