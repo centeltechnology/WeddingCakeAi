@@ -5136,6 +5136,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sendy Integration Settings
+  app.get('/api/super-admin/sendy/settings', verifySuperAdminToken, async (req, res) => {
+    try {
+      const settings = await storage.getSendySettings();
+      const isConfigured = !!(process.env.SENDY_API_KEY && process.env.SENDY_BASE_URL);
+      
+      res.json({
+        success: true,
+        settings: settings || null,
+        isConfigured
+      });
+    } catch (error) {
+      console.error('Error fetching Sendy settings:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch Sendy settings' });
+    }
+  });
+
+  app.post('/api/super-admin/sendy/settings', verifySuperAdminToken, async (req, res) => {
+    try {
+      const settings = await storage.updateSendySettings(req.body);
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error('Error updating Sendy settings:', error);
+      res.status(500).json({ success: false, message: 'Failed to update Sendy settings' });
+    }
+  });
+
+  // Sync bakers to Sendy
+  app.post('/api/super-admin/sendy/sync', verifySuperAdminToken, async (req, res) => {
+    try {
+      const { getSendyService } = await import('./sendy');
+      const sendyService = getSendyService();
+      
+      if (!sendyService) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Sendy not configured. Please add SENDY_API_KEY and SENDY_BASE_URL to your environment.' 
+        });
+      }
+
+      const settings = await storage.getSendySettings();
+      if (!settings || !settings.planMappings) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Sendy plan mappings not configured' 
+        });
+      }
+
+      await storage.updateSendySettings({ lastSyncStatus: 'running', lastSyncMessage: 'Sync started...' });
+
+      const bakers = await storage.getBakers();
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const baker of bakers) {
+        try {
+          const plan = baker.subscriptionPlan || 'starter';
+          const normalizedPlan = plan === 'pro' ? 'professional' : plan;
+          
+          const listId = settings.planMappings[normalizedPlan as keyof typeof settings.planMappings];
+          
+          if (!listId) {
+            errors.push(`No list mapping for plan: ${normalizedPlan} (baker: ${baker.email})`);
+            errorCount++;
+            continue;
+          }
+
+          const result = await sendyService.subscribe({
+            name: baker.name,
+            email: baker.email,
+            list: listId,
+            boolean: true
+          });
+
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            errors.push(`${baker.email}: ${result.message}`);
+          }
+        } catch (error: any) {
+          errorCount++;
+          errors.push(`${baker.email}: ${error.message}`);
+        }
+      }
+
+      await storage.updateSendySettings({
+        lastSyncAt: new Date(),
+        lastSyncStatus: errorCount === 0 ? 'success' : 'failed',
+        lastSyncMessage: `Synced ${successCount} bakers, ${errorCount} errors`
+      });
+
+      res.json({
+        success: true,
+        successCount,
+        errorCount,
+        total: bakers.length,
+        errors: errors.slice(0, 10)
+      });
+    } catch (error: any) {
+      console.error('Error syncing to Sendy:', error);
+      await storage.updateSendySettings({
+        lastSyncStatus: 'failed',
+        lastSyncMessage: error.message
+      });
+      res.status(500).json({ success: false, message: 'Failed to sync to Sendy' });
+    }
+  });
+
   // Export baker data as CSV
   app.get('/api/super-admin/export/bakers', verifySuperAdminToken, async (req, res) => {
     try {

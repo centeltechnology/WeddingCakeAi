@@ -1145,6 +1145,26 @@ export type InsertSuperAdminCampaign = z.infer<typeof insertSuperAdminCampaignSc
 export type SuperAdminCampaignSend = typeof superAdminCampaignSends.$inferSelect;
 export type InsertSuperAdminCampaignSend = z.infer<typeof insertSuperAdminCampaignSendSchema>;
 
+// Sendy Integration Settings
+export const sendySettings = pgTable("sendy_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planMappings: json("plan_mappings").$type<{
+    starter?: string; // Sendy list ID for starter plan
+    professional?: string; // Sendy list ID for professional plan
+    enterprise?: string; // Sendy list ID for enterprise plan
+  }>().default({}),
+  syncEnabled: boolean("sync_enabled").default(false),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncStatus: text("last_sync_status"), // success, failed, running
+  lastSyncMessage: text("last_sync_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSendySettingsSchema = createInsertSchema(sendySettings).omit({ id: true, createdAt: true, updatedAt: true });
+export type SendySettings = typeof sendySettings.$inferSelect;
+export type InsertSendySettings = z.infer<typeof insertSendySettingsSchema>;
+
 // Baker Pricing Configuration Schema (for validation)
 export const bakerPricingSchema = z.object({
   cakeSizes: z.array(z.object({

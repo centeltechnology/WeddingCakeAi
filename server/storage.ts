@@ -13,6 +13,7 @@ import {
   type Booking, type InsertBooking,
   type EmailCampaignEnrollment, type InsertEmailCampaignEnrollment, type EmailCampaignEvent, type InsertEmailCampaignEvent,
   type SuperAdminCampaign, type InsertSuperAdminCampaign, type SuperAdminCampaignSend, type InsertSuperAdminCampaignSend,
+  type SendySettings, type InsertSendySettings,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
@@ -22,7 +23,7 @@ import {
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
   type MaintenanceSchedule, type InsertMaintenanceSchedule,
   announcements, emailJobs, activityLogs, emailCampaignEnrollments, emailCampaignEvents,
-  superAdminCampaigns, superAdminCampaignSends,
+  superAdminCampaigns, superAdminCampaignSends, sendySettings,
   type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
   type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -283,6 +284,11 @@ export interface IStorage {
   deleteSuperAdminCampaign(id: string): Promise<boolean>;
   sendSuperAdminCampaign(campaignId: string): Promise<SuperAdminCampaign>;
   getSuperAdminCampaignStats(campaignId: string): Promise<any>;
+  
+  // Sendy Integration operations
+  getSendySettings(): Promise<SendySettings | undefined>;
+  updateSendySettings(updates: Partial<InsertSendySettings>): Promise<SendySettings>;
+  createSendySettings(settings: InsertSendySettings): Promise<SendySettings>;
 }
 
 export class MemStorage implements IStorage {
@@ -3880,6 +3886,45 @@ export class DatabaseStorage implements IStorage {
       stats,
       sends: sends.slice(0, 100)
     };
+  }
+
+  async getSendySettings(): Promise<SendySettings | undefined> {
+    const [result] = await db
+      .select()
+      .from(sendySettings)
+      .limit(1);
+    return result;
+  }
+
+  async updateSendySettings(updates: Partial<InsertSendySettings>): Promise<SendySettings> {
+    const existing = await this.getSendySettings();
+    
+    if (!existing) {
+      return this.createSendySettings(updates as InsertSendySettings);
+    }
+
+    const [updated] = await db
+      .update(sendySettings)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(sendySettings.id, existing.id))
+      .returning();
+
+    return updated;
+  }
+
+  async createSendySettings(settings: InsertSendySettings): Promise<SendySettings> {
+    const [result] = await db
+      .insert(sendySettings)
+      .values({
+        id: randomUUID(),
+        ...settings
+      })
+      .returning();
+
+    return result;
   }
 }
 
