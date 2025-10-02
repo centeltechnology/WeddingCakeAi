@@ -924,6 +924,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calculator Leads routes
+  app.post("/api/calculator-leads", async (req, res) => {
+    try {
+      const { customerName, customerEmail, customerPhone, eventDate, cakeConfiguration, estimatedPrice } = req.body;
+      
+      const lead = await storage.createCalculatorLead({
+        customerName,
+        customerEmail,
+        customerPhone,
+        eventDate,
+        cakeConfiguration,
+        estimatedPrice,
+        syncedToSendy: false,
+        sendyListId: null
+      });
+      
+      // Auto-sync to Sendy if configured
+      try {
+        const sendySettings = await storage.getSendySettings();
+        if (sendySettings?.calculatorLeadsListId) {
+          const sendyService = new SendyService();
+          await sendyService.subscribe({
+            name: customerName,
+            email: customerEmail,
+            list: sendySettings.calculatorLeadsListId,
+            boolean: true
+          });
+          
+          await storage.markCalculatorLeadSynced(lead.id, sendySettings.calculatorLeadsListId);
+        }
+      } catch (sendyError) {
+        console.error('Failed to sync calculator lead to Sendy:', sendyError);
+        // Don't fail the request if Sendy sync fails
+      }
+      
+      res.status(201).json({ success: true, lead });
+    } catch (error: any) {
+      console.error("Error creating calculator lead:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   // Object Storage routes
   app.post("/api/objects/upload", async (req, res) => {
     try {
