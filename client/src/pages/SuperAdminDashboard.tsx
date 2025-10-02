@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,247 @@ interface BillingHistoryItem {
   amount: number;
   status: string;
   description: string;
+}
+
+interface SendySettings {
+  id: string;
+  planMappings: {
+    starter?: string;
+    professional?: string;
+    enterprise?: string;
+  };
+  lastSyncAt?: string;
+  lastSyncStatus?: string;
+  lastSyncMessage?: string;
+}
+
+function SendyIntegrationPanel() {
+  const { toast } = useToast();
+  const [starterList, setStarterList] = useState("");
+  const [professionalList, setProfessionalList] = useState("");
+  const [enterpriseList, setEnterpriseList] = useState("");
+
+  const { data: sendyData, isLoading: settingsLoading } = useQuery<{
+    success: boolean;
+    settings: SendySettings | null;
+    isConfigured: boolean;
+  }>({
+    queryKey: ['/api/super-admin/sendy/settings'],
+  });
+
+  const settings = sendyData?.settings;
+  const isConfigured = sendyData?.isConfigured || false;
+
+  // Sync local state with fetched settings
+  useEffect(() => {
+    if (settings?.planMappings) {
+      setStarterList(settings.planMappings.starter || "");
+      setProfessionalList(settings.planMappings.professional || "");
+      setEnterpriseList(settings.planMappings.enterprise || "");
+    }
+  }, [settings]);
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (planMappings: any) => {
+      return await apiRequest('POST', '/api/super-admin/sendy/settings', { planMappings });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sendy/settings'] });
+      toast({
+        title: "Settings Updated",
+        description: "Sendy settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update Sendy settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/super-admin/sendy/sync', {});
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sendy/settings'] });
+      toast({
+        title: "Sync Complete",
+        description: `Synced ${data.successCount} of ${data.total} bakers. ${data.errorCount} errors.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync bakers to Sendy.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveSettings = () => {
+    const planMappings = {
+      starter: starterList || null,
+      professional: professionalList || null,
+      enterprise: enterpriseList || null,
+    };
+
+    updateSettingsMutation.mutate(planMappings);
+  };
+
+  const handleSync = () => {
+    if (!isConfigured) {
+      toast({
+        title: "Configuration Required",
+        description: "Please add SENDY_API_KEY and SENDY_BASE_URL to your environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!settings?.planMappings || Object.keys(settings.planMappings).length === 0) {
+      toast({
+        title: "Settings Required",
+        description: "Please configure plan-to-list mappings before syncing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    syncMutation.mutate();
+  };
+
+  if (settingsLoading) {
+    return <div className="text-gray-600 dark:text-gray-400">Loading settings...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Configuration Status */}
+      <div className="flex items-center gap-2">
+        <div className={`h-3 w-3 rounded-full ${isConfigured ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {isConfigured ? 'Sendy API Configured' : 'Sendy API Not Configured'}
+        </span>
+      </div>
+
+      {!isConfigured && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <p className="text-sm text-yellow-800 dark:text-yellow-400">
+            To use Sendy integration, add the following environment variables to your Replit secrets:
+          </p>
+          <ul className="list-disc list-inside text-sm text-yellow-700 dark:text-yellow-500 mt-2 space-y-1">
+            <li><code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">SENDY_API_KEY</code></li>
+            <li><code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">SENDY_BASE_URL</code></li>
+          </ul>
+        </div>
+      )}
+
+      {/* Plan Mappings */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plan to List Mapping</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Map each subscription plan to a Sendy list ID. Bakers will be automatically synced to the corresponding list.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              Starter Plan List ID
+            </label>
+            <Input
+              type="text"
+              placeholder="List ID for starter plan"
+              value={starterList}
+              onChange={(e) => setStarterList(e.target.value)}
+              data-testid="input-starter-list"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              Professional Plan List ID
+            </label>
+            <Input
+              type="text"
+              placeholder="List ID for professional plan"
+              value={professionalList}
+              onChange={(e) => setProfessionalList(e.target.value)}
+              data-testid="input-professional-list"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              Enterprise Plan List ID
+            </label>
+            <Input
+              type="text"
+              placeholder="List ID for enterprise plan"
+              value={enterpriseList}
+              onChange={(e) => setEnterpriseList(e.target.value)}
+              data-testid="input-enterprise-list"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleSaveSettings}
+          disabled={updateSettingsMutation.isPending}
+          data-testid="button-save-settings"
+        >
+          {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+        </Button>
+      </div>
+
+      {/* Sync Status */}
+      {settings?.lastSyncAt && (
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Last Sync</h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+              <Badge variant={settings.lastSyncStatus === 'success' ? 'default' : 'destructive'}>
+                {settings.lastSyncStatus}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Time:</span>
+              <span className="text-sm text-gray-900 dark:text-white">
+                {new Date(settings.lastSyncAt).toLocaleString()}
+              </span>
+            </div>
+            {settings.lastSyncMessage && (
+              <div className="flex items-start gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Message:</span>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  {settings.lastSyncMessage}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Manual Sync */}
+      <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Manual Sync</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Manually sync all bakers to their respective Sendy lists based on their subscription plan.
+        </p>
+        <Button
+          onClick={handleSync}
+          disabled={syncMutation.isPending || !isConfigured}
+          variant="default"
+          data-testid="button-sync-bakers"
+        >
+          {syncMutation.isPending ? "Syncing..." : "Sync Bakers to Sendy"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function SuperAdminDashboard() {
@@ -606,6 +847,10 @@ export default function SuperAdminDashboard() {
             <TabsTrigger value="emails" data-testid="tab-emails">
               <Mail className="h-4 w-4 mr-2" />
               Email Campaigns
+            </TabsTrigger>
+            <TabsTrigger value="integrations" data-testid="tab-integrations">
+              <Settings className="h-4 w-4 mr-2" />
+              Integrations
             </TabsTrigger>
           </TabsList>
 
@@ -1299,6 +1544,22 @@ export default function SuperAdminDashboard() {
                   </TableBody>
                 </Table>
               </div>
+            </Card>
+          </TabsContent>
+
+          {/* Integrations Tab */}
+          <TabsContent value="integrations" className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sendy Integration</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Connect your Sendy email marketing platform to automatically sync bakers to lists
+                  </p>
+                </div>
+              </div>
+
+              <SendyIntegrationPanel />
             </Card>
           </TabsContent>
         </Tabs>
