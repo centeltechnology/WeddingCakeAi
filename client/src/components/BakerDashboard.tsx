@@ -81,6 +81,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [newCakeType, setNewCakeType] = useState("");
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("leads");
+  const [leadForQuote, setLeadForQuote] = useState<Lead | null>(null);
 
   const handleLogout = () => {
     // Clear authentication tokens using centralized token manager
@@ -1454,13 +1455,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                             <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
                               <Button
                                 onClick={() => {
-                                  // Navigate to quotes with this lead pre-selected for conversion
+                                  // Set lead for quote creation and navigate to quotes tab
+                                  setLeadForQuote(lead);
                                   setActiveTab('quotes');
                                   setSelectedLead(null);
-                                  toast({
-                                    title: "Quote Creation Ready",
-                                    description: "Navigate to Quotes section and convert this lead to create a customized quote.",
-                                  });
                                 }}
                                 className="bg-primary hover:from-rose-600 hover:to-pink-600 text-white shadow-lg"
                                 data-testid={`button-create-quote-${lead.id}`}
@@ -1561,7 +1559,29 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         </TabsContent>
 
         <TabsContent value="quotes">
-          <QuoteBuilder bakerId={bakerId} />
+          <QuoteBuilder 
+            bakerId={bakerId} 
+            prefilledCustomer={leadForQuote ? {
+              id: leadForQuote.id!,
+              name: leadForQuote.customerName,
+              email: leadForQuote.customerEmail,
+              phone: leadForQuote.customerPhone || null,
+              eventType: 'wedding',
+              eventDate: leadForQuote.weddingDate || null,
+              guestCount: leadForQuote.guestCount || 100,
+              address: null,
+              venueAddress: null,
+              dietaryRestrictions: null,
+              notes: leadForQuote.message || null,
+              preferredContactMethod: 'email',
+              referralSource: null,
+              budget: null,
+              status: 'active',
+              bakerId: bakerId,
+              createdAt: leadForQuote.createdAt || new Date().toISOString(),
+            } as any : null}
+            onCustomerUsed={() => setLeadForQuote(null)}
+          />
         </TabsContent>
 
         <TabsContent value="templates">
