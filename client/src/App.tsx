@@ -64,6 +64,7 @@ import BakerResetPassword from "@/pages/baker-reset-password";
 import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
 import VerifyEmail from "@/pages/verify-email";
+import QuoteApprovalPage from "@/pages/quote-approval";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
@@ -158,6 +159,7 @@ function Router() {
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
       <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
+      <Route path="/quote-approval/:token" component={QuoteApprovalPage} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/cookies" component={Cookies} />
