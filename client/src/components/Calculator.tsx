@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FileText, Printer, Save, Cake, Sparkles } from "lucide-react";
 import { calculateTotal } from "@/lib/calculator";
 import { generatePDF } from "@/lib/pdf-generator";
@@ -69,23 +70,31 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
     lineItems: [] as Array<{ description: string; price: number }>
   });
 
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [showContactForm, setShowContactForm] = useState(false);
+
   const [isDreamCakeDesignerOpen, setIsDreamCakeDesignerOpen] = useState(false);
 
-  const saveEstimateMutation = useMutation({
-    mutationFn: async (estimate: any) => {
-      return await apiRequest('POST', '/api/estimates', estimate);
+  const saveLeadMutation = useMutation({
+    mutationFn: async (lead: any) => {
+      return await apiRequest('POST', '/api/calculator-leads', lead);
     },
     onSuccess: () => {
       toast({
-        title: "Estimate saved",
-        description: "Your cake estimate has been saved to your profile.",
+        title: "Quote Saved!",
+        description: "We've saved your cake quote and you're now on our mailing list for special offers!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/estimates'] });
+      setShowContactForm(false);
+      setCustomerName('');
+      setCustomerEmail('');
+      setCustomerPhone('');
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to save estimate",
+        description: error.message || "Failed to save your quote",
         variant: "destructive",
       });
     }
@@ -110,27 +119,30 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
     }));
   };
 
-  const handleSaveEstimate = () => {
-    const estimate = {
-      profileId: null, // TODO: Get from user session
-      name: `${config.tiers}-Tier ${config.cakeFlavor} Wedding Cake`,
+  const handleSaveQuote = () => {
+    if (!customerName || !customerEmail) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter your name and email to save your quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const lead = {
+      customerName,
+      customerEmail,
+      customerPhone,
       eventDate: config.eventDate,
-      guestCount: config.guestCount,
-      tiers: config.tiers,
-      baseSize: config.baseSize,
-      shape: config.shape,
-      cakeFlavor: config.cakeFlavor,
-      filling: config.filling,
-      decorations: config.decorations,
-      delivery: config.delivery,
-      distance: config.distance,
-      specialRequests: config.specialRequests,
-      subtotal: pricing.subtotal.toString(),
-      tax: pricing.tax.toString(),
-      total: pricing.total.toString(),
+      cakeConfiguration: config,
+      estimatedPrice: pricing.total.toString(),
     };
 
-    saveEstimateMutation.mutate(estimate);
+    saveLeadMutation.mutate(lead);
+  };
+
+  const handleOpenContactForm = () => {
+    setShowContactForm(true);
   };
 
   const handlePrint = () => {
@@ -493,13 +505,12 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                 Print Estimate
               </Button>
               <Button
-                onClick={handleSaveEstimate}
+                onClick={handleOpenContactForm}
                 className="calculator-accent-btn w-full h-12 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
-                disabled={saveEstimateMutation.isPending}
-                data-testid="button-save-estimate"
+                data-testid="button-save-quote"
               >
                 <Save className="w-5 h-5 mr-3" />
-                {saveEstimateMutation.isPending ? 'Saving...' : 'Save to Profile'}
+                Save My Quote
               </Button>
               
               <div className="flex justify-center">
@@ -585,37 +596,87 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
         }}
         isOpen={isDreamCakeDesignerOpen}
         onClose={() => setIsDreamCakeDesignerOpen(false)}
-        onIncludeInQuote={(aiConfig, imageUrl) => {
-          // Convert the AI cake configuration to a format suitable for estimates
-          const tierSizes = aiConfig.tiers.map(tier => `${tier.size}-inch`).join(', ');
-          const flavors = [...new Set(aiConfig.tiers.map(tier => tier.flavor))].join(', ');
-          const cakeDescription = `AI-Generated Dream Cake: ${aiConfig.totalTiers} tiers (${tierSizes}), flavors: ${flavors}. Decorations: ${Object.entries(aiConfig.decorations).filter(([_, enabled]) => enabled).map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ') || 'none'}. ${aiConfig.specialRequests ? `Special requests: ${aiConfig.specialRequests}` : ''}`;
-          
-          const aiCakeEstimate = {
-            guestCount: config.guestCount || 75,
-            eventDate: config.eventDate || '',
-            budget: pricing.total,
-            description: cakeDescription,
-            preferences: {
-              cakeStyle: `${aiConfig.totalTiers}-tier cake with sizes: ${tierSizes}`,
-              decorations: Object.entries(aiConfig.decorations)
-                .filter(([_, enabled]) => enabled)
-                .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase())
-                .join(', ') || 'none',
-              specialRequests: aiConfig.specialRequests,
-              aiImageUrl: imageUrl
-            }
-          };
-          
-          // Save the AI-generated cake as an estimate
-          saveEstimateMutation.mutate(aiCakeEstimate);
-          
-          toast({
-            title: "Dream Cake Saved!",
-            description: "Your AI-generated cake has been saved to your estimates. You can now share it with bakers when requesting quotes.",
-          });
-        }}
       />
+
+      {/* Contact Information Dialog */}
+      <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+              Save Your Quote
+            </DialogTitle>
+            <DialogDescription>
+              Enter your contact information to save your cake quote and receive special offers & updates!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="customer-name" className="text-sm font-medium">
+                Full Name *
+              </Label>
+              <Input
+                id="customer-name"
+                placeholder="Jane Doe"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                data-testid="input-customer-name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customer-email" className="text-sm font-medium">
+                Email Address *
+              </Label>
+              <Input
+                id="customer-email"
+                type="email"
+                placeholder="jane@example.com"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                data-testid="input-customer-email"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customer-phone" className="text-sm font-medium">
+                Phone Number (Optional)
+              </Label>
+              <Input
+                id="customer-phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                data-testid="input-customer-phone"
+                className="mt-1"
+              />
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <p className="text-sm text-orange-800 dark:text-orange-300">
+                💌 By saving your quote, you'll be added to our exclusive mailing list for wedding cake tips, special promotions, and seasonal offers!
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowContactForm(false)}
+              className="flex-1"
+              data-testid="button-cancel-contact"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveQuote}
+              disabled={saveLeadMutation.isPending}
+              className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600"
+              data-testid="button-submit-contact"
+            >
+              {saveLeadMutation.isPending ? 'Saving...' : 'Save Quote'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
