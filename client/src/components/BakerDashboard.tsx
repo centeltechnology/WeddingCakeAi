@@ -59,6 +59,8 @@ import { PricingManager } from "./PricingManager";
 import { AccountSettings } from "./AccountSettings";
 import { CalendarSystem } from "./CalendarSystem";
 import { ConsultationsManager } from "./ConsultationsManager";
+import BulkEmailLeads from "./BulkEmailLeads";
+import LeadsExportButton from "./LeadsExportButton";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -1101,6 +1103,15 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       <SelectItem value="declined">Declined</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="flex-1" />
+                  <BulkEmailLeads 
+                    bakerId={bakerId} 
+                    userPlan={baker?.subscriptionPlan || "starter"}
+                  />
+                  <LeadsExportButton 
+                    bakerId={bakerId}
+                    userPlan={baker?.subscriptionPlan || "starter"}
+                  />
                 </div>
 
                 {/* Mobile: Stacked layout */}
@@ -1128,6 +1139,16 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                       <SelectItem value="declined">Declined</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="flex space-x-2">
+                    <BulkEmailLeads 
+                      bakerId={bakerId} 
+                      userPlan={baker?.subscriptionPlan || "starter"}
+                    />
+                    <LeadsExportButton 
+                      bakerId={bakerId}
+                      userPlan={baker?.subscriptionPlan || "starter"}
+                    />
+                  </div>
                 </div>
               </div>
             </CardHeader>
