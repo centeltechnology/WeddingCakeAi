@@ -940,6 +940,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sendyListId: null
       });
       
+      // Send confirmation email to customer
+      try {
+        const emailContent = emailTemplates.calculatorLeadConfirmation(
+          customerName,
+          estimatedPrice,
+          eventDate
+        );
+        await sendEmail({
+          to: customerEmail,
+          toName: customerName,
+          ...emailContent
+        });
+      } catch (emailError) {
+        console.error('Failed to send calculator lead confirmation email:', emailError);
+        // Don't fail the request if email fails
+      }
+      
       // Auto-sync to Sendy if configured
       try {
         const sendySettings = await storage.getSendySettings();

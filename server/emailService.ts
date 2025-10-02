@@ -1084,5 +1084,68 @@ Best regards,<br>
 <strong>The BakerIQ Team</strong>
 </p>
 </div>`
+  }),
+
+  calculatorLeadConfirmation: (customerName: string, estimatedPrice: number, eventDate?: string) => ({
+    subject: `Your Cake Quote Request Received - ${estimatedPrice ? `$${estimatedPrice.toFixed(2)} Estimate` : 'Details Saved'}`,
+    textPart: `Hi ${customerName},
+
+Thank you for using our Wedding Cake Calculator!
+
+Your cake quote request has been received and saved. ${estimatedPrice ? `Your estimated price is $${estimatedPrice.toFixed(2)}.` : ''}${eventDate ? ` We've noted your event date of ${eventDate}.` : ''}
+
+What's Next:
+• Your information has been added to our mailing list for special offers and bakery promotions
+• Local bakers in our network will be able to view your request
+• You can browse our bakery directory to connect directly with bakers
+• We'll keep you updated on special offers and tips for your big day
+
+Need help or have questions? Feel free to reach out anytime.
+
+Best wishes for your event planning!
+
+The BakerIQ Team`,
+    htmlPart: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #f97316; margin: 0;">Your Cake Quote is Saved! 🎂</h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">Hi <strong>${customerName}</strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Thank you for using our Wedding Cake Calculator! Your cake quote request has been received.
+</p>
+
+${estimatedPrice || eventDate ? `<div style="background-color: #fff7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
+<h3 style="color: #7c2d12; margin-top: 0;">Your Details:</h3>
+<ul style="list-style: none; padding: 0; color: #333;">
+${estimatedPrice ? `<li style="margin-bottom: 8px;"><strong>Estimated Price:</strong> $${estimatedPrice.toFixed(2)}</li>` : ''}
+${eventDate ? `<li style="margin-bottom: 8px;"><strong>Event Date:</strong> ${eventDate}</li>` : ''}
+</ul>
+</div>` : ''}
+
+<div style="background-color: #fef7ed; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<h3 style="color: #7c2d12; margin-top: 0;">What's Next?</h3>
+<ul style="color: #333; padding-left: 20px;">
+<li style="margin-bottom: 8px;">You're now on our mailing list for special offers and bakery promotions</li>
+<li style="margin-bottom: 8px;">Local bakers in our network can view your request</li>
+<li style="margin-bottom: 8px;">Browse our bakery directory to connect directly with bakers</li>
+<li style="margin-bottom: 8px;">We'll keep you updated on special offers and tips for your big day</li>
+</ul>
+</div>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Need help or have questions? Feel free to reach out anytime.
+</p>
+
+<p style="font-size: 16px; line-height: 1.5; color: #333;">
+Best wishes for your event planning! 🎉
+</p>
+
+<p style="font-size: 14px; color: #666; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+Best regards,<br>
+<strong>The BakerIQ Team</strong>
+</p>
+</div>`
   })
 };
