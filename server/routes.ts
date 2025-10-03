@@ -864,12 +864,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create Stripe subscription for paid plans with 14-day trial
       if (bakerData.subscriptionPlan && bakerData.subscriptionPlan !== 'starter' && stripe && bakerWithStripe.stripeCustomerId) {
+        // Use testing price IDs if STRIPE_SECRET_KEY matches TESTING_STRIPE_SECRET_KEY
+        const isTestingStripe = process.env.STRIPE_SECRET_KEY === process.env.TESTING_STRIPE_SECRET_KEY;
+        
         const priceIds = {
-          professional: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
-          enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE
+          professional: isTestingStripe && process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL
+            ? process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL
+            : process.env.STRIPE_PRICE_ID_PROFESSIONAL,
+          enterprise: isTestingStripe && process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE  
+            ? process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE
+            : process.env.STRIPE_PRICE_ID_ENTERPRISE
         };
 
         const priceId = priceIds[bakerData.subscriptionPlan as keyof typeof priceIds];
+        console.log(`📦 routes.ts signup: Using price ID ${priceId} for plan ${bakerData.subscriptionPlan} (testing mode: ${isTestingStripe})`);
         if (priceId) {
           try {
             const subscription = await stripe.subscriptions.create({

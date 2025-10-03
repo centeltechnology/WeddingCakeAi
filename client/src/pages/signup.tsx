@@ -129,17 +129,16 @@ export default function Signup() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: FormData): Promise<SignupResponse> => {
-      // Map frontend field names to backend schema
+      // Map frontend field names to backend schema for authRoutes.ts /api/bakers/register
       const backendData = {
         name: data.name,
         email: data.email,
         password: data.password,
-        businessName: data.bakeryName,
         phone: data.phone,
-        address: data.location, // Map location to address
-        subscriptionPlan: data.selectedPlan === 'pro' ? 'professional' : data.selectedPlan === 'plus' ? 'enterprise' : 'starter'
+        address: data.location,
+        subscriptionPlan: data.selectedPlan // Use plan IDs directly: 'free', 'pro', 'plus'
       };
-      const response = await apiRequest('POST', '/api/bakers/signup', backendData);
+      const response = await apiRequest('POST', '/api/bakers/register', backendData);
       return response.json();
     },
     onSuccess: (data: SignupResponse) => {

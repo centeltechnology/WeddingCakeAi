@@ -420,7 +420,10 @@ export function setupAuthRoutes(app: Express) {
             throw new Error(`Invalid or unpaid plan: ${subscriptionPlan}`);
           }
 
+          console.log(`🔍 Getting price ID for plan: ${normalizedPlanId}`);
+          console.log(`🔍 Current STRIPE_SECRET_KEY starts with: ${process.env.STRIPE_SECRET_KEY?.substring(0, 8)}...`);
           const priceId = subscriptionManager.getStripePriceId(normalizedPlanId);
+          console.log(`🔍 Selected price ID: ${priceId}`);
           if (!priceId) {
             throw new Error(`No Stripe price ID configured for plan: ${normalizedPlanId}`);
           }

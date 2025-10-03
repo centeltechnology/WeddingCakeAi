@@ -113,6 +113,12 @@ export class SubscriptionManager {
 
   // Get Stripe price ID for a plan (server-only function)
   getStripePriceId(planId: string): string | null {
+    console.log(`🔍 getStripePriceId called for plan: ${planId}`);
+    console.log(`🔍 STRIPE_SECRET_KEY prefix: ${process.env.STRIPE_SECRET_KEY?.substring(0, 10)}...`);
+    console.log(`🔍 TESTING_STRIPE_SECRET_KEY prefix: ${process.env.TESTING_STRIPE_SECRET_KEY?.substring(0, 10)}...`);
+    console.log(`🔍 Keys match: ${process.env.STRIPE_SECRET_KEY === process.env.TESTING_STRIPE_SECRET_KEY}`);
+    console.log(`🔍 TESTING_STRIPE_PRICE_ID_PROFESSIONAL exists: ${!!process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL}`);
+    
     if (!this.isConfigValid) {
       console.error('❌ Cannot get Stripe price ID - configuration invalid');
       return null;
@@ -124,21 +130,23 @@ export class SubscriptionManager {
       return null;
     }
 
-    // Dynamically check if we're in test mode at runtime
-    const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+    // TESTING OVERRIDE: If current Stripe key matches testing key, use testing price IDs
+    const isTestingStripe = process.env.STRIPE_SECRET_KEY === process.env.TESTING_STRIPE_SECRET_KEY;
     
-    // Return the appropriate price ID based on current Stripe key mode
-    if (isTestMode) {
-      const testPriceId = planId === 'professional' 
-        ? (process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL || plan.stripePriceId)
+    if (isTestingStripe) {
+      const testingPriceId = planId === 'professional'
+        ? process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL
         : planId === 'enterprise'
-        ? (process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE || plan.stripePriceId)
-        : plan.stripePriceId;
+        ? process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE
+        : null;
       
-      console.log(`🔧 Test mode detected, using price ID: ${testPriceId} for ${planId}`);
-      return testPriceId;
+      if (testingPriceId) {
+        console.log(`🧪 Testing mode detected, using test price ID for ${planId}: ${testingPriceId}`);
+        return testingPriceId;
+      }
     }
 
+    console.log(`🔍 Using standard price ID for ${planId}: ${plan.stripePriceId}`);
     return plan.stripePriceId;
   }
 
