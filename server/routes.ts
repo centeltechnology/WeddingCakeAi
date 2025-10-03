@@ -3006,8 +3006,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notification first before updating status
       try {
-        // Generate quote URL for customer
-        const quoteUrl = `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://bakeriq.app'}/quotes/${quote.id}/view`;
+        // Generate approval token for customer (30 day expiry)
+        const { token } = await storage.generateQuoteApprovalToken(id, 30);
+        
+        // Generate quote URL for customer using approval token
+        const quoteUrl = `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://bakeriq.app'}/quote-approval/${token}`;
         
         const emailContent = emailTemplates.quoteSent(
           customer.name,
@@ -3119,6 +3122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get baker details
       const baker = await storage.getBaker(quote.bakerId || '');
       
+      // Get customer details
+      const customer = await storage.getCustomer(quote.customerId);
+      
       // Mark quote as viewed if not already
       if (!quote.viewedAt) {
         await storage.updateQuote(quote.id, { 
@@ -3138,6 +3144,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           businessName: baker.businessName,
           email: baker.email,
           phone: baker.phone
+        } : null,
+        customer: customer ? {
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone
         } : null
       });
     } catch (error) {
