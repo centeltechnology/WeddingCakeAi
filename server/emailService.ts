@@ -17,6 +17,7 @@ export interface EmailParams {
   toName?: string;
   from?: string;
   fromName?: string;
+  replyTo?: string;
   subject: string;
   textPart?: string;
   htmlPart?: string;
@@ -32,6 +33,9 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     const emailParams = {
       Source: `${params.fromName || 'BakerIQ'} <${params.from || 'noreply@bakeriq.app'}>`,
+      ...(params.replyTo ? {
+        ReplyToAddresses: [params.replyTo],
+      } : {}),
       Destination: {
         ToAddresses: [
           params.toName 

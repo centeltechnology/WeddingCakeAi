@@ -18,6 +18,7 @@ import Stripe from "stripe";
 import Replicate from "replicate";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { SendyService } from "./sendy";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
 
@@ -961,7 +962,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const sendySettings = await storage.getSendySettings();
         if (sendySettings?.calculatorLeadsListId) {
-          const sendyService = new SendyService();
+          const sendyService = new SendyService({
+            apiKey: process.env.SENDY_API_KEY || '',
+            baseUrl: process.env.SENDY_BASE_URL || ''
+          });
           await sendyService.subscribe({
             name: customerName,
             email: customerEmail,
@@ -1161,7 +1165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fromName: baker.name,
           replyTo: baker.email,
           subject: `Consultation Request - ${baker.name}`,
-          html: `
+          htmlPart: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #f97316;">Consultation Request from ${baker.name}</h2>
               <p>Hi ${lead.customerName},</p>
@@ -1331,7 +1335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: 'Payment processing not configured' });
       }
 
-      const customer = await storage.getCustomer(quote.customerId);
+      const customer = await storage.getCustomer(quote.customerId || '');
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
@@ -1351,7 +1355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
-        await storage.updateCustomer(quote.customerId, { 
+        await storage.updateCustomer(quote.customerId || '', { 
           stripeCustomerId: stripeCustomer.id 
         });
       }
@@ -1374,8 +1378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Track transaction
       await storage.createTransaction({
-        bakerId: quote.bakerId,
-        customerId: quote.customerId,
+        bakerId: quote.bakerId || '',
+        customerId: quote.customerId || '',
         type: 'deposit',
         amount: quote.depositAmount,
         status: 'pending',
@@ -1415,7 +1419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: 'Payment processing not configured' });
       }
 
-      const customer = await storage.getCustomer(quote.customerId);
+      const customer = await storage.getCustomer(quote.customerId || '');
       if (!customer || !customer.stripeCustomerId) {
         return res.status(404).json({ message: "Customer not found or not set up for payments" });
       }
@@ -1440,8 +1444,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Track transaction
       await storage.createTransaction({
-        bakerId: quote.bakerId,
-        customerId: quote.customerId,
+        bakerId: quote.bakerId || '',
+        customerId: quote.customerId || '',
         type: 'final_payment',
         amount: finalAmount.toString(),
         status: 'pending',
@@ -2021,7 +2025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if customer already exists with this email
-      const existingCustomers = await storage.getCustomersByBaker(lead.bakerId);
+      const existingCustomers = await storage.getCustomersByBaker(lead.bakerId || '');
       const existingCustomer = existingCustomers.find(c => c.email === lead.customerEmail);
       
       if (existingCustomer) {
@@ -2985,13 +2989,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get customer details
-      const customer = await storage.getCustomer(quote.customerId);
+      const customer = await storage.getCustomer(quote.customerId || '');
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
 
       // Get baker details
-      const baker = await storage.getBaker(quote.bakerId);
+      const baker = await storage.getBaker(quote.bakerId || '');
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });
       }
@@ -3123,7 +3127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baker = await storage.getBaker(quote.bakerId || '');
       
       // Get customer details
-      const customer = await storage.getCustomer(quote.customerId);
+      const customer = await storage.getCustomer(quote.customerId || '');
       
       // Mark quote as viewed if not already
       if (!quote.viewedAt) {
