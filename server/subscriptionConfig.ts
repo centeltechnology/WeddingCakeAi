@@ -16,6 +16,10 @@ export interface SubscriptionPlan {
 // Detect if we're using test mode Stripe keys
 const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
 
+console.log(`🔧 Subscription Config: Using ${isTestMode ? 'TEST' : 'LIVE'} mode Stripe keys`);
+console.log(`🔧 Professional Price ID: ${isTestMode ? (process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL || process.env.STRIPE_PRICE_ID_PROFESSIONAL || 'NONE') : (process.env.STRIPE_PRICE_ID_PROFESSIONAL || 'NONE')}`);
+console.log(`🔧 Enterprise Price ID: ${isTestMode ? (process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE || process.env.STRIPE_PRICE_ID_ENTERPRISE || 'NONE') : (process.env.STRIPE_PRICE_ID_ENTERPRISE || 'NONE')}`);
+
 // SECURITY: Server-only plan configuration - never expose price IDs to client
 const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   starter: {
@@ -118,6 +122,21 @@ export class SubscriptionManager {
     if (!plan || !plan.stripePriceId) {
       console.error(`❌ No Stripe price ID configured for plan: ${planId}`);
       return null;
+    }
+
+    // Dynamically check if we're in test mode at runtime
+    const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+    
+    // Return the appropriate price ID based on current Stripe key mode
+    if (isTestMode) {
+      const testPriceId = planId === 'professional' 
+        ? (process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL || plan.stripePriceId)
+        : planId === 'enterprise'
+        ? (process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE || plan.stripePriceId)
+        : plan.stripePriceId;
+      
+      console.log(`🔧 Test mode detected, using price ID: ${testPriceId} for ${planId}`);
+      return testPriceId;
     }
 
     return plan.stripePriceId;
