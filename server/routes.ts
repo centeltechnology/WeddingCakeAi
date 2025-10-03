@@ -4577,8 +4577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metricName,
         metricValue: value.toString(),
         unit: unit || '',
-        status: value > 90 ? 'critical' : value > 70 ? 'warning' : 'healthy',
-        metadata: metadata || {}
+        status: value > 90 ? 'critical' : value > 70 ? 'warning' : 'healthy'
       });
       
       res.json(metric);
@@ -5828,7 +5827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const baker of bakers) {
         const leads = leadsByBaker.get(baker.id) || [];
-        const location = baker.location ? `${baker.location.city || ''} ${baker.location.state || ''}`.trim() : '';
+        const location = baker.address || '';
         const plan = baker.subscriptionPlan || 'starter';
         const status = baker.isActive ? 'active' : 'suspended';
         
