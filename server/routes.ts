@@ -25,11 +25,16 @@ import { EmailAutomationService } from "./emailAutomation";
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
 
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Use testing Stripe key in development mode if available
+const stripeSecretKey = process.env.NODE_ENV === 'development' && process.env.TESTING_STRIPE_SECRET_KEY
+  ? process.env.TESTING_STRIPE_SECRET_KEY
+  : process.env.STRIPE_SECRET_KEY;
+
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey, {
     apiVersion: "2025-08-27.basil",
   });
-  console.log('Stripe initialized for platform subscriptions');
+  console.log(`Stripe initialized for platform subscriptions (${stripeSecretKey.startsWith('sk_test_') ? 'TEST' : 'LIVE'} mode)`);
 } else {
   console.log('Stripe not configured - manual payment system only');
 }

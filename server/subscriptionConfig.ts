@@ -13,8 +13,13 @@ export interface SubscriptionPlan {
   trialDays?: number;
 }
 
+// Use testing Stripe key in development mode if available
+const activeStripeKey = process.env.NODE_ENV === 'development' && process.env.TESTING_STRIPE_SECRET_KEY
+  ? process.env.TESTING_STRIPE_SECRET_KEY
+  : process.env.STRIPE_SECRET_KEY;
+
 // Detect if we're using test mode Stripe keys
-const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+const isTestMode = activeStripeKey?.startsWith('sk_test_');
 
 console.log(`🔧 Subscription Config: Using ${isTestMode ? 'TEST' : 'LIVE'} mode Stripe keys`);
 console.log(`🔧 Professional Price ID: ${isTestMode ? (process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL || process.env.STRIPE_PRICE_ID_PROFESSIONAL || 'NONE') : (process.env.STRIPE_PRICE_ID_PROFESSIONAL || 'NONE')}`);

@@ -8,9 +8,15 @@ import { type InsertBaker } from "@shared/schema";
 
 // Initialize Stripe for subscription management
 let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  console.log('Stripe initialized for baker subscriptions');
+
+// Use testing Stripe key in development mode if available
+const stripeSecretKey = process.env.NODE_ENV === 'development' && process.env.TESTING_STRIPE_SECRET_KEY
+  ? process.env.TESTING_STRIPE_SECRET_KEY
+  : process.env.STRIPE_SECRET_KEY;
+
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey);
+  console.log(`Stripe initialized for baker subscriptions (${stripeSecretKey.startsWith('sk_test_') ? 'TEST' : 'LIVE'} mode)`);
 } else {
   console.warn('STRIPE_SECRET_KEY not found - subscription features will be disabled');
 }
