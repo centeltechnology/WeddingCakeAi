@@ -13,6 +13,9 @@ export interface SubscriptionPlan {
   trialDays?: number;
 }
 
+// Detect if we're using test mode Stripe keys
+const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+
 // SECURITY: Server-only plan configuration - never expose price IDs to client
 const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   starter: {
@@ -27,7 +30,9 @@ const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   professional: {
     id: 'professional', 
     name: 'Professional',
-    stripePriceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL || '',
+    stripePriceId: isTestMode 
+      ? (process.env.TESTING_STRIPE_PRICE_ID_PROFESSIONAL || process.env.STRIPE_PRICE_ID_PROFESSIONAL || '')
+      : (process.env.STRIPE_PRICE_ID_PROFESSIONAL || ''),
     features: ['Unlimited leads', 'Unlimited portfolio', 'Custom domain', 'Quote templates'],
     monthlyPrice: 19,
     trialDays: 14
@@ -35,7 +40,9 @@ const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   enterprise: {
     id: 'enterprise',
     name: 'Enterprise', 
-    stripePriceId: process.env.STRIPE_PRICE_ID_ENTERPRISE || '',
+    stripePriceId: isTestMode
+      ? (process.env.TESTING_STRIPE_PRICE_ID_ENTERPRISE || process.env.STRIPE_PRICE_ID_ENTERPRISE || '')
+      : (process.env.STRIPE_PRICE_ID_ENTERPRISE || ''),
     features: ['Everything in Professional', 'Bulk email to leads', 'CSV data export', 'Priority placement', 'Advanced analytics', 'API access'],
     monthlyPrice: 39,
     trialDays: 14
