@@ -105,6 +105,11 @@ interface SignupResponse {
     name: string;
   };
   requiresVerification?: boolean;
+  checkoutUrl?: string;
+  plan?: {
+    id: string;
+    name: string;
+  };
 }
 
 export default function Signup() {
@@ -144,6 +149,18 @@ export default function Signup() {
           localStorage.setItem("baker_token", data.token);
         }
         
+        // For paid plans, redirect to Stripe checkout
+        if (data.checkoutUrl) {
+          toast({
+            title: "Account created!",
+            description: `Redirecting to payment for ${data.plan?.name || 'your plan'}...`,
+          });
+          // Redirect to Stripe checkout page
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+        
+        // For free plans or if email verification is required
         if (data.requiresVerification) {
           // Redirect to login with verification message
           setLocation(`/baker-login?verification-sent=true&email=${encodeURIComponent(formData.email)}`);
