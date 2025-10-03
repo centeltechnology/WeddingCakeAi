@@ -1,0 +1,36 @@
+You are my debugging engineer for bakeriq.app — a SaaS for bakeries.
+
+Read-first, then fix:
+1) Scan the CURRENT repo without changing anything: package.json, vite config, tsconfig, .env.example, src/, server/, drizzle migrations, email templates, Stripe code, and routes.
+2) Identify root causes for ALL active problems and explain them in plain English before edits.
+
+Scope (check and fix all of these):
+• Frontend: React 18 + TypeScript, shadcn/ui (Radix), TanStack Query state, Wouter routing, Tailwind/PostCSS. Fix CSS specificity & purge issues, layout regressions, wrong imports, missing assets, favicon/OG images.
+• Links & Assets: incorrect relative paths, 404s, tenant routing (e.g., /demo/sweet-dreams-bakery), sitemap/robots integrity.
+• Build/SSR/Hydration: Vite build warnings, ESM/CJS mismatches, “expected server HTML to contain a matching…” issues, environment variable availability at build vs. runtime.
+• Backend/Runtime: Node + Express with TypeScript (ESM), REST endpoints, Drizzle ORM against Neon/Postgres, session store with connect-pg-simple, auth flows (login, password reset), email templates.
+• Payments/Email: Stripe subscription flows & webhooks; AWS SES templates, transport config, and bounce-safe sending.
+• DX: Type errors, lint/build warnings that would break CI.
+
+Change policy:
+• Apply MINIMAL, SAFE edits. Do not refactor or remove unrelated code. Keep file structure and code style.
+• For changes, output unified diff blocks per file (patch format).
+
+Deliverables:
+A) Root-cause report per issue (CSS, links, SSR, API, etc.)
+B) Patch-style diffs, file by file
+C) Local verification steps (exact commands + URLs to visit, what to expect in console)
+D) Production checks (build command, .env keys needed, what to verify after deploy)
+E) Rollback notes
+
+Context you must honor:
+• Frontend: React 18 + TS, Vite, shadcn/ui, TanStack Query, Wouter, responsive with dark mode
+• Backend: Node + Express (TS, ESM), REST API, Drizzle ORM + PostgreSQL (Neon)
+• Services: AWS SES email, Stripe subscriptions, Postgres session store
+• Demo tenant routes exist (e.g., /demo/sweet-dreams-bakery)
+
+Inputs from me (fill these into your plan as you work):
+- Dev cmd: npm run dev   Build cmd: npm run build   Start cmd: npm start
+- Known symptoms/logs: [paste current error/warning/output here]
+- Recent edits: [brief note]
+Proceed step-by-step. Start with the read-only diagnosis, then propose minimal patches, then apply.
