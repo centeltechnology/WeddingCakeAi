@@ -2847,8 +2847,11 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  async trackAnalytics(analytics: InsertAnalytics): Promise<Analytics> {
-    const [result] = await db.insert(analytics).values({ ...analytics, id: analytics.id || randomUUID() }).returning();
+  async trackAnalytics(analyticsData: InsertAnalytics): Promise<Analytics> {
+    if (!analyticsData.bakerId) {
+      throw new Error('bakerId is required for analytics tracking');
+    }
+    const [result] = await db.insert(analytics).values({ ...analyticsData, id: analyticsData.id || randomUUID() }).returning();
     return result;
   }
 
