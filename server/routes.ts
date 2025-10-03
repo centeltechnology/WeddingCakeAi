@@ -802,8 +802,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create new baker (signup)
-  app.post("/api/bakers", async (req, res) => {
+  // Create new baker (signup) - handler function
+  const handleBakerSignup = async (req: any, res: any) => {
     try {
       const bakerData = insertBakerSchema.parse(req.body);
       
@@ -835,10 +835,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bakerWithStripe.stripeCustomerId = customer.id;
         } catch (stripeError) {
           console.error('Error creating Stripe customer:', stripeError);
-          // Continue with account creation for free plans
-          if (bakerData.subscriptionPlan !== 'starter') {
-            throw new Error('Unable to set up paid subscription. Please try again later.');
-          }
+          // Continue with account creation - baker can set up payment later
+          console.log('Continuing with account creation despite Stripe customer error');
         }
       }
 
@@ -869,7 +867,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } catch (stripeError) {
             console.error('Error creating Stripe subscription:', stripeError);
-            // Continue with account creation even if subscription fails
+            // Continue with account creation - subscription can be set up later via billing page
+            console.log('Continuing with account creation despite Stripe subscription error');
           }
         }
       }
@@ -891,14 +890,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dietaryOptions: null
       });
       
+      // Create session token for auto-login after signup
+      const sessionToken = Buffer.from(`baker:${baker.id}:${Date.now()}`).toString('base64');
+      
       // Don't return the password in the response
       const { password, ...bakerResponse } = baker;
-      res.status(201).json(bakerResponse);
+      res.status(201).json({
+        success: true,
+        token: sessionToken,
+        baker: bakerResponse
+      });
     } catch (error: any) {
       console.error("Error creating baker:", error);
       res.status(400).json({ message: error.message });
     }
-  });
+  };
+
+  // Create new baker (signup) - both routes supported
+  app.post("/api/bakers", handleBakerSignup);
+  app.post("/api/bakers/signup", handleBakerSignup);
 
   app.get("/api/bakers/:id", async (req, res) => {
     try {

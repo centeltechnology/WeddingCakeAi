@@ -97,7 +97,8 @@ interface FormData {
 
 interface SignupResponse {
   success: boolean;
-  message: string;
+  message?: string;
+  token?: string;
   baker?: {
     id: string;
     slug: string;
@@ -123,11 +124,26 @@ export default function Signup() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: FormData): Promise<SignupResponse> => {
-      const response = await apiRequest('POST', '/api/bakers/signup', data);
+      // Map frontend field names to backend schema
+      const backendData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        businessName: data.bakeryName,
+        phone: data.phone,
+        address: data.location, // Map location to address
+        subscriptionPlan: data.selectedPlan === 'pro' ? 'professional' : data.selectedPlan === 'plus' ? 'enterprise' : 'starter'
+      };
+      const response = await apiRequest('POST', '/api/bakers/signup', backendData);
       return response.json();
     },
     onSuccess: (data: SignupResponse) => {
       if (data.success) {
+        // Store session token for auto-login
+        if (data.token) {
+          localStorage.setItem("baker_token", data.token);
+        }
+        
         if (data.requiresVerification) {
           // Redirect to login with verification message
           setLocation(`/baker-login?verification-sent=true&email=${encodeURIComponent(formData.email)}`);
@@ -136,7 +152,8 @@ export default function Signup() {
             title: "Account created successfully!",
             description: "Welcome to BakerIQ! Setting up your dashboard...",
           });
-          setLocation(`/baker/${data.baker.slug}/dashboard`);
+          // Redirect to baker login page which will auto-redirect to dashboard
+          setLocation('/baker-login');
         }
       } else {
         toast({
