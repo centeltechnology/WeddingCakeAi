@@ -46,16 +46,17 @@ Preferred communication style: Simple, everyday language.
 - **Email Marketing**: Sendy integration for automated list management and baker segmentation.
 
 ### Key Features
-- **Dynamic Pricing Calculator**: Real-time cake cost calculations.
+- **Dynamic Pricing Calculator**: Real-time cake cost calculations with 8 decoration options including Piping & Borders, Edible Glitter, Hand-painted Design, and Sugar Flowers.
 - **Baker Directory**: Searchable directory with filtering.
 - **Profile Management**: Comprehensive wedding planning profiles.
 - **Estimate Management**: Save, edit, and share detailed cake estimates.
 - **PDF Export**: Professional estimate generation.
-- **CRM Features**: Bulk email for leads, CSV export for leads, one-click quote approval system.
+- **CRM Features**: Bulk email for leads, CSV export for leads, one-click quote approval system with secure tokenized links.
 - **Quote Template Management**: UI for creating and managing reusable quote templates.
+- **Quote Approval System**: Customers receive email with secure approval link (/quote-approval/:token) to view, approve, or decline quotes. Links expire after 30 days.
 - **Dark Mode**: ThemeToggle component with Light/Dark/System options.
 - **Email Campaign Management**: Super admin system for sending segmented email campaigns to bakers.
-- **Calculator Leads Capture**: Automatic lead capture from the pricing calculator, integrated with Sendy.
+- **Calculator Leads Capture**: Automatic lead capture from the pricing calculator with customer confirmation emails, integrated with Sendy.
 - **Super Admin Dashboard**: Multi-tenant control, analytics (MRR, user growth), subscription management, baker impersonation, and baker management.
 - **Password Reset**: Complete password reset flow for baker accounts.
 
