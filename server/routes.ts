@@ -38,6 +38,28 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
+// JWT secret for baker authentication
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
+    throw new Error('JWT_SECRET must be set to a strong secret (32+ characters) in production');
+  }
+  return secret || 'fallback_dev_secret_DO_NOT_USE_IN_PROD';
+})();
+
+// Helper to create JWT token for baker authentication
+function createBakerToken(bakerId: string, email: string): string {
+  return jwt.sign(
+    { 
+      userId: bakerId,
+      username: email,
+      role: 'baker'
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
 // Trial expiration calculation helper function
 function calculateTrialStatus(baker: any) {
   const now = new Date();
