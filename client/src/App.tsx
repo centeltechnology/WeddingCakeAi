@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -108,27 +108,48 @@ function Router() {
           </BakerAuthWrapper>
         )}
       </Route>
-      <Route path="/baker/dashboard">
-        {() => {
-          // Redirect to proper dashboard route after checking authentication
-          const token = localStorage.getItem("baker_token");
-          if (token) {
+      <Route path="/baker/dashboard" component={() => {
+        const [location, setLocation] = useLocation();
+        
+        useEffect(() => {
+          const redirectToDashboard = async () => {
+            const token = localStorage.getItem("baker_token");
+            if (!token) {
+              setLocation('/baker-login');
+              return;
+            }
+
             try {
-              const decoded = atob(token);
-              const bakerIdMatch = decoded.match(/baker:([^:]+):/);
-              if (bakerIdMatch) {
-                const bakerId = bakerIdMatch[1];
-                window.location.href = `/dashboard/${bakerId}`;
-                return null;
+              // Fetch authenticated baker info using JWT
+              const response = await fetch('/api/bakers/me', {
+                headers: {
+                  'x-baker-token': token
+                }
+              });
+
+              if (response.ok) {
+                const baker = await response.json();
+                setLocation(`/dashboard/${baker.id}`);
+              } else {
+                // Token invalid or expired
+                localStorage.removeItem('baker_token');
+                setLocation('/baker-login');
               }
             } catch (e) {
-              // Invalid token, redirect to login
+              console.error('Error fetching baker info:', e);
+              setLocation('/baker-login');
             }
-          }
-          window.location.href = '/baker-login';
-          return null;
-        }}
-      </Route>
+          };
+
+          redirectToDashboard();
+        }, [setLocation]);
+
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        );
+      }} />
       <Route path="/baker-login" component={BakerLogin} />
       <Route path="/baker/forgot-password" component={BakerForgotPassword} />
       <Route path="/baker-forgot-password" component={BakerForgotPassword} />

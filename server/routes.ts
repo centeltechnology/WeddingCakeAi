@@ -912,14 +912,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dietaryOptions: null
       });
       
-      // Create session token for auto-login after signup
-      const sessionToken = Buffer.from(`baker:${baker.id}:${Date.now()}`).toString('base64');
+      // Create secure JWT token for auto-login after signup
+      const token = createBakerToken(baker.id, baker.email);
       
       // Don't return the password in the response
       const { password, ...bakerResponse } = baker;
       res.status(201).json({
         success: true,
-        token: sessionToken,
+        token,
         baker: bakerResponse
       });
     } catch (error: any) {
@@ -931,6 +931,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new baker (signup) - both routes supported
   app.post("/api/bakers", handleBakerSignup);
   app.post("/api/bakers/signup", handleBakerSignup);
+
+  // Get current authenticated baker
+  app.get("/api/bakers/me", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const baker = await storage.getBaker(req.user.userId);
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      
+      // Don't return the password
+      const { password, ...bakerResponse } = baker;
+      res.json(bakerResponse);
+    } catch (error: any) {
+      console.error("Error fetching current baker:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   app.get("/api/bakers/:id", async (req, res) => {
     try {
@@ -2318,15 +2339,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create session token (in production, use proper JWT or session management)
-      const sessionToken = Buffer.from(`baker:${baker.id}:${Date.now()}`).toString('base64');
+      // Create secure JWT token
+      const token = createBakerToken(baker.id, baker.email);
       
       // Don't return the password in the response
       const { password: _, ...bakerResponse } = baker;
       
       res.json({
         success: true,
-        token: sessionToken,
+        token,
         baker: bakerResponse
       });
     } catch (error) {

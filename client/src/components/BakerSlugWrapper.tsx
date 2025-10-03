@@ -28,9 +28,20 @@ export function BakerSlugWrapper({ children, slug }: BakerSlugWrapperProps) {
           return;
         }
 
-        // For now, if there's a token, we assume they're authenticated
-        // In a production app, you'd verify the token with the backend
-        setIsAuthenticated(true);
+        // Verify token with backend using JWT authentication
+        const response = await fetch("/api/bakers/me", {
+          headers: {
+            "x-baker-token": token
+          }
+        });
+
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          // Token is invalid or expired
+          localStorage.removeItem("baker_token");
+          setIsAuthenticated(false);
+        }
       } catch (error) {
         console.error("Auth check error:", error);
         localStorage.removeItem("baker_token");

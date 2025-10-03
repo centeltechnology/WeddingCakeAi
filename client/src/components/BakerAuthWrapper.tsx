@@ -21,20 +21,26 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
           return;
         }
 
-        // Verify token by checking if it contains the expected baker ID
-        try {
-          const decodedToken = atob(token);
+        // Verify token by calling /api/bakers/me with JWT authentication
+        const response = await fetch("/api/bakers/me", {
+          headers: {
+            "x-baker-token": token
+          }
+        });
+
+        if (response.ok) {
+          const baker = await response.json();
           
-          if (decodedToken.includes(`baker:${bakerId}:`)) {
-            // Token is valid for this baker
+          // Check if the authenticated baker matches the expected bakerId
+          if (baker.id === bakerId) {
             setIsAuthenticated(true);
           } else {
-            // Token is for a different baker or invalid
+            // Token is valid but for a different baker
             localStorage.removeItem("baker_token");
             setIsAuthenticated(false);
           }
-        } catch (decodeError) {
-          // Token is malformed
+        } else {
+          // Token is invalid or expired
           localStorage.removeItem("baker_token");
           setIsAuthenticated(false);
         }
