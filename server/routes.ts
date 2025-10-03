@@ -2360,7 +2360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update last login (simplified for demo)
       await storage.updateCustomer(customer.id, {
-        portalLastLogin: new Date().toISOString()
+        portalLastLogin: new Date()
       });
 
       res.json({
@@ -4575,7 +4575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const metric = await storage.createSystemHealthMetric({
         metricName,
-        metricValue: parseFloat(value),
+        metricValue: value.toString(),
         unit: unit || '',
         status: value > 90 ? 'critical' : value > 70 ? 'warning' : 'healthy',
         metadata: metadata || {}
@@ -4596,9 +4596,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const job = await storage.createDataExportJob({
         requestedById: req.user.userId,
         jobType: exportType,
-        format: format || 'csv',
         status: 'pending',
         parameters: {
+          format: format || 'csv',
           dateRange: dateRange || {},
           filters: filters || {}
         }
@@ -4614,8 +4614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           setTimeout(async () => {
             await storage.updateDataExportJob(job.id, {
               status: 'completed',
-              downloadUrl: `/exports/${job.id}.${format}`,
-              fileSize: Math.floor(Math.random() * 1000000)
+              fileUrl: `/exports/${job.id}.${format}`
             });
           }, 3000);
         } catch (error) {
@@ -4759,9 +4758,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'scheduled',
         scheduledStart: new Date(scheduledStart),
         scheduledEnd: new Date(scheduledEnd),
-        affectedServices: affectedServices || [],
-        notifyUsers: notifyUsers ?? true,
-        createdById: req.user.userId
+        affectedSystems: affectedServices || [],
+        scheduledById: req.user.userId
       });
       
       await storage.createAuditLog({
@@ -4924,10 +4922,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create backup job
       const backupJob = await storage.createDataExportJob({
-        userId: req.user.userId,
-        type: `backup_${type}`,
+        requestedById: req.user.userId,
+        jobType: `backup_${type}`,
         status: 'pending',
-        metadata: { 
+        parameters: { 
           backupType: type,
           initiatedAt: new Date().toISOString()
         }
@@ -5103,23 +5101,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             case 'suspend':
               result = await storage.updateTenant(tenantId, {
                 isActive: false,
-                subscriptionStatus: 'suspended',
-                updatedAt: new Date()
+                subscriptionStatus: 'suspended'
               });
               break;
             case 'activate':
               result = await storage.updateTenant(tenantId, {
                 isActive: true,
-                subscriptionStatus: 'active',
-                updatedAt: new Date()
+                subscriptionStatus: 'active'
               });
               break;
             case 'delete':
               // In production, this would be a soft delete or require additional confirmation
               result = await storage.updateTenant(tenantId, {
                 isActive: false,
-                subscriptionStatus: 'cancelled',
-                updatedAt: new Date()
+                subscriptionStatus: 'cancelled'
               });
               break;
             default:
@@ -5201,12 +5196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create the email job
       const emailJob = await storage.createEmailJob({
-        type,
-        recipients,
+        name: type,
         subject,
-        content,
+        body: content,
         status: 'pending',
-        metadata: {
+        filters: {
+          recipients,
           ...metadata,
           createdBy: req.user.userId,
           createdAt: new Date().toISOString()
@@ -5370,7 +5365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       newPeriodEnd.setDate(newPeriodEnd.getDate() + 14);
       
       await storage.updateBaker(id, {
-        currentPeriodEnd: newPeriodEnd.toISOString(),
+        currentPeriodEnd: newPeriodEnd,
         subscriptionStatus: 'trialing'
       });
       
@@ -5438,7 +5433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateBaker(id, {
         subscriptionStatus: 'active',
         cancelAtPeriodEnd: false,
-        currentPeriodEnd: newPeriodEnd.toISOString()
+        currentPeriodEnd: newPeriodEnd
       });
       
       res.json({
