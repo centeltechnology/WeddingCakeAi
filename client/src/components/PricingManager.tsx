@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -41,6 +42,7 @@ interface CakeSizePricing {
   basePrice: number;
   costToMake: number;
   profitMargin: number;
+  isActive?: boolean;
 }
 
 interface FlavorPricing {
@@ -48,6 +50,7 @@ interface FlavorPricing {
   name: string;
   upcharge: number;
   isPremium: boolean;
+  isActive?: boolean;
 }
 
 interface ShapePricing {
@@ -56,6 +59,7 @@ interface ShapePricing {
   baseUpcharge: number;
   costToMake: number;
   profitMargin: number;
+  isActive?: boolean;
 }
 
 interface DecorationPricing {
@@ -91,36 +95,36 @@ interface BakerPricingConfig {
 }
 
 const DEFAULT_CAKE_SIZES: CakeSizePricing[] = [
-  { size: "4-inch", servings: 6, basePrice: 45, costToMake: 18, profitMargin: 60 },
-  { size: "6-inch", servings: 12, basePrice: 65, costToMake: 25, profitMargin: 62 },
-  { size: "8-inch", servings: 24, basePrice: 85, costToMake: 35, profitMargin: 59 },
-  { size: "10-inch", servings: 38, basePrice: 115, costToMake: 50, profitMargin: 57 },
-  { size: "12-inch", servings: 56, basePrice: 145, costToMake: 70, profitMargin: 52 },
-  { size: "14-inch", servings: 78, basePrice: 185, costToMake: 95, profitMargin: 49 }
+  { size: "4-inch", servings: 6, basePrice: 45, costToMake: 18, profitMargin: 60, isActive: true },
+  { size: "6-inch", servings: 12, basePrice: 65, costToMake: 25, profitMargin: 62, isActive: true },
+  { size: "8-inch", servings: 24, basePrice: 85, costToMake: 35, profitMargin: 59, isActive: true },
+  { size: "10-inch", servings: 38, basePrice: 115, costToMake: 50, profitMargin: 57, isActive: true },
+  { size: "12-inch", servings: 56, basePrice: 145, costToMake: 70, profitMargin: 52, isActive: true },
+  { size: "14-inch", servings: 78, basePrice: 185, costToMake: 95, profitMargin: 49, isActive: true }
 ];
 
 const DEFAULT_FLAVORS: FlavorPricing[] = [
-  { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false },
-  { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false },
-  { id: "strawberry", name: "Fresh Strawberry", upcharge: 0, isPremium: false },
-  { id: "lemon", name: "Lemon Zest", upcharge: 0, isPremium: false },
-  { id: "red-velvet", name: "Red Velvet", upcharge: 15, isPremium: true },
-  { id: "funfetti", name: "Funfetti", upcharge: 5, isPremium: false },
-  { id: "carrot", name: "Carrot Spice", upcharge: 18, isPremium: true },
-  { id: "champagne", name: "Champagne", upcharge: 25, isPremium: true },
-  { id: "salted-caramel", name: "Salted Caramel", upcharge: 22, isPremium: true },
-  { id: "cookies-cream", name: "Cookies & Cream", upcharge: 12, isPremium: true }
+  { id: "vanilla", name: "Classic Vanilla", upcharge: 0, isPremium: false, isActive: true },
+  { id: "chocolate", name: "Rich Chocolate", upcharge: 0, isPremium: false, isActive: true },
+  { id: "strawberry", name: "Fresh Strawberry", upcharge: 0, isPremium: false, isActive: true },
+  { id: "lemon", name: "Lemon Zest", upcharge: 0, isPremium: false, isActive: true },
+  { id: "red-velvet", name: "Red Velvet", upcharge: 15, isPremium: true, isActive: true },
+  { id: "funfetti", name: "Funfetti", upcharge: 5, isPremium: false, isActive: true },
+  { id: "carrot", name: "Carrot Spice", upcharge: 18, isPremium: true, isActive: true },
+  { id: "champagne", name: "Champagne", upcharge: 25, isPremium: true, isActive: true },
+  { id: "salted-caramel", name: "Salted Caramel", upcharge: 22, isPremium: true, isActive: true },
+  { id: "cookies-cream", name: "Cookies & Cream", upcharge: 12, isPremium: true, isActive: true }
 ];
 
 const DEFAULT_SHAPES: ShapePricing[] = [
-  { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0 },
-  { id: "square", name: "Square", baseUpcharge: 25, costToMake: 10, profitMargin: 60 },
-  { id: "rectangular", name: "Rectangular", baseUpcharge: 35, costToMake: 15, profitMargin: 57 },
-  { id: "heart", name: "Heart", baseUpcharge: 45, costToMake: 20, profitMargin: 56 },
-  { id: "hexagon", name: "Hexagon", baseUpcharge: 55, costToMake: 25, profitMargin: 55 },
-  { id: "oval", name: "Oval", baseUpcharge: 40, costToMake: 18, profitMargin: 55 },
-  { id: "petal", name: "Petal", baseUpcharge: 65, costToMake: 30, profitMargin: 54 },
-  { id: "custom", name: "Custom Shape", baseUpcharge: 85, costToMake: 40, profitMargin: 53 }
+  { id: "round", name: "Round", baseUpcharge: 0, costToMake: 0, profitMargin: 0, isActive: true },
+  { id: "square", name: "Square", baseUpcharge: 25, costToMake: 10, profitMargin: 60, isActive: true },
+  { id: "rectangular", name: "Rectangular", baseUpcharge: 35, costToMake: 15, profitMargin: 57, isActive: true },
+  { id: "heart", name: "Heart", baseUpcharge: 45, costToMake: 20, profitMargin: 56, isActive: true },
+  { id: "hexagon", name: "Hexagon", baseUpcharge: 55, costToMake: 25, profitMargin: 55, isActive: true },
+  { id: "oval", name: "Oval", baseUpcharge: 40, costToMake: 18, profitMargin: 55, isActive: true },
+  { id: "petal", name: "Petal", baseUpcharge: 65, costToMake: 30, profitMargin: 54, isActive: true },
+  { id: "custom", name: "Custom Shape", baseUpcharge: 85, costToMake: 40, profitMargin: 53, isActive: true }
 ];
 
 const DEFAULT_DECORATIONS: DecorationPricing[] = [
@@ -616,11 +620,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                                 </div>
                               </div>
                               <div>
-                                <Label className="text-xs">Status</Label>
-                                <div className="mt-1">
-                                  <Badge variant={decoration.isActive ? "default" : "secondary"}>
-                                    {decoration.isActive ? "Active" : "Inactive"}
-                                  </Badge>
+                                <Label className="text-xs">Active</Label>
+                                <div className="mt-1 flex items-center space-x-2">
+                                  <Switch
+                                    checked={decoration.isActive}
+                                    onCheckedChange={(checked) => updateDecoration(index, { isActive: checked })}
+                                    data-testid={`switch-decoration-active-${decoration.id}`}
+                                  />
+                                  <span className="text-xs text-muted-foreground">
+                                    {decoration.isActive ? "Visible" : "Hidden"}
+                                  </span>
                                 </div>
                               </div>
                             </div>
