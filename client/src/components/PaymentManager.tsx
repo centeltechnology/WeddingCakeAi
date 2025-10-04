@@ -22,7 +22,8 @@ import {
   AlertCircle,
   TrendingUp,
   Receipt,
-  Wallet
+  Wallet,
+  FileCheck
 } from 'lucide-react';
 
 interface PaymentManagerProps {
