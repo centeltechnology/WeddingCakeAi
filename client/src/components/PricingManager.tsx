@@ -189,7 +189,24 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
   // Save pricing configuration
   const savePricingMutation = useMutation({
     mutationFn: async (pricingConfig: BakerPricingConfig) => {
-      return await apiRequest("PUT", `/api/bakers/${bakerId}/pricing`, pricingConfig);
+      // Ensure all arrays have at least defaults populated
+      // This gives bakers a complete starting point they can customize
+      const configToSave = {
+        ...pricingConfig,
+        cakeSizes: (pricingConfig.cakeSizes && pricingConfig.cakeSizes.length > 0) 
+          ? pricingConfig.cakeSizes 
+          : DEFAULT_CAKE_SIZES,
+        flavors: (pricingConfig.flavors && pricingConfig.flavors.length > 0)
+          ? pricingConfig.flavors
+          : DEFAULT_FLAVORS,
+        shapes: (pricingConfig.shapes && pricingConfig.shapes.length > 0)
+          ? pricingConfig.shapes
+          : DEFAULT_SHAPES,
+        decorations: (pricingConfig.decorations && pricingConfig.decorations.length > 0)
+          ? pricingConfig.decorations
+          : DEFAULT_DECORATIONS
+      };
+      return await apiRequest("PUT", `/api/bakers/${bakerId}/pricing`, configToSave);
     },
     onSuccess: (data, pricingConfig) => {
       // Update cache immediately for better UX
