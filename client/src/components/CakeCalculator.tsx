@@ -179,7 +179,15 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   // Use dynamic pricing or fallback to defaults (memoized for performance)
   const CAKE_SIZES = useMemo(() => {
     const dynamicSizes = (pricingConfig as any)?.cakeSizes;
-    return (dynamicSizes && dynamicSizes.length > 0) ? dynamicSizes : DEFAULT_CAKE_SIZES;
+    // Always ensure DEFAULT_CAKE_SIZES are included, merge with dynamic if available
+    if (dynamicSizes && dynamicSizes.length > 0) {
+      const sizeMap = new Map(DEFAULT_CAKE_SIZES.map(s => [s.size, s]));
+      dynamicSizes.forEach((ds: any) => sizeMap.set(ds.size, ds));
+      return Array.from(sizeMap.values()).sort((a, b) => 
+        parseInt(a.size) - parseInt(b.size)
+      );
+    }
+    return DEFAULT_CAKE_SIZES;
   }, [pricingConfig]);
   
   const CAKE_FLAVORS = useMemo(() => {
@@ -197,7 +205,20 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   
   const DECORATION_OPTIONS = useMemo(() => {
     const dynamicDecorations = (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive);
-    return (dynamicDecorations && dynamicDecorations.length > 0) ? dynamicDecorations : DEFAULT_DECORATION_OPTIONS;
+    // Always ensure all categories from defaults are available
+    if (dynamicDecorations && dynamicDecorations.length > 0) {
+      const categories = new Set(['flowers', 'design', 'topper', 'extras']);
+      const dynamicCategories = new Set(dynamicDecorations.map((d: any) => d.category));
+      const missingCategories = Array.from(categories).filter(c => !dynamicCategories.has(c));
+      
+      // Add default options for missing categories
+      const defaultsForMissingCategories = DEFAULT_DECORATION_OPTIONS.filter(
+        d => missingCategories.includes(d.category)
+      );
+      
+      return [...dynamicDecorations, ...defaultsForMissingCategories];
+    }
+    return DEFAULT_DECORATION_OPTIONS;
   }, [pricingConfig]);
   
   const SHAPE_OPTIONS = useMemo(() => {

@@ -347,6 +347,11 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         customer = await response.json();
         console.log('Fetched customer from backend:', customer.id, customer.name);
       }
+      
+      // Double-check customer exists
+      if (!customer) {
+        throw new Error('Customer data unavailable');
+      }
 
       const contractData = {
         bakerId,
