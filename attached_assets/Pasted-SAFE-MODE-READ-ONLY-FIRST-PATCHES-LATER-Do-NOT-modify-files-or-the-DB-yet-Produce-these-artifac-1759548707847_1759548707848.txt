@@ -1,0 +1,89 @@
+SAFE MODE — READ-ONLY FIRST, PATCHES LATER
+Do NOT modify files or the DB yet. Produce these artifacts FIRST, then STOP and await my approval keyword: **ACK: APPLY**.
+
+1) Schema Mapping (canonical → actual)
+   - Tables & columns for Contact / Lead / Quote / Contract / Payment* (PaymentMethod, PaymentRequest, etc. — whatever they’re REALLY named)
+   - Current FKs, indexes, nullability, and any pending migrations that touch these entities
+   - Output a mapping table (canonical on the left → actual table.column on the right)
+
+2) API Contract Table
+   - For every public/protected API: Method, Path, Auth (public/protected), Inputs, Outputs, Side effects (DB rows/columns touched)
+
+3) Flow Maps (golden paths)
+   A) Prospect → Calculator → Lead → Quote → Send → Contract → Pay → Job
+   B) Baker daily ops → Login → Pipeline → Create Quote → Send → Follow-up → Won/Lost
+   For each step list: route/API, DB tables/columns touched, expected state transitions
+
+4) Integrity Scan (read-only queries/checks)
+   - Orphan detection: quotes w/o lead, contracts w/o quote, payment requests w/o quote
+   - Places where transactions are missing but should exist (quote send, contract create, payment request create, webhooks)
+   - Identify idempotency gaps (e.g., duplicate leads/quotes on retry)
+
+5) External Payments ↔ Contract Linkage (discovery)
+   - Where/how baker Payment Methods and/or Payment Requests are stored and selected for a Quote
+   - How contract templates currently receive data (templating variables/placeholders)
+   - Confirm data flow is via IDs (server truth), not client-only state
+
+6) Risk Register
+   - Any destructive ops, renames, or non-reversible changes that would be risky
+   - ENV keys required at build/runtime that could break flows
+   - Files likely to be edited later (list paths + purpose) — analysis only
+
+STOP after producing the above. Await my approval keyword: **ACK: APPLY**.
+
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+APPLY PHASE (only after I reply "ACK: APPLY")
+Now prepare minimal, additive patches — still DO NOT write to disk yet. After generating diffs, STOP and wait for **ACK: MERGE**.
+
+Goals (patch plan only at this stage):
+1) Data integrity (minimal migrations; add-only)
+   - Ensure Quote has a NOT NULL FK to Lead (actual column names from mapping)
+   - Ensure Contract has a NOT NULL FK to Quote
+   - (If used) Lead → Contact FK; add a small project_signature column if needed for idempotent upserts (no renames, no drops)
+   - Provide reversible, idempotent migrations (IF NOT EXISTS guards)
+
+2) Transactions & Idempotency
+   - Wrap create/send quote, contract create/send, payment request create in DB transactions
+   - Upsert Contact by normalized email; Upsert Lead by (contact_id + project_signature)
+   - Return canonical IDs from APIs: { contactId, leadId, quoteId, contractId?, paymentRequestId? }
+
+3) Routing & State
+   - After sending a quote or creating a contract, navigate by IDs (e.g., /leads/:leadId/quotes/:quoteId[/contract]) and refetch from server
+   - Never clear lead/quote context on success
+
+4) External Payments ↔ Contract (wire in without rebuild)
+   - Contract generation must read payment info by Quote/PaymentRequest IDs (server side), not client state
+   - Add/confirm template variables:
+       {{payment_method_label}}
+       {{payment_link}}
+       {{payment_instructions}}
+       {{payment_qr_url}}   (if QR is rendered as an asset)
+   - Persist a snapshot on the contract (e.g., contract.payment_summary JSON) of the method/links shown at send-time
+   - Sensible fallbacks: if no PaymentRequest exists, use baker default or show “Contact baker for payment options”
+   - Sanitize: validate links/handles; avoid verbose logging of PII/payment handles
+
+Deliverables (as text — unified diffs, no file writes yet):
+- API Contract Table (final)
+- Flow diagrams (ASCII/bullets) for paths A and B
+- Integrity report + proposed minimal migrations (add-only) with exact DDL/Drizzle
+- Patches (unified diffs) for:
+   a) Transactions & idempotent upserts
+   b) Safer routing by IDs (post-action navigation + refetch)
+   c) Payment info → Contract template wiring + snapshot persistence
+- cURL smoke pack for key endpoints (create/upsert lead, create/send quote, create payment request, create/send contract)
+- SQL orphan checks
+- Rollback plan for each migration and code patch
+
+STOP after generating the above diffs/DDL and await my approval keyword: **ACK: MERGE**.
+
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+MERGE PHASE (only after I reply "ACK: MERGE")
+- Create a new git branch: audit/<YYYY-MM-DD> and apply the exact diffs + migrations
+- Run migrations with a dry-run first (BEGIN…ROLLBACK) and print results
+- Execute the cURL smoke pack; show responses
+- Re-run SQL orphan checks; show zero results
+- Output “done” with a summary of files changed + migrations applied
