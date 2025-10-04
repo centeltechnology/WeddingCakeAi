@@ -882,23 +882,40 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
               : quotes.filter(q => q.status === statusFilter);
             
             return filteredQuotes.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    {quotes.length === 0 ? 'No Quotes Yet' : `No ${statusFilter === 'all' ? '' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Quotes`}
+              <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+                <CardContent className="text-center py-16">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-r from-rose-200 to-pink-200 rounded-full blur-xl opacity-30"></div>
+                    <FileText className="h-20 w-20 text-rose-400 mx-auto mb-4 relative" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                    {quotes.length === 0 ? 'No quotes yet' : `No ${statusFilter === 'all' ? '' : statusFilter} quotes`}
                   </h3>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
                     {quotes.length === 0 
-                      ? 'Create your first quote to get started with the quote builder.' 
-                      : `You don't have any ${statusFilter === 'all' ? '' : statusFilter} quotes at the moment.`
+                      ? 'Create your first quote to start converting leads into customers. You can use templates to save time on future quotes.' 
+                      : `You don't have any ${statusFilter} quotes at the moment. Try adjusting your filter or create a new quote.`
                     }
                   </p>
                   {quotes.length === 0 && (
-                    <Button onClick={() => setIsCreating(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First Quote
-                    </Button>
+                    <div className="flex gap-3 justify-center">
+                      <Button 
+                        onClick={() => setIsCreating(true)}
+                        className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+                        data-testid="button-create-first-quote"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Your First Quote
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setActiveTab('templates')}
+                        data-testid="button-browse-templates"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Browse Templates
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>

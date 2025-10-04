@@ -305,13 +305,24 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
 
         <TabsContent value="plans" className="space-y-4">
           {paymentPlans.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Payment Plans Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Payment plans will appear here when you create contracts with installment options.
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardContent className="text-center py-16">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-full blur-xl opacity-30"></div>
+                  <Calendar className="h-20 w-20 text-blue-400 mx-auto mb-4 relative" />
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">No payment plans yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Payment plans help you manage installments and track deposits. They'll appear here automatically when you create contracts with payment schedules.
                 </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '#contracts'}
+                  data-testid="button-create-contract-for-payment"
+                >
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Create a Contract
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -350,13 +361,24 @@ export function PaymentManager({ bakerId }: PaymentManagerProps) {
 
         <TabsContent value="plans" className="space-y-4">
           {paymentPlans.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Payment Plans Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Payment plans will appear here when you create contracts with installment options.
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardContent className="text-center py-16">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-full blur-xl opacity-30"></div>
+                  <Calendar className="h-20 w-20 text-blue-400 mx-auto mb-4 relative" />
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">No payment plans yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Payment plans help you manage installments and track deposits. They'll appear here automatically when you create contracts with payment schedules.
                 </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '#contracts'}
+                  data-testid="button-create-contract-for-payment"
+                >
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Create a Contract
+                </Button>
               </CardContent>
             </Card>
           ) : (

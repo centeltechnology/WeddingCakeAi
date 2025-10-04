@@ -414,17 +414,34 @@ export function ContractManager({ bakerId }: ContractManagerProps) {
 
         <TabsContent value="contracts" className="space-y-4">
           {!contracts || contracts.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <FileCheck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Contracts Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first contract to get started.
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardContent className="text-center py-16">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-200 to-teal-200 rounded-full blur-xl opacity-30"></div>
+                  <FileCheck className="h-20 w-20 text-emerald-400 mx-auto mb-4 relative" />
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">No contracts yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Protect your business and set clear expectations with professional contracts. Create your first contract to secure bookings and deposits.
                 </p>
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Contract
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button 
+                    onClick={() => setIsCreating(true)}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+                    data-testid="button-create-first-contract"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Contract
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setActiveTab('templates')}
+                    data-testid="button-browse-contract-templates"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    View Templates
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
