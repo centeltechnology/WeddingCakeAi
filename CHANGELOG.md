@@ -43,6 +43,13 @@ All notable changes to BakerIQ will be documented in this file.
 - **Lead Signature Field**: All 17 missing signatures backfilled
 - **Contract Data Consistency**: Signature and signed_at timestamp now updated atomically
 - **Customer Creation Race Condition**: Lead conversion now checks for existing customer in transaction
+- **Contract Creation "Customer not found" Error**: Fixed race condition where creating contract from newly created quote failed because customer wasn't in frontend cache
+  - Added fallback to fetch customer from backend API if not found in cache
+  - Prevents "Customer not found" errors when baker creates quote from lead then immediately creates contract
+- **Cake Calculator Missing 4" Size**: Fixed dynamic pricing replacing all default sizes
+  - Now merges dynamic sizes with defaults to ensure all standard sizes (4", 6", 8", 10", 12", 14") always available
+- **Cake Calculator Missing Decoration Categories**: Fixed dynamic pricing causing empty decoration categories
+  - Now fills missing categories (Fresh Flowers, Design Elements, Cake Toppers, Extra Touches) from defaults when baker's dynamic pricing is incomplete
 
 ### Security
 - Added payment handle sanitization to prevent XSS in contract templates
