@@ -53,6 +53,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
     title: '',
     description: '',
     customerId: '',
+    customerEmail: '',
+    customerName: '',
+    customerPhone: '',
     templateId: '',
     eventDate: '',
     eventType: 'wedding',
@@ -155,6 +158,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         setNewQuote(prev => ({ 
           ...prev, 
           customerId: customer.id,
+          customerEmail: customer.email,
+          customerName: customer.name,
+          customerPhone: customer.phone || '',
           title: quoteTitleSuffix,
           eventDate: selectedLead?.weddingDate || '',
           guestCount: selectedLead?.guestCount || 100,
@@ -228,12 +234,17 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
   }, [prefilledCustomer, onCustomerUsed]);
 
   // Create quote mutation
-  const createQuoteMutation = useMutation({
+  const createQuoteMutation = useMutation<
+    { quote: Quote; contactId: string; leadId: string; quoteId: string },
+    Error,
+    any
+  >({
     mutationFn: async (quoteData: any) => {
-      return apiRequest('POST', '/api/quotes', quoteData);
+      const response = await apiRequest('POST', '/api/quotes', quoteData);
+      return await response.json();
     },
-    onSuccess: async (response: { quote: Quote; contactId: string; leadId: string; quoteId: string }) => {
-      const { leadId, quoteId } = response;
+    onSuccess: async (response) => {
+      const { quote, leadId, quoteId } = response;
       
       // Refetch server state
       await Promise.all([
@@ -243,8 +254,8 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       ]);
       
       toast({
-        title: "Quote Created",
-        description: "Your quote has been created successfully!",
+        title: "Quote Created Successfully!",
+        description: `Quote #${quote.quoteNumber} has been created and linked to the lead.`,
       });
       
       setIsCreating(false);
@@ -252,6 +263,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         title: '',
         description: '',
         customerId: '',
+        customerEmail: '',
+        customerName: '',
+        customerPhone: '',
         templateId: '',
         eventDate: '',
         eventType: 'wedding',
@@ -267,8 +281,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         depositAmount: '0.00'
       });
       
-      // Navigate to the new quote details page
-      navigate(`/leads/${leadId}/quotes/${quoteId}`);
+      // Open the quote details modal for the newly created quote
+      setSelectedQuote(quote);
+      setActiveTab('quotes');
     },
     onError: () => {
       toast({
@@ -365,30 +380,20 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
   });
 
   const handleCreateQuote = () => {
-    if (!newQuote.title || !newQuote.customerId) {
+    if (!newQuote.title) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in the quote title.",
         variant: "destructive",
       });
       return;
     }
 
-    // Verify customer exists in cache (and should exist in DB)
-    const customerExists = customers.some(c => c.id === newQuote.customerId);
-    if (!customerExists) {
-      console.error('Customer not found in cache:', newQuote.customerId);
-      toast({
-        title: "Error",
-        description: "Customer not found. Please select a valid customer or convert a lead first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Use customer details from form state (already populated during lead conversion or customer selection)
     const quoteData = {
       ...newQuote,
       bakerId,
+      // Customer details are already in newQuote from lead conversion
       // Convert empty string to null for templateId (foreign key constraint)
       templateId: newQuote.templateId || null,
       quoteNumber: `Q${new Date().getFullYear()}-${String(quotes.length + 1).padStart(3, '0')}`,
@@ -402,7 +407,7 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
     };
 
-    console.log('Creating quote with customer:', newQuote.customerId);
+    console.log('Creating quote with customer email:', quoteData.customerEmail, 'name:', quoteData.customerName);
     createQuoteMutation.mutate(quoteData);
   };
 
@@ -622,7 +627,19 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
                       const leadId = value.substring(5);
                       convertLeadMutation.mutate(leadId);
                     } else {
-                      setNewQuote(prev => ({ ...prev, customerId: value }));
+                      // Find and populate customer details
+                      const selectedCustomer = customers.find(c => c.id === value);
+                      if (selectedCustomer) {
+                        setNewQuote(prev => ({ 
+                          ...prev, 
+                          customerId: value,
+                          customerEmail: selectedCustomer.email,
+                          customerName: selectedCustomer.name,
+                          customerPhone: selectedCustomer.phone || ''
+                        }));
+                      } else {
+                        setNewQuote(prev => ({ ...prev, customerId: value }));
+                      }
                     }
                   }}
                   disabled={customersLoading || leadsLoading || convertLeadMutation.isPending}

@@ -54,6 +54,7 @@ Preferred communication style: Simple, everyday language.
 - **CRM Features**: Bulk email for leads, CSV export for leads, one-click quote approval system with secure tokenized links.
 - **Quote Template Management**: UI for creating and managing reusable quote templates.
 - **Quote Approval System**: Customers receive email with secure approval link (/quote-approval/:token) to view, approve, or decline quotes. Links expire after 30 days.
+- **Quote-Lead-Customer Linkage**: Complete transactional flow with idempotent upserts ensuring quotes.lead_id and leads.signature are properly populated. Client stores customer details in form state to prevent race conditions. Quote creation stays on dashboard and opens quote details modal.
 - **Dark Mode**: ThemeToggle component with Light/Dark/System options.
 - **Email Campaign Management**: Super admin system for sending segmented email campaigns to bakers.
 - **Calculator Leads Capture**: Automatic lead capture from the pricing calculator with customer confirmation emails, integrated with Sendy.
