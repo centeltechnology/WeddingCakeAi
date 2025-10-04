@@ -1,0 +1,44 @@
+ACK: APPLY
+
+Implement the Apply Plan below as patches only (no file writes). All changes must be minimal, additive, and reversible.
+
+APPLY PLAN
+A) BACKFILL (patch + dry-run SQL)
+- Backfill quotes.lead_id for 11 rows using existing signature logic (upsert/find lead, then update quote).
+- Tag contracts with quote_id IS NULL as contract_origin = 'direct'; all others 'from_quote'.
+- Backfill 17 leads.signature using our existing signature rule; index already present.
+
+B) MIGRATIONS (add-only)
+- Prepare two-step change for quotes.lead_id → NOT NULL (only after backfill passes).
+- Add contracts.contract_origin text DEFAULT 'from_quote'.
+- Add contracts.payment_snapshot jsonb NULL.
+- All migrations reversible and guarded (IF NOT EXISTS). Print final DDL.
+
+C) TRANSACTIONS + IDEMPOTENCY
+- Wrap these endpoints in transactions and show unified diffs:
+  1) POST /api/leads/:id/convert-to-customer
+  2) POST /api/quotes/:id/send
+  3) POST /api/contracts and POST /api/contracts/:id/sign
+- Ensure responses return canonical IDs; email sending uses outbox or rolls back on failure.
+
+D) SERVER-SIDE CONTRACT RENDERING + PAYMENT SNAPSHOT
+- Introduce a small server renderer that replaces template variables, including:
+  {{baker_name}}, {{baker_email}}, {{customer_name}}, {{customer_email}},
+  {{event_date}}, {{total_amount}}, {{deposit_amount}},
+  {{payment_method_label}}, {{payment_link}}, {{payment_instructions}}, {{payment_qr_url}}
+- Resolve payment info from quote context (or baker default) and snapshot it to contracts.payment_snapshot when sending.
+- Save rendered HTML to contracts.content (frozen). Validate links/handles; avoid logging PII.
+
+E) ROUTING & STATE
+- After send/create, navigate by IDs and refetch from server:
+  /leads/:leadId/quotes/:quoteId[/contract/:contractId]
+- Remove any code that clears selected lead/quote on success.
+
+Deliverables (as text only; do not write files yet):
+- Unified diffs for code changes
+- DDL for migrations with up/down
+- cURL smoke pack covering: create lead, create quote, send quote, create contract, send contract
+- Orphan scan SQL and expected “zero” results after backfill
+- Rollback plan for each change
+
+STOP after printing the above and await: ACK: MERGE
