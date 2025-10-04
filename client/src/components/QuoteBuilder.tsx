@@ -114,13 +114,32 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       const response = await makeAuthenticatedRequest(`/api/leads/${leadId}/convert-to-customer`, {
         method: 'POST'
       });
-      if (!response.ok) throw new Error('Failed to convert lead to customer');
-      return response.json();
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Convert lead to customer failed:', error);
+        throw new Error(error.error || 'Failed to convert lead to customer');
+      }
+      const customer = await response.json();
+      console.log('Customer created successfully:', customer.id, customer.name);
+      return customer;
     },
     onSuccess: async (customer, leadId) => {
-      // Invalidate specific customer and lead queries
-      queryClient.invalidateQueries({ queryKey: ['/api/customers', bakerId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
+      console.log('Lead converted, customer created:', customer);
+      
+      // Manually update customers cache with the new customer
+      queryClient.setQueryData<Customer[]>(['/api/customers', bakerId], (old = []) => {
+        const exists = old.some(c => c.id === customer.id);
+        if (exists) {
+          console.log('Customer already in cache');
+          return old;
+        }
+        console.log('Adding customer to cache:', customer.id);
+        return [...old, customer];
+      });
+      
+      // Also refetch to verify customer was saved to database
+      await queryClient.refetchQueries({ queryKey: ['/api/customers', bakerId] });
+      await queryClient.refetchQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
       
       // Get the lead data to access estimate pricing
       const selectedLead = leads.find(lead => lead.id === leadId);
@@ -211,8 +230,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
     mutationFn: async (quoteData: any) => {
       return apiRequest('POST', '/api/quotes', quoteData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', bakerId] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['/api/quotes', bakerId] });
+      // Don't refetch customers here - it's already fresh from manual cache update in convertLeadMutation
       toast({
         title: "Quote Created",
         description: "Your quote has been created successfully!",
@@ -251,8 +271,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       return apiRequest('PUT', `/api/quotes/${id}`, updates);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', bakerId] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['/api/quotes', bakerId] });
+      // Don't refetch customers - they should already be in cache
       toast({
         title: "Quote Updated",
         description: "Your quote has been updated successfully!",
@@ -340,6 +361,18 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       return;
     }
 
+    // Verify customer exists in cache (and should exist in DB)
+    const customerExists = customers.some(c => c.id === newQuote.customerId);
+    if (!customerExists) {
+      console.error('Customer not found in cache:', newQuote.customerId);
+      toast({
+        title: "Error",
+        description: "Customer not found. Please select a valid customer or convert a lead first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const quoteData = {
       ...newQuote,
       bakerId,
@@ -356,6 +389,7 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
     };
 
+    console.log('Creating quote with customer:', newQuote.customerId);
     createQuoteMutation.mutate(quoteData);
   };
 
