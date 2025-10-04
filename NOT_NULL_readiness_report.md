@@ -1,16 +1,17 @@
 # NOT NULL Readiness Report
 **Migration Target:** `ALTER TABLE quotes ALTER COLUMN lead_id SET NOT NULL;`  
 **Generated:** 2025-10-04  
-**Mode:** READ-ONLY VALIDATION
+**Last Updated:** 2025-10-04 (Deletion Script Prepared)  
+**Mode:** DELETION SCRIPT READY
 
 ---
 
-## Orphan Scan Results
+## Orphan Scan Results (Current State)
 
 ### Total Orphan Count
-```
+```sql
 SELECT COUNT(*) FROM quotes WHERE lead_id IS NULL;
-Result: 2 orphans
+Result: 2 orphans (UNCHANGED - deletion script prepared but not executed)
 ```
 
 ### Orphan Details
@@ -24,6 +25,30 @@ Result: 2 orphans
 - Both have NULL `customer_id` (reason they couldn't be backfilled)
 - Neither has quote items or related contracts
 - Both are safe to delete without cascading issues
+
+---
+
+## Deletion Script Prepared
+
+**File:** `delete_orphan_quotes.sql`
+
+### Explicit Quote IDs Targeted for Deletion
+- `test-quote--MLdk9`
+- `test-quote-xu_1sY`
+
+### Script Features
+✅ Transaction-wrapped for safety (BEGIN...COMMIT)  
+✅ SELECT preview before deletion  
+✅ Explicit ID list (no wildcards or patterns)  
+✅ Post-deletion verification queries  
+✅ Rollback instructions included  
+
+### Script Execution Flow
+1. **BEGIN** transaction
+2. **SELECT** preview of rows to be deleted
+3. **DELETE** the 2 specific quotes by ID
+4. **SELECT** verification (should show 0 orphans)
+5. **COMMIT** if verification passes
 
 ---
 
@@ -69,61 +94,47 @@ SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 
 
 ## Readiness Assessment
 
-### ❌ READY TO ENFORCE: **NO**
+### ⚠️ READY TO ENFORCE: **PENDING DELETION**
 
-**Blockers:**
-1. **2 orphaned quotes with NULL lead_id**
-   - Cannot enforce NOT NULL constraint while orphans exist
-   - PostgreSQL will reject: `ERROR: column "lead_id" contains null values`
+**Current Status:**
+- ❌ 2 orphaned quotes still present
+- ✅ Deletion script prepared and ready
+- ✅ Foreign key constraint exists
+- ✅ No dependent objects
 
-### Resolution Options
-
-#### Option 1: Delete Test Data (RECOMMENDED)
-```sql
--- Safe deletion (no cascading dependencies)
-DELETE FROM quotes WHERE id IN ('test-quote--MLdk9', 'test-quote-xu_1sY');
-```
-
-**Pros:** Clean, permanent solution  
-**Cons:** None (test data only)
-
-#### Option 2: Populate Missing Data
-```sql
--- Would require creating dummy customer + lead first
--- NOT RECOMMENDED for test artifacts
-```
-
-#### Option 3: Skip NOT NULL Enforcement
-**Pros:** No immediate action needed  
-**Cons:** Leaves data model incomplete, allows future orphans
+**After Deletion:**
+- ✅ Zero orphans expected
+- ✅ Constraint can be applied immediately
 
 ---
 
-## Recommended Action Plan
+## Execution Plan
 
-### Step 1: Clean Test Data
+### Phase 1: Delete Orphan Quotes ⏳ PENDING ACK: MERGE
 ```sql
-DELETE FROM quotes 
-WHERE lead_id IS NULL 
-  AND customer_id IS NULL 
-  AND id LIKE 'test-%';
+-- Execute: delete_orphan_quotes.sql
+DELETE FROM quotes
+WHERE id IN (
+  'test-quote--MLdk9',
+  'test-quote-xu_1sY'
+);
+-- Expected: DELETE 2
 ```
 
-### Step 2: Verify Zero Orphans
+### Phase 2: Verify Zero Orphans
 ```sql
 SELECT COUNT(*) FROM quotes WHERE lead_id IS NULL;
 -- Expected: 0
 ```
 
-### Step 3: Apply NOT NULL Constraint
+### Phase 3: Apply NOT NULL Constraint
 ```sql
 ALTER TABLE quotes 
   ALTER COLUMN lead_id SET NOT NULL;
 ```
 
-### Step 4: Verification
+### Phase 4: Confirm Constraint Active
 ```sql
--- Confirm constraint active
 SELECT 
   column_name, 
   is_nullable 
@@ -138,8 +149,8 @@ WHERE table_name = 'quotes'
 ## Impact Assessment
 
 ### Database Impact
-- **Rows affected:** 2 test quotes will be deleted
-- **Performance:** Negligible (constraint check on 2 rows)
+- **Rows to be deleted:** 2 test quotes
+- **Performance:** Negligible (constraint check on remaining rows)
 - **Downtime:** None required (online DDL operation)
 
 ### Application Impact
@@ -149,7 +160,10 @@ WHERE table_name = 'quotes'
 
 ### Rollback Plan
 ```sql
--- If issues arise, remove constraint
+-- If deletion causes issues (unlikely with test data)
+ROLLBACK;
+
+-- If constraint causes issues after applying
 ALTER TABLE quotes 
   ALTER COLUMN lead_id DROP NOT NULL;
 ```
@@ -158,16 +172,20 @@ ALTER TABLE quotes
 
 ## Final Recommendation
 
-**Status:** ⚠️ **BLOCKED - Action Required**
+**Status:** ✅ **READY FOR EXECUTION** (pending approval)
+
+**Risk Level:** 🟢 **LOW** 
+- Only test data affected
+- No production impact
+- No cascading deletes
+- Transaction-wrapped for safety
 
 **Next Steps:**
-1. Delete 2 test quotes (safe, no dependencies)
-2. Re-run orphan scan to confirm zero orphans
-3. Apply NOT NULL constraint
-4. Verify with `\d quotes` or information_schema query
-
-**Risk Level:** 🟢 **LOW** (only test data affected, no production impact)
+1. ⏳ **Awaiting:** `ACK: MERGE` to execute deletion script
+2. ⏳ **Then:** Verify zero orphans
+3. ⏳ **Then:** Apply NOT NULL constraint
+4. ⏳ **Finally:** Verify constraint active
 
 ---
 
-**Awaiting explicit approval:** `ACK: APPLY`
+**Current Approval Status:** Deletion script prepared, awaiting `ACK: MERGE`
