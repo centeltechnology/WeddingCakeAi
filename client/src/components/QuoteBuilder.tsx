@@ -334,9 +334,18 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
   // Create contract from quote mutation
   const createContractFromQuoteMutation = useMutation({
     mutationFn: async (quote: Quote) => {
-      const customer = customers.find(c => c.id === quote.customerId);
+      // Try to find customer in cache first
+      let customer = customers.find(c => c.id === quote.customerId);
+      
+      // If not in cache, fetch from backend
       if (!customer) {
-        throw new Error('Customer not found');
+        console.log('Customer not in cache, fetching from backend:', quote.customerId);
+        const response = await fetch(`/api/customers/${quote.customerId}`);
+        if (!response.ok) {
+          throw new Error('Customer not found');
+        }
+        customer = await response.json();
+        console.log('Fetched customer from backend:', customer.id, customer.name);
       }
 
       const contractData = {
