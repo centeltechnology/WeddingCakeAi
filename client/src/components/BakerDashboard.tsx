@@ -48,7 +48,10 @@ import {
   ExternalLink,
   HelpCircle,
   Bell,
-  CalendarCheck
+  CalendarCheck,
+  Home,
+  ArrowRight,
+  TrendingUp
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -83,7 +86,7 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
   const [cakeTypes, setCakeTypes] = useState<string[]>([]);
   const [newCakeType, setNewCakeType] = useState("");
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("leads");
+  const [activeTab, setActiveTab] = useState("overview");
   const [leadForQuote, setLeadForQuote] = useState<Lead | null>(null);
   const [consultationDialogOpen, setConsultationDialogOpen] = useState(false);
   const [consultationLead, setConsultationLead] = useState<Lead | null>(null);
@@ -725,6 +728,10 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
         {/* Mobile Tab Navigation */}
         <div className="lg:hidden mb-6">
           <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
+            <TabsTrigger value="overview" className="flex-col h-20 gap-2 text-xs" data-testid="tab-overview-mobile">
+              <Home className="w-5 h-5" />
+              <span>Overview</span>
+            </TabsTrigger>
             <TabsTrigger value="leads" className="flex-col h-20 gap-2 text-xs">
               <Users className="w-5 h-5" />
               <span>Leads</span>
@@ -778,6 +785,18 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
 
         {/* Desktop Card-based Navigation */}
         <div className="hidden lg:grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {/* Overview - Featured */}
+          <Card className="backdrop-blur-sm bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-4">
+              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
+                <TabsTrigger value="overview" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50" data-testid="tab-overview">
+                  <Home className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+              </TabsList>
+            </CardContent>
+          </Card>
+          
           {/* Business Operations */}
           <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="pb-2">
@@ -882,6 +901,201 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Today's Activity */}
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-rose-500" />
+                  Today's Activity
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">New Leads</span>
+                  <Badge variant="secondary" className="bg-blue-500 text-white">
+                    {leads?.filter(lead => {
+                      const today = new Date();
+                      const leadDate = new Date(lead.createdAt || '');
+                      return leadDate.toDateString() === today.toDateString();
+                    }).length || 0}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Active Leads</span>
+                  <Badge variant="secondary" className="bg-purple-500 text-white">
+                    {leadStats.new}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Conversion Rate</span>
+                  <Badge variant="secondary" className="bg-emerald-500 text-white">
+                    {leadStats.total > 0 ? Math.round((leadStats.booked / leadStats.total) * 100) : 0}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Plus className="w-5 h-5 mr-2 text-rose-500" />
+                  Quick Actions
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button 
+                  className="w-full justify-start bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white" 
+                  variant="default"
+                  onClick={() => setActiveTab("leads")}
+                  data-testid="button-quick-new-lead"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  View Leads
+                </Button>
+                <Button 
+                  className="w-full justify-start bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white" 
+                  variant="default"
+                  onClick={() => setActiveTab("quotes")}
+                  data-testid="button-quick-new-quote"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Create Quote
+                </Button>
+                <Button 
+                  className="w-full justify-start bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white" 
+                  variant="default"
+                  onClick={() => setActiveTab("bookings")}
+                  data-testid="button-quick-calendar"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Calendar
+                </Button>
+                <Button 
+                  className="w-full justify-start bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white" 
+                  variant="default"
+                  onClick={() => setActiveTab("pricing")}
+                  data-testid="button-quick-pricing"
+                >
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Manage Pricing
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity Feed */}
+            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Clock className="w-5 h-5 mr-2 text-rose-500" />
+                  Recent Activity
+                </h3>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {leads && leads.length > 0 ? (
+                    leads.slice(0, 5).map((lead) => (
+                      <div key={lead.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {lead.status === 'new' && 'New lead'}
+                            {lead.status === 'quoted' && 'Quote sent'}
+                            {lead.status === 'booked' && 'Booked'}
+                            {lead.status === 'archived' && 'Archived'}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setActiveTab("leads")}
+                          data-testid={`button-view-lead-${lead.id}`}
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No recent activity</p>
+                      <p className="text-xs text-gray-400 mt-1">Start by adding your first lead</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Get Started Tips - Only show if new user */}
+          {leads && leads.length === 0 && (
+            <Card className="backdrop-blur-sm bg-gradient-to-r from-rose-50 to-pink-50 border-rose-200 shadow-xl mt-6">
+              <CardHeader>
+                <h3 className="text-xl font-semibold text-gray-900">🎉 Welcome to BakerIQ!</h3>
+                <p className="text-gray-600">Get started in 3 easy steps:</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <button
+                  className="w-full text-left p-4 bg-white rounded-lg hover:shadow-md transition-shadow flex items-center justify-between group"
+                  onClick={() => setActiveTab('pricing')}
+                  data-testid="button-welcome-pricing"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+                      <Calculator className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">1. Set up your pricing</p>
+                      <p className="text-sm text-gray-500">Configure cake sizes, flavors, and decorations</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-rose-500 transition-colors" />
+                </button>
+                
+                <button
+                  className="w-full text-left p-4 bg-white rounded-lg hover:shadow-md transition-shadow flex items-center justify-between group"
+                  onClick={() => setActiveTab('templates')}
+                  data-testid="button-welcome-templates"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Cake className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">2. Create a quote template</p>
+                      <p className="text-sm text-gray-500">Save time with reusable templates</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                </button>
+                
+                <button
+                  className="w-full text-left p-4 bg-white rounded-lg hover:shadow-md transition-shadow flex items-center justify-between group"
+                  onClick={() => setActiveTab('branding')}
+                  data-testid="button-welcome-branding"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Tag className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">3. Customize your branding</p>
+                      <p className="text-sm text-gray-500">Add your logo and brand colors</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="about">
           <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
