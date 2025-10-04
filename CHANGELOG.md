@@ -46,10 +46,11 @@ All notable changes to BakerIQ will be documented in this file.
 - **Contract Creation "Customer not found" Error**: Fixed race condition where creating contract from newly created quote failed because customer wasn't in frontend cache
   - Added fallback to fetch customer from backend API if not found in cache
   - Prevents "Customer not found" errors when baker creates quote from lead then immediately creates contract
-- **Cake Calculator Missing 4" Size**: Fixed dynamic pricing replacing all default sizes
-  - Now merges dynamic sizes with defaults to ensure all standard sizes (4", 6", 8", 10", 12", 14") always available
-- **Cake Calculator Missing Decoration Categories**: Fixed dynamic pricing causing empty decoration categories
-  - Now fills missing categories (Fresh Flowers, Design Elements, Cake Toppers, Extra Touches) from defaults when baker's dynamic pricing is incomplete
+- **Cake Calculator Missing 4" Size & Decoration Categories**: Improved pricing configuration to use pre-population instead of runtime merging
+  - **Better UX Approach**: PricingManager now pre-populates all empty arrays (sizes, flavors, decorations, shapes) with defaults when baker first saves pricing
+  - **WYSIWYG Principle**: Bakers get complete starting point with all defaults, can customize/remove options, and calculator shows exactly what baker configured
+  - **Cache Fix**: Save mutation now properly updates cache with server response (includes defaults), ensuring calculator always receives complete data
+  - **Result**: All standard sizes (4", 6", 8", 10", 12", 14") and all decoration categories (Fresh Flowers, Design Elements, Cake Toppers, Extra Touches) guaranteed available on first save
 
 ### Security
 - Added payment handle sanitization to prevent XSS in contract templates
