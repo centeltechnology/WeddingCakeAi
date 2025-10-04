@@ -418,16 +418,17 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-6 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
+                <div className="grid grid-cols-7 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
                   <div>Size</div>
                   <div>Servings</div>
                   <div>Your Price</div>
                   <div>Cost to Make</div>
                   <div>Profit</div>
                   <div className="text-gray-900 font-medium">Margin</div>
+                  <div>Active</div>
                 </div>
                 {pricing.cakeSizes.map((size, index) => (
-                  <div key={size.size} className="grid grid-cols-6 gap-4 items-center">
+                  <div key={size.size} className="grid grid-cols-7 gap-4 items-center">
                     <div className="font-medium">{size.size}</div>
                     <div className="text-muted-foreground">{size.servings}</div>
                     <div>
@@ -457,6 +458,13 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                       >
                         {size.profitMargin}%
                       </Badge>
+                    </div>
+                    <div className="flex items-center">
+                      <Switch
+                        checked={size.isActive !== false}
+                        onCheckedChange={(checked) => updateCakeSize(index, { isActive: checked })}
+                        data-testid={`switch-size-active-${size.size}`}
+                      />
                     </div>
                   </div>
                 ))}
