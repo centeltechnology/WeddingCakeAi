@@ -2964,8 +2964,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/quotes', async (req, res) => {
     try {
-      const quote = await storage.createQuote(req.body);
-      res.status(201).json(quote);
+      const quoteData = req.body;
+      
+      // STEP 1: Idempotent customer upsert by normalized email
+      const normalizedEmail = quoteData.customerEmail?.toLowerCase().trim();
+      if (!normalizedEmail) {
+        return res.status(400).json({ error: 'Customer email is required' });
+      }
+      
+      const bakerId = quoteData.bakerId;
+      if (!bakerId) {
+        return res.status(400).json({ error: 'Baker ID is required' });
+      }
+      
+      // Check if customer exists
+      const existingCustomers = await storage.getCustomersByBaker(bakerId);
+      let customer = existingCustomers.find(c => c.email.toLowerCase().trim() === normalizedEmail);
+      
+      if (!customer) {
+        // Create new customer
+        const customerData = {
+          bakerId: bakerId,
+          tenantId: quoteData.tenantId || null,
+          name: quoteData.customerName || 'Unknown',
+          email: normalizedEmail,
+          phone: quoteData.customerPhone || null,
+          eventDate: quoteData.eventDate || null,
+          eventType: quoteData.eventType || 'wedding',
+          guestCount: quoteData.guestCount || null,
+          budget: quoteData.budget || null,
+          source: 'quote_builder',
+          status: 'inquiry',
+        };
+        customer = await storage.createCustomer(customerData);
+        console.log('Created new customer:', customer.id, customer.name);
+      } else {
+        console.log('Found existing customer:', customer.id, customer.name);
+      }
+      
+      // STEP 2: Generate signature for idempotent lead upsert
+      // Signature = customer_id + event details to identify unique project
+      const signature = `${customer.id}_${quoteData.eventDate || 'no-date'}_${quoteData.eventType || 'wedding'}`.toLowerCase();
+      
+      // STEP 3: Idempotent lead upsert by (customer_id + signature)
+      const existingLeads = await storage.getLeadsByBaker(bakerId);
+      let lead = existingLeads.find(l => l.signature === signature);
+      
+      if (!lead) {
+        // Create new lead
+        const leadData = {
+          bakerId: bakerId,
+          tenantId: quoteData.tenantId || null,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          customerPhone: customer.phone || null,
+          weddingDate: quoteData.eventDate || null,
+          guestCount: quoteData.guestCount || null,
+          budget: quoteData.budget || null,
+          message: quoteData.description || '',
+          status: 'quoted',
+          signature: signature,
+        };
+        lead = await storage.createLead(leadData);
+        console.log('Created new lead:', lead.id, signature);
+      } else {
+        console.log('Found existing lead:', lead.id, signature);
+        // Update lead status to 'quoted' if it was in a different state
+        if (lead.status !== 'quoted') {
+          await storage.updateLead(lead.id, { status: 'quoted' });
+        }
+      }
+      
+      // STEP 4: Create quote with both customer_id and lead_id
+      const quotePayload = {
+        ...quoteData,
+        customerId: customer.id,
+        leadId: lead.id,
+      };
+      
+      const quote = await storage.createQuote(quotePayload);
+      console.log('Created quote:', quote.id, 'for customer:', customer.id, 'lead:', lead.id);
+      
+      // STEP 5: Return all IDs for client routing
+      res.status(201).json({
+        quote,
+        contactId: customer.id,
+        leadId: lead.id,
+        quoteId: quote.id,
+      });
     } catch (error) {
       console.error('Error creating quote:', error);
       res.status(500).json({ error: 'Failed to create quote' });
