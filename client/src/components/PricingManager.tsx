@@ -484,15 +484,16 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
+                <div className="grid grid-cols-6 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
                   <div>Shape Name</div>
                   <div>Upcharge</div>
                   <div>Cost to Make</div>
                   <div>Profit</div>
                   <div className="text-gray-900 font-medium">Margin</div>
+                  <div>Active</div>
                 </div>
                 {(pricing.shapes || []).map((shape, index) => (
-                  <div key={shape.id} className="grid grid-cols-5 gap-4 items-center">
+                  <div key={shape.id} className="grid grid-cols-6 gap-4 items-center">
                     <div className="font-medium">{shape.name}</div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm">$</span>
@@ -524,6 +525,13 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                         {shape.profitMargin}%
                       </Badge>
                     </div>
+                    <div className="flex items-center">
+                      <Switch
+                        checked={shape.isActive !== false}
+                        onCheckedChange={(checked) => updateShape(index, { isActive: checked })}
+                        data-testid={`switch-shape-active-${shape.id}`}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -542,14 +550,15 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
+                <div className="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
                   <div>Flavor Name</div>
                   <div>Type</div>
                   <div>Upcharge</div>
                   <div>Per Tier</div>
+                  <div>Active</div>
                 </div>
                 {pricing.flavors.map((flavor, index) => (
-                  <div key={flavor.id} className="grid grid-cols-4 gap-4 items-center">
+                  <div key={flavor.id} className="grid grid-cols-5 gap-4 items-center">
                     <div className="font-medium">{flavor.name}</div>
                     <div>
                       <Badge variant={flavor.isPremium ? "default" : "secondary"}>
@@ -568,6 +577,13 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {flavor.upcharge > 0 ? `+$${flavor.upcharge} per tier` : "No charge"}
+                    </div>
+                    <div className="flex items-center">
+                      <Switch
+                        checked={flavor.isActive !== false}
+                        onCheckedChange={(checked) => updateFlavor(index, { isActive: checked })}
+                        data-testid={`switch-flavor-active-${flavor.id}`}
+                      />
                     </div>
                   </div>
                 ))}
