@@ -3,6 +3,10 @@ import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates } from "@shared/schema";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
@@ -21,6 +25,7 @@ import jwt from "jsonwebtoken";
 import { SendyService } from "./sendy";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
+import { renderContractTemplate, resolvePaymentMethod } from "./contractRenderer";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -2084,42 +2089,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/leads/:id/convert-to-customer', authenticateJWT, authorizeLeadOwnership, async (req, res) => {
     try {
       const leadId = req.params.id;
-      const lead = await storage.getLead(leadId);
       
-      if (!lead) {
+      // Wrap in transaction to ensure atomic customer creation + lead update
+      const result = await db.transaction(async (tx) => {
+        // Fetch lead within transaction
+        const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
+        
+        if (!lead) {
+          throw new Error('Lead not found');
+        }
+        
+        // Check if customer already exists with this email
+        const existingCustomers = await tx.select()
+          .from(customers)
+          .where(eq(customers.bakerId, lead.bakerId || ''));
+        
+        const existingCustomer = existingCustomers.find(c => c.email === lead.customerEmail);
+        
+        if (existingCustomer) {
+          // Customer exists, just update lead status
+          await tx.update(leads)
+            .set({ status: 'converted' })
+            .where(eq(leads.id, leadId));
+          
+          return { customer: existingCustomer, isNew: false };
+        }
+        
+        // Create new customer from lead data
+        const customerData = {
+          id: randomUUID(),
+          bakerId: lead.bakerId || '',
+          tenantId: lead.tenantId || null,
+          name: lead.customerName,
+          email: lead.customerEmail,
+          phone: lead.customerPhone || null,
+          eventDate: lead.weddingDate || null,
+          eventType: 'wedding' as const,
+          guestCount: lead.guestCount || null,
+          budget: lead.budget || null,
+          source: 'lead_conversion',
+          status: 'quoted',
+        };
+        
+        const [customer] = await tx.insert(customers)
+          .values(customerData)
+          .returning();
+        
+        // Update lead status to indicate it's been converted
+        await tx.update(leads)
+          .set({ status: 'converted' })
+          .where(eq(leads.id, leadId));
+        
+        return { customer, isNew: true };
+      });
+      
+      const statusCode = result.isNew ? 201 : 200;
+      res.status(statusCode).json(result.customer);
+      
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Lead not found') {
         return res.status(404).json({ error: 'Lead not found' });
       }
-      
-      // Check if customer already exists with this email
-      const existingCustomers = await storage.getCustomersByBaker(lead.bakerId || '');
-      const existingCustomer = existingCustomers.find(c => c.email === lead.customerEmail);
-      
-      if (existingCustomer) {
-        return res.json(existingCustomer);
-      }
-      
-      // Create new customer from lead data
-      const customerData = {
-        bakerId: lead.bakerId || '',
-        tenantId: lead.tenantId || null,
-        name: lead.customerName,
-        email: lead.customerEmail,
-        phone: lead.customerPhone || null,
-        eventDate: lead.weddingDate || null,
-        eventType: 'wedding',
-        guestCount: lead.guestCount || null,
-        budget: lead.budget || null,
-        source: 'lead_conversion',
-        status: 'quoted',
-      };
-      
-      const customer = await storage.createCustomer(customerData);
-      
-      // Update lead status to indicate it's been converted
-      await storage.updateLead(leadId, { status: 'converted' });
-      
-      res.status(201).json(customer);
-    } catch (error) {
       console.error('Error converting lead to customer:', error);
       res.status(500).json({ error: 'Failed to convert lead to customer' });
     }
@@ -3469,9 +3499,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/contracts', async (req, res) => {
     try {
-      const contract = await storage.createContract(req.body);
-      res.status(201).json(contract);
+      const contractData = req.body;
+      
+      // Wrap in transaction: validate quote, render template, save payment snapshot
+      const result = await db.transaction(async (tx) => {
+        let quote = null;
+        let customer = null;
+        let baker = null;
+        
+        // Validate quote exists if quoteId provided
+        if (contractData.quoteId) {
+          [quote] = await tx.select().from(quotes).where(eq(quotes.id, contractData.quoteId));
+          
+          if (!quote) {
+            throw new Error('Quote not found');
+          }
+          
+          // Get customer and baker for template rendering
+          if (quote.customerId) {
+            [customer] = await tx.select().from(customers).where(eq(customers.id, quote.customerId));
+          }
+          if (quote.bakerId) {
+            [baker] = await tx.select().from(bakers).where(eq(bakers.id, quote.bakerId));
+          }
+          
+          // Auto-populate from quote if not provided
+          contractData.contractOrigin = 'from_quote';
+          contractData.customerId = contractData.customerId || quote.customerId;
+          contractData.bakerId = contractData.bakerId || quote.bakerId;
+          contractData.totalAmount = contractData.totalAmount || quote.total;
+          contractData.depositAmount = contractData.depositAmount || quote.depositAmount;
+          contractData.eventDate = contractData.eventDate || quote.eventDate;
+        } else {
+          contractData.contractOrigin = 'direct';
+          
+          // For direct contracts, fetch customer and baker
+          if (contractData.customerId) {
+            [customer] = await tx.select().from(customers).where(eq(customers.id, contractData.customerId));
+          }
+          if (contractData.bakerId) {
+            [baker] = await tx.select().from(bakers).where(eq(bakers.id, contractData.bakerId));
+          }
+        }
+        
+        // Server-side template rendering if template provided
+        if (contractData.templateId && baker && customer) {
+          const [template] = await tx.select().from(contractTemplates).where(eq(contractTemplates.id, contractData.templateId));
+          
+          if (template) {
+            const renderResult = renderContractTemplate(template.template, {
+              baker,
+              customer,
+              quote: quote || undefined,
+              contract: contractData,
+            });
+            
+            // Use rendered content
+            contractData.content = renderResult.content;
+            
+            // Save payment snapshot
+            contractData.paymentSnapshot = renderResult.paymentSnapshot;
+          }
+        }
+        
+        // Validate required fields
+        if (!contractData.content) {
+          throw new Error('Contract content is required');
+        }
+        
+        // Create contract with generated ID
+        const newContractData = {
+          ...contractData,
+          id: randomUUID(),
+        };
+        
+        const [contract] = await tx.insert(contracts)
+          .values(newContractData)
+          .returning();
+        
+        return contract;
+      });
+      
+      res.status(201).json(result);
+      
     } catch (error) {
+      if (error instanceof Error && error.message === 'Quote not found') {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      if (error instanceof Error && error.message === 'Contract content is required') {
+        return res.status(400).json({ error: 'Contract content is required' });
+      }
       console.error('Error creating contract:', error);
       res.status(500).json({ error: 'Failed to create contract' });
     }
@@ -3603,30 +3720,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { signerName, signerEmail, signerType, signatureData } = req.body;
       
-      // Create contract signature
-      const signature = await storage.createContractSignature({
-        contractId: req.params.id,
-        signerName,
-        signerEmail,
-        signerType,
-        signatureData,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || 'Unknown'
-      });
-
-      // Update contract status to 'signed' and set signed date
-      const updatedContract = await storage.updateContract(req.params.id, {
-        status: 'signed',
-        signedAt: new Date()
+      // Wrap in transaction: create signature + update contract atomically
+      const result = await db.transaction(async (tx) => {
+        // Verify contract exists
+        const [contract] = await tx.select().from(contracts).where(eq(contracts.id, req.params.id));
+        
+        if (!contract) {
+          throw new Error('Contract not found');
+        }
+        
+        // Create contract signature
+        const [signature] = await tx.insert(contractSignatures)
+          .values({
+            id: randomUUID(),
+            contractId: req.params.id,
+            signerName,
+            signerEmail,
+            signerType,
+            signatureData: signatureData || null,
+            ipAddress: req.ip || null,
+            userAgent: req.get('User-Agent') || 'Unknown',
+          })
+          .returning();
+        
+        // Update contract signed_at timestamp and status
+        const [updatedContract] = await tx.update(contracts)
+          .set({
+            signedAt: new Date(),
+            status: 'signed',
+          })
+          .where(eq(contracts.id, req.params.id))
+          .returning();
+        
+        return { contract: updatedContract, signature };
       });
 
       res.json({ 
         success: true, 
         message: 'Contract signed successfully',
-        contract: updatedContract,
-        signature
+        contract: result.contract,
+        signature: result.signature
       });
+      
     } catch (error) {
+      if (error instanceof Error && error.message === 'Contract not found') {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
       console.error('Error signing contract:', error);
       res.status(500).json({ error: 'Failed to sign contract' });
     }

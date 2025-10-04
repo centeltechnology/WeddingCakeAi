@@ -4,6 +4,53 @@ All notable changes to BakerIQ will be documented in this file.
 
 ## [Unreleased]
 
+## [2025-10-04] - Backend Data Integrity Audit & Improvements
+
+### Added
+- **Server-Side Contract Template Renderer** (`server/contractRenderer.ts`):
+  - Template variable replacement for baker/customer/event/payment details
+  - Payment method resolution from baker.paymentLinks (Zelle, PayPal, CashApp, Venmo)
+  - XSS sanitization for payment handles
+  - Payment snapshot generation for audit trail
+- **Database Schema Enhancements**:
+  - `contracts.contract_origin` (text) - Tracks whether contract created from quote or directly
+  - `contracts.payment_snapshot` (jsonb) - Freezes payment method info shown when contract sent
+- **Transaction Wrappers** for atomic database operations:
+  - Lead-to-customer conversion (prevents orphaned customers)
+  - Contract creation with quote validation  
+  - Contract signing (signature + status update)
+- **Data Integrity Backfills**:
+  - Linked 9 orphaned quotes to leads using signature-based matching
+  - Populated 17 leads with signature field (`customerId_eventDate_eventType` pattern)
+  - Tagged 3 existing contracts with `contract_origin='direct'`
+
+### Changed
+- **POST /api/leads/:id/convert-to-customer**: Now wrapped in database transaction
+  - Returns 200 for existing customer, 201 for new customer
+  - Atomic customer creation + lead status update
+- **POST /api/contracts**: Enhanced with validation and server-side rendering
+  - Validates quote existence when quoteId provided
+  - Auto-populates contract data from linked quote
+  - Generates payment snapshot at creation time
+  - Sets contract_origin based on quote presence
+  - Requires contract.content (prevents empty contracts)
+- **POST /api/contracts/:id/sign**: Transaction-wrapped for consistency
+  - Verifies contract exists before creating signature
+  - Atomic signature creation + contract status update
+
+### Fixed
+- **Quote-Lead Linkage**: All quotes now properly linked to originating leads (except 2 test records with NULL customer_id)
+- **Lead Signature Field**: All 17 missing signatures backfilled
+- **Contract Data Consistency**: Signature and signed_at timestamp now updated atomically
+- **Customer Creation Race Condition**: Lead conversion now checks for existing customer in transaction
+
+### Security
+- Added payment handle sanitization to prevent XSS in contract templates
+- Email and URL format validation for payment methods
+- PII logging prevention (sensitive values truncated in logs)
+
+---
+
 ### Added
 - **Overview Dashboard Tab**: New default landing page for bakers featuring:
   - Today's Activity card with new leads count, active leads, and conversion rate
