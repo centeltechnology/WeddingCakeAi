@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ interface QuoteBuilderProps {
 export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: QuoteBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState('quotes');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -230,13 +232,21 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
     mutationFn: async (quoteData: any) => {
       return apiRequest('POST', '/api/quotes', quoteData);
     },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['/api/quotes', bakerId] });
-      // Don't refetch customers here - it's already fresh from manual cache update in convertLeadMutation
+    onSuccess: async (response: { quote: Quote; contactId: string; leadId: string; quoteId: string }) => {
+      const { leadId, quoteId } = response;
+      
+      // Refetch server state
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/quotes', bakerId] }),
+        queryClient.refetchQueries({ queryKey: ['/api/customers', bakerId] }),
+        queryClient.refetchQueries({ queryKey: ['/api/leads', bakerId] }),
+      ]);
+      
       toast({
         title: "Quote Created",
         description: "Your quote has been created successfully!",
       });
+      
       setIsCreating(false);
       setNewQuote({
         title: '',
@@ -256,6 +266,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
         total: '0.00',
         depositAmount: '0.00'
       });
+      
+      // Navigate to the new quote details page
+      navigate(`/leads/${leadId}/quotes/${quoteId}`);
     },
     onError: () => {
       toast({
