@@ -276,8 +276,11 @@ export const leads = pgTable("leads", {
   message: text("message"),
   status: text("status").default('new'), // new, contacted, quoted, booked, declined
   estimateId: varchar("estimate_id").references(() => estimates.id),
+  signature: text("signature"), // Project signature for idempotent upserts
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  signatureIdx: sql`CREATE INDEX IF NOT EXISTS leads_signature_idx ON ${table} (signature)`,
+}));
 
 // Old messages table (kept for backward compatibility)
 export const messages = pgTable("messages", {
@@ -710,6 +713,7 @@ export const quotes = pgTable("quotes", {
   tenantId: varchar("tenant_id").references(() => tenants.id),
   bakerId: varchar("baker_id").references(() => bakers.id),
   customerId: varchar("customer_id").references(() => customers.id),
+  leadId: varchar("lead_id").references(() => leads.id), // Link to originating lead
   templateId: varchar("template_id").references(() => quoteTemplates.id),
   quoteNumber: text("quote_number").notNull(),
   title: text("title").notNull(),
