@@ -206,11 +206,13 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
           ? pricingConfig.decorations
           : DEFAULT_DECORATIONS
       };
-      return await apiRequest("PUT", `/api/bakers/${bakerId}/pricing`, configToSave);
+      const response = await apiRequest("PUT", `/api/bakers/${bakerId}/pricing`, configToSave);
+      return await response.json();
     },
     onSuccess: (data, pricingConfig) => {
-      // Update cache immediately for better UX
-      queryClient.setQueryData([`/api/bakers/${bakerId}/pricing`], pricingConfig);
+      // Update cache with the saved config from server response (includes defaults)
+      // This ensures the calculator always sees complete data
+      queryClient.setQueryData([`/api/bakers/${bakerId}/pricing`], data.config);
       // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: [`/api/bakers/${bakerId}/pricing`] });
       toast({
