@@ -1,0 +1,14 @@
+{
+  "name": "bakeriq-monorepo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "start:app": "npm --workspace apps/app run start",
+    "start:market": "npm --workspace apps/market run start",
+    "start:accounts": "npm --workspace apps/accounts run start",
+    "dev:app": "npm --workspace apps/app run dev",
+    "dev:market": "npm --workspace apps/market run dev",
+    "dev:accounts": "npm --workspace apps/accounts run dev",
+    "build:all": "npm -w apps/app run build && npm -w apps/market run build && npm -w apps/accounts run build"
+  }
+}
