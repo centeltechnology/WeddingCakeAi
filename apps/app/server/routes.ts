@@ -226,6 +226,11 @@ async function resolveBaker(identifier: string): Promise<Baker | undefined> {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Health check endpoint
+  app.get('/healthz', (req, res) => {
+    res.json({ ok: true });
+  });
+  
   // Serve PWA manifest
   app.get('/manifest.json', (req, res) => {
     res.sendFile(path.resolve(process.cwd(), 'public', 'manifest.json'));
