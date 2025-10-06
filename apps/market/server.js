@@ -2,7 +2,7 @@ import express from 'express';
 import { ping } from '@bakeriq/shared';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.MARKET_PORT || 3001;
 
 // Prove workspace wiring on boot
 console.log(`[@bakeriq/market] Shared package test: ping() = "${ping()}"`);
