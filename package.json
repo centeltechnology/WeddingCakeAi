@@ -17,6 +17,7 @@
     "build:all": "npm -w apps/app run build && npm -w apps/market run build && npm -w apps/accounts run build"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }
