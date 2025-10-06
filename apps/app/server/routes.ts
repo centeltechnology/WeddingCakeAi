@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoint
   app.get('/healthz', (req, res) => {
-    res.json({ ok: true });
+    res.json({ ok: true, app: "app" });
   });
   
   // Serve PWA manifest
