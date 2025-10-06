@@ -3,6 +3,8 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "dev": "npm --workspace apps/app run dev",
+    "start": "npm --workspace apps/app run start",
     "start:app": "npm --workspace apps/app run start",
     "start:market": "npm --workspace apps/market run start",
     "start:accounts": "npm --workspace apps/accounts run start",
