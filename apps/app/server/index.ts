@@ -317,6 +317,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Health (FIRST)
+const health = (endpoint: string) => (_req: any, res: any) => res.json({ ok: true, app: 'app', endpoint });
+app.get('/health',     health('/health'));
+app.get('/api/health', health('/api/health'));
+app.get('/healthz',    health('/healthz')); // alias for non-custom domains
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
