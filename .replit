@@ -9,8 +9,8 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["sh", "-c", "npm ci && npm --workspace apps/app run build"]
+run = ["sh", "-c", "npm --workspace apps/app run start"]
 
 [[ports]]
 localPort = 5000
