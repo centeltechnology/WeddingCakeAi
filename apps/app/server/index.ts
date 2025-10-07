@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -301,6 +302,7 @@ app.use(session({
 // NOW set up body parsing for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -330,6 +332,44 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// OAuth routes for Accounts integration
+const ACCOUNTS = process.env.ACCOUNTS_BASE_URL || 'https://accounts.bakeriq.app';
+const SELF = process.env.APP_BASE_URL || process.env.MARKET_BASE_URL || '';
+
+app.get('/login', (req, res) => {
+  const state = Math.random().toString(36).slice(2);
+  const redirectUri = `${SELF}/auth/callback`;
+  const url = new URL('/oauth/authorize', ACCOUNTS);
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('state', state);
+  res.redirect(url.toString());
+});
+
+app.get('/auth/callback', async (req, res) => {
+  const code = String(req.query.code || '');
+  if (!code) return res.status(400).send('Missing code');
+  const resp = await fetch(`${ACCOUNTS}/oauth/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ grant_type: 'authorization_code', code })
+  });
+  const data = await resp.json();
+  if (!resp.ok) return res.status(500).json(data);
+  // store access token in httpOnly cookie
+  res.cookie('access_token', data.access_token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 3600 * 1000 });
+  res.redirect('/'); // or dashboard
+});
+
+// helper to read current user
+app.get('/me', async (req, res) => {
+  const token = req.cookies?.access_token;
+  if (!token) return res.status(401).json({ error: 'unauthenticated' });
+  const resp = await fetch(`${ACCOUNTS}/userinfo`, { headers: { Authorization: `Bearer ${token}` } });
+  const me = await resp.json();
+  if (!resp.ok) return res.status(401).json({ error: 'invalid_token', detail: me });
+  res.json(me);
 });
 
 (async () => {
