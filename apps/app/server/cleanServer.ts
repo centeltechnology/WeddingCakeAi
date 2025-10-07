@@ -3,7 +3,7 @@ import { createServer } from "http";
 import { setupAuthRoutes } from "./authRoutes";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Middleware
 app.use(express.json());
@@ -59,7 +59,7 @@ app.use('*', (req, res) => {
 const httpServer = createServer(app);
 
 // Start server
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`Clean auth server running on port ${PORT}`);
 });
 
