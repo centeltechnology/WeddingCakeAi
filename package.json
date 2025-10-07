@@ -6,15 +6,18 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "echo \"Root build noop; use workspace builds\"",
+    "build:app": "npm --workspace apps/app run build",
+    "build:market": "npm --workspace apps/market run build",
+    "build:accounts": "npm --workspace apps/accounts run build",
+    "start": "echo \"Select a workspace: npm -w apps/app start (or market/accounts)\"",
     "dev": "npm --workspace apps/app run dev",
-    "start": "npm --workspace apps/app run start",
     "start:app": "npm --workspace apps/app run start",
     "start:market": "npm --workspace apps/market run start",
     "start:accounts": "npm --workspace apps/accounts run start",
     "dev:app": "npm --workspace apps/app run dev",
     "dev:market": "npm --workspace apps/market run dev",
-    "dev:accounts": "npm --workspace apps/accounts run dev",
-    "build:all": "npm -w apps/app run build && npm -w apps/market run build && npm -w apps/accounts run build"
+    "dev:accounts": "npm --workspace apps/accounts run dev"
   },
   "dependencies": {
     "express": "^5.1.0",
