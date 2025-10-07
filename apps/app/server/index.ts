@@ -9,6 +9,19 @@ import { startEmailAutomationScheduler } from "./emailAutomation";
 
 const app = express();
 
+// Trust proxy for HTTPS enforcement behind Replit proxy
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] === 'http') {
+    const url = `https://${req.headers.host}${req.url}`;
+    return res.redirect(301, url);
+  }
+  next();
+});
+// CORS if you need cross-origin requests
+// import cors from 'cors';
+// app.use(cors({ origin: [/\.bakeriq\.app$/], credentials: true }));
+
 // In-memory store for webhook idempotency (prevent duplicate processing)
 // In production, consider using Redis or database for persistence across restarts
 const processedWebhookEvents = new Set<string>();
