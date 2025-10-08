@@ -1,6 +1,6 @@
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 import { db } from "./db";
-import { users, bakers, bookings, quoteTemplates, leads, quotes, invoices, contracts, conversationMessages, customers, type Booking, type InsertBooking, type QuoteTemplate, type InsertQuoteTemplate } from "@shared/schema";
+import { users, bakers, bookings, quoteTemplates, leads, quotes, invoices, contracts, conversationMessages, conversations, customers, type Booking, type InsertBooking, type QuoteTemplate, type InsertQuoteTemplate } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { generateUniqueSlug } from "./utils";
 import { randomUUID } from "crypto";
@@ -496,7 +496,7 @@ export class DatabaseStorage {
   }
 
   async getRecentMessages(tenantId: string, bakerId: string, limit: number = 5) {
-    // Get recent conversation messages
+    // Get recent conversation messages by joining with conversations and bakers for tenant filtering
     const messages = await db
       .select({
         id: conversationMessages.id,
@@ -506,7 +506,14 @@ export class DatabaseStorage {
         createdAt: conversationMessages.createdAt,
       })
       .from(conversationMessages)
-      .where(eq(conversationMessages.tenantId, tenantId))
+      .innerJoin(conversations, eq(conversationMessages.conversationId, conversations.id))
+      .innerJoin(bakers, eq(conversations.bakerId, bakers.id))
+      .where(
+        and(
+          eq(conversations.bakerId, bakerId),
+          eq(bakers.tenantId, tenantId)
+        )
+      )
       .orderBy(desc(conversationMessages.createdAt))
       .limit(limit);
 
