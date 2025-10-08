@@ -1,0 +1,172 @@
+You are my code editor and runner for BakerIQ (apps/app).
+Goal:
+1) After login, send bakers to the LEGACY baker dashboard route (assume "/baker/dashboard").
+2) Keep "/dashboard" working too (alias), fully protected.
+3) Add /api/logout and a client Logout button.
+4) Make Neon SSL bypass dev-only (never in production).
+5) Return a test report.
+
+# =========================
+# 0) Detect layout
+# =========================
+Assume:
+- Server: apps/app/server/index.ts
+- DB:     apps/app/server/db.ts
+- Client: apps/app/client (Vite + React + Wouter)
+- Router: apps/app/client/src/App.tsx
+Create these if missing:
+- apps/app/client/src/pages/BakerDashboard.tsx
+- apps/app/client/src/pages/Dashboard.tsx
+- apps/app/client/src/components/AuthGuard.tsx (if not already present)
+- apps/app/client/src/lib/useAuth.ts     (if not already present)
+
+# =========================
+# 1) Server: compute redirect per role + /api/logout
+# =========================
+Open apps/app/server/index.ts and:
+- Ensure login uses bcrypt compare (already done).
+- After auth success, compute redirect path using a helper:
+
+function getDashboardPath(role?: string) {
+  // Allow env override; default legacy baker path
+  const envPath = process.env.DASHBOARD_PATH_BAKER;
+  if ((role ?? "baker") === "baker") return envPath || "/baker/dashboard";
+  if (role === "admin") return process.env.DASHBOARD_PATH_ADMIN || "/admin";
+  if (role === "customer") return process.env.DASHBOARD_PATH_CUSTOMER || "/portal";
+  return "/dashboard"; // fallback
+}
+
+Then in /api/login success response, return:
+res.json({ ok: true, redirect: getDashboardPath(user.role) });
+
+- Add logout route BEFORE error handlers:
+app.post("/api/logout", (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+Ensure session middleware runs BEFORE routes.
+
+# =========================
+# 2) Server: SSL safety (dev only bypass)
+# =========================
+Open apps/app/server/db.ts and:
+- Remove any unconditional SSL verification disable you added.
+- Implement:
+const isProd = process.env.NODE_ENV === "production";
+const sslConfig = isProd
+  ? { rejectUnauthorized: true }
+  : { rejectUnauthorized: false }; // dev only
+
+Use sslConfig in the pg/neon client init.
+Also, if using a WebSocket client, gate its "no verify" setting by !isProd.
+
+# =========================
+# 3) Client: pages and guarded routes
+# =========================
+A) Create/overwrite apps/app/client/src/pages/BakerDashboard.tsx:
+export default function BakerDashboard() {
+  return <div style={{ padding: 24 }}>Baker Dashboard (legacy path) 🧁</div>;
+}
+
+B) Ensure /dashboard still works (alias):
+apps/app/client/src/pages/Dashboard.tsx:
+export default function Dashboard() {
+  return <div style={{ padding: 24 }}>Dashboard (alias) 🎂</div>;
+}
+
+C) Add Logout button component:
+apps/app/client/src/components/LogoutButton.tsx
+-----------------------------------------------
+import { useLocation } from "wouter";
+export default function LogoutButton() {
+  const [, navigate] = useLocation();
+  async function onLogout() {
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    navigate("/login");
+  }
+  return <button onClick={onLogout} className="border px-3 py-2 rounded">Logout</button>;
+}
+-----------------------------------------------
+
+D) Make sure AuthGuard and useAuth exist (create if missing; use the simple versions that hit /api/session).
+- If they already exist, leave them as-is.
+
+E) Wire routes in apps/app/client/src/App.tsx:
+- Root "/" -> Redirect to "/login"
+- "/login" public
+- "/baker/dashboard" protected (legacy path)
+- "/dashboard" protected (alias)
+- 404 fallback
+
+Example content to enforce (replace existing if wildly different):
+------------------------------------------------
+import { Route, Switch, Redirect } from "wouter";
+import LoginPage from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import BakerDashboard from "./pages/BakerDashboard";
+import { AuthGuard } from "./components/AuthGuard";
+
+export default function App() {
+  return (
+    <Switch>
+      <Route path="/"><Redirect to="/login" /></Route>
+      <Route path="/login" component={LoginPage} />
+      <Route path="/baker/dashboard">
+        <AuthGuard><BakerDashboard /></AuthGuard>
+      </Route>
+      <Route path="/dashboard">
+        <AuthGuard><Dashboard /></AuthGuard>
+      </Route>
+      <Route><div style={{ padding: 24 }}>Not found</div></Route>
+    </Switch>
+  );
+}
+------------------------------------------------
+
+F) Update apps/app/client/src/pages/Login.tsx submit handler:
+- After POST /api/login, use server-provided `redirect` directly:
+const data = await res.json().catch(()=>({}));
+if (res.ok && data?.ok) navigate(data.redirect || "/baker/dashboard");
+else setErr(data?.error || "Login failed");
+(Keep credentials: "include".)
+
+G) (Optional) Show Logout on dashboards:
+- Add `import LogoutButton from "../components/LogoutButton";` to both dashboards
+- Render <LogoutButton /> at the top.
+
+# =========================
+# 4) Dev cookie safety
+# =========================
+In session config (index.ts):
+- name: "sid"
+- cookie.secure: process.env.NODE_ENV === "production"
+- sameSite: "lax"
+- httpOnly: true
+- maxAge: 7 days
+- If deploying behind a proxy in prod, app.set("trust proxy", 1)
+
+# =========================
+# 5) Run and test
+# =========================
+- Start API and client dev servers.
+- Test flow:
+  1) POST /api/login with demo account (demo@bakeriq.app / DemoPass123!)
+     -> Expect { ok:true, redirect:"/baker/dashboard" }
+  2) Browser login
+     -> Should navigate to /baker/dashboard (legacy) and render page.
+  3) Visit /dashboard
+     -> Should render alias page, protected by AuthGuard.
+  4) Click Logout
+     -> Should POST /api/logout and route to /login.
+  5) Confirm that in production builds, SSL verification is ON (rejectUnauthorized:true).
+
+# =========================
+# 6) Report back
+# =========================
+Return:
+- Files created/edited (paths)
+- Whether "/baker/dashboard" and "/dashboard" both work and are protected
+- /api/login response sample with redirect field
+- /api/logout response sample
+- db.ts SSL mode summary (dev vs production)
+- Any TODOs (e.g., real dashboards to replace placeholder content)

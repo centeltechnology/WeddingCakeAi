@@ -367,6 +367,16 @@ app.use((req, res, next) => {
 // SESSION-BASED AUTHENTICATION
 // ========================================
 
+// Helper to compute dashboard redirect path based on role
+function getDashboardPath(role?: string) {
+  // Allow env override; default legacy baker path
+  const envPath = process.env.DASHBOARD_PATH_BAKER;
+  if ((role ?? "baker") === "baker") return envPath || "/baker/dashboard";
+  if (role === "admin") return process.env.DASHBOARD_PATH_ADMIN || "/admin";
+  if (role === "customer") return process.env.DASHBOARD_PATH_CUSTOMER || "/portal";
+  return "/dashboard"; // fallback
+}
+
 // Session probe endpoint - check if user is authenticated
 app.get("/api/session", (req, res) => {
   const authed = Boolean((req.session as any)?.userId);
@@ -406,7 +416,7 @@ app.post("/api/login", async (req, res) => {
     
     return res.json({ 
       ok: true, 
-      redirect: "/dashboard",
+      redirect: getDashboardPath(user.role),
       user: {
         id: user.id,
         email: user.email,
