@@ -3,9 +3,13 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Disable SSL certificate verification for WebSocket in development (Replit environment)
-// This prevents "self-signed certificate in certificate chain" errors
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// Only disable SSL verification in development (Replit environment)
+// In production, SSL verification is enforced for security
+const isProd = process.env.NODE_ENV === "production";
+if (!isProd) {
+  // Dev only: prevents "self-signed certificate in certificate chain" errors
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
 neonConfig.webSocketConstructor = ws;
 
