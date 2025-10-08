@@ -76,6 +76,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Redirect } from "wouter";
 import ResetRequest from "@/pages/ResetRequest";
 import ResetConfirm from "@/pages/ResetConfirm";
+import { AppShell } from "@/components/AppShell";
 
 function Router() {
   return (
@@ -88,7 +89,9 @@ function Router() {
       <Route path="/reset/:token" component={ResetConfirm} />
       <Route path="/dashboard">
         <AuthGuard>
-          <Dashboard />
+          <AppShell>
+            <Dashboard />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/home" component={Home} />
@@ -128,7 +131,9 @@ function Router() {
       </Route>
       <Route path="/baker/dashboard">
         <AuthGuard>
-          <BakerDashboardPage />
+          <AppShell>
+            <BakerDashboardPage />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/baker-login" component={BakerLogin} />

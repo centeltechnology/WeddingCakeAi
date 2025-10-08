@@ -22,8 +22,12 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security headers - must come early
+// In development, disable CSP to allow Vite HMR inline scripts
+// In production, use strict CSP for security
+const isDev = process.env.NODE_ENV !== 'production';
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: isDev ? false : undefined
 }));
 
 app.use((req, res, next) => {
