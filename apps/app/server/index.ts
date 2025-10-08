@@ -590,8 +590,17 @@ const CalcInput = z.object({
   notes: z.string().optional(),
 });
 
+// Rate limiter for calculator endpoint - prevent abuse
+const calcLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: Number(process.env.CALC_RATE_LIMIT_MAX || 100), // default 100/10min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." }
+});
+
 // Public calculator quote endpoint - no auth required
-app.post("/api/bakers/public/calculator/quote-draft", async (req, res) => {
+app.post("/api/bakers/public/calculator/quote-draft", calcLimiter, async (req, res) => {
   try {
     // Validate input
     const result = CalcInput.safeParse(req.body);
