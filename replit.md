@@ -33,11 +33,12 @@ Preferred communication style: Simple, everyday language.
 - **Migrations**: Drizzle Kit for schema management.
 
 ### Authentication and Authorization
-- **Session Management**: Express sessions with PostgreSQL session store.
+- **Session Management**: Express sessions with PostgreSQL session store, environment-aware cookie configuration (sameSite/secure based on CROSS_SITE_COOKIES env).
 - **User System**: Basic user registration and authentication.
 - **Profile Association**: User profiles linked to wedding planning accounts.
 - **Password Reset**: Secure token-based password reset flow for bakers.
 - **Feature Gating**: Three-tier plan system (Starter, Professional, Enterprise) with middleware for feature access control (e.g., bulk email, CSV export for Enterprise).
+- **Session Persistence**: RootGate component with smart root redirect, /api/session endpoint with Cache-Control: no-store prevents logout on browser Back button, Vite dev proxy for same-origin API calls.
 
 ### External Service Integrations
 - **PDF Generation**: jsPDF for estimate documents.
