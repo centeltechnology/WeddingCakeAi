@@ -521,12 +521,21 @@ app.post("/api/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     
+    console.log('🔍 Login attempt:', { email, passwordLength: password?.length });
+    
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: "Email and password required" });
     }
 
     // Look up user by email (checking users table)
     const user = await databaseStorage.getUserByEmailOrUsername(email);
+    
+    console.log('👤 User lookup result:', { 
+      found: !!user, 
+      hasPassword: !!user?.passwordHash,
+      userId: user?.id,
+      userEmail: user?.email 
+    });
 
     if (!user || !user.passwordHash) {
       return res.status(401).json({ ok: false, error: "Invalid credentials" });
@@ -534,6 +543,8 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
     // Verify password using bcrypt
     const isValid = await databaseStorage.verifyPassword(password, user.passwordHash);
+    
+    console.log('🔐 Password verification:', { isValid });
     
     if (!isValid) {
       return res.status(401).json({ ok: false, error: "Invalid credentials" });
