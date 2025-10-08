@@ -83,6 +83,20 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  priority: text("priority").default('medium'), // low, medium, high
+  status: text("status").default('pending'), // pending, completed
+  dueDate: date("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id").references(() => tenants.id), // Added for multi-tenancy
@@ -1290,3 +1304,14 @@ export const bakerPricingSchema = z.object({
 });
 
 export type BakerPricing = z.infer<typeof bakerPricingSchema>;
+
+// Tasks schema
+export const insertTaskSchema = createInsertSchema(tasks, {
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  status: z.enum(["pending", "completed"]).default("pending"),
+  dueDate: z.string().optional(),
+});
+
+export type InsertTask = z.infer<typeof insertTaskSchema>;
