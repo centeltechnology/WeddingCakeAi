@@ -291,6 +291,13 @@ export const leads = pgTable("leads", {
   status: text("status").default('new'), // new, contacted, quoted, booked, declined
   estimateId: varchar("estimate_id").references(() => estimates.id),
   signature: text("signature"), // Project signature for idempotent upserts
+  // Calculator integration fields
+  source: text("source").default('calculator'),
+  calculatorPayload: json("calculator_payload").$type<Record<string, any>>(),
+  estimatedTotalLow: integer("estimated_total_low"),
+  estimatedTotalHigh: integer("estimated_total_high"),
+  cityOrZip: text("city_or_zip"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   signatureIdx: sql`CREATE INDEX IF NOT EXISTS leads_signature_idx ON ${table} (signature)`,
