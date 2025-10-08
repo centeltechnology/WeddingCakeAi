@@ -1,0 +1,143 @@
+You are my UAT + Monitoring runner for BakerIQ Rebuild.
+
+# Scope
+- Primary target: app (core SaaS DB)
+- Also run one duplicate-email sanity check on accounts.users
+- Detect engine: PostgreSQL vs SQLite, then use the correct syntax
+
+# === ENGINE DETECTION ===
+Try to run: SELECT version(); If it returns a row with "PostgreSQL" use POSTGRES block.
+If not available or says "SQLite", use SQLITE block.
+
+# === APP: UAT CHECKS ===
+
+## POSTGRES BLOCK (app)
+BEGIN;
+
+-- 1) Tenancy integrity: no NULL tenant_id in key tables
+WITH checks AS (
+  SELECT 'bookings'::text AS t, COUNT(*) c FROM bookings WHERE tenant_id IS NULL
+  UNION ALL SELECT 'consultations', COUNT(*) FROM consultations WHERE tenant_id IS NULL
+  UNION ALL SELECT 'messages', COUNT(*) FROM messages WHERE tenant_id IS NULL
+  UNION ALL SELECT 'analytics', COUNT(*) FROM analytics WHERE tenant_id IS NULL
+  UNION ALL SELECT 'reviews', COUNT(*) FROM reviews WHERE tenant_id IS NULL
+)
+SELECT * FROM checks;
+
+-- 2) Quote → Lead integrity: forbid NULL lead_id
+SELECT COUNT(*) AS quotes_without_lead FROM quotes WHERE lead_id IS NULL;
+
+-- 3) Email uniqueness (app-side): dup emails in bakers/customers
+SELECT email, COUNT(*) c FROM bakers GROUP BY email HAVING COUNT(*) > 1;
+SELECT email, COUNT(*) c FROM customers GROUP BY email HAVING COUNT(*) > 1;
+
+-- 4) Payments surface check
+SELECT COUNT(*) AS invoices_without_valid_contract
+FROM invoices i LEFT JOIN contracts c ON c.id = i.contract_id
+WHERE i.contract_id IS NOT NULL AND c.id IS NULL;
+
+SELECT COUNT(*) AS transactions_without_intent
+FROM transactions
+WHERE stripe_payment_intent_id IS NULL;
+
+-- 5) Activity logs FK sanity
+SELECT COUNT(*) AS activity_orphans
+FROM activity_logs al LEFT JOIN tenants t ON t.id = al.tenant_id
+WHERE al.tenant_id IS NOT NULL AND t.id IS NULL;
+
+-- 6) Phase 3 spot checks (from earlier)
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name='customers' AND column_name='address_json';
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name='reviews' AND column_name='contract_id';
+
+-- 7) Optional FK check (reviews → contracts)
+SELECT conname
+FROM pg_constraint
+WHERE conrelid = 'reviews'::regclass AND conname='fk_reviews_contract';
+
+COMMIT;
+
+-- === MONITORING QUERIES (POSTGRES) ===
+-- New rows missing tenant (should be 0)
+WITH miss AS (
+  SELECT 'messages' t, COUNT(*) c FROM messages WHERE tenant_id IS NULL
+  UNION ALL SELECT 'bookings', COUNT(*) FROM bookings WHERE tenant_id IS NULL
+  UNION ALL SELECT 'consultations', COUNT(*) FROM consultations WHERE tenant_id IS NULL
+)
+SELECT * FROM miss;
+
+-- Recent Stripe tx without intent (7d window; should be 0)
+SELECT COUNT(*) AS tx_last7_without_intent
+FROM transactions
+WHERE created_at >= NOW() - INTERVAL '7 days'
+  AND stripe_payment_intent_id IS NULL;
+
+-- Reviews without contract link (policy-dependent; just watch)
+SELECT COUNT(*) AS reviews_without_contract FROM reviews WHERE contract_id IS NULL;
+
+## SQLITE BLOCK (app)
+-- 1) Tenancy integrity
+SELECT 'bookings' AS t, COUNT(*) AS c FROM bookings WHERE tenant_id IS NULL
+UNION ALL SELECT 'consultations', COUNT(*) FROM consultations WHERE tenant_id IS NULL
+UNION ALL SELECT 'messages', COUNT(*) FROM messages WHERE tenant_id IS NULL
+UNION ALL SELECT 'analytics', COUNT(*) FROM analytics WHERE tenant_id IS NULL
+UNION ALL SELECT 'reviews', COUNT(*) FROM reviews WHERE tenant_id IS NULL;
+
+-- 2) Quote → Lead integrity
+SELECT COUNT(*) AS quotes_without_lead FROM quotes WHERE lead_id IS NULL;
+
+-- 3) Email uniqueness (app-side)
+SELECT email, COUNT(*) c FROM bakers GROUP BY email HAVING c > 1;
+SELECT email, COUNT(*) c FROM customers GROUP BY email HAVING c > 1;
+
+-- 4) Payments surface check (no FK check in SQLite)
+SELECT COUNT(*) AS invoices_with_contract_id FROM invoices WHERE contract_id IS NOT NULL;
+SELECT COUNT(*) AS transactions_without_intent FROM transactions WHERE stripe_payment_intent_id IS NULL;
+
+-- 5) Activity logs FK sanity (approx; no FK enforcement)
+SELECT COUNT(*) AS activity_orphans_estimate
+FROM activity_logs;
+
+-- 6) Phase 3 spot checks (pragma)
+PRAGMA table_info(customers);
+PRAGMA table_info(reviews);
+
+-- === MONITORING (SQLITE) ===
+-- New rows missing tenant (should be 0)
+SELECT 'messages' AS t, COUNT(*) AS c FROM messages WHERE tenant_id IS NULL
+UNION ALL SELECT 'bookings', COUNT(*) FROM bookings WHERE tenant_id IS NULL
+UNION ALL SELECT 'consultations', COUNT(*) FROM consultations WHERE tenant_id IS NULL;
+
+-- Recent Stripe tx without intent (7d window; SQLite datetime)
+SELECT COUNT(*) AS tx_last7_without_intent
+FROM transactions
+WHERE datetime(created_at) >= datetime('now','-7 days')
+  AND stripe_payment_intent_id IS NULL;
+
+-- Reviews without contract link (policy-dependent; just watch)
+SELECT COUNT(*) AS reviews_without_contract FROM reviews WHERE contract_id IS NULL;
+
+# === ACCOUNTS: QUICK SANITY (dup user emails) ===
+-- Run this against the accounts DB/connection:
+-- POSTGRES:
+SELECT email, COUNT(*) c FROM users GROUP BY email HAVING COUNT(*) > 1;
+-- SQLITE:
+SELECT email, COUNT(*) c FROM users GROUP BY email HAVING c > 1;
+
+# === SUMMARIZE ===
+Return a concise PASS/FAIL report:
+- List any table with NULL tenant_id (>0) as FAIL.
+- FAIL if quotes_without_lead > 0.
+- FAIL if any duplicate emails found in bakers/customers (app) or users (accounts).
+- For payments:
+  - POSTGRES: FAIL if invoices_without_valid_contract > 0 or tx_last7_without_intent > 0.
+  - SQLITE: flag tx_last7_without_intent > 0.
+- Otherwise PASS with key counts.
+
+Also include:
+- Engine detected (per DB)
+- Any remediation queries you recommend if there are failures (one-liners).
