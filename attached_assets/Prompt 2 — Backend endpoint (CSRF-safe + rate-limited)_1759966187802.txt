@@ -1,0 +1,30 @@
+Your leads table is missing a few columns we’ll use to persist estimates. Add them in your Drizzle schema (same style as apps/app/shared/schema.ts). If you prefer proper migrations, mirror this in your migration file; otherwise add to schema + run migration.
+
+// apps/app/shared/schema.ts
+import { pgTable, text, integer, json, varchar, timestamp } from "drizzle-orm/pg-core";
+
+// ...existing imports and tables
+
+export const leads = pgTable("leads", {
+  // ...existing columns
+  id: varchar("id").primaryKey().defaultRandom(), // keep your existing definition
+  // existing customer_* and wedding_date, guest_count, etc.
+
+  // NEW (add these if not present)
+  source: text("source").default("calculator"),
+  calculator_payload: json("calculator_payload").$type<Record<string, any>>(), // pg jsonb is fine via drizzle json()
+  estimated_total_low: integer("estimated_total_low"),
+  estimated_total_high: integer("estimated_total_high"),
+  city_or_zip: text("city_or_zip"),
+  notes: text("notes"),
+});
+
+
+If you’re using raw SQL migrations, here are idempotent snippets:
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS source text DEFAULT 'calculator';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS calculator_payload jsonb;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS estimated_total_low integer;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS estimated_total_high integer;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS city_or_zip text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS notes text;
