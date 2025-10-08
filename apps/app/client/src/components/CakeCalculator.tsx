@@ -146,6 +146,14 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   const [selectedDecorations, setSelectedDecorations] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
   const [showAIDesigner, setShowAIDesigner] = useState(false);
+  const [quoteResponse, setQuoteResponse] = useState<{
+    leadId: string;
+    servings: number;
+    deliveryFee: number;
+    total: number;
+    range: { low: number; high: number };
+    breakdown: { base: number; complexityMultiplier: number; addOns: number };
+  } | null>(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
@@ -282,15 +290,29 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   };
 
   const submitQuoteRequest = useMutation({
-    mutationFn: async (quoteRequest: QuoteRequest) => {
-      return await apiRequest("POST", `/api/bakers/${bakerId}/quote-requests`, quoteRequest);
+    mutationFn: async (payload: any) => {
+      const response = await fetch("/api/bakers/public/calculator/quote-draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit quote");
+      }
+
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setQuoteResponse(data);
       toast({
         title: "Quote Request Sent!",
-        description: "We'll get back to you within 24 hours with a personalized quote.",
+        description: `Your estimated price range: $${data.range.low} - $${data.range.high}`,
       });
-      setStep(4); // Success step
+      setStep(4);
     },
     onError: () => {
       toast({
@@ -302,47 +324,45 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   });
 
   const handleSubmit = async () => {
-    const pricing = calculatePricing();
-    const quoteRequest: QuoteRequest = {
-      customerName: customerInfo.name,
+    const hasDelivery = customerInfo.venue ? true : false;
+    const deliveryMiles = hasDelivery ? 10 : 0;
+
+    const hasFondant = selectedDecorations.some(d => 
+      d.includes('fondant') || d.includes('draping')
+    );
+
+    const hasComplexDecorations = selectedDecorations.some(d => 
+      d.includes('gold-leaf') || d.includes('hand-painted') || d.includes('tier-lights')
+    );
+
+    const complexity = hasComplexDecorations ? 'couture' : 
+                      hasFondant ? 'premium' : 
+                      selectedDecorations.length > 2 ? 'standard' : 'basic';
+
+    const payload = {
+      cityOrZip: customerInfo.venue || '',
+      eventDate: customerInfo.eventDate,
+      guestCount: customerInfo.guestCount,
+      icing: hasFondant ? 'fondant' : 'buttercream',
+      complexity,
+      formFactor: tiers.length > 1 ? 'tiered' : 'sheet',
+      addOns: {
+        metallicLeaf: selectedDecorations.includes('gold-leaf'),
+        sugarFlorals: selectedDecorations.some(d => d.includes('rose') || d.includes('peonies') || d.includes('flower')),
+        ediblePrint: selectedDecorations.includes('hand-painted'),
+        topperCustom: selectedDecorations.some(d => d.includes('topper') || d.includes('monogram'))
+      },
+      delivery: {
+        method: hasDelivery ? 'delivery' : 'pickup',
+        miles: deliveryMiles
+      },
+      name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
-      eventDate: customerInfo.eventDate,
-      eventType: customerInfo.eventType,
-      guestCount: customerInfo.guestCount,
-      venue: customerInfo.venue,
-      cakeDesign: {
-        tiers,
-        decorations: selectedDecorations,
-        specialRequests
-      },
-      pricing,
-      contactPreference: customerInfo.contactPreference,
-      timeline: customerInfo.timeline
+      notes: specialRequests
     };
 
-    // Save calculator lead
-    try {
-      await apiRequest("POST", "/api/calculator-leads", {
-        customerName: customerInfo.name,
-        customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
-        eventDate: customerInfo.eventDate,
-        cakeConfiguration: {
-          tiers,
-          decorations: selectedDecorations,
-          specialRequests,
-          guestCount: customerInfo.guestCount,
-          venue: customerInfo.venue
-        },
-        estimatedPrice: pricing.total.toString()
-      });
-    } catch (error) {
-      console.error("Failed to save calculator lead:", error);
-      // Don't fail the quote request if lead save fails
-    }
-
-    submitQuoteRequest.mutate(quoteRequest);
+    submitQuoteRequest.mutate(payload);
   };
 
   const pricing = calculatePricing();
@@ -1011,7 +1031,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
         )}
 
         {/* Step 4: Success */}
-        {step === 4 && (
+        {step === 4 && quoteResponse && (
           <div className="text-center py-16">
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-12 max-w-2xl mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1021,9 +1041,24 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
               <p className="text-lg text-gray-600 mb-8">
                 Thank you for choosing {(baker as any)?.name || 'us'}! We'll review your requirements and get back to you within 24 hours with a personalized quote.
               </p>
+              
+              {/* Price Range Display */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-6 mb-8">
+                <p className="text-sm text-gray-600 mb-2">Estimated Price Range</p>
+                <div className="text-4xl font-bold text-emerald-600">
+                  ${quoteResponse.range.low.toFixed(2)} - ${quoteResponse.range.high.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Serves {quoteResponse.servings} guests
+                </p>
+              </div>
+
               <div className="space-y-4">
                 <p className="text-sm text-gray-500">
                   We'll contact you via {customerInfo.contactPreference} at {customerInfo.contactPreference === 'email' ? customerInfo.email : customerInfo.phone}
+                </p>
+                <p className="text-xs text-gray-400">
+                  Reference ID: {quoteResponse.leadId}
                 </p>
                 <Button 
                   onClick={() => {
@@ -1031,6 +1066,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                     setTiers([]);
                     setSelectedDecorations([]);
                     setSpecialRequests("");
+                    setQuoteResponse(null);
                     setCustomerInfo({
                       name: "",
                       email: "",
