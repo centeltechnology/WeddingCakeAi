@@ -1,0 +1,126 @@
+Create/overwrite the following files (idempotent):
+
+A) lib hook: apps/app/client/src/lib/useAuth.ts
+
+import { useEffect, useState } from "react";
+
+export function useAuth() {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthed] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { credentials: "include" });
+        const data = await res.json();
+        setAuthed(Boolean(data?.authenticated));
+      } catch {
+        setAuthed(false);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  return { loading, authenticated };
+}
+
+
+B) Guard component: apps/app/client/src/components/AuthGuard.tsx
+
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "../lib/useAuth";
+
+export function AuthGuard({ children }: { children: JSX.Element }) {
+  const { loading, authenticated } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !authenticated) navigate("/login");
+  }, [loading, authenticated, navigate]);
+
+  if (loading) return <div style={{ padding: 24 }}>Checking session…</div>;
+  if (!authenticated) return null;
+
+  return children;
+}
+
+
+C) Login page: apps/app/client/src/pages/Login.tsx
+
+import { useState } from "react";
+import { useLocation } from "wouter";
+
+export default function LoginPage() {
+  const [, navigate] = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr("");
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      navigate("/dashboard");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setErr(data?.error || "Login failed");
+    }
+  }
+
+  return (
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-4">
+        <h1 className="text-2xl font-semibold text-center">Sign in</h1>
+        {err && <div className="text-red-600 text-sm">{err}</div>}
+        <form onSubmit={onSubmit} className="space-y-3">
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" className="w-full border p-3 rounded" />
+          <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" className="w-full border p-3 rounded" />
+          <button className="w-full p-3 rounded bg-black text-white">Sign in</button>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+
+D) Dashboard page: apps/app/client/src/pages/Dashboard.tsx
+
+export default function Dashboard() {
+  return <div style={{ padding: 24 }}>Welcome to your dashboard 🎂</div>;
+}
+
+
+E) Router entry (Wouter): apps/app/client/src/App.tsx
+
+Ensure the app routes "/" → "/login"
+
+Gate "/dashboard" using <AuthGuard>
+
+import { Route, Switch, Redirect } from "wouter";
+import LoginPage from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import { AuthGuard } from "./components/AuthGuard";
+
+export default function App() {
+  return (
+    <Switch>
+      <Route path="/"><Redirect to="/login" /></Route>
+      <Route path="/login" component={LoginPage} />
+      <Route path="/dashboard">
+        <AuthGuard><Dashboard /></AuthGuard>
+      </Route>
+      <Route><div style={{ padding: 24 }}>Not found</div></Route>
+    </Switch>
+  );
+}
+
+
+If a different router scaffold exists in App.tsx, replace its content with the above.

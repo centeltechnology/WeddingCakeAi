@@ -69,11 +69,24 @@ import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import LoginPage from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import { AuthGuard } from "@/components/AuthGuard";
+import { Redirect } from "wouter";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/">
+        <Redirect to="/login" />
+      </Route>
+      <Route path="/login" component={LoginPage} />
+      <Route path="/dashboard">
+        <AuthGuard>
+          <Dashboard />
+        </AuthGuard>
+      </Route>
+      <Route path="/home" component={Home} />
       <Route path="/features" component={Features} />
       <Route path="/about" component={About} />
       <Route path="/pricing" component={Pricing} />
