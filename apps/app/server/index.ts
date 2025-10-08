@@ -5,11 +5,16 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "node:path";
+import crypto from "crypto";
+import { v4 as uuid } from "uuid";
+import bcrypt from "bcrypt";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
 import { databaseStorage } from "./databaseStorage.js";
+import { sendResetEmail } from "./mailer";
+import { sql } from "drizzle-orm";
 
 const app = express();
 
@@ -483,6 +488,12 @@ function getDashboardPath(role?: string) {
   return "/dashboard"; // fallback
 }
 
+// Password reset helpers
+const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || "";
+function hashToken(t: string) { 
+  return crypto.createHash("sha256").update(t).digest("hex"); 
+}
+
 // Session probe endpoint - check if user is authenticated
 app.get("/api/session", (req, res) => {
   const authed = Boolean((req.session as any)?.userId);
@@ -553,6 +564,111 @@ app.post("/api/logout", (req, res) => {
     res.clearCookie("sid");
     res.json({ ok: true });
   });
+});
+
+// Password reset: request reset link
+app.post("/api/password/forgot", async (req, res) => {
+  try {
+    const { email } = req.body ?? {};
+    
+    if (!email) {
+      return res.status(400).json({ ok: false, error: "Email required" });
+    }
+
+    // Find user by email (case-insensitive)
+    const user = await databaseStorage.getUserByEmailOrUsername(email.toLowerCase());
+
+    // Always return success to avoid revealing if email exists
+    if (!user) {
+      return res.status(200).json({ ok: true, message: "If that email exists, we sent a reset link." });
+    }
+
+    // Generate secure token
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = hashToken(token);
+    
+    // Set 30 minute expiry
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    // Store hashed token in password_resets table
+    await db.execute(sql`
+      INSERT INTO password_resets (id, user_id, token_hash, ip, user_agent, expires_at)
+      VALUES (${uuid()}, ${user.id}, ${tokenHash}, ${req.ip}, ${req.get('user-agent') || null}, ${expiresAt})
+    `);
+
+    // Send reset email
+    const resetLink = `${FRONTEND_BASE_URL}/reset/${token}`;
+    await sendResetEmail(user.email || email, resetLink);
+
+    return res.status(200).json({ ok: true, message: "If that email exists, we sent a reset link." });
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    return res.status(200).json({ ok: true, message: "If that email exists, we sent a reset link." });
+  }
+});
+
+// Password reset: confirm new password
+app.post("/api/password/reset", async (req, res) => {
+  try {
+    const { token, password } = req.body ?? {};
+    
+    if (!token || !password) {
+      return res.status(400).json({ ok: false, error: "Token and password required" });
+    }
+
+    // Hash the token to look it up
+    const tokenHash = hashToken(token);
+
+    // Find valid, unused token
+    const resetRecord = await db.execute<{
+      id: string;
+      user_id: string;
+      expires_at: Date;
+      used_at: Date | null;
+    }>(sql`
+      SELECT id, user_id, expires_at, used_at
+      FROM password_resets
+      WHERE token_hash = ${tokenHash}
+        AND used_at IS NULL
+        AND expires_at > NOW()
+      LIMIT 1
+    `);
+
+    if (!resetRecord.rows || resetRecord.rows.length === 0) {
+      return res.status(400).json({ ok: false, error: "Invalid or expired reset link" });
+    }
+
+    const reset = resetRecord.rows[0];
+    const userId = reset.user_id;
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Update user password
+    await db.execute(sql`
+      UPDATE users
+      SET password_hash = ${passwordHash}
+      WHERE id = ${userId}
+    `);
+
+    // Mark token as used
+    await db.execute(sql`
+      UPDATE password_resets
+      SET used_at = NOW()
+      WHERE id = ${reset.id}
+    `);
+
+    // Invalidate all sessions for this user
+    await db.execute(sql`
+      DELETE FROM sessions
+      WHERE sess::text LIKE '%"userId":"' || ${userId} || '"%'
+    `);
+
+    return res.json({ ok: true, message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    return res.status(500).json({ ok: false, error: "Reset failed" });
+  }
 });
 
 // Auth guard middleware
