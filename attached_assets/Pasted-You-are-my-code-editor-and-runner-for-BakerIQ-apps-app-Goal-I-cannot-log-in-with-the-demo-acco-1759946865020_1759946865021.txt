@@ -1,0 +1,172 @@
+You are my code editor and runner for BakerIQ (apps/app). 
+Goal: I cannot log in with the demo account because the server errors on login. 
+Fix this by seeding a proper account with a bcrypt hash and wiring the login route to verify it. 
+Also, after login, navigate to the Baker’s dashboard route.
+
+# =========================
+# 0) Project assumptions
+# =========================
+- Server: apps/app/server/index.ts (Express)
+- DB access: Drizzle (e.g., apps/app/server/db.ts)
+- Client: apps/app/client (Vite + React + Wouter)
+- Session: express-session with cookie name "connect.sid" (ok) or "sid" (if we set one)
+If any paths differ, adapt accordingly and report what you changed.
+
+# =========================
+# 1) Install bcrypt
+# =========================
+Run in repo root or server workspace:
+- npm i bcrypt
+- If TypeScript complains about types, also: npm i -D @types/bcrypt
+
+# =========================
+# 2) Add a real password verifier
+# =========================
+Open apps/app/server/index.ts and implement verifyPassword with bcrypt.compare, then use it in /api/login.
+
+Make these changes:
+
+A) Top-level import:
+import bcrypt from "bcrypt";
+
+B) Replace any placeholder verifyPassword with:
+async function verifyPassword(plain: string, hash?: string | null) {
+  if (!hash) return false;
+  try { return await bcrypt.compare(plain, hash); }
+  catch { return false; }
+}
+
+C) Update /api/login to:
+- Lookup user by email (using our Drizzle users table)
+- Compare bcrypt hash via verifyPassword
+- On success: set req.session.userId = user.id; req.session.role = user.role; (optionally req.session.tenantId if available)
+- Return { ok: true, redirect: "<final path>" }
+
+Example (pseudo-Drizzle — adjust to our actual import/names):
+app.post("/api/login", express.json(), async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+    if (!email || !password) return res.status(400).json({ ok: false, error: "Email and password required" });
+
+    const user = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.email, email) });
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
+
+    (req.session as any).userId = user.id;
+    (req.session as any).role = user.role ?? "baker";
+    // if we can resolve tenantId or bakerId here, set them too
+
+    // compute a default dashboard path below; we will detect client route later
+    return res.json({ ok: true, redirect: "/dashboard" });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+Ensure session middleware appears BEFORE routes.
+
+# =========================
+# 3) Seed a proper Baker demo account (with bcrypt hash)
+# =========================
+Create apps/app/server/seedUsers.ts that:
+- Creates a tenant if needed (id: "tenant-demo-1")
+- Creates a user with email demo@bakeriq.app and role "baker"
+- Hashes password "DemoPass123!" with bcrypt.hash(password, 10) and stores in users.password_hash
+- Creates a baker row linked to this user and tenant (if our schema has bakers.user_id / bakers.tenant_id)
+- Upserts (do nothing if they exist)
+
+Pseudo-code (adapt to our exact table/columns):
+import bcrypt from "bcrypt";
+import { db } from "./db";
+import { users, bakers, tenants } from "./schema"; // adjust paths/names
+
+async function run() {
+  const email = "demo@bakeriq.app";
+  const pass = "DemoPass123!";
+  const hash = await bcrypt.hash(pass, 10);
+
+  // upsert tenant
+  const tenantId = "tenant-demo-1";
+  await db.insert(tenants).values({ id: tenantId, name: "Demo Tenant" })
+    .onConflictDoNothing();
+
+  // upsert user
+  const userId = "user-demo-1";
+  await db.insert(users).values({
+    id: userId,
+    email,
+    passwordHash: hash,
+    role: "baker"
+  }).onConflictDoNothing();
+
+  // upsert baker (if schema requires it)
+  const bakerId = "baker-demo-1";
+  await db.insert(bakers).values({
+    id: bakerId,
+    userId,
+    tenantId,
+    name: "Demo Baker"
+  }).onConflictDoNothing();
+
+  console.log("Seeded:", { email, password: pass });
+}
+
+run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1);});
+
+Add a package.json script:
+"seed:users": "ts-node --transpile-only apps/app/server/seedUsers.ts"
+
+Run it:
+npm run seed:users
+
+# =========================
+# 4) Client: ensure post-login redirect goes to the baker dashboard
+# =========================
+Open apps/app/client/src/pages/Login.tsx and update the submit handler:
+- After a successful POST /api/login, read the JSON { ok, redirect }.
+- If redirect is present, navigate there.
+- If not present, auto-detect the right dashboard path by checking file presence:
+  - If client has a route/page component for "/baker/dashboard" (e.g., pages/BakerDashboard.tsx or similar), use "/baker/dashboard".
+  - Else, use "/dashboard".
+
+Implement this logic:
+
+const res = await fetch("/api/login", {...});
+const data = await res.json().catch(()=>({}));
+if (res.ok && data?.ok) {
+  const target = data.redirect || (/* pseudo-detect:
+    - if src/pages/BakerDashboard.tsx exists or route exists */ "/baker/dashboard");
+  // If auto-detect is hard at runtime, just default to "/dashboard"
+  navigate(target || "/dashboard");
+} else {
+  setErr(data?.error || "Login failed");
+}
+
+Additionally, open apps/app/client/src/App.tsx:
+- Keep the route for "/dashboard" (or add one for "/baker/dashboard" if it exists)
+- Both should be guarded by <AuthGuard>
+- Root "/" should <Redirect to="/login" />
+
+# =========================
+# 5) Quick tests
+# =========================
+- Run server and client dev scripts.
+- POST /api/login with body {"email":"demo@bakeriq.app","password":"DemoPass123!"}
+  Expect 200 with { ok: true, redirect: "/dashboard" } or similar.
+- In the browser, login via the form → should navigate to the dashboard route and render.
+- Hit /api/app/me before and after login:
+  - logged out → 401
+  - logged in → { ok: true, userId: ... }
+
+# =========================
+# 6) Report back
+# =========================
+Return:
+- Files created/edited
+- bcrypt install confirmation
+- Seed script run output
+- Login test result (HTTP + JSON)
+- Browser redirect path used (e.g., "/dashboard" or "/baker/dashboard")
+- Any TODOs if you had to adapt table names/columns for our Drizzle schema

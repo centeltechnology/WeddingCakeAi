@@ -7,6 +7,7 @@ import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
+import { databaseStorage } from "./databaseStorage.js";
 
 const app = express();
 
@@ -384,9 +385,6 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Email and password required" });
     }
 
-    // Import databaseStorage for user lookup and password verification
-    const { databaseStorage } = await import('./databaseStorage');
-    
     // Look up user by email (checking users table)
     const user = await databaseStorage.getUserByEmailOrUsername(email);
 
@@ -404,10 +402,11 @@ app.post("/api/login", async (req, res) => {
     // Set session
     (req.session as any).userId = user.id;
     (req.session as any).email = user.email;
-    (req.session as any).role = user.role || 'user';
+    (req.session as any).role = user.role || 'baker';
     
     return res.json({ 
       ok: true, 
+      redirect: "/dashboard",
       user: {
         id: user.id,
         email: user.email,

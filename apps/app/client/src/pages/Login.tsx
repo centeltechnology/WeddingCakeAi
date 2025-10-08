@@ -16,10 +16,11 @@ export default function LoginPage() {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    if (res.ok) {
-      navigate("/dashboard");
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.ok) {
+      const target = data.redirect || "/dashboard";
+      navigate(target);
     } else {
-      const data = await res.json().catch(() => ({}));
       setErr(data?.error || "Login failed");
     }
   }
