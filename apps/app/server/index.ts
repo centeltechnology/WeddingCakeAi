@@ -296,6 +296,7 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
 // Session configuration - MUST come before other middleware that depends on sessions
 const PgSession = ConnectPgSimple(session);
 app.use(session({
+  name: "sid", // Custom session cookie name
   store: new PgSession({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: true,
@@ -359,6 +360,93 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// ========================================
+// SESSION-BASED AUTHENTICATION
+// ========================================
+
+// Session probe endpoint - check if user is authenticated
+app.get("/api/session", (req, res) => {
+  const authed = Boolean((req.session as any)?.userId);
+  res.json({
+    authenticated: authed,
+    userId: authed ? (req.session as any).userId : null,
+  });
+});
+
+// Login endpoint using session authentication
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+    
+    if (!email || !password) {
+      return res.status(400).json({ ok: false, error: "Email and password required" });
+    }
+
+    // Import databaseStorage for user lookup and password verification
+    const { databaseStorage } = await import('./databaseStorage');
+    
+    // Look up user by email (checking users table)
+    const user = await databaseStorage.getUserByEmailOrUsername(email);
+
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
+
+    // Verify password using bcrypt
+    const isValid = await databaseStorage.verifyPassword(password, user.passwordHash);
+    
+    if (!isValid) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
+
+    // Set session
+    (req.session as any).userId = user.id;
+    (req.session as any).email = user.email;
+    (req.session as any).role = user.role || 'user';
+    
+    return res.json({ 
+      ok: true, 
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (e) {
+    console.error('Login error:', e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// Logout endpoint
+app.post("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ ok: false, error: "Logout failed" });
+    }
+    res.clearCookie("sid");
+    res.json({ ok: true });
+  });
+});
+
+// Auth guard middleware
+function ensureAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if ((req.session as any)?.userId) {
+    return next();
+  }
+  return res.status(401).json({ ok: false, error: "Unauthenticated" });
+}
+
+// Protected route example
+app.get("/api/app/me", ensureAuth, (req, res) => {
+  res.json({ 
+    ok: true, 
+    userId: (req.session as any).userId,
+    email: (req.session as any).email,
+    role: (req.session as any).role
+  });
 });
 
 // OAuth routes for Accounts integration

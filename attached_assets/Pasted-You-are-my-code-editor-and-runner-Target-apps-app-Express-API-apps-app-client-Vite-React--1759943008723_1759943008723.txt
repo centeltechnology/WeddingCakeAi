@@ -1,0 +1,91 @@
+You are my code editor and runner. Target: apps/app (Express API) + apps/app/client (Vite + React + Wouter). 
+Goal: Add proper login flow, protect routes behind session auth, and make "/" redirect to "/login".
+
+# =============================
+# 0) Detect project layout
+# =============================
+- Confirm these paths exist or adapt if different:
+  - API server: apps/app/server/index.ts
+  - Client root: apps/app/client
+  - Client entry: apps/app/client/src/App.tsx
+  - Client pages directory: apps/app/client/src/pages (create if missing)
+  - Client components directory: apps/app/client/src/components (create if missing)
+  - Client lib directory: apps/app/client/src/lib (create if missing)
+
+Report any path differences and adjust file writes accordingly.
+
+# =============================
+# 1) Server changes (Express)
+# =============================
+Open apps/app/server/index.ts and ensure the following:
+
+A) SESSION COOKIE (optional, but preferred):
+- In the express-session config, add a `name` to avoid default "connect.sid":
+  name: "sid",
+Keep all other settings the same (store, secret, secure, httpOnly, sameSite, etc.).
+
+B) Add a lightweight session probe endpoint:
+```ts
+// near other routes
+app.get("/api/session", (req, res) => {
+  const authed = Boolean((req.session as any)?.userId);
+  res.json({
+    authenticated: authed,
+    userId: authed ? (req.session as any).userId : null,
+  });
+});
+C) Add a minimal login endpoint that sets req.session.userId on success.
+Assume users are in the DB with fields: id, email, password_hash (argon2/bcrypt).
+If the project already has a user lookup or password verification util, reuse it.
+Otherwise, add a placeholder verifyPassword that returns false until implemented.
+
+ts
+Copy code
+import express from "express";
+
+// TODO: replace with your actual user query and hash verification
+async function verifyPassword(plain: string, hash: string | null | undefined) {
+  // If you have argon2 or bcrypt available, use it here.
+  // Placeholder: always false until you wire hashing.
+  return false;
+}
+
+app.post("/api/login", express.json(), async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+    if (!email || !password) {
+      return res.status(400).json({ ok: false, error: "Email and password required" });
+    }
+
+    // EXAMPLE: replace with real query (e.g., drizzle) to your users table
+    // const user = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.email, email) });
+    const user = null; // TODO: implement real lookup
+
+    if (!user || !(await verifyPassword(password, (user as any).passwordHash))) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
+
+    (req.session as any).userId = (user as any).id;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+D) Add an auth guard middleware and protect app APIs below a prefix:
+
+ts
+Copy code
+function ensureAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if ((req.session as any)?.userId) return next();
+  return res.status(401).json({ ok: false, error: "Unauthenticated" });
+}
+
+// Example protection (adjust prefix to your API shape)
+app.use("/api/app", ensureAuth);
+
+// Example protected endpoint:
+app.get("/api/app/me", (req, res) => {
+  res.json({ ok: true, userId: (req.session as any).userId });
+});
+After edits, reformat the file and ensure it compiles.
