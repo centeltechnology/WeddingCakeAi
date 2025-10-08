@@ -1,0 +1,80 @@
+# BakerIQ Database Summary
+
+## Quick Stats
+- analytics                                Size: |          Columns: kB  Rows: 7
+- customers                                Size: |          Columns: kB  Rows: 30
+- bakers                                   Size: |          Columns: kB  Rows: 44
+- leads                                    Size: |          Columns: kB  Rows: 15
+- email_campaign_events                    Size: |          Columns: kB  Rows: 9
+- baker_profiles                           Size: |          Columns: kB  Rows: 14
+- quotes                                   Size: |          Columns: kB  Rows: 34
+- email_campaign_enrollments               Size: |          Columns: kB  Rows: 14
+- consultations                            Size: |          Columns: kB  Rows: 26
+- super_admin_campaign_sends               Size: |          Columns: kB  Rows: 13
+- calculator_leads                         Size: |          Columns: kB  Rows: 10
+- quote_templates                          Size: |          Columns: kB  Rows: 32
+- super_admin_campaigns                    Size: |          Columns: kB  Rows: 12
+- tenants                                  Size: |          Columns: kB  Rows: 12
+- contracts                                Size: |          Columns: kB  Rows: 26
+- contract_templates                       Size: |          Columns: kB  Rows: 13
+- tenant_configurations                    Size: |          Columns: kB  Rows: 11
+- sendy_settings                           Size: |          Columns: kB  Rows: 9
+- system_announcements                     Size: |          Columns: kB  Rows: 10
+- audit_logs                               Size: |          Columns: kB  Rows: 10
+- users                                    Size: |          Columns: kB  Rows: 12
+- availability                             Size: |          Columns: kB  Rows: 8
+- activity_logs                            Size: |          Columns: kB  Rows: 8
+- customer_sessions                        Size: |          Columns: kB  Rows: 5
+- reviews                                  Size: |          Columns: kB  Rows: 12
+- estimates                                Size: |          Columns: kB  Rows: 19
+- transactions                             Size: |          Columns: kB  Rows: 12
+- profiles                                 Size: |          Columns: kB  Rows: 15
+- tenant_revenue_sharing                   Size: |          Columns: kB  Rows: 11
+- tenant_baker_networks                    Size: |          Columns: kB  Rows: 9
+- customer_notes                           Size: |          Columns: kB  Rows: 7
+- invoices                                 Size: |          Columns: kB  Rows: 21
+- payment_plans                            Size: |          Columns: kB  Rows: 10
+- team_invitations                         Size: |          Columns: kB  Rows: 11
+- team_members                             Size: |          Columns: kB  Rows: 12
+- messages                                 Size: |          Columns: kB  Rows: 6
+- contract_signatures                      Size: |          Columns: kB  Rows: 9
+- payment_schedule                         Size: |          Columns: kB  Rows: 9
+- quote_items                              Size: |          Columns: kB  Rows: 9
+- bookings                                 Size: |          Columns: kB  Rows: 12
+- system_health_metrics                    Size: |          Columns: kB  Rows: 7
+- data_export_jobs                         Size: |          Columns: kB  Rows: 11
+- maintenance_schedule                     Size: |          Columns: kB  Rows: 11
+- announcements                            Size: |          Columns: kB  Rows: 10
+- email_jobs                               Size: |          Columns: kB  Rows: 11
+-                                          Size:            Columns:     Rows: 
+
+## Core Tables Description
+
+### User & Authentication
+- **bakers**: Baker accounts and profiles
+- **customers**: Customer records  
+- **customer_sessions**: Customer portal sessions
+
+### Business Operations
+- **quotes**: Quote management
+- **contracts**: Contract documents
+- **invoices**: Invoice tracking
+- **bookings**: Booking/consultation scheduling
+- **consultations**: Consultation appointments
+
+### Sales & Marketing
+- **leads**: Lead tracking
+- **calculator_leads**: Leads from pricing calculator
+- **email_campaign_enrollments**: Email automation tracking
+- **email_jobs**: Bulk email campaigns
+
+### Configuration
+- **pricing_options**: Pricing configurations (sizes, flavors, shapes, decorations)
+- **quote_templates**: Reusable quote templates
+- **contract_templates**: Reusable contract templates
+
+### Analytics & Logs
+- **analytics**: Business metrics
+- **activity_logs**: User activity tracking
+- **audit_logs**: System audit trail
+
