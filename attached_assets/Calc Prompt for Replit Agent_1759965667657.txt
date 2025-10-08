@@ -1,0 +1,136 @@
+You are auditing the BakerIQ SaaS repo to prepare for integrating a public Cake Calculator route under apps/app with a backend endpoint that creates leads.
+
+IMPORTANT: DO NOT MODIFY ANY FILES. THIS IS A READ-ONLY AUDIT. Return a single JSON object exactly in the schema below.
+
+Scope of repo (assumed paths; adjust if different):
+- Server: apps/app/server/index.ts (Express or similar)
+- DB: apps/app/server/db.ts (Drizzle + Postgres)
+- Client: apps/app/client/src/*
+- Auth: session-based
+- Router: apps/app/client/src/App.tsx (React Router)
+
+TASKS
+1) Identify entry files and frameworks
+   - Confirm server entry file and framework (Express, Fastify, etc.)
+   - Confirm client router file and version (React Router v5/v6)
+   - Confirm build and start scripts
+
+2) Enumerate existing server routes
+   - List all HTTP routes with method → path (e.g., POST /api/leads)
+   - Note any existing calculator endpoints
+   - Note middleware relevant to body parsing, CORS, CSRF, sessions, rate limits
+
+3) Database layer
+   - Locate Drizzle schema for the leads table; dump column names, SQL types, nullability, defaults
+   - Tell me the exact import path to the leads schema (e.g., "apps/app/server/db/schema.ts")
+   - Confirm how to run inserts + returning() in this project (show a small sample from codebase)
+
+4) Required leads columns check
+   - Tell me whether these columns exist (true/false each):
+     - source (text)
+     - calculator_payload (json/jsonb)
+     - estimated_total_low (int)
+     - estimated_total_high (int)
+     - name, email, phone (any types)
+     - city_or_zip (text)
+     - event_date (date or text)
+     - guest_count (int)
+     - notes (text)
+   - If any are missing, propose the exact Drizzle migration code snippet(s) to add them without breaking existing data.
+
+5) Client routing
+   - Confirm whether a public route "/calculator" already exists. If yes, give the file path.
+   - Confirm whether routes are wrapped by an AuthGuard. If so, specify how to register a public route.
+   - Provide the import path for the main App component and where <Routes> is defined.
+
+6) Auth/session
+   - Confirm session middleware in server (name of library and config)
+   - Confirm CSRF usage (yes/no and library)
+   - Confirm cookie settings (sameSite, secure, domain) if present
+
+7) Environment/config
+   - List env vars required by server startup (from code)
+   - Note any email/A2P providers already integrated (SES/Twilio/etc.)
+
+8) Code style notes
+   - Confirm the HTTP JSON body parser used
+   - Confirm how errors are handled and returned (custom error handler?)
+   - Confirm TypeScript config path and target
+
+9) Anything that could block the integration
+   - Port conflicts, proxy rules, conflicting route prefixes, unusual middleware that would block a new POST /api/calculator/quote-draft
+
+OUTPUT FORMAT (return ONLY this JSON; no prose):
+{
+  "server": {
+    "entry_file": "",
+    "framework": "",
+    "routes": [
+      {"method":"","path":"","file":""}
+    ],
+    "middleware": {
+      "body_parser": "",
+      "cors": {"enabled": false, "config": ""},
+      "csrf": {"enabled": false, "library": "", "notes": ""},
+      "rate_limit": {"enabled": false, "library": "", "notes": ""},
+      "sessions": {"enabled": false, "library": "", "config": ""}
+    }
+  },
+  "database": {
+    "client_file": "apps/app/server/db.ts",
+    "schema_files": ["..."],
+    "leads_schema_import_path": "",
+    "leads_columns": [
+      {"name":"","sql_type":"","nullable":false,"default":null}
+    ],
+    "insert_example": "PASTE SMALL SNIPPET FROM CODEBASE THAT SHOWS db.insert(...).values(...).returning(...)",
+    "missing_required_columns": {
+      "source": false,
+      "calculator_payload": false,
+      "estimated_total_low": false,
+      "estimated_total_high": false,
+      "name": false,
+      "email": false,
+      "phone": false,
+      "city_or_zip": false,
+      "event_date": false,
+      "guest_count": false,
+      "notes": false
+    },
+    "proposed_migrations_if_missing": [
+      "// one-line SQL or Drizzle snippets per missing column"
+    ]
+  },
+  "client": {
+    "app_component_path": "apps/app/client/src/App.tsx",
+    "router_version": "v5|v6|unknown",
+    "public_calculator_route_exists": false,
+    "public_calculator_route_path": "",
+    "auth_guard_info": {"wrapped": false, "how_to_add_public_route": ""}
+  },
+  "auth": {
+    "session_library": "",
+    "session_config": "",
+    "csrf_in_use": false
+  },
+  "env_build": {
+    "env_vars_detected": ["..."],
+    "scripts": {
+      "dev": "",
+      "build": "",
+      "start": ""
+    }
+  },
+  "providers": {
+    "email": {"type":"","configured":false},
+    "sms": {"type":"","configured":false}
+  },
+  "ts_config": {
+    "path": "",
+    "target": "",
+    "module": ""
+  },
+  "integration_risks": [
+    "bullet list of anything that might block adding POST /api/calculator/quote-draft or a public /calculator page"
+  ]
+}
