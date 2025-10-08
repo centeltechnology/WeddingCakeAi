@@ -67,6 +67,9 @@ import { CalendarSystem } from "./CalendarSystem";
 import { ConsultationsManager } from "./ConsultationsManager";
 import BulkEmailLeads from "./BulkEmailLeads";
 import LeadsExportButton from "./LeadsExportButton";
+import { PipelineChart } from "./PipelineChart";
+import { RevenueStat } from "./RevenueStat";
+import { TaskList } from "./TaskList";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -1032,6 +1035,13 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Dashboard Widgets */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+            <PipelineChart />
+            <RevenueStat />
+            <TaskList />
           </div>
 
           {/* Get Started Tips - Only show if new user */}

@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { z } from "zod";
@@ -1266,6 +1266,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error sending consultation request:", error);
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Dashboard Charts & Stats Endpoints
+  app.get("/api/app/charts/pipeline", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+
+      // Get quotes grouped by status for the tenant
+      const result = await db.select({
+        status: quotes.status,
+        count: sql<number>`count(*)::int`
+      })
+      .from(quotes)
+      .where(eq(quotes.tenantId, tenantId))
+      .groupBy(quotes.status);
+
+      // Transform to chart format
+      const chartData = result.map(row => ({
+        status: row.status || 'draft',
+        count: row.count
+      }));
+
+      res.json(chartData);
+    } catch (error: any) {
+      console.error("Error fetching pipeline chart:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/app/stats/revenue-mtd", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+
+      const now = new Date();
+      const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const startOfLastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+
+      // This month's revenue from paid quotes
+      const thisMonthResult = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${quotes.total} AS DECIMAL)), 0)`
+      })
+      .from(quotes)
+      .where(
+        sql`${quotes.tenantId} = ${tenantId} 
+        AND ${quotes.status} = 'approved' 
+        AND ${quotes.createdAt} >= ${startOfMonth.toISOString()}`
+      );
+
+      // Last month's revenue for comparison
+      const lastMonthResult = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${quotes.total} AS DECIMAL)), 0)`
+      })
+      .from(quotes)
+      .where(
+        sql`${quotes.tenantId} = ${tenantId} 
+        AND ${quotes.status} = 'approved' 
+        AND ${quotes.createdAt} >= ${startOfLastMonth.toISOString()} 
+        AND ${quotes.createdAt} < ${startOfMonth.toISOString()}`
+      );
+
+      const thisMonth = parseFloat(thisMonthResult[0]?.total || '0');
+      const lastMonth = parseFloat(lastMonthResult[0]?.total || '0');
+      const change = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+
+      res.json({
+        current: thisMonth,
+        previous: lastMonth,
+        change: Math.round(change * 10) / 10
+      });
+    } catch (error: any) {
+      console.error("Error fetching revenue stats:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tasks Endpoints
+  app.get("/api/app/tasks", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = req.user?.userId;
+      
+      if (!tenantId || !userId) {
+        return res.status(400).json({ error: "Authentication required" });
+      }
+
+      const { tasks } = await import("@shared/schema");
+      const userTasks = await db.select()
+        .from(tasks)
+        .where(sql`${tasks.tenantId} = ${tenantId} AND ${tasks.userId} = ${userId}`)
+        .orderBy(sql`${tasks.createdAt} DESC`);
+
+      res.json(userTasks);
+    } catch (error: any) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/app/tasks", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = req.user?.userId;
+      
+      if (!tenantId || !userId) {
+        return res.status(400).json({ error: "Authentication required" });
+      }
+
+      const { insertTaskSchema, tasks } = await import("@shared/schema");
+      const validated = insertTaskSchema.parse(req.body);
+
+      const newTask = await db.insert(tasks).values({
+        ...validated,
+        tenantId,
+        userId
+      }).returning();
+
+      res.json(newTask[0]);
+    } catch (error: any) {
+      console.error("Error creating task:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/app/tasks/:id/complete", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = req.user?.userId;
+      const { id } = req.params;
+      
+      if (!tenantId || !userId) {
+        return res.status(400).json({ error: "Authentication required" });
+      }
+
+      const { tasks } = await import("@shared/schema");
+      
+      // Verify task ownership
+      const task = await db.select().from(tasks).where(
+        sql`${tasks.id} = ${id} AND ${tasks.tenantId} = ${tenantId} AND ${tasks.userId} = ${userId}`
+      ).limit(1);
+
+      if (!task.length) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      const updated = await db.update(tasks)
+        .set({ 
+          status: 'completed',
+          completedAt: new Date()
+        })
+        .where(eq(tasks.id, id))
+        .returning();
+
+      res.json(updated[0]);
+    } catch (error: any) {
+      console.error("Error completing task:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
