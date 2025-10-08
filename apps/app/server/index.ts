@@ -372,6 +372,104 @@ app.use((req, res, next) => {
 });
 
 // ========================================
+// INTERNAL PROVISIONING ENDPOINT
+// ========================================
+
+// Import provisioning service
+import { provisionBakerFromClaim } from "./services/provisioning";
+import { sendWelcomeEmail } from "./services/welcomeEmail";
+import { db } from "./db";
+
+// Middleware to verify internal shared secret
+function verifyInternalAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers['x-internal-auth'];
+  const expectedSecret = process.env.INTERNAL_SHARED_SECRET || 'dev-shared-secret-change-in-production';
+  
+  if (authHeader !== expectedSecret) {
+    console.error('[Internal Auth] Invalid shared secret');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  next();
+}
+
+// Internal endpoint for baker provisioning from marketplace
+app.post("/internal/provision/baker", verifyInternalAuth, async (req, res) => {
+  try {
+    const { claimId, email, name, marketplaceVendorId } = req.body;
+    
+    if (!claimId || !email || !name) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: claimId, email, name' 
+      });
+    }
+
+    console.log('[Provisioning] Received claim approval:', {
+      claimId,
+      email,
+      name,
+      marketplaceVendorId,
+    });
+
+    // Provision the baker
+    const result = await provisionBakerFromClaim({
+      claimId,
+      email,
+      name,
+      marketplaceVendorId,
+    });
+
+    // Audit log
+    console.log('[Provisioning] SUCCESS:', {
+      claimId,
+      tenantId: result.tenantId,
+      userId: result.userId,
+      bakerId: result.bakerId,
+      email,
+    });
+
+    // Send welcome email with temp password (stub for now)
+    try {
+      const tenant = await db.query.tenants.findFirst({
+        where: (tenants, { eq }) => eq(tenants.id, result.tenantId),
+      });
+      
+      await sendWelcomeEmail({
+        email,
+        name,
+        tempPassword: result.tempPassword,
+        subdomain: tenant?.subdomain || 'app',
+      });
+    } catch (emailError) {
+      console.error('[Provisioning] Failed to send welcome email:', emailError);
+    }
+
+    return res.json({
+      success: true,
+      tenantId: result.tenantId,
+      userId: result.userId,
+      bakerId: result.bakerId,
+      message: 'Baker provisioned successfully',
+    });
+  } catch (error: any) {
+    console.error('[Provisioning] ERROR:', error);
+    
+    // Return 409 Conflict if user already exists
+    if (error.message && error.message.includes('already exists')) {
+      return res.status(409).json({ 
+        error: 'User already exists',
+        message: error.message 
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Provisioning failed',
+      message: error.message 
+    });
+  }
+});
+
+// ========================================
 // SESSION-BASED AUTHENTICATION
 // ========================================
 
