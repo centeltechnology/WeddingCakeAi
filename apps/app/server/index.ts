@@ -15,6 +15,7 @@ import { startEmailAutomationScheduler } from "./emailAutomation";
 import { databaseStorage } from "./databaseStorage.js";
 import { sendResetEmail } from "./mailer";
 import { sql } from "drizzle-orm";
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 
 const app = express();
 
@@ -529,6 +530,28 @@ async function audit(eventType: string, payload: Record<string, any> = {}, req?:
   }
 }
 
+// SES client for calculator estimate emails
+const ses = new SESv2Client({ region: process.env.AWS_REGION || "us-east-1" });
+
+async function sendEstimateEmail(to: string, data: { low: number; high: number; leadId: string }) {
+  const from = process.env.SES_FROM!;
+  const subject = `Your BakerIQ estimate: $${data.low}–$${data.high}`;
+  const html = `
+    <div style="font-family:system-ui,Segoe UI,Arial">
+      <h2>Your instant estimate</h2>
+      <p>Estimated range: <strong>$${data.low} – $${data.high}</strong></p>
+      <p>Save or request availability here:</p>
+      <p><a href="${process.env.FRONTEND_URL || ""}/lead/${data.leadId}">View your estimate</a></p>
+      <p>Thanks for using BakerIQ!</p>
+    </div>`;
+
+  await ses.send(new SendEmailCommand({
+    FromEmailAddress: from,
+    Destination: { ToAddresses: [to] },
+    Content: { Simple: { Subject: { Data: subject }, Body: { Html: { Data: html } } } }
+  }));
+}
+
 // Session probe endpoint - check if user is authenticated
 app.get("/api/session", (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -540,6 +563,81 @@ app.get("/api/session", (req, res) => {
     isImpersonating: Boolean((req.session as any)?.isImpersonating) || false,
     impersonatorId: (req.session as any)?.impersonatorId || null
   });
+});
+
+// Public calculator quote endpoint - no auth required
+app.post("/api/bakers/public/calculator/quote-draft", async (req, res) => {
+  try {
+    const payload = req.body;
+    const { db } = await import("./db");
+    const { leads } = await import("@shared/schema");
+
+    // Calculate pricing based on complexity and add-ons
+    const basePrice = payload.guestCount * 3; // $3 per serving base
+    const complexityMultipliers: Record<string, number> = {
+      basic: 1.0,
+      standard: 1.3,
+      premium: 1.6,
+      couture: 2.2
+    };
+    const complexityMultiplier = complexityMultipliers[payload.complexity] || 1.0;
+    
+    // Calculate add-ons cost
+    let addOnsPrice = 0;
+    if (payload.addOns?.metallicLeaf) addOnsPrice += 85;
+    if (payload.addOns?.sugarFlorals) addOnsPrice += 65;
+    if (payload.addOns?.ediblePrint) addOnsPrice += 125;
+    if (payload.addOns?.topperCustom) addOnsPrice += 45;
+
+    // Fondant vs buttercream
+    const icingMultiplier = payload.icing === 'fondant' ? 1.2 : 1.0;
+    
+    // Delivery fee
+    const deliveryFee = payload.delivery?.method === 'delivery' 
+      ? 50 + (payload.delivery.miles * 2) 
+      : 0;
+
+    // Calculate totals
+    const base = basePrice * complexityMultiplier * icingMultiplier;
+    const total = base + addOnsPrice + deliveryFee;
+    const low = Math.floor(total * 0.85);
+    const high = Math.ceil(total * 1.15);
+
+    // Insert lead into database
+    const [row] = await db.insert(leads).values({
+      customerName: payload.name || 'Anonymous',
+      customerEmail: payload.email || 'no-email@example.com',
+      customerPhone: payload.phone || null,
+      weddingDate: payload.eventDate || null,
+      guestCount: payload.guestCount || null,
+      cityOrZip: payload.cityOrZip || null,
+      notes: payload.notes || null,
+      source: 'calculator',
+      calculatorPayload: payload,
+      estimatedTotalLow: low,
+      estimatedTotalHigh: high,
+      budget: `$${low}-$${high}`,
+      status: 'new'
+    }).returning();
+
+    // Send confirmation email if email provided
+    if (payload.email) {
+      sendEstimateEmail(payload.email, { low, high, leadId: row.id }).catch(() => {});
+    }
+
+    // Return response
+    res.json({
+      leadId: row.id,
+      servings: payload.guestCount,
+      deliveryFee,
+      total,
+      range: { low, high },
+      breakdown: { base, complexityMultiplier, addOns: addOnsPrice }
+    });
+  } catch (error) {
+    console.error('Calculator quote error:', error);
+    res.status(500).json({ error: 'Failed to process quote request' });
+  }
 });
 
 // Rate limiter for login endpoint - prevent brute force attacks
