@@ -416,7 +416,7 @@ app.post("/api/login", async (req, res) => {
     
     return res.json({ 
       ok: true, 
-      redirect: getDashboardPath(user.role),
+      redirect: getDashboardPath(user.role ?? undefined),
       user: {
         id: user.id,
         email: user.email,
