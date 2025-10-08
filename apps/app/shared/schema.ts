@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -137,7 +137,7 @@ export const bakers = pgTable("bakers", {
   name: text("name").notNull(),
   slug: varchar("slug"),
   email: text("email").notNull(),
-  password: text("password").notNull(),
+  passwordHash: text("password_hash"),
   phone: text("phone"),
   address: text("address").notNull(),
   latitude: decimal("latitude"),
@@ -296,6 +296,7 @@ export const messages = pgTable("messages", {
 export const bookings = pgTable("bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bakerId: varchar("baker_id").notNull().references(() => bakers.id),
+  tenantId: text("tenant_id"), // Added by Phase 0 migration
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
@@ -385,6 +386,8 @@ export type TenantRevenueSharing = typeof tenantRevenueSharing.$inferSelect;
 export const reviews = pgTable("reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bakerId: varchar("baker_id").notNull(),
+  tenantId: text("tenant_id"), // Added by Phase 0 migration
+  contractId: text("contract_id"), // FK to contracts - added in Phase 3
   customerId: varchar("customer_id"),
   customerName: varchar("customer_name").notNull(),
   customerEmail: varchar("customer_email").notNull(),
@@ -505,10 +508,11 @@ export const customers = pgTable("customers", {
   stripeCustomerId: varchar("stripe_customer_id"), // Added for Stripe integration
   // Customer Portal Authentication
   hasPortalAccess: boolean("has_portal_access").default(false),
-  portalPassword: text("portal_password"), // Hashed password for portal access
+  portalPasswordHash: text("portal_password_hash"), // Hashed password for portal access
   portalLastLogin: timestamp("portal_last_login"),
   portalActivationToken: varchar("portal_activation_token"),
   portalActivatedAt: timestamp("portal_activated_at"),
+  addressJson: jsonb("address_json"), // JSONB address structure
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -1,0 +1,88 @@
+Patch for apps/app/shared/schema.ts
+
+Notes:
+
+You’re on PostgreSQL, so use jsonb (not json) from drizzle-orm/pg-core.
+
+We’re removing plaintext fields from the schema (they don’t exist in DB anymore).
+
+New columns are added exactly as your report lists.
+
+A) Ensure imports include jsonb
+// at top of file
+import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb } from "drizzle-orm/pg-core";
+
+B) Bakers: replace password → passwordHash
+// BEFORE
+// export const bakers = pgTable("bakers", {
+//   ...
+//   password: text("password").notNull(),
+//   ...
+// });
+
+// AFTER
+export const bakers = pgTable("bakers", {
+  // ...
+  passwordHash: text("password_hash"), // plaintext removed; DB owns password_hash
+  // ...
+});
+
+C) Customers: replace portalPassword → portalPasswordHash, add addressJson
+// BEFORE
+// export const customers = pgTable("customers", {
+//   ...
+//   portalPassword: text("portal_password"),
+//   ...
+// });
+
+// AFTER
+export const customers = pgTable("customers", {
+  // ...
+  portalPasswordHash: text("portal_password_hash"),
+  addressJson: jsonb("address_json"), // JSONB in Postgres
+  // ...
+});
+
+D) Bookings: add tenantId
+// BEFORE
+// export const bookings = pgTable("bookings", {
+//   id: text("id").primaryKey(),
+//   bakerId: text("baker_id").notNull(),
+//   ...
+// });
+
+// AFTER
+export const bookings = pgTable("bookings", {
+  id: text("id").primaryKey(),
+  bakerId: text("baker_id").notNull(),
+  tenantId: text("tenant_id"), // added by Phase 0; text in DB
+  // ...
+});
+
+E) Reviews: add tenantId, contractId
+// BEFORE
+// export const reviews = pgTable("reviews", {
+//   id: text("id").primaryKey(),
+//   bakerId: text("baker_id").notNull(),
+//   // ...
+// });
+
+// AFTER
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  bakerId: text("baker_id").notNull(),
+  tenantId: text("tenant_id"),
+  contractId: text("contract_id"), // FK exists in DB
+  // ...
+});
+
+
+If you have explicit relations defined elsewhere (e.g., relations(reviews, …)), you can add:
+
+contract: one(contracts, {
+  fields: [reviews.contractId],
+  references: [contracts.id],
+})
+
+
+Keep it consistent with however you’ve defined relations for other tables.
