@@ -16,6 +16,7 @@ import { databaseStorage } from "./databaseStorage.js";
 import { sendResetEmail } from "./mailer";
 import { sql } from "drizzle-orm";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { z } from "zod";
 
 const app = express();
 
@@ -565,55 +566,89 @@ app.get("/api/session", (req, res) => {
   });
 });
 
+// Validation schema for calculator input
+const CalcInput = z.object({
+  cityOrZip: z.string().min(2, "city/zip required"),
+  eventDate: z.string().min(3, "event date required"),
+  guestCount: z.coerce.number().int().min(5, "min 5 guests").max(500, "max 500"),
+  icing: z.enum(["buttercream", "fondant"]),
+  complexity: z.enum(["basic", "standard", "premium", "couture"]),
+  formFactor: z.enum(["tiered", "sheet", "cupcakes"]),
+  addOns: z.object({
+    metallicLeaf: z.coerce.boolean().optional().default(false),
+    sugarFlorals: z.coerce.boolean().optional().default(false),
+    ediblePrint: z.coerce.boolean().optional().default(false),
+    topperCustom: z.coerce.boolean().optional().default(false),
+  }).default({}),
+  delivery: z.object({
+    method: z.enum(["pickup", "delivery"]),
+    miles: z.coerce.number().min(0).max(200).default(0),
+  }),
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 // Public calculator quote endpoint - no auth required
 app.post("/api/bakers/public/calculator/quote-draft", async (req, res) => {
   try {
-    const payload = req.body;
+    // Validate input
+    const result = CalcInput.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Invalid input",
+        issues: result.error.issues.map(i => ({ path: i.path, message: i.message }))
+      });
+    }
+    const parsed = result.data;
+    
     const { db } = await import("./db");
     const { leads } = await import("@shared/schema");
 
     // Calculate pricing based on complexity and add-ons
-    const basePrice = payload.guestCount * 3; // $3 per serving base
+    const basePrice = parsed.guestCount * 3; // $3 per serving base
     const complexityMultipliers: Record<string, number> = {
       basic: 1.0,
       standard: 1.3,
       premium: 1.6,
       couture: 2.2
     };
-    const complexityMultiplier = complexityMultipliers[payload.complexity] || 1.0;
+    const complexityMultiplier = complexityMultipliers[parsed.complexity] || 1.0;
     
     // Calculate add-ons cost
-    let addOnsPrice = 0;
-    if (payload.addOns?.metallicLeaf) addOnsPrice += 85;
-    if (payload.addOns?.sugarFlorals) addOnsPrice += 65;
-    if (payload.addOns?.ediblePrint) addOnsPrice += 125;
-    if (payload.addOns?.topperCustom) addOnsPrice += 45;
+    const addOnsCost =
+      (parsed.addOns.metallicLeaf ? 45 : 0) +
+      (parsed.addOns.sugarFlorals ? 85 : 0) +
+      (parsed.addOns.ediblePrint ? 25 : 0) +
+      (parsed.addOns.topperCustom ? 30 : 0);
 
     // Fondant vs buttercream
-    const icingMultiplier = payload.icing === 'fondant' ? 1.2 : 1.0;
+    const icingMultiplier = parsed.icing === 'fondant' ? 1.2 : 1.0;
     
     // Delivery fee
-    const deliveryFee = payload.delivery?.method === 'delivery' 
-      ? 50 + (payload.delivery.miles * 2) 
+    const deliveryFee = parsed.delivery.method === 'delivery' 
+      ? 50 + (parsed.delivery.miles * 2) 
       : 0;
 
     // Calculate totals
     const base = basePrice * complexityMultiplier * icingMultiplier;
-    const total = base + addOnsPrice + deliveryFee;
+    const subtotal = base + addOnsCost;
+    const total = subtotal + deliveryFee;
     const low = Math.floor(total * 0.85);
     const high = Math.ceil(total * 1.15);
 
     // Insert lead into database
     const [row] = await db.insert(leads).values({
-      customerName: payload.name || 'Anonymous',
-      customerEmail: payload.email || 'no-email@example.com',
-      customerPhone: payload.phone || null,
-      weddingDate: payload.eventDate || null,
-      guestCount: payload.guestCount || null,
-      cityOrZip: payload.cityOrZip || null,
-      notes: payload.notes || null,
+      customerName: parsed.name || 'Anonymous',
+      customerEmail: parsed.email || 'no-email@example.com',
+      customerPhone: parsed.phone || null,
+      weddingDate: parsed.eventDate || null,
+      guestCount: parsed.guestCount,
+      cityOrZip: parsed.cityOrZip,
+      notes: parsed.notes || null,
       source: 'calculator',
-      calculatorPayload: payload,
+      calculatorPayload: parsed,
       estimatedTotalLow: low,
       estimatedTotalHigh: high,
       budget: `$${low}-$${high}`,
@@ -621,18 +656,23 @@ app.post("/api/bakers/public/calculator/quote-draft", async (req, res) => {
     }).returning();
 
     // Send confirmation email if email provided
-    if (payload.email) {
-      sendEstimateEmail(payload.email, { low, high, leadId: row.id }).catch(() => {});
+    if (parsed.email) {
+      sendEstimateEmail(parsed.email, { low, high, leadId: row.id }).catch(() => {});
     }
 
     // Return response
     res.json({
       leadId: row.id,
-      servings: payload.guestCount,
+      servings: parsed.guestCount,
       deliveryFee,
       total,
       range: { low, high },
-      breakdown: { base, complexityMultiplier, addOns: addOnsPrice }
+      breakdown: { 
+        base, 
+        complexityMultiplier, 
+        addOnsCost,
+        selectedAddOns: parsed.addOns
+      }
     });
   } catch (error) {
     console.error('Calculator quote error:', error);

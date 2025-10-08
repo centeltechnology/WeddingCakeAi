@@ -1,0 +1,75 @@
+You are fixing input validation for the public calculator endpoint so invalid payloads (e.g., guestCount: 0) return HTTP 400.
+
+FILE: apps/app/server/index.ts
+
+TASKS
+1) Ensure JSON body parsing runs BEFORE the endpoint:
+   - Confirm `app.use(express.json())` appears before `app.post("/api/bakers/public/calculator/quote-draft", ...)`.
+   - If not, move it up.
+
+2) Replace the CalcInput schema with a "coercing" version to handle numbers coming in as strings and to enforce min/max:
+
+   import { z } from "zod";
+
+   const CalcInput = z.object({
+     cityOrZip: z.string().min(2, "city/zip required"),
+     eventDate: z.string().min(3, "event date required"),
+     guestCount: z.coerce.number().int().min(5, "min 5 guests").max(500, "max 500"),
+     icing: z.enum(["buttercream","fondant"]),
+     complexity: z.enum(["basic","standard","premium","couture"]),
+     formFactor: z.enum(["tiered","sheet","cupcakes"]),
+     addOns: z.object({
+       metallicLeaf: z.coerce.boolean().optional().default(false),
+       sugarFlorals: z.coerce.boolean().optional().default(false),
+       ediblePrint: z.coerce.boolean().optional().default(false),
+       topperCustom: z.coerce.boolean().optional().default(false),
+     }).default({}),
+     delivery: z.object({
+       method: z.enum(["pickup","delivery"]),
+       miles: z.coerce.number().min(0).max(200).default(0),
+     }),
+     name: z.string().optional(),
+     email: z.string().email().optional(),
+     phone: z.string().optional(),
+     notes: z.string().optional(),
+   });
+
+3) Change the endpoint to use safeParse so we can return detailed errors:
+
+   const result = CalcInput.safeParse(req.body);
+   if (!result.success) {
+     return res.status(400).json({
+       error: "Invalid input",
+       issues: result.error.issues.map(i => ({ path: i.path, message: i.message }))
+     });
+   }
+   const parsed = result.data;
+
+4) Keep all pricing logic the same, but make sure breakdown returns the "addOns" cost as a number AND the selected flags:
+
+   const addOnsCost =
+     (parsed.addOns.metallicLeaf ? 45 : 0) +
+     (parsed.addOns.sugarFlorals ? 85 : 0) +
+     (parsed.addOns.ediblePrint ? 25 : 0) +
+     (parsed.addOns.topperCustom ? 30 : 0);
+
+   // use addOnsCost in subtotal and in the response breakdown:
+   let subtotal = base * mult + addOnsCost;
+
+   return res.json({
+     leadId: row.id,
+     servings,
+     deliveryFee,
+     total,
+     range: { low, high },
+     breakdown: {
+       base,
+       complexityMultiplier: mult,
+       addOnsCost,
+       selectedAddOns: parsed.addOns
+     }
+   });
+
+OUTPUT
+- Show the updated CalcInput schema with z.coerce for numbers/booleans.
+- Show the safeParse guard and the breakdown fields.
