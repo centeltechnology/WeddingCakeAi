@@ -24,6 +24,7 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful endpoints.
 - **Validation**: Zod schemas shared between client and server.
 - **Storage**: In-memory storage with an interface for future database integration.
+- **Security**: Helmet middleware with environment-aware CSP (disabled in development for Vite HMR, strict in production).
 
 ### Data Storage Solutions
 - **ORM**: Drizzle ORM for PostgreSQL.
@@ -62,6 +63,7 @@ Preferred communication style: Simple, everyday language.
 - **Calculator Leads Capture**: Automatic lead capture from the pricing calculator with customer confirmation emails, integrated with Sendy.
 - **Super Admin Dashboard**: Multi-tenant control, analytics (MRR, user growth), subscription management, baker impersonation, and baker management.
 - **Password Reset**: Complete password reset flow for baker accounts.
+- **Role-Based Navigation**: Dynamic navigation system with AppShell layout and Nav component. Shows role-specific links (baker: Invoices/Customers/Settings, admin: Tenants/Users). Features useMe hook for user context, error handling with visual feedback, and dark mode support.
 
 ### Development Architecture
 - **Build System**: Vite for frontend, ESBuild for server compilation.
