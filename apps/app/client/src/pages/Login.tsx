@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 export default function LoginPage() {
@@ -6,6 +6,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [checking, setChecking] = useState(true); // block UI until we know auth state
+
+  // smart redirect if already logged in
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { credentials: "include", cache: "no-store" });
+        const data = await res.json();
+        if (!cancelled && data?.authenticated) {
+          const params = new URLSearchParams(window.location.search);
+          const desired = params.get("redirect");
+          const target =
+            desired && desired.startsWith("/") ? desired :
+            "/baker/dashboard"; // legacy path; keep alias /dashboard available too
+          navigate(target, { replace: true });
+          return;
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,12 +44,13 @@ export default function LoginPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data?.ok) {
-      const target = data.redirect || "/dashboard";
-      navigate(target);
+      navigate(data.redirect || "/baker/dashboard");
     } else {
       setErr(data?.error || "Login failed");
     }
   }
+
+  if (checking) return <div style={{ padding: 24 }}>Checking session…</div>;
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
