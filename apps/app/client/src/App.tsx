@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -78,11 +78,28 @@ import ResetRequest from "@/pages/ResetRequest";
 import ResetConfirm from "@/pages/ResetConfirm";
 import { AppShell } from "@/components/AppShell";
 
+function RootGate() {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { credentials: "include", cache: "no-store" });
+        const data = await res.json();
+        const target = data?.authenticated ? "/baker/dashboard" : "/login";
+        navigate(target, { replace: true });
+      } catch {
+        navigate("/login", { replace: true });
+      }
+    })();
+  }, [navigate]);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/">
-        <Redirect to="/login" />
+        <RootGate />
       </Route>
       <Route path="/login" component={LoginPage} />
       <Route path="/reset" component={ResetRequest} />

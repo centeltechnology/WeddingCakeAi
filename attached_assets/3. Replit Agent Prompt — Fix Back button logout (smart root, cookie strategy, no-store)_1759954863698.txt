@@ -1,0 +1,137 @@
+You are my code editor/runner for BakerIQ (apps/app).
+Goal: Prevent apparent logout when using the browser Back button from the baker dashboard.
+
+We will:
+1) Make the root route ("/") SMART — it checks the session and sends you to /baker/dashboard when authenticated, else /login.
+2) Ensure the session cookie is sent in dev when client and API are on different origins (toggle SameSite/secure via env).
+3) Mark /api/session as no-store to avoid BFCache/stale responses.
+4) (Optional) Add Vite dev proxy for /api so the browser treats API calls as same-origin.
+
+# =========================
+# 0) Env toggles (set secrets)
+# =========================
+Add these env vars (Replit Secrets):
+- CROSS_SITE_COOKIES=true   # set true if client and API use DIFFERENT origins/ports in dev; false if same-origin or proxied
+- NODE_ENV=development      # prod builds will set NODE_ENV=production
+
+# =========================
+# 1) Server: cookie strategy + /api/session no-store
+# =========================
+Open apps/app/server/index.ts and update the session config:
+
+- Compute crossSite:
+  const crossSite = process.env.CROSS_SITE_COOKIES === "true";
+- Use:
+  app.use(session({
+    name: "sid",
+    store: new PgSession({ ...existing... }),
+    secret: process.env.SESSION_SECRET || "fallback_session_secret_for_development_only",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: crossSite ? "none" : "lax",
+      secure: crossSite || process.env.NODE_ENV === "production"
+    }
+  }));
+
+- Add no-store headers on the session probe endpoint:
+  app.get("/api/session", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const authed = Boolean((req.session as any)?.userId);
+    res.json({
+      authenticated: authed,
+      userId: authed ? (req.session as any).userId : null,
+      role: (req.session as any)?.role || null,
+      isImpersonating: Boolean((req.session as any)?.isImpersonating) || false
+    });
+  });
+
+# =========================
+# 2) Client: smart root redirect + always include credentials + no-store
+# =========================
+Edit apps/app/client/src/App.tsx:
+- Replace the "/" route logic. Instead of hard Redirect to "/login", create a small component that checks /api/session and redirects accordingly.
+
+Create (or inline) a RootGate component:
+
+-----------------------------------------
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+
+function RootGate() {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { credentials: "include", cache: "no-store" });
+        const data = await res.json();
+        const target = data?.authenticated ? "/baker/dashboard" : "/login";
+        navigate(target, { replace: true });
+      } catch {
+        navigate("/login", { replace: true });
+      }
+    })();
+  }, [navigate]);
+  return null;
+}
+-----------------------------------------
+
+In the router:
+- Change the root route to: <Route path="/"><RootGate /></Route>
+- Keep all other routes the same; ensure protected routes still use <AuthGuard>.
+
+Ensure every client fetch that checks auth/session uses:
+{ credentials: "include", cache: "no-store" }
+
+# =========================
+# 3) (Optional but recommended) Vite dev proxy for same-origin API
+# =========================
+If not already present, add a dev proxy so the browser sees /api as same-origin, which avoids cross-site cookie rules entirely.
+
+Edit/create apps/app/client/vite.config.ts:
+
+-----------------------------------------
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",    // adjust if your Express runs elsewhere
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+});
+-----------------------------------------
+
+If using a different port for the API, update target accordingly.
+After adding a proxy, you may set CROSS_SITE_COOKIES=false to use SameSite=lax and secure=false in dev.
+
+# =========================
+# 4) Tests to run
+# =========================
+- Restart servers (API and client).
+- Log in as demo@bakeriq.app / DemoPass123!
+- Navigate to /baker/dashboard.
+- Press the browser Back button:
+  EXPECTED: You land on "/" which immediately probes /api/session and sends you to /baker/dashboard (still authenticated).
+- Manually hit /login while authenticated:
+  If your UX prefers auto-redirect, you can optionally make /login also check /api/session and redirect to /baker/dashboard if already logged in.
+
+- If client and API are different origins and you KEEP CROSS_SITE_COOKIES=true:
+  Verify Set-Cookie has SameSite=None; Secure=true (dev can be https on Replit). Auth checks must pass on Back/Forward.
+
+# =========================
+# 5) Report
+# =========================
+Return:
+- Files edited (paths)
+- Current values for sameSite / secure as computed (log them once on server start)
+- Confirmation that Back now keeps you logged in
+- Whether a Vite proxy was added and if CROSS_SITE_COOKIES was set to true/false

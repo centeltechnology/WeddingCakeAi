@@ -313,6 +313,10 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
 
 // Session configuration - MUST come before other middleware that depends on sessions
 const PgSession = ConnectPgSimple(session);
+const crossSite = process.env.CROSS_SITE_COOKIES === "true";
+
+console.log(`🍪 Session cookie config: sameSite=${crossSite ? 'none' : 'lax'}, secure=${crossSite || process.env.NODE_ENV === 'production'}`);
+
 app.use(session({
   name: "sid", // Custom session cookie name
   store: new PgSession({
@@ -325,10 +329,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
-    sameSite: 'lax'
+    sameSite: crossSite ? 'none' : 'lax',
+    secure: crossSite || process.env.NODE_ENV === 'production'
   }
 }));
 
@@ -500,10 +504,13 @@ function hashToken(t: string) {
 
 // Session probe endpoint - check if user is authenticated
 app.get("/api/session", (req, res) => {
+  res.set("Cache-Control", "no-store");
   const authed = Boolean((req.session as any)?.userId);
   res.json({
     authenticated: authed,
     userId: authed ? (req.session as any).userId : null,
+    role: (req.session as any)?.role || null,
+    isImpersonating: Boolean((req.session as any)?.isImpersonating) || false
   });
 });
 
