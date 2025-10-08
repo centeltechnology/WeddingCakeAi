@@ -71,6 +71,7 @@ import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import LoginPage from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import BakerDashboardPage from "@/pages/BakerDashboard";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Redirect } from "wouter";
 
@@ -121,48 +122,11 @@ function Router() {
           </BakerAuthWrapper>
         )}
       </Route>
-      <Route path="/baker/dashboard" component={() => {
-        const [location, setLocation] = useLocation();
-        
-        useEffect(() => {
-          const redirectToDashboard = async () => {
-            const token = localStorage.getItem("baker_token");
-            if (!token) {
-              setLocation('/baker-login');
-              return;
-            }
-
-            try {
-              // Fetch authenticated baker info using JWT
-              const response = await fetch('/api/bakers/me', {
-                headers: {
-                  'x-baker-token': token
-                }
-              });
-
-              if (response.ok) {
-                const baker = await response.json();
-                setLocation(`/dashboard/${baker.id}`);
-              } else {
-                // Token invalid or expired
-                localStorage.removeItem('baker_token');
-                setLocation('/baker-login');
-              }
-            } catch (e) {
-              console.error('Error fetching baker info:', e);
-              setLocation('/baker-login');
-            }
-          };
-
-          redirectToDashboard();
-        }, [setLocation]);
-
-        return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        );
-      }} />
+      <Route path="/baker/dashboard">
+        <AuthGuard>
+          <BakerDashboardPage />
+        </AuthGuard>
+      </Route>
       <Route path="/baker-login" component={BakerLogin} />
       <Route path="/baker/forgot-password" component={BakerForgotPassword} />
       <Route path="/baker-forgot-password" component={BakerForgotPassword} />
