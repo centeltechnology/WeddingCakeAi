@@ -521,21 +521,12 @@ app.post("/api/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     
-    console.log('🔍 Login attempt:', { email, passwordLength: password?.length });
-    
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: "Email and password required" });
     }
 
     // Look up user by email (checking users table)
     const user = await databaseStorage.getUserByEmailOrUsername(email);
-    
-    console.log('👤 User lookup result:', { 
-      found: !!user, 
-      hasPassword: !!user?.passwordHash,
-      userId: user?.id,
-      userEmail: user?.email 
-    });
 
     if (!user || !user.passwordHash) {
       return res.status(401).json({ ok: false, error: "Invalid credentials" });
@@ -543,8 +534,6 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
     // Verify password using bcrypt
     const isValid = await databaseStorage.verifyPassword(password, user.passwordHash);
-    
-    console.log('🔐 Password verification:', { isValid });
     
     if (!isValid) {
       return res.status(401).json({ ok: false, error: "Invalid credentials" });
@@ -769,7 +758,10 @@ app.get("/api/app/invoices/due", ensureAuth, async (req, res) => {
   }
 });
 
-// OAuth routes for Accounts integration
+// OAuth routes for Accounts integration - DISABLED
+// These routes conflict with the React SPA login page
+// Commenting out to allow React Router to handle /login
+/*
 const ACCOUNTS = process.env.ACCOUNTS_BASE_URL || 'https://accounts.bakeriq.app';
 const SELF = process.env.APP_BASE_URL || process.env.MARKET_BASE_URL || '';
 
@@ -806,6 +798,7 @@ app.get('/me', async (req, res) => {
   if (!resp.ok) return res.status(401).json({ error: 'invalid_token', detail: me });
   res.json(me);
 });
+*/
 
 (async () => {
   const server = await registerRoutes(app);
