@@ -458,6 +458,71 @@ app.get("/api/app/me", ensureAuth, (req, res) => {
   });
 });
 
+// Dashboard stats endpoint - tenant-aware
+app.get("/api/app/stats", ensureAuth, async (req, res) => {
+  try {
+    const userId = (req.session as any).userId;
+    const userEmail = (req.session as any).email;
+    
+    // Get baker and tenant info by email
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const tenantId = baker.tenantId;
+    const bakerId = baker.id;
+    
+    // Get stats with tenant filtering
+    const stats = await databaseStorage.getDashboardStats(tenantId, bakerId);
+    
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
+// Recent messages endpoint - tenant-aware
+app.get("/api/app/recent/messages", ensureAuth, async (req, res) => {
+  try {
+    const userId = (req.session as any).userId;
+    const userEmail = (req.session as any).email;
+    const limit = parseInt(req.query.limit as string) || 5;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const messages = await databaseStorage.getRecentMessages(baker.tenantId, baker.id, limit);
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching recent messages:", error);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+// Invoices due endpoint - tenant-aware
+app.get("/api/app/invoices/due", ensureAuth, async (req, res) => {
+  try {
+    const userId = (req.session as any).userId;
+    const userEmail = (req.session as any).email;
+    const limit = parseInt(req.query.limit as string) || 5;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const invoices = await databaseStorage.getInvoicesDue(baker.tenantId, baker.id, limit);
+    res.json(invoices);
+  } catch (error) {
+    console.error("Error fetching invoices due:", error);
+    res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+});
+
 // OAuth routes for Accounts integration
 const ACCOUNTS = process.env.ACCOUNTS_BASE_URL || 'https://accounts.bakeriq.app';
 const SELF = process.env.APP_BASE_URL || process.env.MARKET_BASE_URL || '';

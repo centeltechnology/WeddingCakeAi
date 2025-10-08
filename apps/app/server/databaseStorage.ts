@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, sql, desc } from "drizzle-orm";
 import { db } from "./db";
-import { users, bakers, bookings, quoteTemplates, type Booking, type InsertBooking, type QuoteTemplate, type InsertQuoteTemplate } from "@shared/schema";
+import { users, bakers, bookings, quoteTemplates, leads, quotes, invoices, contracts, conversationMessages, customers, type Booking, type InsertBooking, type QuoteTemplate, type InsertQuoteTemplate } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { generateUniqueSlug } from "./utils";
 import { randomUUID } from "crypto";
@@ -418,6 +418,157 @@ export class DatabaseStorage {
       console.error(`Error deleting quote template ${id}:`, error);
       return false;
     }
+  }
+
+  // Dashboard stats methods
+  async getBakerByEmail(email: string) {
+    const [baker] = await db
+      .select()
+      .from(bakers)
+      .where(eq(bakers.email, email))
+      .limit(1);
+    return baker;
+  }
+
+  async getDashboardStats(tenantId: string, bakerId: string) {
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Leads created today
+    const [leadsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.tenantId, tenantId),
+          eq(leads.bakerId, bakerId),
+          gte(leads.createdAt, today)
+        )
+      );
+
+    // Quotes with status 'sent' or 'viewed' (pending)
+    const [quotesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(quotes)
+      .where(
+        and(
+          eq(quotes.tenantId, tenantId),
+          eq(quotes.bakerId, bakerId),
+          sql`${quotes.status} IN ('sent', 'viewed')`
+        )
+      );
+
+    // Invoices that are not paid and due within 14 days
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 14);
+    
+    const [invoicesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.tenantId, tenantId),
+          eq(invoices.bakerId, bakerId),
+          sql`${invoices.status} != 'paid'`,
+          sql`${invoices.dueDate} <= ${futureDate.toISOString().split('T')[0]}`
+        )
+      );
+
+    // Contracts awaiting signature (status = 'sent')
+    const [contractsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contracts)
+      .where(
+        and(
+          eq(contracts.tenantId, tenantId),
+          eq(contracts.bakerId, bakerId),
+          eq(contracts.status, 'sent')
+        )
+      );
+
+    return {
+      leadsToday: leadsResult?.count || 0,
+      quotesPending: quotesResult?.count || 0,
+      invoicesDue: invoicesResult?.count || 0,
+      contractsAwaitingSignature: contractsResult?.count || 0,
+    };
+  }
+
+  async getRecentMessages(tenantId: string, bakerId: string, limit: number = 5) {
+    // Get recent conversation messages
+    const messages = await db
+      .select({
+        id: conversationMessages.id,
+        content: conversationMessages.content,
+        senderName: conversationMessages.senderName,
+        senderType: conversationMessages.senderType,
+        createdAt: conversationMessages.createdAt,
+      })
+      .from(conversationMessages)
+      .where(eq(conversationMessages.tenantId, tenantId))
+      .orderBy(desc(conversationMessages.createdAt))
+      .limit(limit);
+
+    return messages.map(msg => ({
+      id: msg.id,
+      name: msg.senderName || 'Unknown',
+      snippet: msg.content?.substring(0, 100) || '',
+      time: msg.createdAt,
+    }));
+  }
+
+  async getInvoicesDue(tenantId: string, bakerId: string, limit: number = 5) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 14);
+
+    const invoicesList = await db
+      .select({
+        id: invoices.id,
+        invoiceNumber: invoices.invoiceNumber,
+        title: invoices.title,
+        total: invoices.total,
+        dueDate: invoices.dueDate,
+        status: invoices.status,
+        customerId: invoices.customerId,
+      })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.tenantId, tenantId),
+          eq(invoices.bakerId, bakerId),
+          sql`${invoices.status} != 'paid'`,
+          sql`${invoices.dueDate} <= ${futureDate.toISOString().split('T')[0]}`
+        )
+      )
+      .orderBy(invoices.dueDate)
+      .limit(limit);
+
+    // Get customer names for each invoice
+    const results = await Promise.all(
+      invoicesList.map(async (invoice) => {
+        let customerName = 'Unknown Customer';
+        if (invoice.customerId) {
+          const [customer] = await db
+            .select({ name: customers.name })
+            .from(customers)
+            .where(eq(customers.id, invoice.customerId))
+            .limit(1);
+          if (customer) customerName = customer.name;
+        }
+
+        return {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          dueDate: invoice.dueDate,
+          amount: invoice.total,
+          customer: customerName,
+          status: invoice.status,
+        };
+      })
+    );
+
+    return results;
   }
 }
 
