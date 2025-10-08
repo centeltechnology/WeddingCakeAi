@@ -1,0 +1,61 @@
+Create a tiny demo page so we can verify the flow; your real calculator can post the same way.
+
+applypatch <<'PATCH'
+*** Begin Patch
+*** Update File: apps/app/server/index.ts
+@@
+// ensure JSON parsing exists:
+// app.use(express.json());
+
+// serve a simple calc page
+import path from "node:path";
+import express from "express";
+const PUB = path.join(process.cwd(), "apps/app/public");
+app.use("/calc", express.static(PUB));
+app.get("/calc/cake", (_req, res) => {
+  res.sendFile(path.join(PUB, "calc-cake.html"));
+});
+*** End Patch
+PATCH
+
+mkdir -p apps/app/public
+cat > apps/app/public/calc-cake.html <<'HTML'
+<!doctype html><meta charset="utf-8">
+<title>Cake Quote (demo)</title>
+<h1>Cake Quote (demo)</h1>
+<form id="f">
+  <input name="vendorId" placeholder="vendor id" value="demo-vendor" required><br>
+  <input name="name" placeholder="your name" required><br>
+  <input name="email" type="email" placeholder="email" required><br>
+  <input name="tiers" type="number" placeholder="tiers" value="3" required><br>
+  <input name="servings" type="number" placeholder="servings" value="120" required><br>
+  <button>Send quote</button>
+</form>
+<pre id="out"></pre>
+<script>
+const APP = location.origin; // this page is served from app.bakeriq.app
+const ret = new URLSearchParams(location.search).get("return") || (APP + "/health");
+document.getElementById("f").onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    vendorId: fd.get("vendorId"),
+    category: "baker",
+    name: fd.get("name"),
+    email: fd.get("email"),
+    details: { cake: { tiers: +fd.get("tiers"), servings: +fd.get("servings") } }
+  };
+  const r = await fetch(APP + "/public/lead", {
+    method:"POST",
+    headers:{ "content-type":"application/json", "x-lead-source":"market:cake-calc" },
+    body: JSON.stringify(payload)
+  });
+  const j = await r.json();
+  document.getElementById("out").textContent = JSON.stringify(j,null,2);
+  if (j.ok) setTimeout(()=>location.href = ret, 700);
+};
+</script>
+HTML
+
+npm --workspace apps/app run build && npm --workspace apps/app run start
+echo "Open: https://app.bakeriq.app/calc/cake?return=https%3A%2F%2Fmarket.bakeriq.app%2Fv%2Fdemo-vendor"

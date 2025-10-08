@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
 import cookieParser from "cookie-parser";
+import path from "node:path";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -322,6 +323,13 @@ const health = (endpoint: string) => (_req: any, res: any) => res.json({ ok: tru
 app.get('/health',     health('/health'));
 app.get('/api/health', health('/api/health'));
 app.get('/healthz',    health('/healthz')); // alias for non-custom domains
+
+// serve a simple calc page
+const PUB = path.join(process.cwd(), "public");
+app.use("/calc", express.static(PUB));
+app.get("/calc/cake", (_req, res) => {
+  res.sendFile(path.join(PUB, "calc-cake.html"));
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
