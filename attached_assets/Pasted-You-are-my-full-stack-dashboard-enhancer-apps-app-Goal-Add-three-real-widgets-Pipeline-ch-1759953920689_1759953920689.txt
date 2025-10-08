@@ -1,0 +1,76 @@
+You are my full-stack dashboard enhancer (apps/app).
+
+Goal: Add three real widgets:
+- Pipeline chart (quotes by status)
+- Revenue MTD (sum of paid transactions this month vs last)
+- Task list (light CRUD)
+
+# 1) Install client chart lib
+- cd apps/app/client && npm i recharts
+
+# 2) Server endpoints (tenant-scoped)
+Edit apps/app/server/index.ts (protected with ensureAuth):
+A) GET /api/app/charts/pipeline
+   Returns: [{ status:"draft", count: N }, { status:"sent", ...}, { status:"accepted", ...}, { status:"rejected", ...}]
+   Query quotes where tenant_id matches current baker’s tenant; group by status.
+
+B) GET /api/app/stats/revenue-mtd
+   Returns: { current: number, previous: number, deltaPct: number }
+   - current: SUM(transactions.amount) where status='succeeded' and created_at >= date_trunc('month', now())
+   - previous: SUM for last month
+   - deltaPct = ((current - previous)/NULLIF(previous,0))*100 (handle division by zero)
+
+C) Tasks (new table)
+Create migration apps/app/migrations/006_tasks.sql:
+------------------------------------------------
+BEGIN;
+CREATE TABLE IF NOT EXISTS tasks (
+  id          TEXT PRIMARY KEY,
+  tenant_id   TEXT NOT NULL,
+  user_id     TEXT NOT NULL,
+  title       TEXT NOT NULL,
+  due_date    TIMESTAMPTZ,
+  status      TEXT NOT NULL DEFAULT 'open',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT fk_tasks_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+  CONSTRAINT fk_tasks_user   FOREIGN KEY (user_id)   REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_tasks_tenant_status ON tasks(tenant_id, status);
+COMMIT;
+------------------------------------------------
+Run it.
+Add endpoints:
+- GET /api/app/tasks?status=open (list)
+- POST /api/app/tasks { title, dueDate } (create; id = uuid)
+- POST /api/app/tasks/:id/complete (mark status='done')
+All queries must enforce tenant_id from session/baker.
+
+# 3) Client widgets
+Create apps/app/client/src/components/PipelineChart.tsx:
+- Fetch /api/app/charts/pipeline; render BarChart (Recharts): status on X, count on Y.
+
+Create apps/app/client/src/components/RevenueStat.tsx:
+- Fetch /api/app/stats/revenue-mtd; render current total and small deltaPct caption.
+
+Create apps/app/client/src/components/TaskList.tsx:
+- Fetch open tasks; render list with checkbox to complete.
+- Small form to add a task (POST); refresh list.
+
+Update apps/app/client/src/pages/BakerDashboard.tsx:
+- Compose:
+  • Top: <RevenueStat />
+  • Left: <PipelineChart />
+  • Right: <TaskList />
+- Keep basic responsive layout (stack on mobile).
+
+# 4) Tests
+- Run both migrations (005, 006).
+- Call API endpoints; show sample JSON.
+- Verify widgets render with empty-state gracefully (no crashes).
+
+Return:
+- Files created/edited
+- Migration results
+- Example API responses (sanitized)
+- Screenshot note of the dashboard with three widgets
