@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import path from "node:path";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
@@ -13,6 +15,12 @@ const app = express();
 
 // Trust proxy for HTTPS enforcement behind Replit proxy
 app.set('trust proxy', 1);
+
+// Security headers - must come early
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
 app.use((req, res, next) => {
   if (req.headers['x-forwarded-proto'] === 'http') {
     const url = `https://${req.headers.host}${req.url}`;
@@ -386,8 +394,17 @@ app.get("/api/session", (req, res) => {
   });
 });
 
+// Rate limiter for login endpoint - prevent brute force attacks
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: { ok: false, error: "Too many login attempts, please try again later" }
+});
+
 // Login endpoint using session authentication
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     
