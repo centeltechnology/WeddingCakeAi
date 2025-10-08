@@ -1,4 +1,5 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { resetEmail } from "./emails/resetEmail";
 
 const isProd = process.env.NODE_ENV === "production";
 const ses = new SESv2Client({
@@ -9,32 +10,66 @@ const ses = new SESv2Client({
   } : undefined,
 });
 
-export async function sendResetEmail(to: string, link: string) {
+interface SendMailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+/**
+ * Generic email sender using AWS SES v2
+ * Falls back to console logging in dev if AWS credentials are missing
+ */
+export async function sendMail({ to, subject, html, text }: SendMailOptions) {
   const from = process.env.SES_FROM || "no-reply@bakeriq.app";
-  const Subject = "Reset your BakerIQ password";
-  const Text = `Tap the link to reset your password (valid for 30 minutes): ${link}`;
-  const Html = `
-    <div style="font-family:Inter,Arial,sans-serif">
-      <h2>Reset your BakerIQ password</h2>
-      <p>This link is valid for 30 minutes and can be used once.</p>
-      <p><a href="${link}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Reset Password</a></p>
-      <p>If you didn't request this, ignore this email.</p>
-    </div>`;
 
   // Dev fallback: log to console
   if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-    console.log("[DEV email] To:", to, "Link:", link);
+    console.log("[DEV email]");
+    console.log("  To:", to);
+    console.log("  Subject:", subject);
+    console.log("\n--- Text Version ---");
+    console.log(text);
+    console.log("\n--- HTML Version ---");
+    console.log(html);
+    console.log("--- End Email ---\n");
     return;
   }
 
-  await ses.send(new SendEmailCommand({
-    FromEmailAddress: from,
-    Destination: { ToAddresses: [to] },
-    Content: {
-      Simple: {
-        Subject: { Data: Subject },
-        Body: { Text: { Data: Text }, Html: { Data: Html } }
+  try {
+    await ses.send(new SendEmailCommand({
+      FromEmailAddress: from,
+      Destination: { ToAddresses: [to] },
+      Content: {
+        Simple: {
+          Subject: { Data: subject },
+          Body: { Text: { Data: text }, Html: { Data: html } }
+        }
       }
+    }));
+    console.log(`[Email sent] To: ${to}, Subject: ${subject}`);
+  } catch (error) {
+    console.error("[Email error]", error);
+    // In dev mode, still log the email content for debugging
+    if (!isProd) {
+      console.log("[DEV email fallback]");
+      console.log("  To:", to);
+      console.log("  Subject:", subject);
+      console.log("\n--- Text Version ---");
+      console.log(text);
+      console.log("\n--- HTML Version ---");
+      console.log(html);
+      console.log("--- End Email ---\n");
     }
-  }));
+    throw error; // Re-throw so caller can handle
+  }
+}
+
+/**
+ * Send password reset email with branded template
+ */
+export async function sendResetEmail(to: string, link: string) {
+  const { subject, html, text } = resetEmail({ link });
+  await sendMail({ to, subject, html, text });
 }
