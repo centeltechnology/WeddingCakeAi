@@ -77,6 +77,7 @@ import { Redirect } from "wouter";
 import ResetRequest from "@/pages/ResetRequest";
 import ResetConfirm from "@/pages/ResetConfirm";
 import { AppShell } from "@/components/AppShell";
+import AdminImpersonate from "@/pages/AdminImpersonate";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -145,6 +146,11 @@ function Router() {
             <BakerDashboard bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />
           </BakerAuthWrapper>
         )}
+      </Route>
+      <Route path="/admin/impersonate">
+        <AuthGuard>
+          <AdminImpersonate />
+        </AuthGuard>
       </Route>
       <Route path="/baker/dashboard">
         <AuthGuard>

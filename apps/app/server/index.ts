@@ -502,6 +502,33 @@ function hashToken(t: string) {
   return crypto.createHash("sha256").update(t).digest("hex"); 
 }
 
+// Role-based access control middleware
+function requireRole(...roles: string[]) {
+  return (req: any, res: any, next: any) => {
+    const r = req.session?.role || "viewer";
+    if (roles.includes(r)) return next();
+    return res.status(403).json({ ok: false, error: "Forbidden" });
+  };
+}
+
+// Audit helper for logging important events
+async function audit(eventType: string, payload: Record<string, any> = {}, req?: any) {
+  try {
+    const { activityLogs } = await import("@shared/schema");
+    await db.insert(activityLogs).values({
+      tenantId: payload.tenantId || null,
+      userId: payload.actorUserId || null,
+      actor: payload.actorEmail || payload.actorUserId || 'system',
+      entityType: payload.entityType || 'user',
+      action: eventType,
+      metadata: payload,
+    });
+    console.log("[AUDIT]", { eventType, payload, ip: req?.ip, ua: req?.headers?.["user-agent"] });
+  } catch (e) {
+    console.error("Audit error", e);
+  }
+}
+
 // Session probe endpoint - check if user is authenticated
 app.get("/api/session", (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -510,7 +537,8 @@ app.get("/api/session", (req, res) => {
     authenticated: authed,
     userId: authed ? (req.session as any).userId : null,
     role: (req.session as any)?.role || null,
-    isImpersonating: Boolean((req.session as any)?.isImpersonating) || false
+    isImpersonating: Boolean((req.session as any)?.isImpersonating) || false,
+    impersonatorId: (req.session as any)?.impersonatorId || null
   });
 });
 
@@ -575,6 +603,145 @@ app.post("/api/logout", (req, res) => {
     res.clearCookie("sid");
     res.json({ ok: true });
   });
+});
+
+// ========================================
+// ADMIN IMPERSONATION
+// ========================================
+
+// Start impersonation (admin-only)
+app.post("/api/admin/impersonate", ensureAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const { targetUserId, targetEmail } = req.body;
+    const session = req.session as any;
+    
+    // Prevent nested impersonation
+    if (session.isImpersonating) {
+      return res.status(400).json({ ok: false, error: "Already impersonating. Exit current impersonation first." });
+    }
+    
+    // Lookup target user
+    let targetUser;
+    if (targetUserId) {
+      targetUser = await databaseStorage.getUserById(targetUserId);
+    } else if (targetEmail) {
+      targetUser = await databaseStorage.getUserByEmailOrUsername(targetEmail);
+    } else {
+      return res.status(400).json({ ok: false, error: "targetUserId or targetEmail required" });
+    }
+    
+    if (!targetUser) {
+      return res.status(404).json({ ok: false, error: "Target user not found" });
+    }
+    
+    // Safety: block impersonating super_admin users
+    if (targetUser.role === 'super_admin') {
+      return res.status(403).json({ ok: false, error: "Cannot impersonate super admin users" });
+    }
+    
+    // Save current session to backup
+    session.backup = {
+      userId: session.userId,
+      email: session.email,
+      role: session.role,
+      tenantId: session.tenantId || null,
+      bakerId: session.bakerId || null
+    };
+    
+    session.impersonatorId = session.userId;
+    session.impersonatorRole = session.role;
+    
+    // Clear tenant/baker context before switching
+    session.tenantId = null;
+    session.bakerId = null;
+    
+    // Switch to target user's session
+    session.userId = targetUser.id;
+    session.email = targetUser.email;
+    session.role = targetUser.role || 'baker';
+    session.isImpersonating = true;
+    
+    // Try to find tenantId and bakerId for target user
+    try {
+      const profiles = await db.query.profiles.findMany({
+        where: (profiles, { eq }) => eq(profiles.userId, targetUser.id)
+      });
+      if (profiles.length > 0) {
+        session.tenantId = profiles[0].tenantId;
+      }
+      
+      const bakers = await db.query.bakers.findMany({
+        where: (bakers, { eq }) => eq(bakers.email, targetUser.email)
+      });
+      if (bakers.length > 0) {
+        session.bakerId = bakers[0].id;
+      }
+    } catch (lookupError) {
+      console.error('Error looking up tenant/baker:', lookupError);
+    }
+    
+    // Audit log
+    await audit("impersonation_start", {
+      actorUserId: session.impersonatorId,
+      actorEmail: session.backup.email,
+      targetUserId: targetUser.id,
+      targetEmail: targetUser.email,
+      tenantId: session.tenantId || null,
+      entityType: 'user'
+    }, req);
+    
+    return res.json({
+      ok: true,
+      target: {
+        id: targetUser.id,
+        email: targetUser.email,
+        role: targetUser.role
+      },
+      isImpersonating: true
+    });
+  } catch (error) {
+    console.error('Impersonation start error:', error);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// Stop impersonation
+app.post("/api/admin/impersonate/stop", ensureAuth, async (req, res) => {
+  try {
+    const session = req.session as any;
+    
+    if (!session.isImpersonating || !session.backup) {
+      return res.status(400).json({ ok: false, error: "Not currently impersonating" });
+    }
+    
+    const restoredFromUserId = session.userId;
+    
+    // Restore original session
+    session.userId = session.backup.userId;
+    session.email = session.backup.email;
+    session.role = session.backup.role;
+    session.tenantId = session.backup.tenantId;
+    session.bakerId = session.backup.bakerId;
+    
+    // Clear impersonation fields
+    const impersonatorId = session.impersonatorId;
+    delete session.isImpersonating;
+    delete session.impersonatorId;
+    delete session.impersonatorRole;
+    delete session.backup;
+    
+    // Audit log
+    await audit("impersonation_stop", {
+      actorUserId: impersonatorId,
+      restoredFromUserId,
+      entityType: 'user'
+    }, req);
+    
+    return res.json({ ok: true, isImpersonating: false });
+  } catch (error) {
+    console.error('Impersonation stop error:', error);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
 });
 
 // Password reset: request reset link

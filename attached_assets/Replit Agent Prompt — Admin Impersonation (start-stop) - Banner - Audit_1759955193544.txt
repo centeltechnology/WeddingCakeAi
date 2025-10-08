@@ -1,0 +1,223 @@
+You are my code editor/runner for BakerIQ (apps/app).
+Goal: Add an admin-only impersonation feature to QA tenant dashboards.
+- Admin can impersonate a target user (by userId or email).
+- Session tracks impersonation and can be reverted.
+- UI shows an “Impersonating …” banner with Exit button.
+- All events audited to activity_logs.
+
+# =========================
+# 0) Paths & assumptions
+# =========================
+- Server: apps/app/server/index.ts  (Express)
+- DB:     apps/app/server/db.ts + existing Drizzle schema helpers
+- Client: apps/app/client (Vite + React + Wouter)
+- Session fields in use today: userId, role, (maybe tenantId/bakerId)
+- We already have ensureAuth and (optionally) requireRole('admin'). If not, add requireRole.
+- activity_logs table exists and is tenant-linked; if not, fallback to console.log.
+
+If any files live elsewhere, adapt and report.
+
+# =========================
+# 1) Server utilities (authz + audit)
+# =========================
+Open apps/app/server/index.ts and ensure we have:
+
+A) A role guard
+-----------------------------------------
+function requireRole(...roles: string[]) {
+  return (req: any, res: any, next: any) => {
+    const r = req.session?.role || "viewer";
+    if (roles.includes(r)) return next();
+    return res.status(403).json({ ok:false, error:"Forbidden" });
+  };
+}
+-----------------------------------------
+
+B) Audit helper (best-effort)
+If we have a Drizzle db + activity_logs model, use it; otherwise stub.
+
+Add near the top (adjust import names if needed):
+-----------------------------------------
+async function audit(eventType: string, payload: Record<string, any> = {}, req?: any) {
+  try {
+    // If you have a typed activity_logs table, swap below with insert via Drizzle
+    // Example:
+    // await db.insert(activityLogs).values({
+    //   id: crypto.randomUUID(),
+    //   event_type: eventType,
+    //   tenant_id: payload.tenantId || null,
+    //   actor_user_id: payload.actorUserId || null,
+    //   target_user_id: payload.targetUserId || null,
+    //   ip: req?.ip,
+    //   user_agent: req?.headers['user-agent'] || null,
+    //   metadata: JSON.stringify(payload),
+    // });
+
+    console.log("[AUDIT]", { eventType, payload, ip: req?.ip, ua: req?.headers?.["user-agent"] });
+  } catch (e) {
+    console.error("Audit error", e);
+  }
+}
+-----------------------------------------
+
+# =========================
+# 2) Session shape & safety
+# =========================
+We’ll store impersonation in the session:
+- session.isImpersonating: boolean
+- session.impersonatorId: string (admin user id)
+- session.impersonatorRole: string
+- session.backup: { userId, role, tenantId?, bakerId? }
+
+Add TS hints or just use (req.session as any).
+
+# =========================
+# 3) Endpoints
+# =========================
+
+## 3A) Start impersonation (admin-only)
+Create POST /api/admin/impersonate
+Body accepts ONE of:
+- { targetUserId: "..." }  OR  { targetEmail: "example@x.com" }
+
+Steps:
+1) ensureAuth + requireRole('admin')
+2) lookup target user by id OR email
+3) block impersonating users with role 'super_admin' (safety)
+4) Save current session snapshot to session.backup + set impersonatorId/Role
+5) Set session.userId/role (and tenantId/bakerId if resolvable) to target’s
+6) session.isImpersonating=true
+7) audit("impersonation_start", { actorUserId, targetUserId, tenantId })
+8) return { ok:true, target:{ id,email,role }, isImpersonating:true }
+
+## 3B) Stop impersonation
+Create POST /api/admin/impersonate/stop
+Steps:
+1) ensureAuth
+2) If !session.isImpersonating or no backup → 400
+3) Restore session.userId/role/(tenantId/bakerId) from backup
+4) Clear isImpersonating/impersonator fields/backup
+5) audit("impersonation_stop", { actorUserId, restoredFromUserId })
+6) return { ok:true, isImpersonating:false }
+
+Implement both endpoints now, using your existing Drizzle accessors for users/bakers/tenants if available. Use best-guess table/field names, and report any adaptations.
+
+Also, augment GET /api/session response (if it exists) to include:
+{ authenticated, userId, role, tenantId?, isImpersonating, impersonatorId? }
+
+# =========================
+# 4) Client — Banner + Exit button
+# =========================
+Create apps/app/client/src/components/ImpersonationBanner.tsx:
+-----------------------------------------
+import { useEffect, useState } from "react";
+
+export default function ImpersonationBanner() {
+  const [state, setState] = useState<{ isImpersonating?: boolean } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { credentials: "include" });
+        const data = await res.json();
+        setState({ isImpersonating: Boolean(data?.isImpersonating) });
+      } catch {
+        setState({ isImpersonating: false });
+      }
+    })();
+  }, []);
+
+  if (!state?.isImpersonating) return null;
+
+  async function exit() {
+    await fetch("/api/admin/impersonate/stop", { method:"POST", credentials:"include" });
+    location.replace("/admin/users"); // adjust target if you have a specific admin page
+  }
+
+  return (
+    <div style={{
+      background:"#FFE8CC", border:"1px solid #FF6A00",
+      padding:"8px 12px", display:"flex", gap:12, alignItems:"center",
+      justifyContent:"space-between", fontSize:14
+    }}>
+      <span>⚠️ You are <b>impersonating</b> another user. Actions you take may affect their tenant.</span>
+      <button onClick={exit} style={{border:"1px solid #FF6A00", padding:"6px 10px", borderRadius:8, background:"#fff"}}>
+        Exit impersonation
+      </button>
+    </div>
+  );
+}
+-----------------------------------------
+
+Add it to your app shell so it appears on protected pages:
+- If you have apps/app/client/src/components/AppShell.tsx, import and render <ImpersonationBanner /> at the very top.
+- If not, open apps/app/client/src/pages/BakerDashboard.tsx and apps/app/client/src/pages/Dashboard.tsx and render it at the top until AppShell exists.
+
+# =========================
+# 5) Optional Admin UI helper (dev only)
+# =========================
+For convenience, add a small dev-only form to trigger impersonation by email.
+
+Create apps/app/client/src/pages/AdminImpersonate.tsx (route: /admin/impersonate):
+-----------------------------------------
+import { useState } from "react";
+
+export default function AdminImpersonate() {
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState("");
+
+  async function start(e: React.FormEvent) {
+    e.preventDefault(); setMsg("");
+    const res = await fetch("/api/admin/impersonate", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      credentials:"include",
+      body: JSON.stringify({ targetEmail: email })
+    });
+    const data = await res.json().catch(()=>({}));
+    if (res.ok && data?.ok) {
+      setMsg("Impersonation started.");
+      location.replace("/baker/dashboard");
+    } else {
+      setMsg(data?.error || "Failed");
+    }
+  }
+
+  return (
+    <div style={{ padding:24 }}>
+      <h2>Admin: Impersonate by Email</h2>
+      <form onSubmit={start} style={{ display:"flex", gap:8 }}>
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="target@example.com"
+               style={{ padding:8, border:"1px solid #ccc", borderRadius:6 }} />
+        <button style={{ padding:"8px 12px" }}>Impersonate</button>
+      </form>
+      {msg && <div style={{ marginTop:12 }}>{msg}</div>}
+    </div>
+  );
+}
+-----------------------------------------
+
+Wire the route in apps/app/client/src/App.tsx (admin-only page; still behind AuthGuard + requireRole enforcement at API level):
+- <Route path="/admin/impersonate"><AuthGuard><AdminImpersonate /></AuthGuard></Route>
+
+# =========================
+# 6) Tests
+# =========================
+- Seed an admin user (role='admin') if missing.
+- As admin, call POST /api/admin/impersonate with a target baker email:
+  Expect { ok:true, isImpersonating:true, target:{...} }
+- Hit /api/session: expect isImpersonating:true and impersonatorId present.
+- Visit /baker/dashboard: should load as target user (tenant-scoped).
+- Click “Exit impersonation” in banner: expect POST /api/admin/impersonate/stop → { ok:true }
+- Hit /api/session again: isImpersonating:false and original admin restored.
+- Verify audit logs print (or insert) for start/stop.
+
+# =========================
+# 7) Report
+# =========================
+Return:
+- Files created/edited (paths)
+- /api/admin/impersonate and /api/admin/impersonate/stop sample responses
+- /api/session response (showing isImpersonating flag) before/after stop
+- Where the ImpersonationBanner was injected
+- Any adaptations to table/column names for user lookup
