@@ -1,0 +1,71 @@
+You are implementing Zod schemas for AI endpoints.
+
+FILES
+- apps/app/server/routes/ai/schemas/leads.schema.ts
+- apps/app/server/routes/ai/schemas/quotes.schema.ts
+- apps/app/server/routes/ai/schemas/marketing.schema.ts
+
+CODE (leads.schema.ts):
+------------------------------------------------
+import { z } from "zod";
+
+export const LeadAutoResponderInput = z.object({
+  bakeryName: z.string().min(1),
+  customerName: z.string().optional(),
+  eventType: z.string().optional(),
+  eventDate: z.string().optional(),
+  guestCount: z.coerce.number().int().min(1).optional(),
+  styleNotes: z.string().optional(),
+  tone: z.enum(["friendly","formal","lux","casual"]).default("friendly"),
+  emailSignature: z.string().optional(),
+});
+
+export const LeadScoreInput = z.object({
+  eventDate: z.string().optional(),
+  budgetBand: z.enum(["low","mid","high"]).optional(),
+  guestCount: z.coerce.number().int().min(1).optional(),
+  distanceMiles: z.coerce.number().min(0).optional(),
+  specialRequests: z.string().optional(),
+});
+------------------------------------------------
+
+CODE (quotes.schema.ts):
+------------------------------------------------
+import { z } from "zod";
+
+export const SuggestPriceInput = z.object({
+  guestCount: z.coerce.number().int().min(5),
+  icing: z.enum(["buttercream","fondant"]),
+  complexity: z.enum(["basic","standard","premium","couture"]).default("standard"),
+  addOns: z.object({
+    metallicLeaf: z.boolean().optional().default(false),
+    sugarFlorals: z.boolean().optional().default(false),
+    ediblePrint: z.boolean().optional().default(false),
+    topperCustom: z.boolean().optional().default(false),
+  }).default({}),
+  deliveryMiles: z.coerce.number().min(0).default(0),
+  notes: z.string().optional(),
+});
+------------------------------------------------
+
+CODE (marketing.schema.ts):
+------------------------------------------------
+import { z } from "zod";
+
+export const CaptionInput = z.object({
+  tags: z.array(z.string()).min(1),
+  tone: z.enum(["friendly","elegant","playful","lux"]).default("elegant"),
+  hashtags: z.boolean().default(true),
+  maxChars: z.coerce.number().min(60).max(2200).default(280),
+});
+
+export const CopyInput = z.object({
+  section: z.enum(["about","email_signature","promo","seo_meta"]),
+  context: z.string().optional(),
+  tone: z.enum(["friendly","formal","elegant","lux","playful"]).default("friendly"),
+  maxChars: z.coerce.number().min(60).max(2000).default(400),
+});
+------------------------------------------------
+
+OUTPUT
+- Confirm three files saved with line counts.
