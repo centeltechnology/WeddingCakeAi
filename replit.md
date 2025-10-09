@@ -62,6 +62,7 @@ Preferred communication style: Simple, everyday language.
 - **Dark Mode**: ThemeToggle component with Light/Dark/System options.
 - **Email Campaign Management**: Super admin system for sending segmented email campaigns to bakers.
 - **Calculator Leads Capture**: Automatic lead capture from the pricing calculator with customer confirmation emails, integrated with Sendy.
+- **Advertiser Network**: Complete lead rental system with advertiser accounts, credit management, campaign creation with advanced targeting (geo, dates, budgets, interests), and automated sending via AWS SES. Includes preflight audience counting, credit ledger, frequency caps (7-day network-wide, 30-day per-advertiser), tracking (opens/clicks), and secure unsubscribe with SHA-256 token hashing.
 - **Super Admin Dashboard**: Multi-tenant control, analytics (MRR, user growth), subscription management, baker impersonation, and baker management.
 - **Password Reset**: Complete password reset flow for baker accounts with rate limiting (20 req/10min) and daily cleanup job (2 AM) for expired tokens.
 - **Role-Based Navigation**: Dynamic navigation system with AppShell layout and Nav component. Shows role-specific links (baker: Invoices/Customers/Settings, admin: Tenants/Users). Features useMe hook for user context, error handling with visual feedback, and dark mode support.
