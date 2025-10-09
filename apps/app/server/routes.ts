@@ -7997,6 +7997,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ====== PUBLIC SHORTLINKS ======
+  
+  // GET /q/:id - Redirect to quote approval page
+  app.get('/q/:id', async (req, res) => {
+    try {
+      const quoteId = req.params.id;
+      const quote = await storage.getQuote(quoteId);
+      
+      if (!quote) {
+        return res.status(404).send('Quote not found');
+      }
+
+      // If no approval token exists or it's expired, generate a new one
+      if (!quote.approvalToken || (quote.approvalTokenExpiresAt && new Date(quote.approvalTokenExpiresAt) < new Date())) {
+        const { token } = await storage.generateQuoteApprovalToken(quoteId, 30);
+        console.log(`[Shortlink] Generated new approval token for quote ${quoteId}`);
+        return res.redirect(302, `/quote-approval/${token}`);
+      }
+
+      console.log(`[Shortlink] Redirecting to existing quote approval ${quote.approvalToken}`);
+      res.redirect(302, `/quote-approval/${quote.approvalToken}`);
+    } catch (error) {
+      console.error('[Shortlink] Error processing quote shortlink:', error);
+      res.status(500).send('Error processing quote link');
+    }
+  });
+
+  // GET /c/:id - Redirect to contract approval page
+  app.get('/c/:id', async (req, res) => {
+    try {
+      const contractId = req.params.id;
+      const contract = await storage.getContract(contractId);
+      
+      if (!contract) {
+        return res.status(404).send('Contract not found');
+      }
+
+      // Generate a simple token for contract access (reuse contract ID with timestamp)
+      const token = crypto.createHash('sha256')
+        .update(`${contractId}-${Date.now()}`)
+        .digest('hex')
+        .substring(0, 32);
+
+      // Store token in contract (we'll need to add this field or use a separate table)
+      // For now, use contractId as the token for simplicity
+      console.log(`[Shortlink] Redirecting to contract approval ${contractId}`);
+      res.redirect(302, `/contract-approval/${contractId}`);
+    } catch (error) {
+      console.error('[Shortlink] Error processing contract shortlink:', error);
+      res.status(500).send('Error processing contract link');
+    }
+  });
+
+  // ====== PUBLIC CONTRACT FETCH ======
+  
+  // GET /api/contracts/public/:id - Fetch contract for public viewing (token-protected)
+  app.get('/api/contracts/public/:id', async (req, res) => {
+    try {
+      const contractId = req.params.id;
+      const token = req.query.token as string;
+
+      // For now, allow access with contractId (we can enhance with proper tokens later)
+      const contract = await storage.getContract(contractId);
+      
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Return sanitized contract data for public viewing
+      res.json({
+        html: contract.content,
+        summary: {
+          contractNumber: contract.contractNumber,
+          title: contract.title,
+          totalAmount: contract.totalAmount,
+          depositAmount: contract.depositAmount,
+          eventDate: contract.eventDate,
+          status: contract.status
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching public contract:', error);
+      res.status(500).json({ error: 'Failed to fetch contract' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
