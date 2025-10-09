@@ -1276,12 +1276,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard Charts & Stats Endpoints
-  app.get("/api/app/charts/pipeline", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/app/charts/pipeline", ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const tenantId = getTenantId(req);
-      if (!tenantId) {
-        return res.status(400).json({ error: "Tenant ID required" });
+      const userEmail = (req.session as any).email;
+      
+      // Get baker and tenant info by email
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker || !baker.tenantId) {
+        return res.status(404).json({ error: "Baker or tenant not found" });
       }
+      
+      const tenantId = baker.tenantId;
 
       // Get quotes grouped by status for the tenant
       const result = await db.select({
@@ -1305,12 +1310,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/app/stats/revenue-mtd", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/app/stats/revenue-mtd", ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const tenantId = getTenantId(req);
-      if (!tenantId) {
+      const user = req.user;
+      if (!user || !user.tenantId) {
         return res.status(400).json({ error: "Tenant ID required" });
       }
+      const tenantId = user.tenantId;
 
       const now = new Date();
       const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
