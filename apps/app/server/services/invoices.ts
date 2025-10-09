@@ -31,3 +31,32 @@ export async function createDepositInvoice(contract: {
 
   return invoice;
 }
+
+export async function createSimpleInvoice(params: {
+  tenantId: string;
+  bakerId: string;
+  customerId?: string | null;
+  title: string;
+  total: number;
+}) {
+  const [invoice] = await db.insert(invoices).values({
+    tenantId: params.tenantId,
+    bakerId: params.bakerId,
+    customerId: params.customerId || null,
+    invoiceNumber: `INV-${Date.now()}`,
+    title: params.title,
+    subtotal: params.total.toString(),
+    total: params.total.toString(),
+    remainingBalance: params.total.toString(),
+    status: 'pending'
+  }).returning();
+
+  await db.insert(invoiceEvents).values({
+    tenantId: params.tenantId,
+    invoiceId: invoice.id,
+    type: 'created',
+    meta: { source: 'manual' }
+  });
+
+  return invoice;
+}
