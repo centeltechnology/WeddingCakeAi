@@ -3763,6 +3763,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get quote events/activity history (baker-only)
+  app.get('/api/quotes/:id/events', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Get quote to verify ownership
+      const quote = await storage.getQuote(id);
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      
+      // Check if user is authorized to view events
+      if (user.role === 'baker') {
+        // Bakers can only view events for their own quotes
+        if (user.userId !== quote.bakerId) {
+          return res.status(403).json({ 
+            error: 'Access forbidden',
+            message: 'You can only view events for your own quotes'
+          });
+        }
+      } else if (user.role !== 'super_admin') {
+        // Only bakers and super admins can view events
+        return res.status(403).json({ 
+          error: 'Access forbidden',
+          message: 'Only bakers can view quote events'
+        });
+      }
+      
+      // Get events for this quote
+      const events = await storage.getQuoteEvents(id);
+      
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching quote events:', error);
+      res.status(500).json({ error: 'Failed to fetch quote events' });
+    }
+  });
+
   // Contract API Routes
   app.get('/api/contracts', async (req, res) => {
     try {
