@@ -44,7 +44,7 @@ Preferred communication style: Simple, everyday language.
 - **PDF Generation**: jsPDF for estimate documents.
 - **Location Services**: Browser geolocation API.
 - **Maps Integration**: Google Maps API with Places Autocomplete for location-based features.
-- **Email Capabilities**: Framework for estimate sharing and notifications.
+- **Email System**: AWS SES integration with modular template architecture. Email templates (`contractEmail.ts`, `invoiceEmail.ts`) use shared layout/partials pattern. Send functions are thin wrappers that load data and call `sendEmail()` helper.
 - **Email Marketing**: Sendy integration for automated list management and baker segmentation.
 
 ### Key Features
@@ -71,6 +71,7 @@ Preferred communication style: Simple, everyday language.
 - **Role-Based Navigation**: Dynamic navigation system with AppShell layout and Nav component. Shows role-specific links (baker: Invoices/Customers/Settings, admin: Tenants/Users). Features useMe hook for user context, error handling with visual feedback, and dark mode support.
 - **Dashboard Widgets**: Tenant-aware dashboard components using TanStack Query and Recharts, including PipelineChart (quotes by status), RevenueStat (MTD revenue with month-over-month comparison), and TaskList (task management with create/complete). All widgets filter by tenant_id for multi-tenancy isolation.
 - **Quote Timeline & Event Tracking**: Comprehensive audit system with quote_events table tracking all lifecycle events (created, updated, sent, viewed, approved, declined). QuoteTimeline React component displays visual timeline with event history, metadata (email subjects, field changes, customer info), and timestamp tracking. Fully integrated into QuoteBuilder dialog with proper authentication and tenant filtering.
+- **Contract & Invoice Timeline UI**: Event history visualization with ContractTimeline and InvoiceTimeline components. API endpoints (`GET /api/contracts/:id/events`, `GET /api/invoices/:id/events`) provide secured, role-based access to event logs. Integrated into ContractEdit and InvoiceDetail pages for complete audit trail visibility.
 
 ### Development Architecture
 - **Build System**: Vite for frontend, ESBuild for server compilation.
