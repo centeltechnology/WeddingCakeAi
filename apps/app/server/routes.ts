@@ -7,6 +7,7 @@ import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
 import { randomUUID } from "crypto";
+import crypto from "crypto";
 import { z } from "zod";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
@@ -7688,6 +7689,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error approving campaign:', error);
       res.status(500).json({ error: 'Failed to approve campaign' });
+    }
+  });
+
+  // ====== CAMPAIGN TRACKING ENDPOINTS ======
+
+  // Open tracking pixel
+  app.get('/api/trk/o', async (req, res) => {
+    try {
+      const { d: deliveryId } = req.query;
+
+      if (!deliveryId || typeof deliveryId !== 'string') {
+        return res.status(400).send('Invalid delivery ID');
+      }
+
+      // Mark as opened
+      await db.execute(sql`
+        UPDATE ad_deliveries
+        SET opened_at = NOW()
+        WHERE id = ${deliveryId} AND opened_at IS NULL
+      `);
+
+      // Return 1x1 transparent pixel
+      const pixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
+      res.setHeader('Content-Type', 'image/gif');
+      res.send(pixel);
+    } catch (error) {
+      console.error('Error tracking open:', error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Click tracking with redirect
+  app.get('/api/trk/c', async (req, res) => {
+    try {
+      const { d: deliveryId, u: targetUrl } = req.query;
+
+      if (!deliveryId || typeof deliveryId !== 'string' || !targetUrl || typeof targetUrl !== 'string') {
+        return res.status(400).send('Invalid parameters');
+      }
+
+      // Mark as clicked
+      await db.execute(sql`
+        UPDATE ad_deliveries
+        SET clicked_at = NOW()
+        WHERE id = ${deliveryId} AND clicked_at IS NULL
+      `);
+
+      // Redirect to target URL
+      res.redirect(targetUrl);
+    } catch (error) {
+      console.error('Error tracking click:', error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Unsubscribe endpoint
+  app.get('/api/unsub', async (req, res) => {
+    try {
+      const { t: token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send('Invalid token');
+      }
+
+      // Hash the token to compare
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Find the lead by token hash
+      const tokenRecord = await db.execute<{ lead_id: string }>(sql`
+        SELECT lead_id FROM unsubscribe_tokens WHERE token_hash = ${tokenHash} LIMIT 1
+      `);
+
+      if (!tokenRecord.rows || tokenRecord.rows.length === 0) {
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Invalid Link - BakerIQ</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+                .error { color: #f44336; }
+              </style>
+            </head>
+            <body>
+              <h1 class="error">Invalid Unsubscribe Link</h1>
+              <p>This unsubscribe link is invalid or has expired.</p>
+              <p><a href="/">Return to BakerIQ</a></p>
+            </body>
+          </html>
+        `);
+      }
+
+      const leadId = tokenRecord.rows[0].lead_id;
+
+      // Mark lead as unsubscribed from network
+      await db.execute(sql`
+        UPDATE calculator_leads
+        SET unsubscribed_network = true
+        WHERE id = ${leadId}
+      `);
+
+      // Mark all pending/queued deliveries for this lead as unsubscribed
+      await db.execute(sql`
+        UPDATE ad_deliveries
+        SET status = 'unsub', unsubscribed_at = NOW()
+        WHERE lead_id = ${leadId} AND status IN ('queued', 'sent')
+      `);
+
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Unsubscribed - BakerIQ</title>
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+              .success { color: #4CAF50; }
+            </style>
+          </head>
+          <body>
+            <h1 class="success">Successfully Unsubscribed</h1>
+            <p>You have been unsubscribed from partner offers.</p>
+            <p>You will no longer receive promotional emails from our advertisers.</p>
+            <p><a href="/">Return to BakerIQ</a></p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error processing unsubscribe:', error);
+      res.status(500).send('Error processing unsubscribe');
     }
   });
 
