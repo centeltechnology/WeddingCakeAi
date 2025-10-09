@@ -8052,22 +8052,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ====== PUBLIC CONTRACT FETCH ======
   
-  // GET /api/contracts/public/:id - Fetch contract for public viewing (token-protected)
+  // GET /api/contracts/public/:id - Fetch contract for public viewing (using contractId as token for now)
   app.get('/api/contracts/public/:id', async (req, res) => {
     try {
       const contractId = req.params.id;
-      const token = req.query.token as string;
 
-      // For now, allow access with contractId (we can enhance with proper tokens later)
       const contract = await storage.getContract(contractId);
       
       if (!contract) {
         return res.status(404).json({ error: 'Contract not found' });
       }
 
-      // Return sanitized contract data for public viewing
+      // Only allow viewing if contract is in 'sent' or later status
+      if (contract.status === 'draft') {
+        return res.status(403).json({ error: 'Contract not available for viewing' });
+      }
+
+      // Return sanitized contract data for public viewing (no sensitive baker/customer details)
       res.json({
-        html: contract.content,
+        html: contract.content || '<p>Contract content not available</p>',
         summary: {
           contractNumber: contract.contractNumber,
           title: contract.title,
@@ -8080,6 +8083,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching public contract:', error);
       res.status(500).json({ error: 'Failed to fetch contract' });
+    }
+  });
+
+  // POST /api/contracts/public/:id/sign - Public contract signing endpoint
+  app.post('/api/contracts/public/:id/sign', async (req, res) => {
+    try {
+      const contractId = req.params.id;
+      const { signerName, signerEmail, signerType } = req.body;
+
+      if (!signerName || !signerEmail) {
+        return res.status(400).json({ error: 'Signer name and email are required' });
+      }
+
+      // Verify contract exists and is in appropriate status
+      const contract = await storage.getContract(contractId);
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      if (contract.status === 'draft') {
+        return res.status(403).json({ error: 'Contract not available for signing' });
+      }
+
+      if (contract.status === 'signed' || contract.status === 'completed') {
+        return res.status(400).json({ error: 'Contract already signed' });
+      }
+
+      // Create signature using transaction
+      const result = await db.transaction(async (tx) => {
+        const [signature] = await tx.insert(contractSignatures)
+          .values({
+            id: randomUUID(),
+            contractId,
+            signerName,
+            signerEmail,
+            signerType: signerType || 'customer',
+            signedAt: new Date()
+          })
+          .returning();
+
+        // Update contract status to signed
+        const [updatedContract] = await tx.update(contracts)
+          .set({
+            status: 'signed',
+            signedAt: new Date()
+          })
+          .where(eq(contracts.id, contractId))
+          .returning();
+
+        return { signature, contract: updatedContract };
+      });
+
+      // TODO: Send confirmation email to customer and baker
+
+      res.json({
+        success: true,
+        message: 'Contract signed successfully',
+        signature: result.signature
+      });
+    } catch (error) {
+      console.error('Error signing contract:', error);
+      res.status(500).json({ error: 'Failed to sign contract' });
     }
   });
 

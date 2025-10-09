@@ -71,7 +71,7 @@ export default function ContractApprovalPage() {
 
     try {
       setSubmitting(true);
-      const response = await fetch(`/api/contracts/${token}/sign`, {
+      const response = await fetch(`/api/contracts/public/${token}/sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

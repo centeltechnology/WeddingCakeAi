@@ -65,6 +65,11 @@ import AuthTest from "@/pages/auth-test";
 import Billing from "@/pages/billing";
 import VerifyEmail from "@/pages/verify-email";
 import QuoteApprovalPage from "@/pages/quote-approval";
+import ContractsList from "@/pages/ContractsList";
+import ContractEdit from "@/pages/ContractEdit";
+import ContractApprovalPage from "@/pages/contract-approval";
+import InvoicesList from "@/pages/InvoicesList";
+import InvoiceDetail from "@/pages/InvoiceDetail";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
 import { BakerSlugWrapper } from "@/components/BakerSlugWrapper";
@@ -193,6 +198,27 @@ function Router() {
       </Route>
       <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
       <Route path="/quote-approval/:token" component={QuoteApprovalPage} />
+      <Route path="/contract-approval/:token" component={ContractApprovalPage} />
+      <Route path="/contracts">
+        <AuthGuard>
+          <ContractsList />
+        </AuthGuard>
+      </Route>
+      <Route path="/contracts/:id">
+        <AuthGuard>
+          <ContractEdit />
+        </AuthGuard>
+      </Route>
+      <Route path="/invoices">
+        <AuthGuard>
+          <InvoicesList />
+        </AuthGuard>
+      </Route>
+      <Route path="/invoices/:id">
+        <AuthGuard>
+          <InvoiceDetail />
+        </AuthGuard>
+      </Route>
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/cookies" component={Cookies} />
