@@ -3,6 +3,7 @@ import LogoutButton from "../components/LogoutButton";
 import { PipelineChart } from "../components/PipelineChart";
 import { RevenueStat } from "../components/RevenueStat";
 import { TaskList } from "../components/TaskList";
+import AiToolsCard from "@/components/ai/AiToolsCard";
 
 interface DashboardStats {
   leadsToday: number;
@@ -99,6 +100,11 @@ export default function BakerDashboard() {
         <h1>Baker Dashboard 🧁</h1>
         <LogoutButton />
       </div>
+
+      {/* AI Tools quick actions */}
+      <section className="mb-4">
+        <AiToolsCard />
+      </section>
 
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>

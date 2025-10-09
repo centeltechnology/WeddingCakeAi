@@ -1,0 +1,54 @@
+You are updating the Baker Dashboard UI to expose AI features and verifying deep-link anchors.
+
+GOAL
+1) On the Baker Dashboard page, render the <AiToolsCard /> at the top of the content area (just below the “Baker Dashboard” title).
+2) Ensure anchors exist for deep-linking:
+   - Leads AI panel should be wrapped in <section id="ai-reply">…</section>
+   - Quote AI panel should be wrapped in <section id="ai-price">…</section>
+
+FILES TO EDIT
+- apps/app/client/src/pages/BakerDashboard.tsx
+- apps/app/client/src/components/BulkEmailLeads.tsx  (Leads AI panel)
+- apps/app/client/src/components/QuoteBuilder.tsx     (Quote AI panel)
+
+STEP 1 — Insert AiToolsCard on the Dashboard
+1. Open apps/app/client/src/pages/BakerDashboard.tsx
+2. Add this import at the top (only if not already present):
+   import AiToolsCard from "@/components/ai/AiToolsCard";
+
+3. Find the main Dashboard content area. Look for a heading containing "Baker Dashboard" or the outer container that follows it. Immediately AFTER that heading/container, insert this block (do NOT wrap or rewrite the existing metrics grid—place this above it as its own section):
+
+   ------------------------------------------------
+   {/* AI Tools quick actions */}
+   <section className="mb-4">
+     <AiToolsCard />
+   </section>
+   ------------------------------------------------
+
+4. Ensure the file compiles.
+
+STEP 2 — Ensure deep-link anchors exist
+A) apps/app/client/src/components/BulkEmailLeads.tsx
+   - Locate the existing LeadsAiAssist panel (the bordered card for the AI autoresponder in the compose dialog).
+   - Wrap ONLY that panel in:
+     <section id="ai-reply"> ...existing LeadsAiAssist panel... </section>
+   - If it’s already wrapped with id="ai-reply", do nothing.
+
+B) apps/app/client/src/components/QuoteBuilder.tsx
+   - Locate the existing QuoteAiAssist (AI Price Suggestion) panel.
+   - Wrap ONLY that panel in:
+     <section id="ai-price"> ...existing QuoteAiAssist panel... </section>
+   - If it’s already wrapped with id="ai-price", do nothing.
+
+OUTPUT
+- Print a JSON object with:
+  {
+    "dashboard_file": "<path>",
+    "ai_tools_card_inserted_after_line": <line_number_or_hint>,
+    "imports": { "AiToolsCard": "added|existing" },
+    "anchors": {
+      "BulkEmailLeads.tsx": "added|existing",
+      "QuoteBuilder.tsx": "added|existing"
+    }
+  }
+- Also print a minimal diff (±15 lines) around where <AiToolsCard /> was inserted.

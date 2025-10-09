@@ -788,7 +788,7 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
               </div>
 
               {/* AI Price Suggestion Tool */}
-              <div id="ai-price" className="md:col-span-2 border-t pt-4">
+              <section id="ai-price" className="md:col-span-2 border-t pt-4">
                 <QuoteAiAssist 
                   defaultGuestCount={newQuote.guestCount || 50}
                   onApplyTotal={(total) => {
@@ -804,7 +804,7 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
                     }));
                   }}
                 />
-              </div>
+              </section>
 
               {/* Pricing Section */}
               <div className="md:col-span-2 border-t pt-4">
