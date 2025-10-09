@@ -1,0 +1,64 @@
+You are my integrator for BakerIQ (apps/app).
+
+Goal: Standardize API auth so both legacy JWT calls and our new session routes work seamlessly, and every request is tenant-scoped.
+
+# 1) Create unified middleware
+File: apps/app/server/authUnified.ts
+------------------------------------------------
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+export function ensureAuthUnified(req: any, res: Response, next: NextFunction) {
+  // Session first
+  if (req.session?.userId) {
+    req.user = {
+      id: req.session.userId,
+      role: req.session.role || "baker",
+      tenantId: req.session.tenantId || req.session?.tenant_id || null,
+    };
+    return next();
+  }
+  // Legacy JWT (compat)
+  const auth = req.headers?.authorization || "";
+  if (auth.startsWith("Bearer ")) {
+    try {
+      const token = auth.slice(7);
+      const payload: any = jwt.verify(token, process.env.JWT_SECRET || "dev");
+      req.user = {
+        id: payload.sub || payload.id,
+        role: payload.role || "baker",
+        tenantId: payload.tenantId || payload.tenant_id || null,
+      };
+      return next();
+    } catch (e) {
+      // fall through to 401
+    }
+  }
+  return res.status(401).json({ ok: false, error: "Unauthenticated" });
+}
+
+export function requireTenant(req: any, res: Response, next: NextFunction) {
+  if (!req.user?.tenantId) return res.status(400).json({ ok:false, error:"Missing tenant context" });
+  return next();
+}
+------------------------------------------------
+
+# 2) Apply to routes that currently use authenticateJWT
+- Open apps/app/server/routes.ts (and any route files that mount /api/quotes*, /api/contracts*, /api/invoices*).
+- Replace imports/usage of authenticateJWT with ensureAuthUnified.
+- For modifying tenant-owned resources, also add requireTenant after ensureAuthUnified.
+
+EXAMPLE:
+router.post("/api/quotes/:id/send", ensureAuthUnified, requireTenant, handler);
+router.post("/api/contracts", ensureAuthUnified, requireTenant, handler);
+
+# 3) /api/session should reflect unified state
+- In apps/app/server/index.ts (or wherever /api/session is), include:
+  { authenticated, userId, role, tenantId, isImpersonating }
+  and set Cache-Control: no-store.
+
+# 4) Verify
+- List all changed files and endpoints.
+- Confirm that calling a quote/contract endpoint works with either:
+  (a) session cookie OR (b) Authorization: Bearer <jwt>.
+Return a short report.

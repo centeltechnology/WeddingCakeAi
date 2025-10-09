@@ -3142,7 +3142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quotes', async (req, res) => {
+  app.get('/api/quotes', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const { bakerId, customerId } = req.query;
       
@@ -3162,7 +3162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quotes', async (req, res) => {
+  app.post('/api/quotes', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const quoteData = req.body;
       
@@ -3266,7 +3266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quotes/:id', async (req, res) => {
+  app.get('/api/quotes/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const quote = await storage.getQuote(req.params.id);
       if (!quote) {
@@ -3279,7 +3279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/quotes/:id', async (req, res) => {
+  app.put('/api/quotes/:id', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const quote = await storage.updateQuote(req.params.id, req.body);
       
@@ -3807,7 +3807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contract API Routes
-  app.get('/api/contracts', async (req, res) => {
+  app.get('/api/contracts', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const { bakerId, customerId } = req.query;
       
@@ -3827,7 +3827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/contracts', async (req, res) => {
+  app.post('/api/contracts', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const contractData = req.body;
       
@@ -3924,7 +3924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/contracts/:id', async (req, res) => {
+  app.get('/api/contracts/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const contract = await storage.getContract(req.params.id);
       if (!contract) {
@@ -3937,7 +3937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/contracts/:id', async (req, res) => {
+  app.put('/api/contracts/:id', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const contract = await storage.updateContract(req.params.id, req.body);
       res.json(contract);
@@ -3947,7 +3947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/contracts/:id', async (req, res) => {
+  app.delete('/api/contracts/:id', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const success = await storage.deleteContract(req.params.id);
       if (!success) {
@@ -4237,7 +4237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/invoices', async (req, res) => {
+  app.get('/api/invoices', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const { bakerId, customerId } = req.query;
       
@@ -4257,7 +4257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/invoices', async (req, res) => {
+  app.post('/api/invoices', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const invoice = await storage.createInvoice(req.body);
       res.status(201).json(invoice);
