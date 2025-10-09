@@ -5,12 +5,21 @@ import React from "react";
 
 function useAiCredits() {
   const [credits, setCredits] = React.useState<number | null>(null);
-  React.useEffect(() => {
+
+  const fetchBal = React.useCallback(() => {
     fetch("/api/ai/credits/me", { credentials: "include" })
       .then(r => r.json())
-      .then(j => setCredits(j.balance))
+      .then(j => setCredits(typeof j.balance === "number" ? j.balance : null))
       .catch(() => setCredits(null));
   }, []);
+
+  React.useEffect(() => {
+    fetchBal();
+    const onUpdated = () => fetchBal();
+    window.addEventListener("ai-credits:updated", onUpdated as EventListener);
+    return () => window.removeEventListener("ai-credits:updated", onUpdated as EventListener);
+  }, [fetchBal]);
+
   return credits;
 }
 
