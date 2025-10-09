@@ -1,0 +1,211 @@
+You are working in apps/app for the BakerIQ SaaS. Some previous prompts may have run out of order. Please do an idempotent recovery + consistency pass that:
+
+Verifies env flags (demo + AI)
+
+Ensures required client routes & pages exist
+
+Ensures server endpoints exist (quotes, contracts, invoices, AI, charts, timelines)
+
+Ensures event tracking writes for contracts/invoices (created/signed/paid)
+
+Standardizes navigation + AppLayout usage (with our filter config)
+
+Seeds demo data and backfills events for existing rows
+
+Builds the project and prints a PASS/FAIL summary with next steps
+
+0) Assumptions
+
+Workspace root contains apps/app.
+
+TypeScript + Drizzle; React client with Vite.
+
+We previously added enforceAppLayout.ts and enforceAppLayout.config.json. If missing, create them from the steps below.
+
+1) Set env flags (non-destructive)
+
+In apps/app/client/.env, ensure:
+
+VITE_DEMO_MODE=true
+VITE_AI_ENABLED=true
+
+
+In apps/app/server/.env, ensure:
+
+DEMO_MODE=true
+
+2) Ensure dependencies
+
+Install/confirm:
+
+pnpm add -D ts-morph fast-glob
+pnpm add -D tsx
+
+3) Create/ensure AppLayout enforcement (filtered)
+
+If not present, create apps/app/scripts/enforceAppLayout.config.json with include/exclude patterns (authenticated pages only).
+If not present, create apps/app/scripts/enforceAppLayout.ts exactly as below (reads config; dry-run or write).
+
+After creation, run:
+
+pnpm tsx apps/app/scripts/enforceAppLayout.ts
+pnpm tsx apps/app/scripts/enforceAppLayout.ts --write
+
+
+(Use the filtered version we discussed: include dashboards, Quotes/Contracts/Invoices/AILab/Admin/Settings/Customers/etc.; exclude login, marketing, approvals, help, legal, etc.)
+
+4) Create/ensure Routes Doctor (adds missing routes/endpoints)
+
+Create apps/app/scripts/routesDoctor.ts that:
+
+Checks (and inserts if missing) these client routes in client/src/App.tsx:
+
+/baker/dashboard → Dashboard component
+
+/quotes, /quotes/new, /quotes/:id
+
+/contracts, /contracts/:id
+
+/invoices
+
+/ai-lab
+
+Checks server server/routes.ts for these endpoints; adds stubs if missing (tenant-scoped):
+
+GET /api/quotes
+
+POST /api/quotes/:id/approve (creates contract from quote)
+
+GET /api/contracts
+
+POST /api/contracts/:id/sign (sets signed + creates deposit invoice + inserts contract_events.signed)
+
+GET /api/invoices
+
+POST /api/invoices (manual create + invoice_events.created)
+
+POST /api/invoices/:id/paid (invoice_events.paid)
+
+GET /api/contracts/:id/events
+
+GET /api/invoices/:id/events
+
+GET /api/charts/quote-pipeline (counts by quotes.status)
+
+POST /api/ai/suggest-items, /api/ai/summarize-quote, /api/ai/generate-contract (return {ok:true})
+
+Verifies imports exist for createContractFromQuote, createDepositInvoice, createSimpleInvoice, and Drizzle tables.
+
+Prints what it added/modified.
+
+(Use ts-morph or safe string insertions — idempotent: only add blocks if missing.)
+
+Run:
+
+pnpm tsx apps/app/scripts/routesDoctor.ts
+
+5) Ensure services fire “created” events (idempotent)
+
+server/services/contracts.ts → after inserting a contract, insert contract_events.created.
+
+server/services/invoices.ts:
+
+In createDepositInvoice, insert invoice_events.created.
+
+In createSimpleInvoice, insert invoice_events.created.
+
+If these inserts already exist, do nothing.
+
+6) Add Backfill for existing records (only if not present)
+
+Create apps/app/server/scripts/backfillContractInvoiceEvents.ts (idempotent) to:
+
+Insert contract_events.created for any contract missing it.
+
+Insert contract_events.signed for any signed contract missing it.
+
+Insert invoice_events.created for any invoice missing it.
+
+Insert invoice_events.paid for any paid invoice missing it.
+
+Run:
+
+pnpm tsx apps/app/server/scripts/backfillContractInvoiceEvents.ts
+
+7) Build & run quick checks
+pnpm -w -r build
+pnpm -w -r dev
+
+8) Print a Doctor Summary
+
+Create apps/app/scripts/doctorReport.ts that:
+
+Pings the server (if possible) or statically checks source to confirm presence of:
+
+Client routes (regex matches in client/src/App.tsx)
+
+Server endpoints (regex matches in server/routes.ts)
+
+Event-insert lines in services & routes (created/signed/paid)
+
+Reads the layout enforcement dry-run results (or scans pages for <AppLayout>), listing any authenticated pages still missing it.
+
+Outputs a clear PASS/FAIL checklist:
+
+Expected output sections:
+
+ENV FLAGS: PASS/FAIL
+
+CLIENT ROUTES: PASS/FAIL (list missing)
+
+SERVER ENDPOINTS: PASS/FAIL (list missing)
+
+EVENTS ON CREATE: PASS/FAIL (contracts created / invoices created)
+
+EVENTS ON ACTIONS: PASS/FAIL (contract signed / invoice paid)
+
+NAV & LAYOUT: PASS/FAIL (# of pages wrapped by AppLayout, list exceptions)
+
+NEXT ACTIONS (if any)
+
+Run:
+
+pnpm tsx apps/app/scripts/doctorReport.ts
+
+9) Final Smoke Checklist (print to console)
+
+Simulate (or print curl commands) for:
+
+GET /api/quotes (200 with auth), POST /api/quotes/:id/approve
+
+GET /api/contracts → POST /api/contracts/:id/sign (expect invoice)
+
+GET /api/invoices → POST /api/invoices/:id/paid
+
+GET /api/contracts/:id/events returns created/signed
+
+GET /api/invoices/:id/events returns created/paid
+
+GET /api/charts/quote-pipeline returns status counts
+
+POST /api/ai/* all return {ok:true}
+
+If UI is gated by session in preview, the above API checks still prove functionality.
+
+Acceptance
+
+Print the final Doctor Summary with PASS/FAIL and a short “Run order suggestion”:
+
+enforceAppLayout (filtered)
+
+routesDoctor
+
+services event verification
+
+backfill script
+
+build & dev
+
+doctorReport (PASS)
+
+If any item fails, auto-print the exact file path and the missing snippet to copy in.
