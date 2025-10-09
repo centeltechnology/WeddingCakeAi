@@ -1,4 +1,5 @@
 import React from "react";
+import { useCreditsModal } from "./CreditsModalContext";
 
 type Props = {
   label?: string;
@@ -10,10 +11,18 @@ type Props = {
 export default function AiSuggestButton({ label = "✨ AI Suggest", onClick, className = "", title }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
+  const creditsModal = useCreditsModal();
 
   const handle = async () => {
     setErr(null); setLoading(true);
-    try { await onClick(); } catch (e:any) { setErr(e?.message || "Something went wrong"); }
+    try { await onClick(); }
+    catch (e:any) {
+      if (e?.code === 402) {
+        creditsModal.open({ reason: "Insufficient credits", needed: e?.payload?.need, have: e?.payload?.have });
+      } else {
+        setErr(e?.message || "Something went wrong");
+      }
+    }
     finally { setLoading(false); }
   };
 
