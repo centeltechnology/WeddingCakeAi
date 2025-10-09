@@ -15,7 +15,8 @@ import {
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
   paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
-import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, requireFeature, requireRole, type AuthenticatedRequest } from "./authMiddleware";
+import { authorizeBakerWithData, authorizeLeadOwnership, requireFeature, type AuthenticatedRequest } from "./authMiddleware";
+import { ensureAuthUnified, requireRole, type UnifiedRequest } from "./authUnified";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -285,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Domain Configuration API
   // Baker-specific domain configuration
-  app.put('/api/bakers/:bakerId/domain', authenticateJWT, authorizeBakerWithData, async (req, res) => {
+  app.put('/api/bakers/:bakerId/domain', ensureAuthUnified, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
       const { subdomain, customDomain } = req.body;
@@ -406,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment Links Management Endpoints - SECURED  
-  app.get('/api/bakers/:bakerId/payment-links', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/bakers/:bakerId/payment-links', ensureAuthUnified, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
       // Baker data already loaded and verified by authorizeBakerWithData middleware
       const baker = req.baker;
@@ -418,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/bakers/:bakerId/payment-links', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+  app.put('/api/bakers/:bakerId/payment-links', ensureAuthUnified, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
       const { bakerId } = req.params;
       
@@ -957,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bakers/signup", handleBakerSignup);
 
   // Get current authenticated baker
-  app.get("/api/bakers/me", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/bakers/me", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -1198,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bakers/:bakerId/leads", authenticateJWT, authorizeBakerWithData, async (req, res) => {
+  app.get("/api/bakers/:bakerId/leads", ensureAuthUnified, authorizeBakerWithData, async (req, res) => {
     try {
       const leads = await storage.getLeadsByBaker(req.params.bakerId);
       res.json(leads);
@@ -1208,7 +1209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/leads/:id", authenticateJWT, authorizeLeadOwnership, async (req, res) => {
+  app.put("/api/leads/:id", ensureAuthUnified, authorizeLeadOwnership, async (req, res) => {
     try {
       const updates = insertLeadSchema.partial().parse(req.body);
       const lead = await storage.updateLead(req.params.id, updates);
@@ -1219,7 +1220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/leads/:id/consultation", authenticateJWT, authorizeLeadOwnership, async (req, res) => {
+  app.post("/api/leads/:id/consultation", ensureAuthUnified, authorizeLeadOwnership, async (req, res) => {
     try {
       const leadId = req.params.id;
       const { message } = req.body;
@@ -1271,7 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard Charts & Stats Endpoints
-  app.get("/api/app/charts/pipeline", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/app/charts/pipeline", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
       if (!tenantId) {
@@ -1300,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/app/stats/revenue-mtd", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/app/stats/revenue-mtd", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
       if (!tenantId) {
@@ -1350,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tasks Endpoints
-  app.get("/api/app/tasks", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/app/tasks", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
       const userId = req.user?.userId;
@@ -1372,7 +1373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/app/tasks", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/app/tasks", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
       const userId = req.user?.userId;
@@ -1397,7 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/app/tasks/:id/complete", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/app/tasks/:id/complete", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
       const userId = req.user?.userId;
@@ -1728,7 +1729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Note: Public availability route exists at line 414 for customer booking
   // Authenticated availability management uses the AvailabilitySettings component
 
-  app.put("/api/availability/:id", authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.put("/api/availability/:id", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       const user = req.user;
@@ -1972,7 +1973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // General baker profile update
-  app.put("/api/bakers/:id", authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+  app.put("/api/bakers/:id", ensureAuthUnified, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       
@@ -2255,7 +2256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Convert lead to customer
-  app.post('/api/leads/:id/convert-to-customer', authenticateJWT, authorizeLeadOwnership, async (req, res) => {
+  app.post('/api/leads/:id/convert-to-customer', ensureAuthUnified, authorizeLeadOwnership, async (req, res) => {
     try {
       const leadId = req.params.id;
       
@@ -2325,7 +2326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk email to leads (Enterprise only)
-  app.post('/api/leads/bulk-email', authenticateJWT, requireFeature('bulk_email'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/leads/bulk-email', ensureAuthUnified, requireFeature('bulk_email'), async (req: AuthenticatedRequest, res) => {
     try {
       const { leadIds, subject, body } = req.body;
       const bakerId = req.user!.userId;
@@ -2409,7 +2410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CSV export for leads (Enterprise only)
-  app.get('/api/leads/export', authenticateJWT, requireFeature('csv_export'), async (req: AuthenticatedRequest, res) => {
+  app.get('/api/leads/export', ensureAuthUnified, requireFeature('csv_export'), async (req: AuthenticatedRequest, res) => {
     try {
       const bakerId = req.user!.userId;
 
@@ -2730,7 +2731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Baker Pricing Configuration API
-  app.get('/api/bakers/:bakerId/pricing', authenticateJWT, authorizeBakerWithData, async (req, res) => {
+  app.get('/api/bakers/:bakerId/pricing', ensureAuthUnified, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
       
@@ -2780,7 +2781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/bakers/:bakerId/pricing', authenticateJWT, authorizeBakerWithData, async (req, res) => {
+  app.put('/api/bakers/:bakerId/pricing', ensureAuthUnified, authorizeBakerWithData, async (req, res) => {
     try {
       const { bakerId } = req.params;
       
@@ -3305,7 +3306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send quote to customer via email
-  app.post('/api/quotes/:id/send', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/quotes/:id/send', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       const user = req.user;
@@ -3436,7 +3437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate approval link for quote (baker-only)
-  app.post('/api/quotes/:id/generate-approval-link', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/quotes/:id/generate-approval-link', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       const user = req.user;
@@ -6539,7 +6540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SECURE plan change endpoint with authentication and validation
-  app.post('/api/bakers/:bakerId/billing/change-plan', authenticateJWT, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/bakers/:bakerId/billing/change-plan', ensureAuthUnified, authorizeBakerWithData, async (req: AuthenticatedRequest, res) => {
     try {
       const { bakerId } = req.params;
       const { planId } = req.body;
@@ -6878,7 +6879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== TENANT SENDY CONFIGURATION =====
   
   // Get tenant Sendy configuration
-  app.get('/api/admin/tenant-sendy-config/:tenantId', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/admin/tenant-sendy-config/:tenantId', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const { tenantId } = req.params;
       const user = req.user;
@@ -6907,7 +6908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update tenant Sendy configuration
-  app.post('/api/admin/tenant-sendy-config/:tenantId', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/admin/tenant-sendy-config/:tenantId', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const { tenantId } = req.params;
       const { sendyLeadsListId, sendyCustomersListId, sendyBrandId } = req.body;
@@ -7140,7 +7141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ====== ADVERTISER MANAGEMENT API ENDPOINTS ======
 
   // Create advertiser (admin only)
-  app.post('/api/admin/advertisers', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/admin/advertisers', ensureAuthUnified, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
     try {
       const { name, contactEmail, website, vertical, userId } = req.body;
 
@@ -7186,7 +7187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Approve advertiser and seed credits (admin only)
-  app.post('/api/admin/advertisers/:id/approve', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/admin/advertisers/:id/approve', ensureAuthUnified, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
 
@@ -7224,7 +7225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add/subtract credits (admin only)
-  app.post('/api/admin/advertisers/:id/credit', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/admin/advertisers/:id/credit', ensureAuthUnified, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       const { deltaCents, reason, campaignId } = req.body;
@@ -7279,7 +7280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get advertiser credits (advertiser-authenticated)
-  app.get('/api/advertisers/me/credits', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+  app.get('/api/advertisers/me/credits', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.userId;
 
@@ -7320,7 +7321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ====== CAMPAIGN API ENDPOINTS ======
 
   // Create campaign (advertiser only)
-  app.post('/api/advertisers/campaigns', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/advertisers/campaigns', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.userId;
       if (!userId) {
@@ -7366,7 +7367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Preflight campaign - get eligible audience count
-  app.get('/api/advertisers/campaigns/:id/preflight', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+  app.get('/api/advertisers/campaigns/:id/preflight', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.userId;
       if (!userId) {
@@ -7495,7 +7496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit campaign for review
-  app.post('/api/advertisers/campaigns/:id/submit', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/advertisers/campaigns/:id/submit', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.userId;
       if (!userId) {
@@ -7649,7 +7650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Approve campaign (admin only)
-  app.post('/api/admin/campaigns/:id/approve', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+  app.post('/api/admin/campaigns/:id/approve', ensureAuthUnified, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
 
@@ -7827,7 +7828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ====== REPORTING ENDPOINTS ======
 
   // Advertiser summary report
-  app.get('/api/advertisers/reports/summary', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+  app.get('/api/advertisers/reports/summary', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const { from, to } = req.query;
       const userId = req.user!.userId;
@@ -7905,7 +7906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin network report
-  app.get('/api/admin/reports/network', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+  app.get('/api/admin/reports/network', ensureAuthUnified, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
     try {
       // Top advertisers by spend
       const topAdvertisers = await db.execute<{
