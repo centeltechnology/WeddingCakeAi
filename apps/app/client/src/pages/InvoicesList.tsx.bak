@@ -60,10 +60,10 @@ export default function InvoicesList() {
     const Icon = config.icon;
 
     return (
-      <AppLayout><Badge variant={config.variant} className="flex items-center gap-1">
-                <Icon className="h-3 w-3" />
-                {status}
-              </Badge></AppLayout>
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
   };
 
@@ -114,47 +114,47 @@ export default function InvoicesList() {
             const isOverdue = invoice.dueDate && new Date(invoice.dueDate) < new Date() && parseFloat(outstanding) > 0;
 
             return (
-              <AppLayout><Link key={invoice.id} href={`/invoices/${invoice.id}`}>
-                                <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-                                  <CardHeader className="pb-3">
-                                    <div className="flex justify-between items-start">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
-                                          {getStatusBadge(isOverdue ? 'overdue' : invoice.status)}
-                                        </div>
-                                        {invoice.customerName && (
-                                          <p className="text-sm text-muted-foreground">{invoice.customerName}</p>
-                                        )}
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-lg font-semibold">${parseFloat(invoice.totalAmount).toFixed(2)}</div>
-                                        {parseFloat(outstanding) > 0 && (
-                                          <div className="text-sm text-muted-foreground">
-                                            ${outstanding} due
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent className="pt-0">
-                                    <div className="flex gap-6 text-sm text-muted-foreground">
-                                      {invoice.dueDate && (
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="h-4 w-4" />
-                                          Due {new Date(invoice.dueDate).toLocaleDateString()}
-                                        </div>
-                                      )}
-                                      {invoice.paidAmount && parseFloat(invoice.paidAmount) > 0 && (
-                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                          <DollarSign className="h-4 w-4" />
-                                          ${parseFloat(invoice.paidAmount).toFixed(2)} paid
-                                        </div>
-                                      )}
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </Link></AppLayout>
+              <Link key={invoice.id} href={`/invoices/${invoice.id}`}>
+                <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
+                          {getStatusBadge(isOverdue ? 'overdue' : invoice.status)}
+                        </div>
+                        {invoice.customerName && (
+                          <p className="text-sm text-muted-foreground">{invoice.customerName}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold">${parseFloat(invoice.totalAmount).toFixed(2)}</div>
+                        {parseFloat(outstanding) > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            ${outstanding} due
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex gap-6 text-sm text-muted-foreground">
+                      {invoice.dueDate && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Due {new Date(invoice.dueDate).toLocaleDateString()}
+                        </div>
+                      )}
+                      {invoice.paidAmount && parseFloat(invoice.paidAmount) > 0 && (
+                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <DollarSign className="h-4 w-4" />
+                          ${parseFloat(invoice.paidAmount).toFixed(2)} paid
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

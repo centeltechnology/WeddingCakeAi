@@ -10,6 +10,7 @@ import { ArrowLeft, Send, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import ContractTimeline from '@/components/ContractTimeline';
+import AppLayout from "@/components/AppLayout";
 
 interface ContractTemplate {
   id: string;
@@ -160,167 +161,167 @@ export default function ContractEdit() {
 
   if (loading && !isNew) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading contract...</div>
-      </div>
+      <AppLayout><div className="flex items-center justify-center h-64">
+                <div className="text-muted-foreground">Loading contract...</div>
+              </div></AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/contracts">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">{isNew ? 'New Contract' : 'Edit Contract'}</h1>
-          <p className="text-muted-foreground">Configure contract details and send for signature</p>
-        </div>
-      </div>
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contract Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="title">Contract Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., Wedding Cake Contract"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="template">Template</Label>
-                <Select
-                  value={selectedTemplateId}
-                  onValueChange={(value) => {
-                    setSelectedTemplateId(value);
-                    setFormData({ ...formData, templateId: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Total Amount</Label>
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  step="0.01"
-                  value={formData.totalAmount}
-                  onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="depositAmount">Deposit Amount</Label>
-                <Input
-                  id="depositAmount"
-                  type="number"
-                  step="0.01"
-                  value={formData.depositAmount}
-                  onChange={(e) => setFormData({ ...formData, depositAmount: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="eventDate">Event Date</Label>
-                <Input
-                  id="eventDate"
-                  type="date"
-                  value={formData.eventDate}
-                  onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="deliveryDate">Delivery Date</Label>
-                <Input
-                  id="deliveryDate"
-                  type="date"
-                  value={formData.deliveryDate}
-                  onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
-                />
+    <AppLayout><div className="container mx-auto p-6 space-y-6">
+            <div className="flex items-center gap-4">
+              <Link href="/contracts">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold">{isNew ? 'New Contract' : 'Edit Contract'}</h1>
+                <p className="text-muted-foreground">Configure contract details and send for signature</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deliveryAddress">Delivery Address</Label>
-              <Input
-                id="deliveryAddress"
-                value={formData.deliveryAddress}
-                onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
-                placeholder="Full delivery address"
-              />
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contract Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Contract Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="e.g., Wedding Cake Contract"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="template">Template</Label>
+                      <Select
+                        value={selectedTemplateId}
+                        onValueChange={(value) => {
+                          setSelectedTemplateId(value);
+                          setFormData({ ...formData, templateId: value });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="totalAmount">Total Amount</Label>
+                      <Input
+                        id="totalAmount"
+                        type="number"
+                        step="0.01"
+                        value={formData.totalAmount}
+                        onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="depositAmount">Deposit Amount</Label>
+                      <Input
+                        id="depositAmount"
+                        type="number"
+                        step="0.01"
+                        value={formData.depositAmount}
+                        onChange={(e) => setFormData({ ...formData, depositAmount: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="eventDate">Event Date</Label>
+                      <Input
+                        id="eventDate"
+                        type="date"
+                        value={formData.eventDate}
+                        onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="deliveryDate">Delivery Date</Label>
+                      <Input
+                        id="deliveryDate"
+                        type="date"
+                        value={formData.deliveryDate}
+                        onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="deliveryAddress">Delivery Address</Label>
+                    <Input
+                      id="deliveryAddress"
+                      value={formData.deliveryAddress}
+                      onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+                      placeholder="Full delivery address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="specialInstructions">Special Instructions</Label>
+                    <Textarea
+                      id="specialInstructions"
+                      value={formData.specialInstructions}
+                      onChange={(e) => setFormData({ ...formData, specialInstructions: e.target.value })}
+                      placeholder="Any special instructions or notes"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="variables">Template Variables (JSON)</Label>
+                    <Textarea
+                      id="variables"
+                      value={formData.variables}
+                      onChange={(e) => setFormData({ ...formData, variables: e.target.value })}
+                      placeholder='{"customer_name": "John Doe", "event_type": "Wedding"}'
+                      rows={4}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {!isNew && contractId && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Contract Timeline</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ContractTimeline contractId={contractId} />
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex gap-4 justify-end">
+                <Button variant="outline" onClick={handleSave} disabled={loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Draft
+                </Button>
+                <Button onClick={handleSend} disabled={loading || isNew}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send for Signature
+                </Button>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="specialInstructions">Special Instructions</Label>
-              <Textarea
-                id="specialInstructions"
-                value={formData.specialInstructions}
-                onChange={(e) => setFormData({ ...formData, specialInstructions: e.target.value })}
-                placeholder="Any special instructions or notes"
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="variables">Template Variables (JSON)</Label>
-              <Textarea
-                id="variables"
-                value={formData.variables}
-                onChange={(e) => setFormData({ ...formData, variables: e.target.value })}
-                placeholder='{"customer_name": "John Doe", "event_type": "Wedding"}'
-                rows={4}
-                className="font-mono text-sm"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {!isNew && contractId && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Contract Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ContractTimeline contractId={contractId} />
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="flex gap-4 justify-end">
-          <Button variant="outline" onClick={handleSave} disabled={loading}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Draft
-          </Button>
-          <Button onClick={handleSend} disabled={loading || isNew}>
-            <Send className="h-4 w-4 mr-2" />
-            Send for Signature
-          </Button>
-        </div>
-      </div>
-    </div>
+          </div></AppLayout>
   );
 }

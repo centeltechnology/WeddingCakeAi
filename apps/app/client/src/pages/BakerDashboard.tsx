@@ -5,6 +5,7 @@ import { PipelineChart } from "../components/PipelineChart";
 import { RevenueStat } from "../components/RevenueStat";
 import { TaskList } from "../components/TaskList";
 import AiToolsCard from "@/components/ai/AiToolsCard";
+import AppLayout from "@/components/AppLayout";
 
 interface DashboardStats {
   leadsToday: number;
@@ -74,109 +75,109 @@ export default function BakerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h1>Baker Dashboard 🧁</h1>
-          <LogoutButton />
-        </div>
-        <p>Loading dashboard data...</p>
-      </div>
+      <AppLayout><div style={{ padding: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <h1>Baker Dashboard 🧁</h1>
+                  <LogoutButton />
+                </div>
+                <p>Loading dashboard data...</p>
+              </div></AppLayout>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h1>Baker Dashboard 🧁</h1>
-          <LogoutButton />
-        </div>
-        <div style={{ color: 'red' }}>{error}</div>
-      </div>
+      <AppLayout><div style={{ padding: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <h1>Baker Dashboard 🧁</h1>
+                  <LogoutButton />
+                </div>
+                <div style={{ color: 'red' }}>{error}</div>
+              </div></AppLayout>
     );
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-        <h1>Baker Dashboard 🧁</h1>
-        <LogoutButton />
-      </div>
-
-      {/* AI Tools quick actions */}
-      <section className="mb-4">
-        <AiToolsCard />
-      </section>
-
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <StatCard title="Leads Today" value={stats?.leadsToday || 0} />
-        <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} onClick={() => navigate('/quotes')} />
-        <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} onClick={() => navigate('/invoices')} />
-        <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} onClick={() => navigate('/contracts')} />
-      </div>
-
-      {/* Revenue and Tasks Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 24 }}>
-        <RevenueStat />
-        <TaskList />
-      </div>
-
-      {/* Pipeline Chart */}
-      <div style={{ marginBottom: 24 }}>
-        <PipelineChart />
-      </div>
-
-      {/* Data Panels */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
-        {/* Recent Messages */}
-        <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
-          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Recent Messages</h2>
-          {messages.length === 0 ? (
-            <p style={{ color: '#666' }}>No recent messages</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {messages.map((msg) => (
-                <div key={msg.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                  <div style={{ fontWeight: 600 }}>{msg.name}</div>
-                  <div style={{ color: '#666', fontSize: 14, marginTop: 4 }}>{msg.snippet}</div>
-                  <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>
-                    {new Date(msg.time).toLocaleString()}
-                  </div>
-                </div>
-              ))}
+    <AppLayout><div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+              <h1>Baker Dashboard 🧁</h1>
+              <LogoutButton />
             </div>
-          )}
-        </div>
 
-        {/* Invoices Coming Due */}
-        <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
-          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Invoices Coming Due</h2>
-          {invoices.length === 0 ? (
-            <p style={{ color: '#666' }}>No upcoming invoices</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {invoices.map((inv) => (
-                <div key={inv.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{inv.customer}</div>
-                      <div style={{ color: '#666', fontSize: 14 }}>
-                        Due: {new Date(inv.dueDate).toLocaleDateString()}
+            {/* AI Tools quick actions */}
+            <section className="mb-4">
+              <AiToolsCard />
+            </section>
+
+            {/* Stats Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
+              <StatCard title="Leads Today" value={stats?.leadsToday || 0} />
+              <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} onClick={() => navigate('/quotes')} />
+              <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} onClick={() => navigate('/invoices')} />
+              <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} onClick={() => navigate('/contracts')} />
+            </div>
+
+            {/* Revenue and Tasks Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 24 }}>
+              <RevenueStat />
+              <TaskList />
+            </div>
+
+            {/* Pipeline Chart */}
+            <div style={{ marginBottom: 24 }}>
+              <PipelineChart />
+            </div>
+
+            {/* Data Panels */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
+              {/* Recent Messages */}
+              <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
+                <h2 style={{ marginTop: 0, marginBottom: 16 }}>Recent Messages</h2>
+                {messages.length === 0 ? (
+                  <p style={{ color: '#666' }}>No recent messages</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {messages.map((msg) => (
+                      <div key={msg.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
+                        <div style={{ fontWeight: 600 }}>{msg.name}</div>
+                        <div style={{ color: '#666', fontSize: 14, marginTop: 4 }}>{msg.snippet}</div>
+                        <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>
+                          {new Date(msg.time).toLocaleString()}
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 600 }}>${inv.amount}</div>
-                      <div style={{ color: '#999', fontSize: 12 }}>{inv.invoiceNumber}</div>
-                    </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+
+              {/* Invoices Coming Due */}
+              <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
+                <h2 style={{ marginTop: 0, marginBottom: 16 }}>Invoices Coming Due</h2>
+                {invoices.length === 0 ? (
+                  <p style={{ color: '#666' }}>No upcoming invoices</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {invoices.map((inv) => (
+                      <div key={inv.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{inv.customer}</div>
+                            <div style={{ color: '#666', fontSize: 14 }}>
+                              Due: {new Date(inv.dueDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 600 }}>${inv.amount}</div>
+                            <div style={{ color: '#999', fontSize: 12 }}>{inv.invoiceNumber}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div></AppLayout>
   );
 }
 

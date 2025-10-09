@@ -37,10 +37,11 @@ const project = new Project({
 const ensureImport = (sf: any, importName: string, importPath: string) => {
   const existing = sf.getImportDeclarations().find((d:any)=> d.getModuleSpecifierValue()===importPath);
   if (existing) {
-    const named = existing.getNamedImports().map((n:any)=>n.getName());
-    if (!named.includes(importName)) existing.addNamedImport({ name: importName });
+    if (!existing.getDefaultImport()) {
+      existing.setDefaultImport(importName);
+    }
   } else {
-    sf.addImportDeclaration({ moduleSpecifier: importPath, namedImports:[{ name: importName }] });
+    sf.addImportDeclaration({ moduleSpecifier: importPath, defaultImport: importName });
   }
 };
 
@@ -48,8 +49,36 @@ const wrapWithAppLayout = (sf:any) => {
   const def = sf.getDefaultExportSymbol()?.getDeclarations()?.[0];
   if (!def) return false;
 
-  const returns = sf.getDescendantsOfKind(SyntaxKind.ReturnStatement);
-  const jsxReturn = returns.find((r:any)=>{
+  // Get returns ONLY from the default export's body, not all returns in the file
+  let componentBody: any = null;
+  
+  if (def.getKind() === SyntaxKind.FunctionDeclaration) {
+    componentBody = def;
+  } else if (def.getKind() === SyntaxKind.ExportAssignment) {
+    const expr = def.getExpression();
+    if (expr.getKind() === SyntaxKind.FunctionExpression || expr.getKind() === SyntaxKind.ArrowFunction) {
+      componentBody = expr;
+    } else if (expr.getKind() === SyntaxKind.Identifier) {
+      const symbol = expr.getSymbol();
+      const declarations = symbol?.getDeclarations() ?? [];
+      if (declarations.length > 0) {
+        const varDecl = declarations[0];
+        if (varDecl.getKind() === SyntaxKind.FunctionDeclaration) {
+          componentBody = varDecl;
+        } else if (varDecl.getKind() === SyntaxKind.VariableDeclaration) {
+          const init = varDecl.getInitializer();
+          if (init && (init.getKind() === SyntaxKind.FunctionExpression || init.getKind() === SyntaxKind.ArrowFunction)) {
+            componentBody = init;
+          }
+        }
+      }
+    }
+  }
+  
+  if (!componentBody) return false;
+
+  const returns = componentBody.getDescendantsOfKind(SyntaxKind.ReturnStatement);
+  const jsxReturns = returns.filter((r:any)=>{
     const expr = r.getExpression();
     if (!expr) return false;
     return [
@@ -59,21 +88,35 @@ const wrapWithAppLayout = (sf:any) => {
       SyntaxKind.JsxFragment,
     ].includes(expr.getKind());
   });
-  if (!jsxReturn) return false;
+  
+  if (jsxReturns.length === 0) return false;
 
-  let expr:any = jsxReturn.getExpression();
-  if (expr.getKind()===SyntaxKind.ParenthesizedExpression) expr = expr.getExpression();
+  // Collect all unwrapped expressions first (don't modify AST yet)
+  const toWrap: Array<{expr: any, source: string}> = [];
+  
+  for (const jsxReturn of jsxReturns) {
+    let expr:any = jsxReturn.getExpression();
+    if (expr.getKind()===SyntaxKind.ParenthesizedExpression) expr = expr.getExpression();
 
-  // already wrapped?
-  const isWrapped =
-    expr.getKind()===SyntaxKind.JsxElement &&
-    expr.getOpeningElement().getTagNameNode().getText()==="AppLayout";
-  if (isWrapped) return false;
+    // already wrapped?
+    const isWrapped =
+      expr.getKind()===SyntaxKind.JsxElement &&
+      expr.getOpeningElement().getTagNameNode().getText()==="AppLayout";
+    if (isWrapped) continue;
 
+    const source = expr.getText();
+    toWrap.push({ expr, source });
+  }
+  
+  if (toWrap.length === 0) return false;
+
+  // Now apply all changes in reverse order (to avoid AST invalidation)
   ensureImport(sf, "AppLayout", "@/components/AppLayout");
-
-  const source = expr.getText();
-  expr.replaceWithText(`<AppLayout>${source}</AppLayout>`);
+  for (let i = toWrap.length - 1; i >= 0; i--) {
+    const { expr, source } = toWrap[i];
+    expr.replaceWithText(`<AppLayout>${source}</AppLayout>`);
+  }
+  
   return true;
 };
 
@@ -81,7 +124,6 @@ const changed:string[] = [];
 for (const file of targets) {
   const sf = project.addSourceFileAtPathIfExists(file) || project.getSourceFile(file);
   if (!sf) continue;
-  if (sf.getText().includes("<AppLayout")) continue;
 
   const didWrap = wrapWithAppLayout(sf);
   if (didWrap) changed.push(file);

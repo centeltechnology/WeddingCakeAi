@@ -60,10 +60,10 @@ export default function ContractsList() {
     const Icon = config.icon;
 
     return (
-      <AppLayout><Badge variant={config.variant} className="flex items-center gap-1">
-                <Icon className="h-3 w-3" />
-                {status}
-              </Badge></AppLayout>
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
   };
 
