@@ -87,6 +87,11 @@ import AdvertiserCampaigns from "@/pages/AdvertiserCampaigns";
 import AdvertiserReports from "@/pages/AdvertiserReports";
 import AdminNetworkReports from "@/pages/AdminNetworkReports";
 import { CreditsModalProvider } from "@/components/ai/CreditsModalContext";
+import MessagesPage from "@/pages/Messages";
+import QuotesPage from "@/pages/Quotes";
+import CustomersPage from "@/pages/Customers";
+import AdminTenantsPage from "@/pages/AdminTenants";
+import AdminUsersPage from "@/pages/AdminUsers";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -259,6 +264,34 @@ function Router() {
       <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
       <Route path="/advertiser/reports" component={AdvertiserReports} />
       <Route path="/admin/reports/network" component={AdminNetworkReports} />
+      
+      {/* Placeholder pages for nav links */}
+      <Route path="/messages">
+        <AppShell>
+          <MessagesPage />
+        </AppShell>
+      </Route>
+      <Route path="/quotes">
+        <AppShell>
+          <QuotesPage />
+        </AppShell>
+      </Route>
+      <Route path="/customers">
+        <AppShell>
+          <CustomersPage />
+        </AppShell>
+      </Route>
+      <Route path="/admin/tenants">
+        <AppShell>
+          <AdminTenantsPage />
+        </AppShell>
+      </Route>
+      <Route path="/admin/users">
+        <AppShell>
+          <AdminUsersPage />
+        </AppShell>
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
