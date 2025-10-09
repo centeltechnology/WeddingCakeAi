@@ -1,0 +1,98 @@
+You are my code editor/runner for BakerIQ (apps/app).
+
+Goal: Add consent + advertiser schema for the lead rental MVP.
+
+# 1) DB migration: consent + targeting + advertiser tables
+Create apps/app/migrations/008_advertiser_mvp.sql with:
+------------------------------------------------
+BEGIN;
+
+-- Extend leads for network contact & targeting
+ALTER TABLE calculator_leads
+  ADD COLUMN IF NOT EXISTS network_opt_in BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS consented_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS source TEXT,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS state TEXT,
+  ADD COLUMN IF NOT EXISTS postal_code TEXT,
+  ADD COLUMN IF NOT EXISTS budget_min INTEGER,
+  ADD COLUMN IF NOT EXISTS budget_max INTEGER,
+  ADD COLUMN IF NOT EXISTS interests TEXT[],
+  ADD COLUMN IF NOT EXISTS last_network_contact_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS unsubscribed_network BOOLEAN DEFAULT false;
+
+-- Advertiser entities
+CREATE TABLE IF NOT EXISTS advertisers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  contact_email TEXT NOT NULL,
+  website TEXT,
+  vertical TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS advertiser_users (
+  id TEXT PRIMARY KEY,
+  advertiser_id TEXT NOT NULL REFERENCES advertisers(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  role TEXT NOT NULL DEFAULT 'member',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS advertiser_credits (
+  advertiser_id TEXT PRIMARY KEY REFERENCES advertisers(id),
+  balance_cents INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS advertiser_credits_ledger (
+  id TEXT PRIMARY KEY,
+  advertiser_id TEXT NOT NULL REFERENCES advertisers(id),
+  delta_cents INTEGER NOT NULL,
+  reason TEXT,
+  campaign_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ad_campaigns (
+  id TEXT PRIMARY KEY,
+  advertiser_id TEXT NOT NULL REFERENCES advertisers(id),
+  name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft', -- draft|pending_review|approved|sending|paused|done
+  unit_price_cents INTEGER NOT NULL DEFAULT 25, -- $0.25/send default
+  max_sends INTEGER NOT NULL DEFAULT 1000,
+  targeting JSONB NOT NULL DEFAULT '{}',
+  scheduled_at TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ad_deliveries (
+  id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL REFERENCES ad_campaigns(id),
+  lead_id TEXT NOT NULL REFERENCES calculator_leads(id),
+  status TEXT NOT NULL DEFAULT 'queued', -- queued|sent|bounced|unsub|failed
+  sent_at TIMESTAMPTZ,
+  opened_at TIMESTAMPTZ,
+  clicked_at TIMESTAMPTZ,
+  unsubscribed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS unsubscribe_tokens (
+  id TEXT PRIMARY KEY,
+  lead_id TEXT NOT NULL REFERENCES calculator_leads(id),
+  token_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMIT;
+------------------------------------------------
+Run the migration.
+
+# 2) Lead capture UI: add a “partner offers” consent checkbox
+- In the public lead capture form (where calculator_leads are created), add:
+  [ ] I’d like relevant offers from BakerIQ partners (optional)
+- Store network_opt_in=true/false, consented_at=now() when true, and source='calculator' (or current source).
+
+Return: migration result + the client file updated for the checkbox.
