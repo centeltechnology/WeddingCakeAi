@@ -462,6 +462,10 @@ export const insertMessageSchema = createInsertSchema(messages).omit({ id: true,
 export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCalculatorLeadSchema = createInsertSchema(calculatorLeads).omit({ id: true, createdAt: true });
 
+// Advertiser schemas
+export const insertAdvertiserSchema = createInsertSchema(advertisers).omit({ id: true, createdAt: true });
+export const insertAdCampaignSchema = createInsertSchema(adCampaigns).omit({ id: true, createdAt: true });
+
 // Multi-tenancy schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTenantConfigurationSchema = createInsertSchema(tenantConfigurations).omit({ id: true, createdAt: true, updatedAt: true });
@@ -476,6 +480,12 @@ export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type InsertCalculatorLead = z.infer<typeof insertCalculatorLeadSchema>;
+
+// Advertiser types
+export type Advertiser = typeof advertisers.$inferSelect;
+export type AdCampaign = typeof adCampaigns.$inferSelect;
+export type InsertAdvertiser = z.infer<typeof insertAdvertiserSchema>;
+export type InsertAdCampaign = z.infer<typeof insertAdCampaignSchema>;
 
 // Multi-tenancy types
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
