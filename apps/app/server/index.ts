@@ -10,6 +10,7 @@ import { v4 as uuid } from "uuid";
 import bcrypt from "bcrypt";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
+import { registerAiRoutes } from "./routes/ai";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
 import { databaseStorage } from "./databaseStorage.js";
@@ -1770,6 +1771,9 @@ app.get('/me', async (req, res) => {
   
   // Setup clean authentication routes
   setupAuthRoutes(app);
+
+  // Mount AI routes
+  registerAiRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
