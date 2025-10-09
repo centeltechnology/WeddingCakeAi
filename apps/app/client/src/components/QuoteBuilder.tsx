@@ -347,7 +347,9 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
           throw new Error('Customer not found');
         }
         customer = await response.json();
-        console.log('Fetched customer from backend:', customer.id, customer.name);
+        if (customer) {
+          console.log('Fetched customer from backend:', customer.id, customer.name);
+        }
       }
       
       // Double-check customer exists
