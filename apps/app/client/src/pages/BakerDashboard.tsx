@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import LogoutButton from "../components/LogoutButton";
+import { PipelineChart } from "../components/PipelineChart";
+import { RevenueStat } from "../components/RevenueStat";
+import { TaskList } from "../components/TaskList";
 
 interface DashboardStats {
   leadsToday: number;
@@ -103,6 +106,17 @@ export default function BakerDashboard() {
         <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} />
         <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} />
         <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} />
+      </div>
+
+      {/* Revenue and Tasks Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 24 }}>
+        <RevenueStat />
+        <TaskList />
+      </div>
+
+      {/* Pipeline Chart */}
+      <div style={{ marginBottom: 24 }}>
+        <PipelineChart />
       </div>
 
       {/* Data Panels */}

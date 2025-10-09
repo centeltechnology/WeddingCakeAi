@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 interface RevenueData {
   current: number;
   previous: number;
-  change: number;
+  deltaPct: number;
 }
 
 export function RevenueStat() {
@@ -41,7 +41,7 @@ export function RevenueStat() {
     );
   }
 
-  const { current = 0, previous = 0, change = 0 } = data || {};
+  const { current = 0, previous = 0, deltaPct: change = 0 } = data || {};
   const isPositive = change > 0;
   const isNeutral = change === 0;
 
