@@ -7830,11 +7830,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/advertisers/reports/summary', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
       const { from, to } = req.query;
-      const advertiserId = req.user!.advertiserId;
+      const userId = req.user!.userId;
 
-      if (!advertiserId) {
-        return res.status(403).json({ error: 'Not an advertiser account' });
+      // Get advertiser ID from advertiser_users table
+      const advertiserUser = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id FROM advertiser_users WHERE user_id = ${userId} LIMIT 1
+      `);
+
+      if (!advertiserUser.rows || advertiserUser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser association not found' });
       }
+
+      const advertiserId = advertiserUser.rows[0].advertiser_id;
 
       // Build date filter
       let dateFilter = sql`TRUE`;
@@ -7863,21 +7870,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           AND ${dateFilter}
       `);
 
-      // Get spend from ledger
-      let spendFilter = sql`TRUE`;
+      // Get spend from ledger with date filter
+      const spendConditions = [
+        sql`advertiser_id = ${advertiserId}`,
+        sql`delta_cents < 0`
+      ];
+      
       if (from && typeof from === 'string') {
-        spendFilter = sql`${spendFilter} AND created_at >= ${from}::timestamp`;
+        spendConditions.push(sql`created_at >= ${from}::timestamp`);
       }
       if (to && typeof to === 'string') {
-        spendFilter = sql`${spendFilter} AND created_at <= ${to}::timestamp`;
+        spendConditions.push(sql`created_at <= ${to}::timestamp`);
       }
 
       const spend = await db.execute<{ total: string }>(sql`
         SELECT COALESCE(SUM(ABS(delta_cents)), 0) as total
         FROM advertiser_credits_ledger
-        WHERE advertiser_id = ${advertiserId}
-          AND delta_cents < 0
-          AND ${spendFilter}
+        WHERE ${sql.join(spendConditions, sql` AND `)}
       `);
 
       const result = {

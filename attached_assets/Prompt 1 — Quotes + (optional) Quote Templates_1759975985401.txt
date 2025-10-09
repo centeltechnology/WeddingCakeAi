@@ -1,0 +1,105 @@
+You are my code editor/runner for BakerIQ (apps/app).
+
+Goal: Solid “quote → send → accept/reject” flow with optional templates.
+
+# 0) Paths & stack
+- Server: apps/app/server/index.ts (+ db.ts + schema imports)
+- Client: apps/app/client (Vite + React + Wouter)
+- Email: SES mailer already in apps/app/server/mailer.ts
+- DB: Postgres via Drizzle
+
+# 1) DB migration — quote templates + status audit
+Create apps/app/migrations/009_quote_templates.sql:
+------------------------------------------------
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS quote_templates (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id),
+  name TEXT NOT NULL,
+  description TEXT,
+  body_html TEXT NOT NULL,        -- HTML with {{variables}} placeholders
+  items_json JSONB,               -- optional default line items [{label, qty, unit, price}]
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Optional: track status transitions
+CREATE TABLE IF NOT EXISTS quote_events (
+  id TEXT PRIMARY KEY,
+  quote_id TEXT NOT NULL REFERENCES quotes(id),
+  event TEXT NOT NULL,            -- 'created'|'sent'|'accepted'|'rejected'
+  meta JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMIT;
+------------------------------------------------
+Run it.
+
+# 2) Server — Quote endpoints (protected)
+Add to apps/app/server/index.ts under /api/app/* (ensure ensureAuth + tenant scoping):
+- POST /api/app/quotes
+  Body: { customerId, items:[{label,qty,unitPrice}], templateId?, variables?:object, notes? }
+  Steps:
+    • If templateId provided, load template, merge items/variables into HTML.
+    • Compute subtotal/tax/total (simple 0% tax placeholder; leave hook).
+    • Insert into quotes (status='draft'), add quote_events 'created'.
+    • Return {id}.
+
+- POST /api/app/quotes/:id/send
+  Body: { subject?, message? }
+  Steps:
+    • Generate a secure view token (crypto.randomBytes(24).toString('hex')); store hashed if you prefer.
+    • Email customer via sendMail with a link /q/:id?t=<token>.
+    • Update quotes.status='sent'; quote_events 'sent'.
+    • Return {ok:true, link}.
+
+- GET /q/:id (public)
+  Query: t=<token>
+  Steps:
+    • Validate token for this quote (allow simple token column on quotes or a separate quote_tokens table—choose simplest).
+    • Return sanitized quote HTML + line items + Accept/Reject POST endpoints.
+
+- POST /api/quotes/:id/accept (public)
+  Body: { token, name, email }
+  Steps:
+    • Validate token; set quotes.status='accepted'; quote_events 'accepted'.
+    • (Side-effect) Create a draft contract from default contract template (if exists)—store relation on contracts.quote_id.
+    • Email both baker & customer confirmation.
+
+- POST /api/quotes/:id/reject (public)
+  Body: { token, reason? }
+  Steps:
+    • Validate token; quotes.status='rejected'; quote_events 'rejected'; email baker.
+
+Implementation notes:
+- Persist line items JSON on quotes.items_json if your schema supports; else create a small quote_items table.
+- Keep tenant_id on every insert.
+
+# 3) Client — Baker UI for quotes
+Add pages/components:
+- apps/app/client/src/pages/QuotesList.tsx
+  • Lists quotes (id, customer, status, total, updated)
+  • Button “New Quote”
+- apps/app/client/src/pages/QuoteEdit.tsx
+  • Form: customer selector, items grid (label/qty/unitPrice), optional template selector, variables editor (key/value)
+  • Save as draft; “Send” button calls /quotes/:id/send
+- Public viewer:
+  • apps/app/client/src/pages/PublicQuote.tsx (mounted on route “/q/:id?t=:token”) – simple read-only view + Accept/Reject buttons
+
+Wire routes in App.tsx (protected for baker pages, public for /q/*).
+
+# 4) Emails
+Use mailer.ts:
+- Subject: “Quote from {{baker_name}} — {{customer_name}}”
+- Body: button to open the /q/:id?t=token link, support text fallback.
+
+# 5) Tests
+- Create a quote with 2 items → verify totals.
+- Send quote → receive link (log ok in dev), GET /q/:id?t=token renders.
+- Accept → status flips to ‘accepted’, event logged, (draft) contract created.
+
+Return:
+- Files created/edited
+- Migration result
+- Sample JSON for POST /api/app/quotes and /send
