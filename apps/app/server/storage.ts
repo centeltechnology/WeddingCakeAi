@@ -7,7 +7,7 @@ import {
   type Tenant, type InsertTenant, type TenantConfiguration, type InsertTenantConfiguration,
   type TenantBakerNetwork, type InsertTenantBakerNetwork, type TenantRevenueSharing, type InsertTenantRevenueSharing,
   type Customer, type InsertCustomer, type CustomerNote, type InsertCustomerNote,
-  type QuoteTemplate, type InsertQuoteTemplate, type Quote, type InsertQuote, type QuoteItem, type InsertQuoteItem,
+  type QuoteTemplate, type InsertQuoteTemplate, type Quote, type InsertQuote, type QuoteItem, type InsertQuoteItem, type QuoteEvent, type InsertQuoteEvent,
   type ContractTemplate, type InsertContractTemplate, type Contract, type InsertContract, type ContractSignature, type InsertContractSignature,
   type PaymentPlan, type InsertPaymentPlan, type PaymentSchedule, type InsertPaymentSchedule, type Invoice, type InsertInvoice,
   type Booking, type InsertBooking,
@@ -17,7 +17,7 @@ import {
   type CalculatorLead, type InsertCalculatorLead,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
-  customers, customerNotes, quoteTemplates, quotes, quoteItems, contractTemplates, contracts, contractSignatures,
+  customers, customerNotes, quoteTemplates, quotes, quoteItems, quoteEvents, contractTemplates, contracts, contractSignatures,
   paymentPlans, paymentSchedule, invoices, bookings,
   auditLogs, systemAnnouncements, systemHealthMetrics, dataExportJobs, maintenanceSchedule,
   type AuditLog, type InsertAuditLog, type SystemAnnouncement, type InsertSystemAnnouncement,
@@ -176,6 +176,9 @@ export interface IStorage {
   updateQuoteItem(id: string, updates: Partial<InsertQuoteItem>): Promise<QuoteItem>;
   deleteQuoteItem(id: string): Promise<boolean>;
   
+  createQuoteEvent(event: InsertQuoteEvent): Promise<QuoteEvent>;
+  getQuoteEvents(quoteId: string): Promise<QuoteEvent[]>;
+  
   // Contract methods
   createContractTemplate(template: InsertContractTemplate): Promise<ContractTemplate>;
   getContractTemplates(bakerId: string): Promise<ContractTemplate[]>;
@@ -331,6 +334,7 @@ export class MemStorage implements IStorage {
   private quoteTemplates: Map<string, QuoteTemplate>;
   private quotes: Map<string, Quote>;
   private quoteItems: Map<string, QuoteItem>;
+  private quoteEvents: Map<string, QuoteEvent>;
   
   // Contract storage
   private contractTemplates: Map<string, ContractTemplate>;
@@ -409,6 +413,7 @@ export class MemStorage implements IStorage {
     this.quoteTemplates = new Map();
     this.quotes = new Map();
     this.quoteItems = new Map();
+    this.quoteEvents = new Map();
     
     // Contract storage
     this.contractTemplates = new Map();
@@ -1654,6 +1659,25 @@ export class MemStorage implements IStorage {
 
   async deleteQuoteItem(id: string): Promise<boolean> {
     return this.quoteItems.delete(id);
+  }
+
+  async createQuoteEvent(eventData: InsertQuoteEvent): Promise<QuoteEvent> {
+    const id = randomUUID();
+    const event: QuoteEvent = { 
+      id, 
+      ...eventData,
+      createdAt: eventData.createdAt || new Date()
+    };
+    if (!this.quoteEvents) this.quoteEvents = new Map();
+    this.quoteEvents.set(id, event);
+    return event;
+  }
+
+  async getQuoteEvents(quoteId: string): Promise<QuoteEvent[]> {
+    if (!this.quoteEvents) return [];
+    return Array.from(this.quoteEvents.values())
+      .filter(e => e.quoteId === quoteId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
   // Contract methods implementation
@@ -3082,6 +3106,19 @@ export class DatabaseStorage implements IStorage {
     return item;
   }
   async deleteQuoteItem(id: string): Promise<boolean> { return true; }
+  
+  async createQuoteEvent(event: InsertQuoteEvent): Promise<QuoteEvent> {
+    const [result] = await db.insert(quoteEvents).values({ ...event, id: event.id || randomUUID() }).returning();
+    return result;
+  }
+  
+  async getQuoteEvents(quoteId: string): Promise<QuoteEvent[]> {
+    return await db.select()
+      .from(quoteEvents)
+      .where(eq(quoteEvents.quoteId, quoteId))
+      .orderBy(quoteEvents.createdAt);
+  }
+  
   async createContractTemplate(template: InsertContractTemplate): Promise<ContractTemplate> {
     const [result] = await db.insert(contractTemplates).values({ ...template, id: template.id || randomUUID() }).returning();
     return result;

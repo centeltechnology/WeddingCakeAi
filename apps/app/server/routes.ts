@@ -3245,6 +3245,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const quote = await storage.createQuote(quotePayload);
       console.log('Created quote:', quote.id, 'for customer:', customer.id, 'lead:', lead.id);
       
+      // Track quote creation event
+      await storage.createQuoteEvent({
+        quoteId: quote.id,
+        event: 'created',
+        actorUserId: bakerId,
+        meta: { source: 'quote_builder' }
+      });
+      
       // STEP 5: Return all IDs for client routing
       res.status(201).json({
         quote,
@@ -3274,6 +3282,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/quotes/:id', async (req, res) => {
     try {
       const quote = await storage.updateQuote(req.params.id, req.body);
+      
+      // Track quote update event
+      await storage.createQuoteEvent({
+        quoteId: quote.id,
+        event: 'updated',
+        actorUserId: quote.bakerId || undefined,
+        meta: { fields: Object.keys(req.body) }
+      });
+      
       res.json(quote);
     } catch (error) {
       console.error('Error updating quote:', error);
@@ -3399,6 +3416,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sentAt: new Date()
         });
 
+        // Track quote sent event
+        await storage.createQuoteEvent({
+          quoteId: id,
+          event: 'sent',
+          actorUserId: user.userId,
+          meta: { 
+            to: customer.email,
+            subject: emailContent.subject
+          }
+        });
+
         // Update Sendy stage to 'quoted' if lead exists
         if (quote.leadId) {
           try {
@@ -3504,6 +3532,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           viewedAt: new Date(),
           status: 'viewed'
         });
+        
+        // Track quote viewed event (first time only)
+        await storage.createQuoteEvent({
+          quoteId: quote.id,
+          event: 'viewed',
+          actorUserId: null,
+          meta: { customerEmail: customer?.email }
+        });
       }
       
       res.json({
@@ -3559,6 +3595,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedQuote = await storage.updateQuote(quote.id, {
         status: 'approved',
         approvedAt: new Date()
+      });
+      
+      // Track quote approved event
+      await storage.createQuoteEvent({
+        quoteId: quote.id,
+        event: 'approved',
+        actorUserId: null,
+        meta: { approvedAt: new Date().toISOString() }
       });
       
       // Sendy: Subscribe to customers list and update stage to 'contracted'
@@ -3671,6 +3715,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'rejected',
         declinedAt: new Date(),
         declineReason: reason || null
+      });
+      
+      // Track quote declined event
+      await storage.createQuoteEvent({
+        quoteId: quote.id,
+        event: 'declined',
+        actorUserId: null,
+        meta: { 
+          declinedAt: new Date().toISOString(),
+          reason: reason || null
+        }
       });
       
       // Send notification email to baker
