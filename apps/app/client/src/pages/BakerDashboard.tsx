@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import LogoutButton from "../components/LogoutButton";
 import { PipelineChart } from "../components/PipelineChart";
 import { RevenueStat } from "../components/RevenueStat";
@@ -29,6 +30,7 @@ interface Invoice {
 }
 
 export default function BakerDashboard() {
+  const [, navigate] = useLocation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -109,9 +111,9 @@ export default function BakerDashboard() {
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
         <StatCard title="Leads Today" value={stats?.leadsToday || 0} />
-        <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} />
-        <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} />
-        <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} />
+        <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} onClick={() => navigate('/quotes')} />
+        <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} onClick={() => navigate('/invoices')} />
+        <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} onClick={() => navigate('/contracts')} />
       </div>
 
       {/* Revenue and Tasks Row */}
@@ -178,14 +180,33 @@ export default function BakerDashboard() {
   );
 }
 
-function StatCard({ title, value }: { title: string; value: number }) {
+function StatCard({ title, value, onClick }: { title: string; value: number; onClick?: () => void }) {
   return (
-    <div style={{ 
-      border: '1px solid #ddd', 
-      borderRadius: 8, 
-      padding: 20,
-      backgroundColor: '#f9f9f9'
-    }}>
+    <div 
+      style={{ 
+        border: '1px solid #ddd', 
+        borderRadius: 8, 
+        padding: 20,
+        backgroundColor: '#f9f9f9',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease'
+      }}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        if (onClick) {
+          e.currentTarget.style.backgroundColor = '#f0f0f0';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) {
+          e.currentTarget.style.backgroundColor = '#f9f9f9';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = 'none';
+        }
+      }}
+    >
       <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>{title}</div>
       <div style={{ fontSize: 32, fontWeight: 'bold' }}>{value}</div>
     </div>
