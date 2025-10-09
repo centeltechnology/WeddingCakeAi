@@ -81,6 +81,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [networkOptIn, setNetworkOptIn] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
 
   const [isDreamCakeDesignerOpen, setIsDreamCakeDesignerOpen] = useState(false);
@@ -98,6 +99,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       setCustomerName('');
       setCustomerEmail('');
       setCustomerPhone('');
+      setNetworkOptIn(false);
     },
     onError: (error: any) => {
       toast({
@@ -144,6 +146,9 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       eventDate: config.eventDate,
       cakeConfiguration: config,
       estimatedPrice: pricing.total.toString(),
+      networkOptIn,
+      consentedAt: networkOptIn ? new Date().toISOString() : null,
+      source: 'calculator',
     };
 
     saveLeadMutation.mutate(lead);
@@ -706,6 +711,26 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                 data-testid="input-customer-phone"
                 className="mt-1"
               />
+            </div>
+            <div className="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <Checkbox
+                id="network-opt-in"
+                checked={networkOptIn}
+                onCheckedChange={(checked) => setNetworkOptIn(checked as boolean)}
+                data-testid="checkbox-network-opt-in"
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <Label 
+                  htmlFor="network-opt-in" 
+                  className="text-sm font-medium cursor-pointer text-blue-900 dark:text-blue-100"
+                >
+                  I'd like relevant offers from BakerIQ partners (optional)
+                </Label>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  Get exclusive deals on wedding services like venues, photography, and more.
+                </p>
+              </div>
             </div>
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
               <p className="text-sm text-orange-800 dark:text-orange-300">
