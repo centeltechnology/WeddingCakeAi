@@ -93,6 +93,7 @@ import { QuoteBuilder } from "@/components/QuoteBuilder";
 import CustomersPage from "@/pages/Customers";
 import AdminTenantsPage from "@/pages/AdminTenants";
 import AdminUsersPage from "@/pages/AdminUsers";
+import AILab from "@/pages/AILab";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -231,6 +232,13 @@ function Router() {
         <AuthGuard>
           <AppShell>
             <InvoiceDetail />
+          </AppShell>
+        </AuthGuard>
+      </Route>
+      <Route path="/ai-lab">
+        <AuthGuard>
+          <AppShell>
+            <AILab />
           </AppShell>
         </AuthGuard>
       </Route>
