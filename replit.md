@@ -17,6 +17,13 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state management.
 - **Routing**: Wouter for client-side routing.
 - **Forms**: React Hook Form with Zod validation.
+- **Navigation System**: Centralized navigation infrastructure with:
+  - `navConfig.ts`: Centralized navigation configuration with demo mode support (VITE_DEMO_MODE env var)
+  - `AppLayout` component: Shared layout with top nav bar, responsive design, dark mode support, and user menu
+  - `PageHeader` component: Consistent page headers with back button functionality
+  - Demo mode filtering: Navigation items marked with `demoOnly: true` are hidden when VITE_DEMO_MODE is false
+  - Active state tracking: Nav links highlight based on current route using wouter's location hook
+  - Core pages using AppLayout: QuoteList, InvoiceList, ContractsList, AILab, NotFound
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js.
@@ -68,7 +75,7 @@ Preferred communication style: Simple, everyday language.
 - **Advertiser Network**: Complete lead rental system with advertiser accounts, credit management, campaign creation with advanced targeting (geo, dates, budgets, interests), and automated sending via AWS SES. Includes preflight audience counting, credit ledger, frequency caps (7-day network-wide, 30-day per-advertiser), tracking (opens/clicks), and secure unsubscribe with SHA-256 token hashing.
 - **Super Admin Dashboard**: Multi-tenant control, analytics (MRR, user growth), subscription management, baker impersonation, and baker management.
 - **Password Reset**: Complete password reset flow for baker accounts with rate limiting (20 req/10min) and daily cleanup job (2 AM) for expired tokens.
-- **Role-Based Navigation**: Dynamic navigation system with AppShell layout and Nav component. Shows role-specific links (baker: Invoices/Customers/Settings, admin: Tenants/Users). Features useMe hook for user context, error handling with visual feedback, and dark mode support.
+- **Role-Based Navigation**: Dynamic navigation system with centralized AppLayout and navConfig. Shows role-specific links (baker: Quotes/Invoices/Contracts/Customers, admin: Tenants/Users). Features demo mode filtering via VITE_DEMO_MODE env var, active state tracking, user menu with theme toggle, and consistent page headers with back navigation. Legacy AppShell component being phased out as pages migrate to AppLayout.
 - **Dashboard Widgets**: Tenant-aware dashboard components using TanStack Query and Recharts, including PipelineChart (quotes by status), RevenueStat (MTD revenue with month-over-month comparison), and TaskList (task management with create/complete). All widgets filter by tenant_id for multi-tenancy isolation.
 - **Quote Timeline & Event Tracking**: Comprehensive audit system with quote_events table tracking all lifecycle events (created, updated, sent, viewed, approved, declined). QuoteTimeline React component displays visual timeline with event history, metadata (email subjects, field changes, customer info), and timestamp tracking. Fully integrated into QuoteBuilder dialog with proper authentication and tenant filtering.
 - **Contract & Invoice Timeline UI**: Event history visualization with ContractTimeline and InvoiceTimeline components. API endpoints (`GET /api/contracts/:id/events`, `GET /api/invoices/:id/events`) provide secured, role-based access to event logs. Integrated into ContractEdit and InvoiceDetail pages for complete audit trail visibility.
