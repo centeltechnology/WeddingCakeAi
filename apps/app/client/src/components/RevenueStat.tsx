@@ -6,6 +6,8 @@ interface RevenueData {
   current: number;
   previous: number;
   deltaPct: number;
+  currentFormatted?: string;
+  previousFormatted?: string;
 }
 
 export function RevenueStat() {
@@ -41,12 +43,21 @@ export function RevenueStat() {
     );
   }
 
-  const { current = 0, previous = 0, deltaPct: change = 0 } = data || {};
+  const { current = 0, previous = 0, deltaPct: change = 0, currentFormatted, previousFormatted } = data || {};
   const isPositive = change > 0;
   const isNeutral = change === 0;
 
   const Icon = isNeutral ? Minus : isPositive ? TrendingUp : TrendingDown;
   const changeColor = isNeutral ? "text-muted-foreground" : isPositive ? "text-green-600" : "text-red-600";
+
+  const formatUSD = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
 
   return (
     <Card>
@@ -57,14 +68,14 @@ export function RevenueStat() {
       <CardContent>
         <div className="space-y-2">
           <div className="text-3xl font-bold">
-            ${current.toFixed(2)}
+            {currentFormatted || formatUSD(current)}
           </div>
           <div className={`flex items-center gap-1 text-sm ${changeColor}`}>
             <Icon className="h-4 w-4" />
-            <span>{Math.abs(change)}% vs last month</span>
+            <span>{Math.abs(change).toFixed(1)}% vs last month</span>
           </div>
           <div className="text-sm text-muted-foreground">
-            Previous month: ${previous.toFixed(2)}
+            Previous month: {previousFormatted || formatUSD(previous)}
           </div>
         </div>
       </CardContent>

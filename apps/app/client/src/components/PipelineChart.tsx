@@ -46,6 +46,23 @@ export function PipelineChart() {
 
   const chartData = data || [];
 
+  if (chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Quote Pipeline</CardTitle>
+          <CardDescription>Quotes by status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground">
+            <p className="text-lg font-medium">No quotes yet</p>
+            <p className="text-sm mt-2">Start creating quotes to see your pipeline</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>

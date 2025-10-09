@@ -51,6 +51,26 @@ export function TaskList() {
       if (!res.ok) throw new Error("Failed to complete task");
       return res.json();
     },
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/app/tasks"] });
+      const previousTasks = queryClient.getQueryData<Task[]>(["/api/app/tasks"]);
+      
+      queryClient.setQueryData<Task[]>(["/api/app/tasks"], (old) => {
+        if (!old) return old;
+        return old.map(task => 
+          task.id === taskId 
+            ? { ...task, status: "completed", completedAt: new Date().toISOString() }
+            : task
+        );
+      });
+      
+      return { previousTasks };
+    },
+    onError: (_err, _taskId, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["/api/app/tasks"], context.previousTasks);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/app/tasks"] });
     },

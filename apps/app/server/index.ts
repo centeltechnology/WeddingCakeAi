@@ -1100,11 +1100,33 @@ app.get("/api/app/charts/pipeline", ensureAuth, async (req, res) => {
     }
     
     const result = await db.execute<{ status: string; count: number }>(sql`
-      SELECT status, COUNT(*)::int as count
+      SELECT 
+        CASE 
+          WHEN status IN ('draft', 'pending') THEN 'draft'
+          WHEN status IN ('sent', 'delivered', 'viewed') THEN 'sent'
+          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 'accepted'
+          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 'rejected'
+          ELSE 'draft'
+        END as status,
+        COUNT(*)::int as count
       FROM quotes
       WHERE tenant_id = ${baker.tenantId}
-      GROUP BY status
-      ORDER BY status
+      GROUP BY 
+        CASE 
+          WHEN status IN ('draft', 'pending') THEN 'draft'
+          WHEN status IN ('sent', 'delivered', 'viewed') THEN 'sent'
+          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 'accepted'
+          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 'rejected'
+          ELSE 'draft'
+        END
+      ORDER BY 
+        CASE 
+          WHEN status IN ('draft', 'pending') THEN 1
+          WHEN status IN ('sent', 'delivered', 'viewed') THEN 2
+          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 3
+          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 4
+          ELSE 1
+        END
     `);
     
     res.json(result.rows || []);
@@ -1150,7 +1172,22 @@ app.get("/api/app/stats/revenue-mtd", ensureAuth, async (req, res) => {
     const previous = parseFloat(result.rows?.[0]?.previous || '0');
     const deltaPct = previous > 0 ? ((current - previous) / previous) * 100 : 0;
     
-    res.json({ current, previous, deltaPct });
+    const formatUSD = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
+    };
+    
+    res.json({ 
+      current, 
+      previous, 
+      deltaPct,
+      currentFormatted: formatUSD(current),
+      previousFormatted: formatUSD(previous)
+    });
   } catch (error) {
     console.error("Error fetching revenue MTD:", error);
     res.status(500).json({ error: "Failed to fetch revenue data" });
