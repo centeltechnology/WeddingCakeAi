@@ -8034,16 +8034,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Contract not found');
       }
 
-      // Generate a simple token for contract access (reuse contract ID with timestamp)
-      const token = crypto.createHash('sha256')
-        .update(`${contractId}-${Date.now()}`)
-        .digest('hex')
-        .substring(0, 32);
+      // If no approval token exists or it's expired, generate a new one
+      if (!contract.approvalToken || (contract.approvalTokenExpiresAt && new Date(contract.approvalTokenExpiresAt) < new Date())) {
+        const { token } = await storage.generateContractApprovalToken(contractId, 30);
+        console.log(`[Shortlink] Generated new approval token for contract ${contractId}`);
+        return res.redirect(302, `/contract-approval/${token}`);
+      }
 
-      // Store token in contract (we'll need to add this field or use a separate table)
-      // For now, use contractId as the token for simplicity
-      console.log(`[Shortlink] Redirecting to contract approval ${contractId}`);
-      res.redirect(302, `/contract-approval/${contractId}`);
+      console.log(`[Shortlink] Redirecting to existing contract approval ${contract.approvalToken}`);
+      res.redirect(302, `/contract-approval/${contract.approvalToken}`);
     } catch (error) {
       console.error('[Shortlink] Error processing contract shortlink:', error);
       res.status(500).send('Error processing contract link');
@@ -8052,15 +8051,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ====== PUBLIC CONTRACT FETCH ======
   
-  // GET /api/contracts/public/:id - Fetch contract for public viewing (using contractId as token for now)
-  app.get('/api/contracts/public/:id', async (req, res) => {
+  // GET /api/contracts/public/:token - Fetch contract for public viewing (token-protected)
+  app.get('/api/contracts/public/:token', async (req, res) => {
     try {
-      const contractId = req.params.id;
+      const { token } = req.params;
 
-      const contract = await storage.getContract(contractId);
+      // Find contract by approval token
+      const contract = await storage.getContractByApprovalToken(token);
       
       if (!contract) {
         return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Validate token expiry
+      if (contract.approvalTokenExpiresAt && new Date(contract.approvalTokenExpiresAt) < new Date()) {
+        return res.status(403).json({ error: 'Approval link has expired' });
       }
 
       // Only allow viewing if contract is in 'sent' or later status
@@ -8086,20 +8091,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST /api/contracts/public/:id/sign - Public contract signing endpoint
-  app.post('/api/contracts/public/:id/sign', async (req, res) => {
+  // POST /api/contracts/public/:token/sign - Public contract signing endpoint
+  app.post('/api/contracts/public/:token/sign', async (req, res) => {
     try {
-      const contractId = req.params.id;
+      const { token } = req.params;
       const { signerName, signerEmail, signerType } = req.body;
 
       if (!signerName || !signerEmail) {
         return res.status(400).json({ error: 'Signer name and email are required' });
       }
 
-      // Verify contract exists and is in appropriate status
-      const contract = await storage.getContract(contractId);
+      // Find contract by approval token
+      const contract = await storage.getContractByApprovalToken(token);
       if (!contract) {
         return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Validate token expiry
+      if (contract.approvalTokenExpiresAt && new Date(contract.approvalTokenExpiresAt) < new Date()) {
+        return res.status(403).json({ error: 'Approval link has expired' });
       }
 
       if (contract.status === 'draft') {
@@ -8115,7 +8125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const [signature] = await tx.insert(contractSignatures)
           .values({
             id: randomUUID(),
-            contractId,
+            contractId: contract.id,
             signerName,
             signerEmail,
             signerType: signerType || 'customer',
@@ -8129,7 +8139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'signed',
             signedAt: new Date()
           })
-          .where(eq(contracts.id, contractId))
+          .where(eq(contracts.id, contract.id))
           .returning();
 
         return { signature, contract: updatedContract };

@@ -929,6 +929,8 @@ export const contracts = pgTable("contracts", {
   completedAt: timestamp("completed_at"),
   cancelledAt: timestamp("cancelled_at"),
   cancellationReason: text("cancellation_reason"),
+  approvalToken: text("approval_token").unique(),
+  approvalTokenExpiresAt: timestamp("approval_token_expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

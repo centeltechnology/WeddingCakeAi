@@ -186,6 +186,8 @@ export interface IStorage {
   getContractsByBaker(bakerId: string): Promise<Contract[]>;
   getContractsByCustomer(customerId: string): Promise<Contract[]>;
   updateContract(id: string, updates: Partial<InsertContract>): Promise<Contract>;
+  getContractByApprovalToken(token: string): Promise<Contract | undefined>;
+  generateContractApprovalToken(contractId: string, expiresInDays: number): Promise<{ token: string; expiresAt: Date }>;
   
   createContractSignature(signature: InsertContractSignature): Promise<ContractSignature>;
   getContractSignatures(contractId: string): Promise<ContractSignature[]>;
@@ -1707,6 +1709,31 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async getContractByApprovalToken(token: string): Promise<Contract | undefined> {
+    return Array.from(this.contracts.values()).find(c => c.approvalToken === token);
+  }
+
+  async generateContractApprovalToken(contractId: string, expiresInDays: number = 30): Promise<{ token: string; expiresAt: Date }> {
+    const contract = this.contracts.get(contractId);
+    if (!contract) throw new Error('Contract not found');
+    
+    // Generate a secure random token
+    const token = randomUUID() + '-' + Date.now().toString(36);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    // Update the contract with the approval token
+    const updated: Contract = { 
+      ...contract, 
+      approvalToken: token,
+      approvalTokenExpiresAt: expiresAt,
+      updatedAt: new Date()
+    };
+    this.contracts.set(contractId, updated);
+    
+    return { token, expiresAt };
+  }
+
   async createContractSignature(signatureData: InsertContractSignature): Promise<ContractSignature> {
     const id = randomUUID();
     const signature: ContractSignature = {
@@ -3100,6 +3127,30 @@ export class DatabaseStorage implements IStorage {
     const [contract] = await db.update(contracts).set(updates).where(eq(contracts.id, id)).returning();
     return contract;
   }
+
+  async getContractByApprovalToken(token: string): Promise<Contract | undefined> {
+    const [contract] = await db.select().from(contracts).where(eq(contracts.approvalToken, token));
+    return contract;
+  }
+
+  async generateContractApprovalToken(contractId: string, expiresInDays: number = 30): Promise<{ token: string; expiresAt: Date }> {
+    // Generate a secure random token
+    const token = randomUUID() + '-' + Date.now().toString(36);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    // Update the contract with the approval token
+    await db.update(contracts)
+      .set({ 
+        approvalToken: token,
+        approvalTokenExpiresAt: expiresAt,
+        updatedAt: new Date()
+      })
+      .where(eq(contracts.id, contractId));
+    
+    return { token, expiresAt };
+  }
+
   async deleteContract(id: string): Promise<boolean> {
     try {
       const result = await db.delete(contracts).where(eq(contracts.id, id));

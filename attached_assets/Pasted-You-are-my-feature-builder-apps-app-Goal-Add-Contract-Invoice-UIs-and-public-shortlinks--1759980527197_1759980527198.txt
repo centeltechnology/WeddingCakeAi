@@ -1,0 +1,64 @@
+You are my feature builder (apps/app).
+
+Goal: Add Contract & Invoice UIs and public shortlinks.
+
+# 1) PUBLIC SHORTLINKS
+Server (apps/app/server/index.ts or routes.ts):
+A) GET /q/:id  (302 to /quote-approval/:token)
+- Lookup quote by id; if approval_token is present and not expired, redirect to /quote-approval/:token
+- If no token yet, call existing generator (or create one) and then redirect.
+- NEVER reveal tenant/customer info; just 302.
+
+B) GET /c/:id  (302 to /contract-approval/:token)  [new]
+- If you already have /api/contracts/:id/send issuing tokens, reuse that token
+- Otherwise create a token entry; then 302 to /contract-approval/:token
+
+Add simple logging.
+
+# 2) CONTRACT UI (protected pages)
+Create:
+- apps/app/client/src/pages/ContractsList.tsx
+  • Table of contracts: number, customer, status, signed_at
+  • Link to view/edit
+
+- apps/app/client/src/pages/ContractEdit.tsx
+  • If template exists: choose template, variables (JSON textarea), preview, “Send for signature”
+  • POST /api/contracts (create) and /api/contracts/:id/send
+
+- PUBLIC viewer:
+  • apps/app/client/src/pages/contract-approval.tsx (route: /contract-approval/:token)
+    - Fetch sanitized public contract HTML via a new endpoint:
+      GET /api/contracts/public/:id?token=...
+    - Render HTML, collect signer name/email, POST /api/contracts/:id/sign { token, name, email }
+    - Show success screen
+
+Wire routes in App.tsx:
+  • Protected: /contracts, /contracts/:id
+  • Public: /contract-approval/:token
+  • Shortlink /c/:id is server redirect only (client doesn’t need a route)
+
+# 3) INVOICE UI (protected)
+Create:
+- apps/app/client/src/pages/InvoicesList.tsx
+  • List invoices: number, customer, status, total, due
+  • Link to detail
+
+- apps/app/client/src/pages/InvoiceDetail.tsx
+  • Shows amounts, payments
+  • If Stripe checkout endpoint exists: button “Pay by card”
+  • Manual payment section if manual endpoints exist
+
+Add routes: /invoices, /invoices/:id
+Guard with AuthGuard.
+
+# 4) Minimal server helper (public contract fetch)
+Add GET /api/contracts/public/:id
+- Validate ?token against the contract’s token store (expiry, match)
+- Return { html, summary } only; no sensitive fields
+- 401/403 on invalid token
+
+# 5) Report
+Return:
+- Files created/edited
+- Routes added
+- Any assumptions made (e.g., which fields compose contract HTML)
