@@ -34,9 +34,24 @@ export default function BuyCreditsModal({ onClose, meta }:{ onClose: () => void;
         <button className="px-3 py-2 text-sm border rounded" onClick={onClose}>Close</button>
         <button
           className="px-3 py-2 text-sm border rounded bg-black text-white"
-          onClick={() => {
-            alert(`Stub: purchase pack ${pack} credits.\nImplement server route later.`);
-            onClose();
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/billing/topup", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pack })
+              });
+              if (!res.ok) {
+                const txt = await res.text().catch(()=> "");
+                throw new Error(`Top-up failed: ${res.status} ${res.statusText} - ${txt}`);
+              }
+              // notify the app that credits changed
+              window.dispatchEvent(new CustomEvent("ai-credits:updated"));
+              onClose();
+            } catch (e:any) {
+              alert(e?.message || "Top-up failed");
+            }
           }}
         >
           Buy Pack
