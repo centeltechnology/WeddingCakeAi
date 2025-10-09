@@ -38,6 +38,13 @@ export const tenantConfigurations = pgTable("tenant_configurations", {
     customerWelcome?: string;
     estimateReady?: string;
   }>().default({}),
+  // Sendy integration settings
+  sendyLeadsListId: text("sendy_leads_list_id"),
+  sendyCustomersListId: text("sendy_customers_list_id"),
+  sendyNewsletterListId: text("sendy_newsletter_list_id"),
+  sendySenderName: text("sendy_sender_name"),
+  sendySenderEmail: text("sendy_sender_email"),
+  sendyReplyTo: text("sendy_reply_to"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -339,10 +346,14 @@ export const sessions = pgTable("sessions", {
 
 export const calculatorLeads = pgTable("calculator_leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
   eventDate: text("event_date"),
+  city: text("city"),
+  state: text("state"),
+  source: text("source"), // e.g., 'calculator', 'contact_form', 'referral'
   cakeConfiguration: json("cake_configuration").$type<{
     guestCount?: number;
     tiers?: number;
@@ -356,9 +367,13 @@ export const calculatorLeads = pgTable("calculator_leads", {
     specialRequests?: string;
   }>(),
   estimatedPrice: decimal("estimated_price", { precision: 10, scale: 2 }),
+  stage: text("stage").default('lead'), // 'lead', 'quoted', 'contracted', 'completed'
+  consentedAt: timestamp("consented_at"),
   syncedToSendy: boolean("synced_to_sendy").default(false),
   syncedAt: timestamp("synced_at"),
+  sendySubscriberId: text("sendy_subscriber_id"),
   sendyListId: text("sendy_list_id"),
+  lastSyncError: text("last_sync_error"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -536,6 +551,7 @@ export const customers = pgTable("customers", {
   lastContactDate: timestamp("last_contact_date"),
   nextFollowUpDate: date("next_follow_up_date"),
   stripeCustomerId: varchar("stripe_customer_id"), // Added for Stripe integration
+  sendySubscriberId: text("sendy_subscriber_id"), // Sendy subscriber tracking
   // Customer Portal Authentication
   hasPortalAccess: boolean("has_portal_access").default(false),
   portalPasswordHash: text("portal_password_hash"), // Hashed password for portal access
