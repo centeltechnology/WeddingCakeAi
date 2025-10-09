@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -75,6 +75,13 @@ export default function BulkEmailLeads({
 
   // Check if user has enterprise plan
   const hasAccess = userPlan === "enterprise";
+
+  // Auto-open dialog if deep-linked with #ai-reply
+  useEffect(() => {
+    if (window.location.hash === "#ai-reply" && hasAccess) {
+      setEmailDialogOpen(true);
+    }
+  }, [hasAccess]);
 
   // Fetch leads
   const { data: leads = [], isLoading } = useQuery<Lead[]>({
@@ -345,11 +352,13 @@ export default function BulkEmailLeads({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <LeadsAiAssist
-                    bakeryName="Your Bakery"
-                    defaultTone="friendly"
-                    onInsertDraft={(draft) => setEmailBody(draft)}
-                  />
+                  <section id="ai-reply">
+                    <LeadsAiAssist
+                      bakeryName="Your Bakery"
+                      defaultTone="friendly"
+                      onInsertDraft={(draft) => setEmailBody(draft)}
+                    />
+                  </section>
                   <div>
                     <Label htmlFor="email-subject">Subject</Label>
                     <Input
