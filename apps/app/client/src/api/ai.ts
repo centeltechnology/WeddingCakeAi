@@ -9,11 +9,20 @@ async function fetchJSON(url: string, opts: RequestInit = {}) {
   if (csrf) headers.set("x-csrf-token", csrf);
 
   const res = await fetch(url, { credentials: "include", ...opts, headers, body: opts.body });
+  const text = await res.text().catch(()=>"");
+  const maybeJSON = (()=>{ try { return JSON.parse(text || "{}"); } catch { return null; }})();
+
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${res.statusText} – ${detail}`);
+    // bubble up structured 402 if present
+    if (res.status === 402 && maybeJSON?.error === "insufficient_credits") {
+      const err: any = new Error("insufficient_credits");
+      err.code = 402;
+      err.payload = maybeJSON;
+      throw err;
+    }
+    throw new Error(`HTTP ${res.status} ${res.statusText} – ${text?.slice(0,200)}`);
   }
-  return res.json();
+  return maybeJSON ?? {};
 }
 
 export async function aiLeadsAutoresponder(payload: {
