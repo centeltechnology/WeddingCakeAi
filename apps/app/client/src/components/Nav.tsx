@@ -52,6 +52,7 @@ export function Nav() {
   }
 
   const { role } = me;
+  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
 
   return (
     <nav className="border-b bg-white dark:bg-gray-900 dark:border-gray-800">
@@ -67,12 +68,24 @@ export function Nav() {
               <Link href="/baker/dashboard" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 Dashboard
               </Link>
-              <Link href="/messages" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                Messages
-              </Link>
               <Link href="/quotes" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 Quotes
               </Link>
+              
+              {/* Demo Mode or Baker: Show Contracts, Invoices, AI Lab */}
+              {(isDemo || role === "baker") && (
+                <>
+                  <Link href="/contracts" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    Contracts
+                  </Link>
+                  <Link href="/invoices" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    Invoices
+                  </Link>
+                  <Link href="/ai-lab" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    AI Lab
+                  </Link>
+                </>
+              )}
               
               {/* Admin Links */}
               {role === "admin" && (
@@ -86,17 +99,11 @@ export function Nav() {
                 </>
               )}
               
-              {/* Baker Links */}
+              {/* Baker-only Links (not shown in demo for non-bakers) */}
               {role === "baker" && (
                 <>
-                  <Link href="/invoices" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                    Invoices
-                  </Link>
                   <Link href="/customers" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                     Customers
-                  </Link>
-                  <Link href="/ai-lab" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                    AI Lab
                   </Link>
                   <Link href="/settings" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                     Settings
