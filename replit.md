@@ -70,12 +70,42 @@ Preferred communication style: Simple, everyday language.
 - **Password Reset**: Complete password reset flow for baker accounts with rate limiting (20 req/10min) and daily cleanup job (2 AM) for expired tokens.
 - **Role-Based Navigation**: Dynamic navigation system with AppShell layout and Nav component. Shows role-specific links (baker: Invoices/Customers/Settings, admin: Tenants/Users). Features useMe hook for user context, error handling with visual feedback, and dark mode support.
 - **Dashboard Widgets**: Tenant-aware dashboard components using TanStack Query and Recharts, including PipelineChart (quotes by status), RevenueStat (MTD revenue with month-over-month comparison), and TaskList (task management with create/complete). All widgets filter by tenant_id for multi-tenancy isolation.
+- **Quote Timeline & Event Tracking**: Comprehensive audit system with quote_events table tracking all lifecycle events (created, updated, sent, viewed, approved, declined). QuoteTimeline React component displays visual timeline with event history, metadata (email subjects, field changes, customer info), and timestamp tracking. Fully integrated into QuoteBuilder dialog with proper authentication and tenant filtering.
 
 ### Development Architecture
 - **Build System**: Vite for frontend, ESBuild for server compilation.
 - **Development Tools**: TSX for server-side TypeScript.
 - **Code Quality**: Shared TypeScript configuration.
 - **Asset Management**: Integrated asset handling with path resolution aliases.
+
+## UAT Testing & Quality Assurance
+
+### Testing Framework
+- **UAT Tests**: Comprehensive end-to-end testing framework validating customer journey from quote to payment.
+- **Test Coverage**: Quote creation/approval, contract generation/signing, invoice creation, and payment processing.
+- **Documentation**: UAT_TEST_SUMMARY.md contains detailed test results and findings.
+
+### Known Issues & Automation Gaps
+
+#### High Priority
+1. **Missing Contract Auto-Creation**: Contracts are NOT automatically created when quotes are approved. Manual intervention required.
+2. **Missing Invoice Auto-Creation**: Invoices are NOT automatically created when contracts are signed. Manual intervention required.
+
+#### Medium Priority
+3. **API Parameter Inconsistency**: Contract signing endpoint uses `signerName`/`signerEmail` while other endpoints may use `customerName`/`customerEmail`.
+
+#### Verified Working
+- ✅ Quote timeline event tracking (sent, viewed, approved, declined)
+- ✅ Multi-tenant data isolation across all entities
+- ✅ Quote-to-contract-to-invoice data linkage
+- ✅ Secure token-based approval flows
+- ✅ Transaction-wrapped database operations
+
+### Recommendations
+- Implement event-driven architecture for automated workflow transitions
+- Add webhook support for external integrations
+- Extend timeline tracking to contracts and invoices
+- Add automated email notifications for all status changes
 
 ## External Dependencies
 
