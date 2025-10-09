@@ -353,6 +353,7 @@ export const calculatorLeads = pgTable("calculator_leads", {
   eventDate: text("event_date"),
   city: text("city"),
   state: text("state"),
+  postalCode: text("postal_code"),
   source: text("source"), // e.g., 'calculator', 'contact_form', 'referral'
   cakeConfiguration: json("cake_configuration").$type<{
     guestCount?: number;
@@ -367,14 +368,85 @@ export const calculatorLeads = pgTable("calculator_leads", {
     specialRequests?: string;
   }>(),
   estimatedPrice: decimal("estimated_price", { precision: 10, scale: 2 }),
+  budgetMin: integer("budget_min"),
+  budgetMax: integer("budget_max"),
+  interests: text("interests").array(),
   stage: text("stage").default('lead'), // 'lead', 'quoted', 'contracted', 'completed'
   consentedAt: timestamp("consented_at"),
+  networkOptIn: boolean("network_opt_in").default(false),
+  lastNetworkContactAt: timestamp("last_network_contact_at"),
+  unsubscribedNetwork: boolean("unsubscribed_network").default(false),
   syncedToSendy: boolean("synced_to_sendy").default(false),
   syncedAt: timestamp("synced_at"),
   sendySubscriberId: text("sendy_subscriber_id"),
   sendyListId: text("sendy_list_id"),
   lastSyncError: text("last_sync_error"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advertiser tables for lead rental MVP
+export const advertisers = pgTable("advertisers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  status: text("status").notNull().default('pending'), // pending, approved, suspended
+  contactEmail: text("contact_email").notNull(),
+  website: text("website"),
+  vertical: text("vertical"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const advertiserUsers = pgTable("advertiser_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: text("role").notNull().default('member'), // admin, member
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const advertiserCredits = pgTable("advertiser_credits", {
+  advertiserId: varchar("advertiser_id").primaryKey().references(() => advertisers.id),
+  balanceCents: integer("balance_cents").notNull().default(0),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const advertiserCreditsLedger = pgTable("advertiser_credits_ledger", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  deltaCents: integer("delta_cents").notNull(),
+  reason: text("reason"),
+  campaignId: varchar("campaign_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const adCampaigns = pgTable("ad_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  name: text("name").notNull(),
+  status: text("status").notNull().default('draft'), // draft, pending_review, approved, sending, paused, done
+  unitPriceCents: integer("unit_price_cents").notNull().default(25), // $0.25/send default
+  maxSends: integer("max_sends").notNull().default(1000),
+  targeting: jsonb("targeting").notNull().default('{}'),
+  scheduledAt: timestamp("scheduled_at"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const adDeliveries = pgTable("ad_deliveries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => adCampaigns.id),
+  leadId: varchar("lead_id").notNull().references(() => calculatorLeads.id),
+  status: text("status").notNull().default('queued'), // queued, sent, bounced, unsub, failed
+  sentAt: timestamp("sent_at"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+});
+
+export const unsubscribeTokens = pgTable("unsubscribe_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadId: varchar("lead_id").notNull().references(() => calculatorLeads.id),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
