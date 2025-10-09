@@ -78,6 +78,7 @@ import ResetRequest from "@/pages/ResetRequest";
 import ResetConfirm from "@/pages/ResetConfirm";
 import { AppShell } from "@/components/AppShell";
 import AdminImpersonate from "@/pages/AdminImpersonate";
+import AdvertiserCampaigns from "@/pages/AdvertiserCampaigns";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -226,6 +227,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/account-settings" component={Settings} />
       <Route path="/billing" component={Billing} />
+      <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
       <Route component={NotFound} />
     </Switch>
   );
