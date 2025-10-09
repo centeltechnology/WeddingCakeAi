@@ -1446,3 +1446,34 @@ export const insertTaskSchema = createInsertSchema(tasks, {
 });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+// --- AI Credits ---
+export const aiBalances = pgTable("ai_balances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().unique(),
+  creditsBalance: integer("credits_balance").notNull().default(0),
+  rolloverCap: integer("rollover_cap").notNull().default(0),
+  cycleStart: timestamp("cycle_start", { mode: "string" }).notNull().defaultNow(),
+  cycleEnd: timestamp("cycle_end", { mode: "string" }).notNull()
+});
+
+export const aiUsage = pgTable("ai_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  feature: text("feature").notNull(),
+  credits: integer("credits").notNull(),
+  tokensInput: integer("tokens_input"),
+  tokensOutput: integer("tokens_output"),
+  unitCostCents: integer("unit_cost_cents").default(0),
+  createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+}, (t) => ({
+  tenantCreatedIdx: index("ai_usage_tenant_created_idx").on(t.tenantId, t.createdAt),
+}));
+
+export const insertAiBalanceSchema = createInsertSchema(aiBalances).omit({ id: true, cycleStart: true });
+export const insertAiUsageSchema = createInsertSchema(aiUsage).omit({ id: true, createdAt: true });
+
+export type AiBalance = typeof aiBalances.$inferSelect;
+export type InsertAiBalance = z.infer<typeof insertAiBalanceSchema>;
+export type AiUsage = typeof aiUsage.$inferSelect;
+export type InsertAiUsage = z.infer<typeof insertAiUsageSchema>;
