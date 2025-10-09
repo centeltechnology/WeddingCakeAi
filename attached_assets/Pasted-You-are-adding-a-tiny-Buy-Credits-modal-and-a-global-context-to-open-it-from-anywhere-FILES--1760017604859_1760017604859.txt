@@ -1,0 +1,123 @@
+You are adding a tiny “Buy Credits” modal and a global context to open it from anywhere.
+
+FILES
+- Create: apps/app/client/src/components/ai/CreditsModalContext.tsx
+- Create: apps/app/client/src/components/ai/BuyCreditsModal.tsx
+- Update: apps/app/client/src/App.tsx (or the root layout where the app renders) to include the provider and modal once.
+
+CODE (CreditsModalContext.tsx):
+------------------------------------------------
+import React from "react";
+
+type Ctx = {
+  open: (opts?: { reason?: string; needed?: number; have?: number }) => void;
+  close: () => void;
+};
+export const CreditsModalContext = React.createContext<Ctx | null>(null);
+
+export function useCreditsModal() {
+  const ctx = React.useContext(CreditsModalContext);
+  if (!ctx) throw new Error("CreditsModalContext missing");
+  return ctx;
+}
+
+export function CreditsModalProvider({ children }: { children: React.ReactNode }) {
+  const [visible, setVisible] = React.useState(false);
+  const [meta, setMeta] = React.useState<{ reason?: string; needed?: number; have?: number } | null>(null);
+  const open = (opts?: { reason?: string; needed?: number; have?: number }) => { setMeta(opts || null); setVisible(true); };
+  const close = () => setVisible(false);
+
+  return (
+    <CreditsModalContext.Provider value={{ open, close }}>
+      {children}
+      {/* Portal-friendly: render modal here */}
+      <div id="credits-modal-root" style={{ position:"relative", zIndex: 1000 }}>
+        {visible && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-lg p-4">
+              {/* lazy import the real modal to avoid SSR quirks */}
+              <React.Suspense fallback={<div>Loading…</div>}>
+                <BuyCreditsModalInternal onClose={close} meta={meta || undefined} />
+              </React.Suspense>
+            </div>
+          </div>
+        )}
+      </div>
+    </CreditsModalContext.Provider>
+  );
+}
+
+// Lazy wrapper (avoids circular import)
+const BuyCreditsModalInternal = React.lazy(() => import("./BuyCreditsModal"));
+------------------------------------------------
+
+CODE (BuyCreditsModal.tsx):
+------------------------------------------------
+import React from "react";
+
+export default function BuyCreditsModal({ onClose, meta }:{ onClose: () => void; meta?: { reason?: string; needed?: number; have?: number } }) {
+  const [pack, setPack] = React.useState<"200"|"500"|"1000">("200");
+
+  return (
+    <div>
+      <div className="text-lg font-semibold">Get more AI credits</div>
+      <div className="text-sm text-gray-600 mt-1">
+        {meta?.reason ? <>Reason: <span className="font-medium">{meta.reason}</span></> : "Add credits to keep using AI tools."}
+      </div>
+      <div className="mt-3 p-2 text-xs bg-gray-50 rounded border">
+        {typeof meta?.have === "number" && typeof meta?.needed === "number" ? (
+          <>You have <b>{meta.have}</b>, need <b>{meta.needed}</b>.</>
+        ) : <>Choose a top-up pack below.</>}
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <button onClick={()=>setPack("200")} className={`border rounded p-2 ${pack==="200"?"bg-white shadow":""}`}>
+          <div className="font-medium">200</div>
+          <div className="text-xs text-gray-600">$9</div>
+        </button>
+        <button onClick={()=>setPack("500")} className={`border rounded p-2 ${pack==="500"?"bg-white shadow":""}`}>
+          <div className="font-medium">500</div>
+          <div className="text-xs text-gray-600">$19</div>
+        </button>
+        <button onClick={()=>setPack("1000")} className={`border rounded p-2 ${pack==="1000"?"bg-white shadow":""}`}>
+          <div className="font-medium">1000</div>
+          <div className="text-xs text-gray-600">$35</div>
+        </button>
+      </div>
+
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <button className="px-3 py-2 text-sm border rounded" onClick={onClose}>Close</button>
+        {/* Stubbed purchase – no billing integration yet */}
+        <button
+          className="px-3 py-2 text-sm border rounded bg-black text-white"
+          onClick={() => {
+            // TODO: call /api/billing/topup OR show “Contact Support” until Stripe plan ready.
+            alert(`Stub: purchase pack ${pack} credits.\nImplement server route later.`);
+            onClose();
+          }}
+        >
+          Buy Pack
+        </button>
+      </div>
+    </div>
+  );
+}
+------------------------------------------------
+
+UPDATE ROOT (App.tsx or root layout where routes render):
+- Import and wrap your app in <CreditsModalProvider>.
+Example:
+
+import { CreditsModalProvider } from "./components/ai/CreditsModalContext";
+// ...
+export default function App() {
+  return (
+    <CreditsModalProvider>
+      {/* existing providers/routes */}
+      <AppRoutes />
+    </CreditsModalProvider>
+  );
+}
+
+OUTPUT
+- Print the file you wrapped (e.g., apps/app/client/src/App.tsx) and a small diff around the provider.

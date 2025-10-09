@@ -86,6 +86,7 @@ import AdminImpersonate from "@/pages/AdminImpersonate";
 import AdvertiserCampaigns from "@/pages/AdvertiserCampaigns";
 import AdvertiserReports from "@/pages/AdvertiserReports";
 import AdminNetworkReports from "@/pages/AdminNetworkReports";
+import { CreditsModalProvider } from "@/components/ai/CreditsModalContext";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -276,9 +277,11 @@ function App() {
         <ThemeProvider defaultTheme="light" storageKey="wedding-cake-theme">
           <TenantBrandProvider>
             <TooltipProvider>
-              <Toaster />
-              <Router />
-              <ScrollToTopButton />
+              <CreditsModalProvider>
+                <Toaster />
+                <Router />
+                <ScrollToTopButton />
+              </CreditsModalProvider>
             </TooltipProvider>
           </TenantBrandProvider>
         </ThemeProvider>
