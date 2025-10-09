@@ -4521,6 +4521,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Charts API Routes
+  app.get('/api/charts/quote-pipeline', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get quotes filtered by tenant
+      const tenantQuotes = await db.select()
+        .from(quotes)
+        .where(eq(quotes.tenantId, user.tenantId || ''));
+
+      // Count by status
+      const statusCounts = tenantQuotes.reduce((acc: Record<string, number>, quote) => {
+        const status = quote.status || 'draft';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Format for chart display
+      const pipelineData = Object.entries(statusCounts).map(([status, count]) => ({
+        status,
+        count,
+        label: status.charAt(0).toUpperCase() + status.slice(1)
+      }));
+
+      res.json(pipelineData);
+    } catch (error) {
+      console.error('Error fetching quote pipeline:', error);
+      res.status(500).json({ error: 'Failed to fetch quote pipeline data' });
+    }
+  });
+
   app.get('/api/invoices/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const user = req.user;
