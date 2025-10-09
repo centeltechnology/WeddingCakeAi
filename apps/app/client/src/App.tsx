@@ -208,12 +208,16 @@ function Router() {
       <Route path="/contract-approval/:token" component={ContractApprovalPage} />
       <Route path="/contracts">
         <AuthGuard>
-          <ContractsList />
+          <AppShell>
+            <ContractsList />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/contracts/:id">
         <AuthGuard>
-          <ContractEdit />
+          <AppShell>
+            <ContractEdit />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/invoices">
