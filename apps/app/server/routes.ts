@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
@@ -3957,6 +3957,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting contract:', error);
       res.status(500).json({ error: 'Failed to delete contract' });
+    }
+  });
+
+  app.post('/api/contracts/approve/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { signature } = req.body;
+      
+      if (!signature) {
+        return res.status(400).json({ error: 'Signature is required' });
+      }
+      
+      const contract = await storage.getContractByApprovalToken(token);
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+      
+      if (contract.approvalTokenExpiresAt && new Date() > new Date(contract.approvalTokenExpiresAt)) {
+        return res.status(410).json({ error: 'Approval link has expired' });
+      }
+      
+      if (contract.status === 'signed') {
+        return res.status(409).json({ error: 'Contract has already been signed' });
+      }
+      
+      if (contract.status === 'cancelled') {
+        return res.status(409).json({ error: 'Contract has been cancelled and cannot be signed' });
+      }
+      
+      const customer = await storage.getCustomer(contract.customerId || '');
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      const existingSignature = await db.query.contractSignatures.findFirst({
+        where: eq(contractSignatures.contractId, contract.id)
+      });
+      
+      if (existingSignature) {
+        return res.status(409).json({ error: 'Contract has already been signed' });
+      }
+      
+      await db.transaction(async (tx) => {
+        const [updatedContract] = await tx.update(contracts)
+          .set({ 
+            status: 'signed',
+            signedAt: new Date()
+          })
+          .where(and(
+            eq(contracts.id, contract.id),
+            eq(contracts.status, 'sent')
+          ))
+          .returning();
+        
+        if (!updatedContract) {
+          throw new Error('CONTRACT_STATUS_CHANGED');
+        }
+        
+        await tx.insert(contractSignatures)
+          .values({
+            id: randomUUID(),
+            contractId: contract.id,
+            signerName: customer.name,
+            signerEmail: customer.email,
+            signerType: 'customer',
+            signatureData: signature,
+            signedAt: new Date()
+          });
+      });
+      
+      const updatedContract = await storage.getContract(contract.id);
+      
+      try {
+        const baker = await storage.getBaker(contract.bakerId || '');
+        if (baker) {
+          await sendEmail({
+            to: baker.email,
+            toName: baker.name,
+            from: 'noreply@bakeriq.app',
+            fromName: 'BakerIQ',
+            subject: `Contract #${contract.contractNumber} Signed!`,
+            textPart: `Great news! Your contract #${contract.contractNumber} has been signed by the customer.`,
+            htmlPart: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2 style="color: #f97316;">Contract Signed!</h2>
+              <p>Great news! Your contract <strong>#${contract.contractNumber}</strong> has been signed by the customer.</p>
+              <p><strong>Total Amount:</strong> $${contract.totalAmount}</p>
+              <p>Please log in to your baker dashboard to proceed with the next steps.</p>
+            </div>`
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send contract signature notification:', emailError);
+      }
+      
+      res.json(updatedContract);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'CONTRACT_STATUS_CHANGED') {
+        return res.status(409).json({ error: 'Contract status changed during approval' });
+      }
+      console.error('Error approving contract:', error);
+      res.status(500).json({ error: 'Failed to approve contract' });
     }
   });
 
