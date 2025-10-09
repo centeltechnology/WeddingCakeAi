@@ -1,0 +1,170 @@
+You are implementing minimal controller logic for AI endpoints.
+
+FILES & CODE:
+
+(1) apps/app/server/routes/ai/controllers/leads.ts
+------------------------------------------------
+import type { Request, Response } from "express";
+import { openai, AI_DEFAULT_MODEL, AI_MAX_OUTPUT_TOKENS } from "../clients/openai";
+import { LeadAutoResponderInput, LeadScoreInput } from "../schemas/leads.schema";
+import { safe } from "../util/http";
+
+export const autoresponder = safe(async (req: Request, res: Response) => {
+  const parsed = LeadAutoResponderInput.parse(req.body);
+  const { bakeryName, customerName, eventType, eventDate, guestCount, styleNotes, tone, emailSignature } = parsed;
+
+  const system = "You write concise, warm first-replies for a bakery. Keep it under 140 words. Ask 1-2 clarifying questions.";
+  const user = `
+Bakery: ${bakeryName}
+Tone: ${tone}
+Lead: { name: ${customerName ?? "N/A"}, eventType: ${eventType ?? "unknown"}, eventDate: ${eventDate ?? "unknown"}, guests: ${guestCount ?? "unknown"} }
+Style notes: ${styleNotes ?? "N/A"}
+Signature: ${emailSignature ?? ""}
+
+Write a first reply email (no subject line), short paragraphs, include a friendly CTA to share inspo photos and confirm date.
+  `.trim();
+
+  const completion = await openai.chat.completions.create({
+    model: AI_DEFAULT_MODEL,
+    max_tokens: AI_MAX_OUTPUT_TOKENS,
+    temperature: 0.6,
+    messages: [{ role: "system", content: system }, { role: "user", content: user }],
+  });
+
+  res.json({ reply: completion.choices?.[0]?.message?.content?.trim() ?? "" });
+});
+
+export const leadScore = safe(async (req: Request, res: Response) => {
+  const parsed = LeadScoreInput.parse(req.body);
+  let score = 50;
+  if (parsed.guestCount && parsed.guestCount >= 100) score += 15;
+  if (parsed.budgetBand === "high") score += 20;
+  if ((parsed.distanceMiles ?? 0) > 25) score -= 10;
+  if (parsed.specialRequests?.toLowerCase().includes("sugar")) score += 5;
+  res.json({ score: Math.max(0, Math.min(100, score)) });
+});
+------------------------------------------------
+
+(2) apps/app/server/routes/ai/controllers/quotes.ts
+------------------------------------------------
+import type { Request, Response } from "express";
+import { SuggestPriceInput } from "../schemas/quotes.schema";
+import { safe } from "../util/http";
+
+const BASE_RATE_PER_SERVING = { buttercream: 6.0, fondant: 8.0 } as const;
+const COMPLEXITY_MULT = { basic: 1.0, standard: 1.25, premium: 1.5, couture: 2.0 } as const;
+const ADDER = { metallicLeaf: 45, sugarFlorals: 85, ediblePrint: 25, topperCustom: 30 };
+const DELIVERY = { base: 25, free_radius_miles: 5, per_mile_after: 2.0 };
+
+function servings(guests: number) { return Math.ceil(guests * 1.1); }
+function deliveryFee(miles: number) {
+  const extra = Math.max(0, miles - DELIVERY.free_radius_miles);
+  return DELIVERY.base + extra * DELIVERY.per_mile_after;
+}
+function band(total: number) {
+  return { low: Math.round(total * 0.92), high: Math.round(total * 1.08) };
+}
+
+export const suggestPrice = safe(async (req: Request, res: Response) => {
+  const input = SuggestPriceInput.parse(req.body);
+
+  const s = servings(input.guestCount);
+  const base = s * BASE_RATE_PER_SERVING[input.icing];
+  const mult = COMPLEXITY_MULT[input.complexity];
+  const addOns =
+    (input.addOns.metallicLeaf ? ADDER.metallicLeaf : 0) +
+    (input.addOns.sugarFlorals ? ADDER.sugarFlorals : 0) +
+    (input.addOns.ediblePrint   ? ADDER.ediblePrint   : 0) +
+    (input.addOns.topperCustom  ? ADDER.topperCustom  : 0);
+
+  const subtotal = base * mult + addOns;
+  const ship = deliveryFee(input.deliveryMiles);
+  const total = Math.round(subtotal + ship);
+  const { low, high } = band(total);
+
+  res.json({
+    servings: s,
+    total,
+    range: { low, high },
+    breakdown: { base, complexityMultiplier: mult, addOnsCost: addOns, deliveryFee: ship },
+    notesEcho: input.notes ?? null,
+  });
+});
+------------------------------------------------
+
+(3) apps/app/server/routes/ai/controllers/marketing.ts
+------------------------------------------------
+import type { Request, Response } from "express";
+import { openai, AI_DEFAULT_MODEL, AI_MAX_OUTPUT_TOKENS } from "../clients/openai";
+import { CaptionInput, CopyInput } from "../schemas/marketing.schema";
+import { safe } from "../util/http";
+
+export const captionForImage = safe(async (req: Request, res: Response) => {
+  const { tags, tone, hashtags, maxChars } = CaptionInput.parse(req.body);
+
+  const system = "You write concise, engaging Instagram captions for a bakery.";
+  const user = `
+Tone: ${tone}
+Tags: ${tags.join(", ")}
+Max Length: ${maxChars}
+Include Hashtags: ${hashtags ? "yes" : "no"}
+
+Write 1 caption. If hashtags are included, put 4–8 tasteful hashtags at the end.
+`.trim();
+
+  const completion = await openai.chat.completions.create({
+    model: AI_DEFAULT_MODEL,
+    max_tokens: AI_MAX_OUTPUT_TOKENS,
+    temperature: 0.8,
+    messages: [{ role: "system", content: system }, { role: "user", content: user }],
+  });
+
+  res.json({ caption: completion.choices?.[0]?.message?.content?.trim() ?? "" });
+});
+
+export const marketingCopy = safe(async (req: Request, res: Response) => {
+  const { section, context, tone, maxChars } = CopyInput.parse(req.body);
+  const system = "You are a brand copywriter for a boutique bakery marketplace.";
+  const user = `
+Section: ${section}
+Tone: ${tone}
+Max: ${maxChars} chars
+Context:
+${context ?? "N/A"}
+
+Write polished copy that fits the section and length.
+`.trim();
+
+  const completion = await openai.chat.completions.create({
+    model: AI_DEFAULT_MODEL,
+    max_tokens: AI_MAX_OUTPUT_TOKENS,
+    temperature: 0.7,
+    messages: [{ role: "system", content: system }, { role: "user", content: user }],
+  });
+
+  res.json({ copy: completion.choices?.[0]?.message?.content?.trim() ?? "" });
+});
+------------------------------------------------
+
+(4) apps/app/server/routes/ai/controllers/contracts.ts
+------------------------------------------------
+import type { Request, Response } from "express";
+import { safe } from "../util/http";
+
+export const draftContract = safe(async (_req: Request, res: Response) => {
+  res.json({
+    draft: `
+This Services Agreement ("Agreement") is made between Baker ("Provider") and Client.
+1) Services: Custom cake as outlined in Quote #XXXX.
+2) Delivery Window: TBD by Provider; Client to confirm address and time.
+3) Changes: Design changes freeze 7 days before event.
+4) Allergens: Products may contain or come into contact with common allergens.
+5) Payment & Refunds: Non-refundable retainer to secure date; remaining balance due before delivery.
+6) Force Majeure: Provider not liable for delays beyond reasonable control.
+`.trim(),
+  });
+});
+------------------------------------------------
+
+OUTPUT
+- Confirm four files saved and TypeScript passes type-check for these controllers.
