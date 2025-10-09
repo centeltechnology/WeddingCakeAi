@@ -1,0 +1,176 @@
+You’re working in apps/app (BakerIQ). Implement a consistent, app-wide navigation system and add “Back” buttons where appropriate. Make sure all new pages are linked and visible in Demo Mode.
+
+Goals
+
+Centralize Nav Config
+Create a single source of truth for menu items so every page shows the same nav.
+
+New file: client/src/navigation/navConfig.ts
+
+export type NavItem = { label: string; href: string; demoOnly?: boolean };
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', href: '/baker/dashboard' },
+  { label: 'Quotes',    href: '/quotes' },
+  { label: 'Contracts', href: '/contracts' },
+  { label: 'Invoices',  href: '/invoices' },
+  { label: 'AI Lab',    href: '/ai-lab' }, // demo-only feature is fine to always show in demo
+];
+
+
+Shared App Layout with Consistent Menu
+Make an AppLayout wrapper that renders the top nav and a content container. Use it on every page.
+
+New: client/src/components/AppLayout.tsx
+
+import { Link, useLocation } from 'wouter';
+import { NAV_ITEMS } from '@/navigation/navConfig';
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const demo = import.meta.env.VITE_DEMO_MODE === 'true';
+
+  const items = NAV_ITEMS.filter(i => demo || !i.demoOnly);
+
+  return (
+    <div className="min-h-screen">
+      {/* Top Nav */}
+      <div className="border-b bg-white">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
+          <div className="font-semibold">BakerIQ</div>
+          <nav className="flex gap-3">
+            {items.map(it => {
+              const active = location === it.href || location.startsWith(it.href + '/');
+              return (
+                <Link key={it.href} href={it.href} className={`px-2 py-1 rounded ${active ? 'bg-black text-white' : 'hover:bg-neutral-100'}`}>
+                  {it.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+      {/* Page container */}
+      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+    </div>
+  );
+}
+
+
+Back Button / Breadcrumb Helper
+Add a shared header with a Back button you can drop into any page.
+
+New: client/src/components/PageHeader.tsx
+
+export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <div>
+        <h1 className="text-xl font-semibold">{title}</h1>
+        {subtitle && <p className="text-sm opacity-70">{subtitle}</p>}
+      </div>
+      <button onClick={() => history.back()} className="px-3 py-1 rounded border hover:bg-neutral-50">
+        ← Back
+      </button>
+    </div>
+  );
+}
+
+
+Wrap All Pages With AppLayout
+Update these pages to render inside AppLayout and use PageHeader:
+
+client/src/pages/QuoteList.tsx
+
+client/src/pages/InvoiceList.tsx
+
+client/src/pages/ContractList.tsx
+
+client/src/pages/ContractEdit.tsx (stub OK)
+
+client/src/pages/AILab.tsx
+
+Dashboard page (wherever it lives)
+
+Example patch (apply similarly to each page):
+
+import AppLayout from '@/components/AppLayout';
+import { PageHeader } from '@/components/PageHeader';
+
+export default function QuoteList() {
+  // existing logic...
+  return (
+    <AppLayout>
+      <PageHeader title="Quotes" subtitle="Create, review, and approve quotes" />
+      {/* existing list UI */}
+    </AppLayout>
+  );
+}
+
+
+Ensure Routes Exist
+Verify/insert routes in client/src/App.tsx for:
+
+/baker/dashboard → Dashboard component
+
+/quotes, /quotes/new, /quotes/:id
+
+/contracts, /contracts/:id
+
+/invoices
+
+/ai-lab
+
+All route components should return their content inside AppLayout (per step 4), so the nav is identical everywhere.
+
+Make KPI Cards and Empty States Link Properly
+
+In the dashboard component:
+
+Clicking Quotes Pending → navigate('/quotes')
+
+Clicking Invoices Due → navigate('/invoices')
+
+On placeholder pages (like “Manage from dashboard” boxes), add direct links:
+
+“Open Quotes” → /quotes
+
+“Open Invoices” → /invoices
+
+404 (Not Found) Page
+
+Add client/src/pages/NotFound.tsx with AppLayout + PageHeader and a button to go back or go to Dashboard.
+
+Route: catch-all → NotFound.
+
+Demo Mode Guarantee
+When VITE_DEMO_MODE=true, nav must always show: Dashboard, Quotes, Contracts, Invoices, AI Lab (no role gating in demo). Keep your existing role checks for production.
+
+Deliverables
+
+client/src/navigation/navConfig.ts
+
+client/src/components/AppLayout.tsx
+
+client/src/components/PageHeader.tsx
+
+Updated page files to wrap with AppLayout and add PageHeader
+
+Updated client/src/App.tsx routes
+
+Optional client/src/pages/NotFound.tsx
+
+Dashboard KPI click handlers updated
+
+Placeholder/empty-state links pointing to real list pages
+
+Acceptance
+
+The same top nav appears on every page.
+
+All menu items route correctly to the new pages (Quotes, Contracts, Invoices, AI Lab).
+
+Each list/detail page shows a Back button in the header.
+
+Dashboard KPI cards route to the correct lists.
+
+In Demo Mode, nothing is hidden from the nav.
