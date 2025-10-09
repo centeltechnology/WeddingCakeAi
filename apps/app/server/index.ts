@@ -1089,6 +1089,161 @@ app.get("/api/app/invoices/due", ensureAuth, async (req, res) => {
   }
 });
 
+// Pipeline chart - quotes by status (tenant-aware)
+app.get("/api/app/charts/pipeline", ensureAuth, async (req, res) => {
+  try {
+    const userEmail = (req.session as any).email;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const result = await db.execute<{ status: string; count: number }>(sql`
+      SELECT status, COUNT(*)::int as count
+      FROM quotes
+      WHERE tenant_id = ${baker.tenantId}
+      GROUP BY status
+      ORDER BY status
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error) {
+    console.error("Error fetching pipeline chart:", error);
+    res.status(500).json({ error: "Failed to fetch pipeline data" });
+  }
+});
+
+// Revenue MTD - current vs previous month (tenant-aware)
+app.get("/api/app/stats/revenue-mtd", ensureAuth, async (req, res) => {
+  try {
+    const userEmail = (req.session as any).email;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const result = await db.execute<{ current: string; previous: string }>(sql`
+      WITH current_month AS (
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM transactions
+        WHERE tenant_id = ${baker.tenantId}
+          AND status = 'succeeded'
+          AND created_at >= date_trunc('month', now())
+      ),
+      previous_month AS (
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM transactions
+        WHERE tenant_id = ${baker.tenantId}
+          AND status = 'succeeded'
+          AND created_at >= date_trunc('month', now() - interval '1 month')
+          AND created_at < date_trunc('month', now())
+      )
+      SELECT 
+        current_month.total as current,
+        previous_month.total as previous
+      FROM current_month, previous_month
+    `);
+    
+    const current = parseFloat(result.rows?.[0]?.current || '0');
+    const previous = parseFloat(result.rows?.[0]?.previous || '0');
+    const deltaPct = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+    
+    res.json({ current, previous, deltaPct });
+  } catch (error) {
+    console.error("Error fetching revenue MTD:", error);
+    res.status(500).json({ error: "Failed to fetch revenue data" });
+  }
+});
+
+// Tasks - list tasks by status (tenant-aware)
+app.get("/api/app/tasks", ensureAuth, async (req, res) => {
+  try {
+    const userEmail = (req.session as any).email;
+    const userId = (req.session as any).userId;
+    const status = (req.query.status as string) || 'pending';
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const result = await db.execute<{
+      id: string;
+      title: string;
+      due_date: string | null;
+      status: string;
+      created_at: Date;
+    }>(sql`
+      SELECT id, title, due_date, status, created_at
+      FROM tasks
+      WHERE tenant_id = ${baker.tenantId}
+        AND status = ${status}
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+// Tasks - create new task (tenant-aware)
+app.post("/api/app/tasks", ensureAuth, async (req, res) => {
+  try {
+    const userEmail = (req.session as any).email;
+    const userId = (req.session as any).userId;
+    const { title, dueDate } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    const taskId = uuid();
+    await db.execute(sql`
+      INSERT INTO tasks (id, tenant_id, user_id, title, due_date, status)
+      VALUES (${taskId}, ${baker.tenantId}, ${userId}, ${title}, ${dueDate || null}, 'pending')
+    `);
+    
+    res.json({ ok: true, id: taskId });
+  } catch (error) {
+    console.error("Error creating task:", error);
+    res.status(500).json({ error: "Failed to create task" });
+  }
+});
+
+// Tasks - mark task as complete (tenant-aware)
+app.post("/api/app/tasks/:id/complete", ensureAuth, async (req, res) => {
+  try {
+    const userEmail = (req.session as any).email;
+    const taskId = req.params.id;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    await db.execute(sql`
+      UPDATE tasks
+      SET status = 'completed', completed_at = NOW()
+      WHERE id = ${taskId} AND tenant_id = ${baker.tenantId}
+    `);
+    
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Error completing task:", error);
+    res.status(500).json({ error: "Failed to complete task" });
+  }
+});
+
 // OAuth routes for Accounts integration - DISABLED
 // These routes conflict with the React SPA login page
 // Commenting out to allow React Router to handle /login
