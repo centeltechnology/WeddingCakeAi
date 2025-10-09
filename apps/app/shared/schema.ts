@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, jsonb, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -889,6 +889,19 @@ export const quoteItems = pgTable("quote_items", {
   sortOrder: integer("sort_order").default(0),
 });
 
+export const quoteEvents = pgTable("quote_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteId: varchar("quote_id").notNull().references(() => quotes.id),
+  event: text("event").notNull(), // 'created'|'updated'|'sent'|'viewed'|'approved'|'declined'|'expired'
+  actorUserId: varchar("actor_user_id"),
+  meta: jsonb("meta"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    quoteIdCreatedAtIdx: index("idx_quote_events_q").on(table.quoteId, table.createdAt),
+  };
+});
+
 // Contract Management System
 export const contractTemplates = pgTable("contract_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1090,6 +1103,8 @@ export type Quote = typeof quotes.$inferSelect;
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type QuoteItem = typeof quoteItems.$inferSelect;
 export type InsertQuoteItem = z.infer<typeof insertQuoteItemSchema>;
+export type QuoteEvent = typeof quoteEvents.$inferSelect;
+export type InsertQuoteEvent = typeof quoteEvents.$inferInsert;
 
 // Contract types
 export type ContractTemplate = typeof contractTemplates.$inferSelect;
