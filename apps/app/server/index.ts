@@ -1063,6 +1063,130 @@ app.post("/api/admin/sendy/sync-now", ensureAuth, requireRole('admin', 'super_ad
   }
 });
 
+// BakerOps sync - sync all bakers to platform-wide list (admin-only)
+app.post("/api/admin/bakerops/sync-now", ensureAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    console.log('🍰 BakerOps sync triggered by admin');
+    
+    const sendyService = getSendyService();
+    const BAKEROPS_LIST_ID = process.env.BAKEROPS_LIST_ID;
+    
+    if (!sendyService || !BAKEROPS_LIST_ID) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'BakerOps not configured (missing BAKEROPS_LIST_ID or Sendy credentials)' 
+      });
+    }
+    
+    // Get all active bakers
+    const bakersResult = await db.execute<{
+      id: string;
+      email: string;
+      name: string;
+      tenant_id: string | null;
+      subscription_plan: string | null;
+      city: string | null;
+      state: string | null;
+    }>(sql`
+      SELECT id, email, name, tenant_id, subscription_plan, city, state
+      FROM bakers
+      WHERE email IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT 1000
+    `);
+    
+    let syncedCount = 0;
+    let failedCount = 0;
+    
+    for (const baker of bakersResult.rows || []) {
+      try {
+        const result = await sendyService.subscribe({
+          email: baker.email,
+          name: baker.name,
+          list: BAKEROPS_LIST_ID,
+          fields: {
+            TIER: baker.subscription_plan || 'free',
+            TENANT_ID: baker.tenant_id || '',
+            BAKER_ID: baker.id,
+            REGION: baker.state || '',
+            CITY: baker.city || '',
+          }
+        });
+        
+        if (result.success) {
+          syncedCount++;
+        } else {
+          failedCount++;
+          console.error(`Failed to sync baker ${baker.id}:`, result.message);
+        }
+      } catch (error) {
+        failedCount++;
+        console.error(`Error syncing baker ${baker.id}:`, error);
+      }
+    }
+    
+    console.log(`🍰 BakerOps sync complete: ${syncedCount} synced, ${failedCount} failed`);
+    
+    return res.json({
+      ok: true,
+      message: 'BakerOps sync completed',
+      synced: syncedCount,
+      failed: failedCount
+    });
+  } catch (error) {
+    console.error('BakerOps sync error:', error);
+    return res.status(500).json({ 
+      ok: false, 
+      error: 'Failed to sync bakers to BakerOps' 
+    });
+  }
+});
+
+// Sendy webhook receiver for unsubscribe/bounce notifications
+app.post("/api/sendy/webhook", async (req, res) => {
+  try {
+    const { email, list_id, type, secret } = req.body;
+    
+    // Verify shared secret
+    const SENDY_WEBHOOK_SECRET = process.env.SENDY_WEBHOOK_SECRET;
+    if (SENDY_WEBHOOK_SECRET && secret !== SENDY_WEBHOOK_SECRET) {
+      console.error('Invalid Sendy webhook secret');
+      return res.status(403).json({ error: 'Invalid secret' });
+    }
+    
+    if (!email || !type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    console.log(`📨 Sendy webhook received: ${type} for ${email}`);
+    
+    // Handle different webhook types
+    if (type === 'unsubscribe' || type === 'bounce' || type === 'complaint') {
+      // Update calculator_leads status if exists
+      await db.execute(sql`
+        UPDATE calculator_leads
+        SET stage = ${type === 'unsubscribe' ? 'unsubscribed' : 'bounced'},
+            last_sync_error = ${type}
+        WHERE customer_email = ${email}
+      `);
+      
+      // Update customers status if exists
+      await db.execute(sql`
+        UPDATE customers
+        SET status = ${type === 'unsubscribe' ? 'unsubscribed' : 'bounced'}
+        WHERE email = ${email}
+      `);
+      
+      console.log(`✅ Updated ${email} status to ${type}`);
+    }
+    
+    res.json({ ok: true, message: 'Webhook processed' });
+  } catch (error) {
+    console.error('Sendy webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
 // Stop impersonation
 app.post("/api/admin/impersonate/stop", ensureAuth, async (req, res) => {
   try {

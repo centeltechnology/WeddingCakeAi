@@ -22,7 +22,7 @@ import Stripe from "stripe";
 import Replicate from "replicate";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { SendyService } from "./sendy";
+import { SendyService, getSendyService } from "./sendy";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
 import { renderContractTemplate, resolvePaymentMethod } from "./contractRenderer";
@@ -3397,6 +3397,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sentAt: new Date()
         });
 
+        // Update Sendy stage to 'quoted' if lead exists
+        if (quote.leadId) {
+          try {
+            const sendyService = getSendyService();
+            if (sendyService) {
+              await sendyService.update({
+                email: customer.email,
+                list: process.env.SENDY_LIST_ID || '',
+                fields: { STAGE: 'quoted' }
+              });
+            }
+          } catch (sendyErr) {
+            console.error('Failed to update Sendy stage:', sendyErr);
+            // Don't fail the request if Sendy fails
+          }
+        }
+
         res.json({
           success: true,
           message: 'Quote sent successfully',
@@ -3541,6 +3558,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'approved',
         approvedAt: new Date()
       });
+      
+      // Sendy: Subscribe to customers list and update stage to 'contracted'
+      try {
+        const sendyService = getSendyService();
+        const customer = await storage.getCustomer(quote.customerId || '');
+        const baker = await storage.getBaker(quote.bakerId || '');
+        
+        if (sendyService && customer && baker) {
+          // Get tenant configuration for customers list
+          const tenantConfig = await db.execute<{ sendy_customers_list_id: string | null }>(sql`
+            SELECT sendy_customers_list_id 
+            FROM tenant_configurations 
+            WHERE tenant_id = ${baker.tenantId}
+            LIMIT 1
+          `);
+          
+          const customersListId = tenantConfig.rows?.[0]?.sendy_customers_list_id;
+          
+          if (customersListId) {
+            // Subscribe to customers list with contract info
+            await sendyService.subscribe({
+              email: customer.email,
+              name: customer.name,
+              list: customersListId,
+              fields: {
+                TENANT_ID: baker.tenantId || '',
+                STAGE: 'contracted',
+                CONTRACT_ID: quote.id,
+                QUOTE_NUMBER: quote.quoteNumber || '',
+                TOTAL: quote.total || '0',
+              }
+            });
+            
+            // Update customer record with Sendy subscriber ID
+            await db.execute(sql`
+              UPDATE customers
+              SET sendy_subscriber_id = ${customer.email}
+              WHERE id = ${customer.id}
+            `);
+          }
+        }
+      } catch (sendyErr) {
+        console.error('Failed to subscribe customer to Sendy:', sendyErr);
+        // Don't fail the request if Sendy fails
+      }
       
       // Send notification email to baker
       try {
