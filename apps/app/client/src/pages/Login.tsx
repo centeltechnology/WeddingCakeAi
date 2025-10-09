@@ -62,6 +62,9 @@ export default function LoginPage() {
           <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" className="w-full border p-3 rounded" />
           <button className="w-full p-3 rounded bg-black text-white">Sign in</button>
         </form>
+        <div className="text-center">
+          <a href="/reset" className="text-sm text-blue-600 hover:underline">Forgot password?</a>
+        </div>
       </div>
     </main>
   );

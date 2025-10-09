@@ -17,6 +17,7 @@ import { sendResetEmail } from "./mailer";
 import { sql } from "drizzle-orm";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { z } from "zod";
+import cron from "node-cron";
 
 const app = express();
 
@@ -891,8 +892,17 @@ app.post("/api/admin/impersonate/stop", ensureAuth, async (req, res) => {
   }
 });
 
+// Rate limiter for password reset endpoints - prevent abuse
+const passwordResetLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: "Too many password reset attempts, please try again later" }
+});
+
 // Password reset: request reset link
-app.post("/api/password/forgot", async (req, res) => {
+app.post("/api/password/forgot", passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body ?? {};
     
@@ -933,7 +943,7 @@ app.post("/api/password/forgot", async (req, res) => {
 });
 
 // Password reset: confirm new password
-app.post("/api/password/reset", async (req, res) => {
+app.post("/api/password/reset", passwordResetLimiter, async (req, res) => {
   try {
     const { token, password } = req.body ?? {};
     
@@ -1146,6 +1156,23 @@ app.get('/me', async (req, res) => {
 
   // Start email automation scheduler for subscription lifecycle management
   startEmailAutomationScheduler();
+
+  // Start daily cleanup job for expired/used password reset tokens
+  // Runs every day at 2 AM
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      console.log('Running password reset token cleanup...');
+      const result = await db.execute(sql`
+        DELETE FROM password_resets
+        WHERE (expires_at < NOW() OR used_at IS NOT NULL)
+          AND created_at < NOW() - INTERVAL '7 days'
+      `);
+      console.log(`Cleaned up password reset tokens: ${result.rowCount || 0} rows deleted`);
+    } catch (error) {
+      console.error('Password reset token cleanup error:', error);
+    }
+  });
+  console.log('Password reset token cleanup job scheduled (daily at 2 AM)');
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
