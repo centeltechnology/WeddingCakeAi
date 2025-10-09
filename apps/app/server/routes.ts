@@ -4239,15 +4239,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/invoices', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
       const { bakerId, customerId } = req.query;
       
       let invoices;
-      if (bakerId) {
-        invoices = await storage.getInvoicesByBaker(bakerId as string);
-      } else if (customerId) {
-        invoices = await storage.getInvoicesByCustomer(customerId as string);
+      
+      // Role-based access control with tenant isolation
+      if (user.role === 'baker') {
+        // Bakers can only fetch their own invoices
+        if (bakerId && bakerId !== user.userId) {
+          return res.status(403).json({ error: 'Access forbidden' });
+        }
+        invoices = await storage.getInvoicesByBaker(user.userId);
+      } else if (user.role === 'customer') {
+        // Customers can only fetch their own invoices
+        if (customerId && customerId !== user.userId) {
+          return res.status(403).json({ error: 'Access forbidden' });
+        }
+        if (!user.userId) {
+          return res.status(400).json({ error: 'Customer ID not available' });
+        }
+        invoices = await storage.getInvoicesByCustomer(user.userId);
+      } else if (user.role === 'super_admin' || user.role === 'admin') {
+        // Admins can fetch by bakerId or customerId
+        if (bakerId) {
+          invoices = await storage.getInvoicesByBaker(bakerId as string);
+        } else if (customerId) {
+          invoices = await storage.getInvoicesByCustomer(customerId as string);
+        } else {
+          return res.status(400).json({ error: 'bakerId or customerId is required for admin access' });
+        }
       } else {
-        return res.status(400).json({ error: 'bakerId or customerId is required' });
+        return res.status(403).json({ error: 'Insufficient permissions' });
       }
       
       res.json(invoices);
@@ -4264,6 +4291,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating invoice:', error);
       res.status(500).json({ error: 'Failed to create invoice' });
+    }
+  });
+
+  app.get('/api/invoices/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Role-based access control with tenant isolation
+      if (user.role === 'baker') {
+        // Bakers can only access their own invoices
+        if (invoice.bakerId !== user.userId) {
+          return res.status(403).json({ error: 'Access forbidden' });
+        }
+      } else if (user.role === 'customer') {
+        // Customers can only access their own invoices
+        if (invoice.customerId !== user.userId) {
+          return res.status(403).json({ error: 'Access forbidden' });
+        }
+      } else if (user.role !== 'super_admin' && user.role !== 'admin') {
+        // Only admins have unrestricted access
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      res.json(invoice);
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      res.status(500).json({ error: 'Failed to fetch invoice' });
     }
   });
 
