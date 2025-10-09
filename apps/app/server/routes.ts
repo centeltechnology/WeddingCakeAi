@@ -6874,6 +6874,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== TENANT SENDY CONFIGURATION =====
+  
+  // Get tenant Sendy configuration
+  app.get('/api/admin/tenant-sendy-config/:tenantId', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { tenantId } = req.params;
+      const user = req.user;
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+      
+      const config = await db.execute<{
+        tenant_id: string;
+        sendy_leads_list_id: string | null;
+        sendy_customers_list_id: string | null;
+        sendy_brand_id: string | null;
+      }>(sql`
+        SELECT tenant_id, sendy_leads_list_id, sendy_customers_list_id, sendy_brand_id
+        FROM tenant_configurations
+        WHERE tenant_id = ${tenantId}
+        LIMIT 1
+      `);
+      
+      res.json(config.rows?.[0] || { tenant_id: tenantId, sendy_leads_list_id: null, sendy_customers_list_id: null, sendy_brand_id: null });
+    } catch (error) {
+      console.error('Error fetching tenant Sendy config:', error);
+      res.status(500).json({ error: 'Failed to fetch configuration' });
+    }
+  });
+  
+  // Update tenant Sendy configuration
+  app.post('/api/admin/tenant-sendy-config/:tenantId', authenticateJWT, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { tenantId } = req.params;
+      const { sendyLeadsListId, sendyCustomersListId, sendyBrandId } = req.body;
+      const user = req.user;
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+      
+      // Upsert tenant configuration
+      const result = await db.execute(sql`
+        INSERT INTO tenant_configurations (tenant_id, sendy_leads_list_id, sendy_customers_list_id, sendy_brand_id, updated_at)
+        VALUES (${tenantId}, ${sendyLeadsListId}, ${sendyCustomersListId}, ${sendyBrandId}, NOW())
+        ON CONFLICT (tenant_id) 
+        DO UPDATE SET 
+          sendy_leads_list_id = ${sendyLeadsListId},
+          sendy_customers_list_id = ${sendyCustomersListId},
+          sendy_brand_id = ${sendyBrandId},
+          updated_at = NOW()
+        RETURNING *
+      `);
+      
+      res.json({ 
+        success: true, 
+        message: 'Sendy configuration updated',
+        config: result.rows?.[0] 
+      });
+    } catch (error) {
+      console.error('Error updating tenant Sendy config:', error);
+      res.status(500).json({ error: 'Failed to update configuration' });
+    }
+  });
+
   // Send subscription success email to specific baker (for testing)
   app.post('/api/admin/subscriptions/send-success/:bakerId', async (req, res) => {
     try {
