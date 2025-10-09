@@ -3,6 +3,8 @@ import { Users } from "lucide-react";
 import { Link } from "wouter";
 
 export default function CustomersPage() {
+  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
+
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
@@ -15,11 +17,27 @@ export default function CustomersPage() {
           <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
             You can view and manage customers from the Baker Dashboard under the Leads and Quotes tabs.
           </p>
-          <Link href="/baker/dashboard">
-            <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
-              Go to Dashboard
-            </button>
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/baker/dashboard">
+              <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
+                Go to Dashboard
+              </button>
+            </Link>
+            {isDemo && (
+              <>
+                <Link href="/quotes">
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                    View Quotes
+                  </button>
+                </Link>
+                <Link href="/contracts">
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                    View Contracts
+                  </button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

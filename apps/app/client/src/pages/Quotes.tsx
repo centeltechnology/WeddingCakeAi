@@ -3,6 +3,8 @@ import { FileText } from "lucide-react";
 import { Link } from "wouter";
 
 export default function QuotesPage() {
+  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
+
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
@@ -15,11 +17,27 @@ export default function QuotesPage() {
           <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
             You can manage all your quotes from the Baker Dashboard.
           </p>
-          <Link href="/baker/dashboard">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-              Go to Dashboard
-            </button>
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/baker/dashboard">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                Go to Dashboard
+              </button>
+            </Link>
+            {isDemo && (
+              <>
+                <Link href="/contracts">
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                    View Contracts
+                  </button>
+                </Link>
+                <Link href="/invoices">
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                    View Invoices
+                  </button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
