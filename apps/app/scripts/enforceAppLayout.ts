@@ -1,19 +1,52 @@
 // scripts/enforceAppLayout.ts
 import { Project, SyntaxKind, JsxElement, JsxSelfClosingElement } from "ts-morph";
 import fg from "fast-glob";
+import micromatch from "micromatch";
 import { relative, resolve } from "node:path";
-import { existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync, readFileSync } from "node:fs";
 
 const ROOT = resolve(process.cwd());
 const PAGES = resolve(ROOT, "client/src/pages");
 const DRY = process.argv.includes("--write") ? false : true;
 
+console.log("Loading config...");
+
+// Load config
+const configPath = resolve(ROOT, "scripts/enforceAppLayout.config.json");
+const config = existsSync(configPath) 
+  ? JSON.parse(readFileSync(configPath, "utf-8"))
+  : { include: ["**/*.tsx"], exclude: [] };
+
+console.log("Creating ts-morph project...");
+
 const project = new Project({
-  tsConfigFilePath: resolve(ROOT, "tsconfig.json"),
-  skipAddingFilesFromTsConfig: false,
+  skipAddingFilesFromTsConfig: true,
+  skipFileDependencyResolution: true,
+  compilerOptions: {
+    jsx: 1,
+    module: 99,
+    target: 99
+  }
 });
 
-const files = fg.sync(["**/*.tsx"], { cwd: PAGES, absolute: true });
+console.log("Finding TSX files...");
+
+// Get all TSX files from pages directory
+const allFiles = fg.sync(["**/*.tsx"], { cwd: PAGES, absolute: true });
+
+console.log(`Found ${allFiles.length} total files`);
+
+// Filter using micromatch for better performance
+const files = allFiles.filter((file: string) => {
+  const relPath = relative(ROOT, file);
+  
+  // Check if excluded
+  const isExcluded = micromatch.isMatch(relPath, config.exclude || []);
+  
+  return !isExcluded;
+});
+
+console.log(`After filtering: ${files.length} files to process`);
 
 const ensureImport = (sf: any, importName: string, importPath: string) => {
   const existing = sf.getImportDeclarations().find((d:any)=> d.getModuleSpecifierValue()===importPath);
@@ -66,16 +99,30 @@ const wrapWithAppLayout = (sf:any) => {
 };
 
 const changed:string[] = [];
+console.log("Processing files...");
+
 for (const file of files) {
+  console.log(`  Checking ${relative(ROOT, file)}...`);
   const sf = project.addSourceFileAtPathIfExists(file) || project.getSourceFile(file);
-  if (!sf) continue;
+  if (!sf) {
+    console.log(`    Skipped (no source file)`);
+    continue;
+  }
 
   // Quick check: does file contain "<AppLayout" already?
   const hasAppLayout = sf.getText().includes("<AppLayout");
-  if (hasAppLayout) continue;
+  if (hasAppLayout) {
+    console.log(`    Skipped (already has AppLayout)`);
+    continue;
+  }
 
   const didWrap = wrapWithAppLayout(sf);
-  if (didWrap) changed.push(file);
+  if (didWrap) {
+    console.log(`    ✓ Will wrap with AppLayout`);
+    changed.push(file);
+  } else {
+    console.log(`    Skipped (unable to wrap)`);
+  }
 }
 
 if (DRY) {
