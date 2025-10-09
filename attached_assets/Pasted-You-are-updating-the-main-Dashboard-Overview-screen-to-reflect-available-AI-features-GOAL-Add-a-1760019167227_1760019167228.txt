@@ -1,0 +1,45 @@
+You are updating the main Dashboard/Overview screen to reflect available AI features.
+
+GOAL
+Add a small "AI Tools" card with 3 shortcuts:
+- Lead Reply (links to Leads page and focuses AI card anchor)
+- Price Suggestion (links to Quotes page and focuses AI panel anchor)
+- Marketing Caption (links to Portfolio page / uploads and opens AI caption dialog if available)
+
+STEPS
+1) Locate the Overview/Dashboard page component (search for "Overview" heading).
+2) Create a new component apps/app/client/src/components/ai/AiToolsCard.tsx:
+------------------------------------------------
+import React from "react";
+import { Link } from "wouter";
+
+export default function AiToolsCard() {
+  const Item = ({ to, label, desc }:{to:string; label:string; desc:string}) => (
+    <Link href={to}>
+      <a className="block p-3 border rounded-xl hover:shadow transition">
+        <div className="font-medium">✨ {label}</div>
+        <div className="text-xs text-gray-600 mt-1">{desc}</div>
+      </a>
+    </Link>
+  );
+  return (
+    <div className="p-4 border rounded-2xl bg-white/70 backdrop-blur-sm">
+      <div className="text-sm font-semibold mb-2">AI Tools</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <Item to="/leads#ai-reply" label="Lead Reply" desc="Draft a friendly first response." />
+        <Item to="/quotes#ai-price" label="Price Suggestion" desc="Smart range from your pricing." />
+        <Item to="/portfolio#ai-caption" label="Marketing Caption" desc="Write captions when you upload." />
+      </div>
+    </div>
+  );
+}
+------------------------------------------------
+
+3) Import and render <AiToolsCard /> on the Overview page (place in right column or below quick actions).
+
+4) Add id anchors to the Leads and Quotes pages where you mounted the AI components:
+   - <section id="ai-reply"> ... </section>
+   - <section id="ai-price"> ... </section>
+
+OUTPUT
+- Print the Overview page path and a small diff showing where <AiToolsCard /> was added.

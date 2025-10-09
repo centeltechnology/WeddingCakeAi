@@ -70,6 +70,7 @@ import LeadsExportButton from "./LeadsExportButton";
 import { PipelineChart } from "./PipelineChart";
 import { RevenueStat } from "./RevenueStat";
 import { TaskList } from "./TaskList";
+import AiToolsCard from "./ai/AiToolsCard";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
@@ -1042,6 +1043,11 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
             <PipelineChart />
             <RevenueStat />
             <TaskList />
+          </div>
+
+          {/* AI Tools Card */}
+          <div className="mt-6">
+            <AiToolsCard />
           </div>
 
           {/* Get Started Tips - Only show if new user */}
