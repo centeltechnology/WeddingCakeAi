@@ -5,7 +5,7 @@ import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -3857,6 +3857,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/contracts/:id/events - Get contract events
+  app.get('/api/contracts/:id/events', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get contract to check ownership
+      const [contract] = await db.select().from(contracts).where(eq(contracts.id, id));
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Authorization: only baker or super_admin can view contract events
+      if (user.role === 'baker' && user.id !== contract.bakerId) {
+        return res.status(403).json({ error: 'Access forbidden' });
+      } else if (user.role !== 'baker' && user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      // Get events for this contract
+      const events = await db.select()
+        .from(contractEvents)
+        .where(eq(contractEvents.contractId, id))
+        .orderBy(contractEvents.createdAt);
+
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching contract events:', error);
+      res.status(500).json({ error: 'Failed to fetch contract events' });
+    }
+  });
+
   app.post('/api/contracts', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
       const contractData = req.body;
@@ -4321,6 +4357,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating invoice:', error);
       res.status(500).json({ error: 'Failed to create invoice' });
+    }
+  });
+
+  // GET /api/invoices/:id/events - Get invoice events
+  app.get('/api/invoices/:id/events', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get invoice to check ownership
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Authorization: only baker or super_admin can view invoice events
+      if (user.role === 'baker' && user.id !== invoice.bakerId) {
+        return res.status(403).json({ error: 'Access forbidden' });
+      } else if (user.role !== 'baker' && user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      // Get events for this invoice
+      const events = await db.select()
+        .from(invoiceEvents)
+        .where(eq(invoiceEvents.invoiceId, id))
+        .orderBy(invoiceEvents.createdAt);
+
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching invoice events:', error);
+      res.status(500).json({ error: 'Failed to fetch invoice events' });
     }
   });
 

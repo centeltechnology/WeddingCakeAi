@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CreditCard, Download, DollarSign, Calendar, User, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import InvoiceTimeline from '@/components/InvoiceTimeline';
 
 interface Invoice {
   id: string;
@@ -214,6 +215,15 @@ export default function InvoiceDetail() {
               </CardContent>
             </Card>
           )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoice Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <InvoiceTimeline invoiceId={invoiceId || ''} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

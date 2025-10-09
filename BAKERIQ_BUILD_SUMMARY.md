@@ -389,11 +389,15 @@ export async function createDepositInvoice(contract) {
 }
 ```
 
-### Missing UI Components
-- ❌ **contract_events** timeline visualization (similar to quote_events)
-- ❌ **invoice_events** timeline visualization
-- ❌ Bulk contract operations UI
-- ❌ Advanced invoice filtering (by date range, status, amount)
+### ✅ Completed UI Components (October 9, 2025)
+- ✅ **ContractTimeline.tsx** - Visual contract event history with timestamps
+- ✅ **InvoiceTimeline.tsx** - Visual invoice event history with timestamps
+- ✅ Integrated into ContractEdit and InvoiceDetail pages
+- ✅ Real-time event fetching via TanStack Query
+
+### Future UI Enhancements
+- [ ] Bulk contract operations UI
+- [ ] Advanced invoice filtering (by date range, status, amount)
 
 ### Missing API Routes
 - ❌ `POST /api/contracts/bulk-send` - Batch contract sending
@@ -820,18 +824,18 @@ BakerIQ is a **comprehensive, production-ready multi-tenant SaaS platform** with
 
 **✅ Latest Additions (October 9, 2025):**
 - ✅ **Automated email notifications** - Contract & invoice emails now sent automatically!
+- ✅ **Timeline UI components** - Contract & invoice event timelines with visual history!
 
 **Remaining Enhancements (Nice to Have):**
-- [ ] Contract/invoice timeline UI components (4 hours)
 - [ ] Webhook system for external integrations (5 hours)
 
 **Path to Launch:**
 - ✅ ~~Fix 2 automation gaps~~ **COMPLETED (6 hours)**
 - ✅ ~~Add lifecycle event tracking~~ **COMPLETED (2 hours)**
 - ✅ ~~Add automated email notifications~~ **COMPLETED (2 hours)**
-- [ ] Build timeline UI components (~4 hours)
+- ✅ ~~Build timeline UI components~~ **COMPLETED (1 hour)**
 - [ ] Production environment setup (~2 hours)
 - [ ] Deploy to staging and run full UAT (~4 hours)
-- **Total Remaining Effort to MVP: ~10 hours**
+- **Total Remaining Effort to MVP: ~6 hours**
 
 **The platform is now LAUNCH-READY** with a **seamless, automated workflow** for bakery business management from quote to payment. The critical automation gaps have been fixed, and BakerIQ provides a complete end-to-end solution! 🚀

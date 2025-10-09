@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Send, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
+import ContractTimeline from '@/components/ContractTimeline';
 
 interface ContractTemplate {
   id: string;
@@ -297,6 +298,17 @@ export default function ContractEdit() {
             </div>
           </CardContent>
         </Card>
+
+        {!isNew && contractId && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Contract Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ContractTimeline contractId={contractId} />
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex gap-4 justify-end">
           <Button variant="outline" onClick={handleSave} disabled={loading}>
