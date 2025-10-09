@@ -630,13 +630,35 @@ async function sendEstimateEmail(to: string, data: { low: number; high: number; 
 }
 
 // Session probe endpoint - check if user is authenticated
-app.get("/api/session", (req, res) => {
+app.get("/api/session", async (req, res) => {
   res.set("Cache-Control", "no-store");
   const authed = Boolean((req.session as any)?.userId);
+  
+  let advertiserId = null;
+  
+  // If authenticated, check if user is associated with an advertiser
+  if (authed) {
+    const userId = (req.session as any).userId;
+    try {
+      const result = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id 
+        FROM advertiser_users 
+        WHERE user_id = ${userId} 
+        LIMIT 1
+      `);
+      if (result.rows && result.rows.length > 0) {
+        advertiserId = result.rows[0].advertiser_id;
+      }
+    } catch (error) {
+      console.error('Error fetching advertiser association:', error);
+    }
+  }
+  
   res.json({
     authenticated: authed,
     userId: authed ? (req.session as any).userId : null,
     role: (req.session as any)?.role || null,
+    advertiserId,
     isImpersonating: Boolean((req.session as any)?.isImpersonating) || false,
     impersonatorId: (req.session as any)?.impersonatorId || null
   });

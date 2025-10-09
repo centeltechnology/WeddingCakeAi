@@ -5,7 +5,7 @@ import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { 
@@ -14,7 +14,7 @@ import {
   insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
   paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
-import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, requireFeature, type AuthenticatedRequest } from "./authMiddleware";
+import { authenticateJWT, authorizeBakerWithData, authorizeLeadOwnership, requireFeature, requireRole, type AuthenticatedRequest } from "./authMiddleware";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -7133,6 +7133,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching campaign analytics:', error);
       res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // ====== ADVERTISER MANAGEMENT API ENDPOINTS ======
+
+  // Create advertiser (admin only)
+  app.post('/api/admin/advertisers', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { name, contactEmail, website, vertical, userId } = req.body;
+
+      if (!name || !contactEmail) {
+        return res.status(400).json({ 
+          error: 'Missing required fields',
+          message: 'Name and contact email are required'
+        });
+      }
+
+      // Create advertiser
+      const advertiserId = randomUUID();
+      await db.execute(sql`
+        INSERT INTO advertisers (id, name, contact_email, website, vertical, status, created_at)
+        VALUES (${advertiserId}, ${name}, ${contactEmail}, ${website || null}, ${vertical || null}, 'pending', NOW())
+      `);
+
+      // If userId provided, create user association
+      if (userId) {
+        const advertiserUserId = randomUUID();
+        await db.execute(sql`
+          INSERT INTO advertiser_users (id, advertiser_id, user_id, role, created_at)
+          VALUES (${advertiserUserId}, ${advertiserId}, ${userId}, 'admin', NOW())
+        `);
+
+        // Update user role to advertiser
+        await db.execute(sql`
+          UPDATE users
+          SET role = 'advertiser'
+          WHERE id = ${userId}
+        `);
+      }
+
+      res.status(201).json({ 
+        success: true,
+        advertiserId,
+        message: 'Advertiser created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating advertiser:', error);
+      res.status(500).json({ error: 'Failed to create advertiser' });
+    }
+  });
+
+  // Approve advertiser and seed credits (admin only)
+  app.post('/api/admin/advertisers/:id/approve', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      // Check if advertiser exists
+      const advertiser = await db.execute<{ id: string; status: string }>(sql`
+        SELECT id, status FROM advertisers WHERE id = ${id} LIMIT 1
+      `);
+
+      if (!advertiser.rows || advertiser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser not found' });
+      }
+
+      // Update status to active
+      await db.execute(sql`
+        UPDATE advertisers
+        SET status = 'active'
+        WHERE id = ${id}
+      `);
+
+      // Seed advertiser credits with 0 balance
+      await db.execute(sql`
+        INSERT INTO advertiser_credits (advertiser_id, balance_cents, updated_at)
+        VALUES (${id}, 0, NOW())
+        ON CONFLICT (advertiser_id) DO NOTHING
+      `);
+
+      res.json({ 
+        success: true,
+        message: 'Advertiser approved and credits initialized'
+      });
+    } catch (error) {
+      console.error('Error approving advertiser:', error);
+      res.status(500).json({ error: 'Failed to approve advertiser' });
+    }
+  });
+
+  // Add/subtract credits (admin only)
+  app.post('/api/admin/advertisers/:id/credit', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { deltaCents, reason, campaignId } = req.body;
+
+      if (deltaCents === undefined || deltaCents === null) {
+        return res.status(400).json({ 
+          error: 'Missing deltaCents',
+          message: 'deltaCents is required'
+        });
+      }
+
+      // Check if advertiser exists
+      const advertiser = await db.execute<{ id: string }>(sql`
+        SELECT id FROM advertisers WHERE id = ${id} LIMIT 1
+      `);
+
+      if (!advertiser.rows || advertiser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser not found' });
+      }
+
+      // Update balance
+      await db.execute(sql`
+        INSERT INTO advertiser_credits (advertiser_id, balance_cents, updated_at)
+        VALUES (${id}, ${deltaCents}, NOW())
+        ON CONFLICT (advertiser_id) 
+        DO UPDATE SET 
+          balance_cents = advertiser_credits.balance_cents + ${deltaCents},
+          updated_at = NOW()
+      `);
+
+      // Write to ledger
+      const ledgerId = randomUUID();
+      await db.execute(sql`
+        INSERT INTO advertiser_credits_ledger (id, advertiser_id, delta_cents, reason, campaign_id, created_at)
+        VALUES (${ledgerId}, ${id}, ${deltaCents}, ${reason || null}, ${campaignId || null}, NOW())
+      `);
+
+      // Get new balance
+      const balance = await db.execute<{ balance_cents: number }>(sql`
+        SELECT balance_cents FROM advertiser_credits WHERE advertiser_id = ${id}
+      `);
+
+      res.json({ 
+        success: true,
+        newBalance: balance.rows?.[0]?.balance_cents || 0,
+        message: 'Credits updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating credits:', error);
+      res.status(500).json({ error: 'Failed to update credits' });
+    }
+  });
+
+  // Get advertiser credits (advertiser-authenticated)
+  app.get('/api/advertisers/me/credits', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get advertiser ID from user
+      const advertiserUser = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id FROM advertiser_users WHERE user_id = ${userId} LIMIT 1
+      `);
+
+      if (!advertiserUser.rows || advertiserUser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser association not found' });
+      }
+
+      const advertiserId = advertiserUser.rows[0].advertiser_id;
+
+      // Get balance
+      const credits = await db.execute<{ balance_cents: number }>(sql`
+        SELECT balance_cents FROM advertiser_credits WHERE advertiser_id = ${advertiserId}
+      `);
+
+      const balance = credits.rows?.[0]?.balance_cents || 0;
+
+      res.json({ 
+        success: true,
+        advertiserId,
+        balanceCents: balance,
+        balanceDollars: (balance / 100).toFixed(2)
+      });
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+      res.status(500).json({ error: 'Failed to fetch credits' });
     }
   });
 

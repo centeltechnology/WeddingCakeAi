@@ -351,4 +351,39 @@ export async function requireEnterprisePlan(req: AuthenticatedRequest, res: Resp
   }
 }
 
+/**
+ * Middleware to require specific user roles
+ * Usage: requireRole('admin'), requireRole('admin', 'super_admin')
+ */
+export function requireRole(...allowedRoles: string[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'User not authenticated'
+        });
+      }
+
+      // Check if user's role is in the allowed roles list
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({ 
+          error: 'Access forbidden',
+          message: `This action requires one of the following roles: ${allowedRoles.join(', ')}`,
+          requiredRoles: allowedRoles,
+          currentRole: req.user.role
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Role authorization error:', error);
+      return res.status(500).json({ 
+        error: 'Authorization error',
+        message: 'Internal server error during role verification'
+      });
+    }
+  };
+}
+
 export type { AuthenticatedRequest, JWTPayload };
