@@ -136,35 +136,39 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
             const invoice = invoiceResult.rows?.[0];
             if (!invoice) {
               console.error('❌ Invoice not found:', invoiceId);
+              processedWebhookEvents.delete(eventId); // Allow retry
               break;
             }
 
             const paidAmount = parseFloat(invoice.total);
-
-            // Update invoice to mark as paid
-            await db.execute(sql`
-              UPDATE invoices
-              SET paid_at = NOW(),
-                  remaining_balance = 0,
-                  paid_amount = ${paidAmount},
-                  status = 'paid',
-                  updated_at = NOW()
-              WHERE id = ${invoiceId}
-            `);
-
-            // Create transaction record
             const transactionId = uuid();
-            await db.execute(sql`
-              INSERT INTO transactions (
-                id, tenant_id, baker_id, customer_id, type, amount, 
-                currency, status, stripe_payment_intent_id, description, created_at
-              )
-              VALUES (
-                ${transactionId}, ${tenantId}, ${bakerId}, ${invoice.customer_id || null}, 
-                'payment', ${paidAmount}, 'USD', 'succeeded', ${paymentIntentId}, 
-                ${`Payment for Invoice #${invoice.invoice_number}`}, NOW()
-              )
-            `);
+
+            // Use atomic transaction to update invoice and create transaction record
+            await db.transaction(async (tx) => {
+              // Update invoice to mark as paid
+              await tx.execute(sql`
+                UPDATE invoices
+                SET paid_at = NOW(),
+                    remaining_balance = 0,
+                    paid_amount = ${paidAmount},
+                    status = 'paid',
+                    updated_at = NOW()
+                WHERE id = ${invoiceId}
+              `);
+
+              // Create transaction record
+              await tx.execute(sql`
+                INSERT INTO transactions (
+                  id, tenant_id, baker_id, customer_id, type, amount, 
+                  currency, status, stripe_payment_intent_id, description, created_at
+                )
+                VALUES (
+                  ${transactionId}, ${tenantId}, ${bakerId}, ${invoice.customer_id || null}, 
+                  'payment', ${paidAmount}, 'USD', 'succeeded', ${paymentIntentId}, 
+                  ${`Payment for Invoice #${invoice.invoice_number}`}, NOW()
+                )
+              `);
+            });
 
             console.log('✅ Invoice marked as paid:', {
               invoiceId,
@@ -174,6 +178,8 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
             });
           } catch (error) {
             console.error('❌ Error processing invoice payment:', error);
+            processedWebhookEvents.delete(eventId); // Allow Stripe retry
+            throw error; // Re-throw to signal failure to Stripe
           }
           
           break;
