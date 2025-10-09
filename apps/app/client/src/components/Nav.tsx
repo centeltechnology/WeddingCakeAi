@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useMe } from "@/lib/useMe";
 import LogoutButton from "./LogoutButton";
 import React from "react";
+import { useCreditsModal } from "@/components/ai/CreditsModalContext";
 
 function useAiCredits() {
   const [credits, setCredits] = React.useState<number | null>(null);
@@ -26,6 +27,7 @@ function useAiCredits() {
 export function Nav() {
   const { loading, error, me } = useMe();
   const credits = useAiCredits();
+  const creditsModal = useCreditsModal();
 
   if (loading) {
     return null;
@@ -103,9 +105,16 @@ export function Nav() {
           
           <div className="flex items-center">
             {typeof credits === "number" && (
-              <span className="ml-3 text-xs px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-800/60 dark:border-gray-700">
-                ✨ {credits} credits
-              </span>
+              <div className="ml-3 flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-800/60 dark:border-gray-700">✨ {credits} credits</span>
+                <button
+                  type="button"
+                  className="text-xs px-2 py-1 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-700"
+                  onClick={() => creditsModal.open({ reason: "Top up credits" })}
+                >
+                  Top-Up
+                </button>
+              </div>
             )}
             <LogoutButton />
           </div>
