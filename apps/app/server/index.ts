@@ -629,7 +629,7 @@ async function sendEstimateEmail(to: string, data: { low: number; high: number; 
   }));
 }
 
-// Session probe endpoint - check if user is authenticated
+// Session probe endpoint - check if user is authenticated (unified auth state)
 app.get("/api/session", async (req, res) => {
   res.set("Cache-Control", "no-store");
   const authed = Boolean((req.session as any)?.userId);
@@ -658,6 +658,7 @@ app.get("/api/session", async (req, res) => {
     authenticated: authed,
     userId: authed ? (req.session as any).userId : null,
     role: (req.session as any)?.role || null,
+    tenantId: (req.session as any)?.tenantId || (req.session as any)?.tenant_id || null,
     advertiserId,
     isImpersonating: Boolean((req.session as any)?.isImpersonating) || false,
     impersonatorId: (req.session as any)?.impersonatorId || null
