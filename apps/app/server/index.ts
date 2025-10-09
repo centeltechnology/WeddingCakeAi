@@ -112,6 +112,74 @@ app.post(["/webhooks/stripe", "/api/webhooks/stripe"], express.raw({ type: 'appl
         const session = event.data.object;
         console.log('🎉 Checkout session completed:', session.id);
 
+        // Check if this is an invoice payment (has invoiceId metadata)
+        if (session.metadata?.invoiceId) {
+          console.log('💰 Processing invoice payment:', session.metadata.invoiceId);
+          
+          const { invoiceId, tenantId, bakerId } = session.metadata;
+          const paymentIntentId = session.payment_intent as string;
+          
+          try {
+            // Fetch invoice to get details
+            const invoiceResult = await db.execute<{
+              id: string;
+              total: string;
+              invoice_number: string;
+              customer_id: string;
+            }>(sql`
+              SELECT id, total, invoice_number, customer_id
+              FROM invoices
+              WHERE id = ${invoiceId} AND tenant_id = ${tenantId}
+              LIMIT 1
+            `);
+
+            const invoice = invoiceResult.rows?.[0];
+            if (!invoice) {
+              console.error('❌ Invoice not found:', invoiceId);
+              break;
+            }
+
+            const paidAmount = parseFloat(invoice.total);
+
+            // Update invoice to mark as paid
+            await db.execute(sql`
+              UPDATE invoices
+              SET paid_at = NOW(),
+                  remaining_balance = 0,
+                  paid_amount = ${paidAmount},
+                  status = 'paid',
+                  updated_at = NOW()
+              WHERE id = ${invoiceId}
+            `);
+
+            // Create transaction record
+            const transactionId = uuid();
+            await db.execute(sql`
+              INSERT INTO transactions (
+                id, tenant_id, baker_id, customer_id, type, amount, 
+                currency, status, stripe_payment_intent_id, description, created_at
+              )
+              VALUES (
+                ${transactionId}, ${tenantId}, ${bakerId}, ${invoice.customer_id || null}, 
+                'payment', ${paidAmount}, 'USD', 'succeeded', ${paymentIntentId}, 
+                ${`Payment for Invoice #${invoice.invoice_number}`}, NOW()
+              )
+            `);
+
+            console.log('✅ Invoice marked as paid:', {
+              invoiceId,
+              transactionId,
+              amount: paidAmount,
+              paymentIntentId,
+            });
+          } catch (error) {
+            console.error('❌ Error processing invoice payment:', error);
+          }
+          
+          break;
+        }
+
+        // Otherwise, handle as subscription payment
         // Validate required metadata
         if (!session.metadata?.bakerId || !session.metadata?.planId) {
           console.error('❌ Missing required metadata in checkout session:', session.metadata);
@@ -1086,6 +1154,91 @@ app.get("/api/app/invoices/due", ensureAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching invoices due:", error);
     res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+});
+
+// Create Stripe payment link for invoice - tenant-aware
+app.post("/api/app/invoices/:id/pay", ensureAuth, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: "Stripe not configured" });
+    }
+
+    const userEmail = (req.session as any).email;
+    const invoiceId = req.params.id;
+    
+    const baker = await databaseStorage.getBakerByEmail(userEmail);
+    if (!baker || !baker.tenantId) {
+      return res.status(404).json({ error: "Baker or tenant not found" });
+    }
+    
+    // Fetch invoice with tenant verification
+    const result = await db.execute<{
+      id: string;
+      tenant_id: string;
+      baker_id: string;
+      invoice_number: string;
+      title: string;
+      total: string;
+      remaining_balance: string;
+      paid_at: Date | null;
+    }>(sql`
+      SELECT id, tenant_id, baker_id, invoice_number, title, total, remaining_balance, paid_at
+      FROM invoices
+      WHERE id = ${invoiceId} AND tenant_id = ${baker.tenantId}
+      LIMIT 1
+    `);
+
+    const invoice = result.rows?.[0];
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    if (invoice.paid_at) {
+      return res.status(400).json({ error: "Invoice already paid" });
+    }
+
+    const amountDue = parseFloat(invoice.remaining_balance || invoice.total);
+    if (amountDue <= 0) {
+      return res.status(400).json({ error: "No amount due on this invoice" });
+    }
+
+    // Create Stripe Checkout Session for invoice payment
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: invoice.title || `Invoice ${invoice.invoice_number}`,
+              description: `Payment for Invoice #${invoice.invoice_number}`,
+            },
+            unit_amount: Math.round(amountDue * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.FRONTEND_URL || req.headers.origin}/invoices?payment=success`,
+      cancel_url: `${process.env.FRONTEND_URL || req.headers.origin}/invoices?payment=cancelled`,
+      metadata: {
+        invoiceId: invoice.id,
+        tenantId: invoice.tenant_id,
+        bakerId: invoice.baker_id,
+      },
+    });
+
+    console.log('✅ Created payment session for invoice:', {
+      invoiceId: invoice.id,
+      sessionId: session.id,
+      amount: amountDue,
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Error creating invoice payment link:", error);
+    res.status(500).json({ error: "Failed to create payment link" });
   }
 });
 
