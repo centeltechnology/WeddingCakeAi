@@ -1,0 +1,81 @@
+You are adding a client-side AI API helper.
+
+GOAL
+Create apps/app/client/src/api/ai.ts with functions:
+- aiLeadsAutoresponder(payload)
+- aiLeadsScore(payload)
+- aiQuotesSuggestPrice(payload)
+- aiMarketingCaption(payload)
+- aiMarketingCopy(payload)
+
+STEPS
+1) Search for an existing fetch helper (e.g., apps/app/client/src/lib/api.ts or utils/fetch.ts).
+   - If found, import and use it.
+   - If not found, create a local `fetchJSON` inside ai.ts.
+
+2) Include credentials: 'include'. Try to include a CSRF header if your app exposes one:
+   - Look for a meta tag <meta name="csrf-token" content="..."> OR an exported getter in client code.
+   - If none, leave header out (server CSRF config remains unchanged).
+
+3) Create the file with the code below (adapt path if you found an existing helper):
+
+CODE:
+------------------------------------------------
+const getCsrf = () => {
+  const m = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null;
+  return m?.content || undefined;
+};
+
+async function fetchJSON(url: string, opts: RequestInit = {}) {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  const csrf = getCsrf();
+  if (csrf) headers.set("x-csrf-token", csrf);
+
+  const res = await fetch(url, { credentials: "include", ...opts, headers, body: opts.body });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} – ${detail}`);
+  }
+  return res.json();
+}
+
+export async function aiLeadsAutoresponder(payload: {
+  bakeryName: string; tone?: "friendly"|"formal"|"lux"|"casual";
+  customerName?: string; eventType?: string; eventDate?: string;
+  guestCount?: number; styleNotes?: string; emailSignature?: string;
+}) {
+  return fetchJSON("/api/ai/leads/autoresponder", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function aiLeadsScore(payload: {
+  eventDate?: string; budgetBand?: "low"|"mid"|"high";
+  guestCount?: number; distanceMiles?: number; specialRequests?: string;
+}) {
+  return fetchJSON("/api/ai/leads/score", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function aiQuotesSuggestPrice(payload: {
+  guestCount: number; icing: "buttercream"|"fondant";
+  complexity?: "basic"|"standard"|"premium"|"couture";
+  addOns?: { metallicLeaf?: boolean; sugarFlorals?: boolean; ediblePrint?: boolean; topperCustom?: boolean };
+  deliveryMiles?: number; notes?: string;
+}) {
+  return fetchJSON("/api/ai/quotes/suggest-price", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function aiMarketingCaption(payload: {
+  tags: string[]; tone?: "friendly"|"elegant"|"playful"|"lux"; hashtags?: boolean; maxChars?: number;
+}) {
+  return fetchJSON("/api/ai/marketing/caption", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function aiMarketingCopy(payload: {
+  section: "about"|"email_signature"|"promo"|"seo_meta";
+  context?: string; tone?: "friendly"|"formal"|"elegant"|"lux"|"playful"; maxChars?: number;
+}) {
+  return fetchJSON("/api/ai/marketing/copy", { method: "POST", body: JSON.stringify(payload) });
+}
+------------------------------------------------
+
+OUTPUT
+- Print the final file path and whether you reused an existing fetch helper or used the built-in one.
