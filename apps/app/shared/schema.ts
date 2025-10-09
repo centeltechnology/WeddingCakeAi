@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, jsonb, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, boolean, timestamp, json, jsonb, date, index, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -968,6 +968,18 @@ export const contractSignatures = pgTable("contract_signatures", {
   signedAt: timestamp("signed_at").defaultNow(),
 });
 
+export const contractEvents = pgTable('contract_events', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar('tenant_id').notNull(),
+  contractId: varchar('contract_id').notNull().references(() => contracts.id),
+  type: text('type').notNull(), // created|sent|viewed|signed|declined|expired
+  meta: jsonb('meta').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (t) => ({
+  idx_contract: index('contract_events_contract_idx').on(t.contractId),
+  idx_tenant: index('contract_events_tenant_idx').on(t.tenantId),
+}));
+
 // Enhanced Payment System
 export const paymentPlans = pgTable("payment_plans", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1017,6 +1029,18 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const invoiceEvents = pgTable('invoice_events', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar('tenant_id').notNull(),
+  invoiceId: varchar('invoice_id').notNull().references(() => invoices.id),
+  type: text('type').notNull(), // created|sent|viewed|paid|overdue|voided|refunded
+  meta: jsonb('meta').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (t) => ({
+  idx_invoice: index('invoice_events_invoice_idx').on(t.invoiceId),
+  idx_tenant: index('invoice_events_tenant_idx').on(t.tenantId),
+}));
 
 // Enhanced baker profiles with additional fields
 export const bakerProfiles = pgTable("baker_profiles", {
