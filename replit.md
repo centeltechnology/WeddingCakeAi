@@ -4,6 +4,22 @@
 
 BakerIQ is a professional SaaS business platform designed for bakeries, offering a modern user experience with a clean design, orange accents, and comprehensive dark mode support. The platform aims to streamline business management for bakers, providing features such as CRM, quotes, contracts, payments, and email automation, all with baker-centric navigation. It envisions becoming the go-to platform for bakery business management, enhancing efficiency and customer engagement.
 
+## Recent Changes
+
+### Navigation Standardization (October 2025)
+- Implemented centralized navigation infrastructure with AppLayout, navConfig, and PageHeader components
+- Created automated code-mod script (enforceAppLayout.ts) using ts-morph for AST manipulation to enforce consistent layout
+- Successfully migrated 18 authenticated pages to AppLayout: Admin (5), Core App (7), Features (6)
+- Script features: config-based filtering, default export scoping, multi-return support, reverse-order AST modification
+- All authenticated pages now share centralized navigation with role-based visibility
+
+### Timeline Event System Fix (October 2025)
+- Fixed missing contract/invoice timeline events using backfillContractInvoiceEvents.ts script
+- Resolved tenant_id null constraint issue: 1 contract had null tenant_id (bypassed tenant scoping during creation)
+- Backfilled 6 contract events (3 created + 3 signed) and 3 invoice events (3 created)
+- Root cause: Public contract signing route bypassed tenant context; fixed by linking to quote's tenantId
+- Future prevention: Add NOT NULL constraint to contracts.tenant_id and strengthen validation in creation endpoints
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

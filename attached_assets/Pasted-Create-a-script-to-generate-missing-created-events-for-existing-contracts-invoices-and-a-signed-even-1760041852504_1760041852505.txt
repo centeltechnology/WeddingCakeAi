@@ -1,0 +1,88 @@
+Create a script to generate missing created events for existing contracts/invoices and a signed event for already-signed contracts (if none exists).
+
+apps/app/server/scripts/backfillContractInvoiceEvents.ts
+import { db } from '../db';
+import { contracts, invoices, contractEvents, invoiceEvents } from '../../shared/schema';
+import { sql, and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+
+async function backfill() {
+  // Contracts: ensure 'created' exists
+  const existingCreatedC = await db.select({ id: contractEvents.contractId }).from(contractEvents)
+    .where(eq(contractEvents.type, 'created'));
+  const createdSet = new Set(existingCreatedC.map(r => r.id));
+
+  const allContracts = await db.select().from(contracts);
+  for (const c of allContracts) {
+    if (!createdSet.has(c.id)) {
+      await db.insert(contractEvents).values({
+        id: randomUUID(),
+        tenantId: c.tenantId,
+        contractId: c.id,
+        type: 'created',
+        meta: { source: 'backfill' }
+      });
+    }
+  }
+
+  // Contracts: ensure 'signed' exists if status is signed
+  const existingSignedC = await db.select({ id: contractEvents.contractId }).from(contractEvents)
+    .where(eq(contractEvents.type, 'signed'));
+  const signedSet = new Set(existingSignedC.map(r => r.id));
+
+  for (const c of allContracts) {
+    if (c.status === 'signed' && !signedSet.has(c.id)) {
+      await db.insert(contractEvents).values({
+        id: randomUUID(),
+        tenantId: c.tenantId,
+        contractId: c.id,
+        type: 'signed',
+        meta: { source: 'backfill', signedAt: c.signedAt ?? null }
+      });
+    }
+  }
+
+  // Invoices: ensure 'created' exists
+  const existingCreatedI = await db.select({ id: invoiceEvents.invoiceId }).from(invoiceEvents)
+    .where(eq(invoiceEvents.type, 'created'));
+  const createdInvSet = new Set(existingCreatedI.map(r => r.id));
+
+  const allInvoices = await db.select().from(invoices);
+  for (const inv of allInvoices) {
+    if (!createdInvSet.has(inv.id)) {
+      await db.insert(invoiceEvents).values({
+        id: randomUUID(),
+        tenantId: inv.tenantId,
+        invoiceId: inv.id,
+        type: 'created',
+        meta: { source: 'backfill' }
+      });
+    }
+  }
+
+  // Invoices: ensure 'paid' exists if status is paid
+  const existingPaidI = await db.select({ id: invoiceEvents.invoiceId }).from(invoiceEvents)
+    .where(eq(invoiceEvents.type, 'paid'));
+  const paidSet = new Set(existingPaidI.map(r => r.id));
+
+  for (const inv of allInvoices) {
+    if (inv.status === 'paid' && !paidSet.has(inv.id)) {
+      await db.insert(invoiceEvents).values({
+        id: randomUUID(),
+        tenantId: inv.tenantId,
+        invoiceId: inv.id,
+        type: 'paid',
+        meta: { source: 'backfill', paidAt: inv.paidAt ?? null }
+      });
+    }
+  }
+
+  console.log('Backfill complete.');
+}
+
+backfill().then(()=>process.exit(0)).catch((e)=>{ console.error(e); process.exit(1); });
+
+
+Run it:
+
+pnpm tsx apps/app/server/scripts/backfillContractInvoiceEvents.ts
