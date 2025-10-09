@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 import { registerRoutes } from "./routes";
 import { setupAuthRoutes } from "./authRoutes";
 import { registerAiRoutes } from "./routes/ai";
+import { registerBillingRoutes } from "./routes/billing";
 import { setupVite, serveStatic, log } from "./vite";
 import { startEmailAutomationScheduler } from "./emailAutomation";
 import { databaseStorage } from "./databaseStorage.js";
@@ -1774,6 +1775,9 @@ app.get('/me', async (req, res) => {
 
   // Mount AI routes
   registerAiRoutes(app);
+
+  // Mount billing routes
+  registerBillingRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
