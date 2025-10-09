@@ -5,7 +5,7 @@ import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { 
@@ -7313,6 +7313,381 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching credits:', error);
       res.status(500).json({ error: 'Failed to fetch credits' });
+    }
+  });
+
+  // ====== CAMPAIGN API ENDPOINTS ======
+
+  // Create campaign (advertiser only)
+  app.post('/api/advertisers/campaigns', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get advertiser ID from user
+      const advertiserUser = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id FROM advertiser_users WHERE user_id = ${userId} LIMIT 1
+      `);
+
+      if (!advertiserUser.rows || advertiserUser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser association not found' });
+      }
+
+      const advertiserId = advertiserUser.rows[0].advertiser_id;
+
+      const { name, unitPriceCents, maxSends, targeting } = req.body;
+
+      if (!name || unitPriceCents === undefined || maxSends === undefined) {
+        return res.status(400).json({ 
+          error: 'Missing required fields',
+          message: 'name, unitPriceCents, and maxSends are required'
+        });
+      }
+
+      // Create campaign with pending_review status
+      const campaignId = randomUUID();
+      await db.execute(sql`
+        INSERT INTO ad_campaigns (id, advertiser_id, name, unit_price_cents, max_sends, targeting, status, created_at)
+        VALUES (${campaignId}, ${advertiserId}, ${name}, ${unitPriceCents}, ${maxSends}, ${JSON.stringify(targeting || {})}, 'pending_review', NOW())
+      `);
+
+      res.status(201).json({ 
+        success: true,
+        campaignId,
+        message: 'Campaign created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ error: 'Failed to create campaign' });
+    }
+  });
+
+  // Preflight campaign - get eligible audience count
+  app.get('/api/advertisers/campaigns/:id/preflight', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const { id } = req.params;
+
+      // Get advertiser ID and verify ownership
+      const advertiserUser = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id FROM advertiser_users WHERE user_id = ${userId} LIMIT 1
+      `);
+
+      if (!advertiserUser.rows || advertiserUser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser association not found' });
+      }
+
+      const advertiserId = advertiserUser.rows[0].advertiser_id;
+
+      // Get campaign and verify ownership
+      const campaign = await db.execute<{ 
+        id: string; 
+        advertiser_id: string; 
+        targeting: any;
+        unit_price_cents: number;
+      }>(sql`
+        SELECT id, advertiser_id, targeting, unit_price_cents 
+        FROM ad_campaigns 
+        WHERE id = ${id} AND advertiser_id = ${advertiserId}
+        LIMIT 1
+      `);
+
+      if (!campaign.rows || campaign.rows.length === 0) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      const targeting = campaign.rows[0].targeting || {};
+      const unitPriceCents = campaign.rows[0].unit_price_cents;
+
+      // Build WHERE clause based on targeting
+      let whereConditions = [
+        sql`network_opt_in = true`,
+        sql`unsubscribed_network = false`,
+        sql`(last_network_contact_at IS NULL OR (NOW() - last_network_contact_at) > INTERVAL '7 days')`
+      ];
+
+      // Geographic targeting
+      if (targeting.geo) {
+        if (targeting.geo.states && targeting.geo.states.length > 0) {
+          whereConditions.push(sql`state = ANY(${targeting.geo.states}::text[])`);
+        }
+        if (targeting.geo.cities && targeting.geo.cities.length > 0) {
+          whereConditions.push(sql`city = ANY(${targeting.geo.cities}::text[])`);
+        }
+        if (targeting.geo.zips && targeting.geo.zips.length > 0) {
+          whereConditions.push(sql`postal_code = ANY(${targeting.geo.zips}::text[])`);
+        }
+      }
+
+      // Date window targeting
+      if (targeting.dateWindow) {
+        if (targeting.dateWindow.from) {
+          whereConditions.push(sql`event_date >= ${targeting.dateWindow.from}`);
+        }
+        if (targeting.dateWindow.to) {
+          whereConditions.push(sql`event_date <= ${targeting.dateWindow.to}`);
+        }
+      }
+
+      // Budget targeting
+      if (targeting.budget) {
+        if (targeting.budget.min !== undefined) {
+          whereConditions.push(sql`budget_min >= ${targeting.budget.min}`);
+        }
+        if (targeting.budget.max !== undefined) {
+          whereConditions.push(sql`budget_max <= ${targeting.budget.max}`);
+        }
+      }
+
+      // Interests targeting
+      if (targeting.interests && targeting.interests.length > 0) {
+        whereConditions.push(sql`interests && ${targeting.interests}::text[]`);
+      }
+
+      // Exclude recently quoted/contracted leads
+      whereConditions.push(sql`
+        NOT EXISTS (
+          SELECT 1 FROM quotes 
+          WHERE quotes.lead_id = calculator_leads.id 
+          AND quotes.created_at > NOW() - INTERVAL '30 days'
+        )
+      `);
+      whereConditions.push(sql`
+        NOT EXISTS (
+          SELECT 1 FROM contracts 
+          WHERE contracts.lead_id = calculator_leads.id 
+          AND contracts.created_at > NOW() - INTERVAL '30 days'
+        )
+      `);
+
+      // Combine all conditions
+      const whereClause = sql.join(whereConditions, sql` AND `);
+
+      // Count eligible leads
+      const result = await db.execute<{ count: number }>(sql`
+        SELECT COUNT(*) as count 
+        FROM calculator_leads 
+        WHERE ${whereClause}
+      `);
+
+      const eligibleCount = parseInt(result.rows?.[0]?.count?.toString() || '0');
+      const estimatedCostCents = eligibleCount * unitPriceCents;
+
+      res.json({ 
+        success: true,
+        eligibleCount,
+        estimatedCostCents,
+        estimatedCostDollars: (estimatedCostCents / 100).toFixed(2),
+        unitPriceCents,
+        targeting
+      });
+    } catch (error) {
+      console.error('Error running preflight:', error);
+      res.status(500).json({ error: 'Failed to run preflight' });
+    }
+  });
+
+  // Submit campaign for review
+  app.post('/api/advertisers/campaigns/:id/submit', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const { id } = req.params;
+
+      // Get advertiser ID
+      const advertiserUser = await db.execute<{ advertiser_id: string }>(sql`
+        SELECT advertiser_id FROM advertiser_users WHERE user_id = ${userId} LIMIT 1
+      `);
+
+      if (!advertiserUser.rows || advertiserUser.rows.length === 0) {
+        return res.status(404).json({ error: 'Advertiser association not found' });
+      }
+
+      const advertiserId = advertiserUser.rows[0].advertiser_id;
+
+      // Get campaign
+      const campaign = await db.execute<{ 
+        id: string; 
+        advertiser_id: string; 
+        targeting: any;
+        unit_price_cents: number;
+        status: string;
+      }>(sql`
+        SELECT id, advertiser_id, targeting, unit_price_cents, status
+        FROM ad_campaigns 
+        WHERE id = ${id} AND advertiser_id = ${advertiserId}
+        LIMIT 1
+      `);
+
+      if (!campaign.rows || campaign.rows.length === 0) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      if (campaign.rows[0].status !== 'pending_review' && campaign.rows[0].status !== 'draft') {
+        return res.status(400).json({ 
+          error: 'Invalid campaign status',
+          message: 'Campaign must be in draft or pending_review status to submit'
+        });
+      }
+
+      // Run preflight to get eligible count
+      const targeting = campaign.rows[0].targeting || {};
+      const unitPriceCents = campaign.rows[0].unit_price_cents;
+
+      // Build WHERE clause (same logic as preflight)
+      let whereConditions = [
+        sql`network_opt_in = true`,
+        sql`unsubscribed_network = false`,
+        sql`(last_network_contact_at IS NULL OR (NOW() - last_network_contact_at) > INTERVAL '7 days')`
+      ];
+
+      if (targeting.geo) {
+        if (targeting.geo.states && targeting.geo.states.length > 0) {
+          whereConditions.push(sql`state = ANY(${targeting.geo.states}::text[])`);
+        }
+        if (targeting.geo.cities && targeting.geo.cities.length > 0) {
+          whereConditions.push(sql`city = ANY(${targeting.geo.cities}::text[])`);
+        }
+        if (targeting.geo.zips && targeting.geo.zips.length > 0) {
+          whereConditions.push(sql`postal_code = ANY(${targeting.geo.zips}::text[])`);
+        }
+      }
+
+      if (targeting.dateWindow) {
+        if (targeting.dateWindow.from) {
+          whereConditions.push(sql`event_date >= ${targeting.dateWindow.from}`);
+        }
+        if (targeting.dateWindow.to) {
+          whereConditions.push(sql`event_date <= ${targeting.dateWindow.to}`);
+        }
+      }
+
+      if (targeting.budget) {
+        if (targeting.budget.min !== undefined) {
+          whereConditions.push(sql`budget_min >= ${targeting.budget.min}`);
+        }
+        if (targeting.budget.max !== undefined) {
+          whereConditions.push(sql`budget_max <= ${targeting.budget.max}`);
+        }
+      }
+
+      if (targeting.interests && targeting.interests.length > 0) {
+        whereConditions.push(sql`interests && ${targeting.interests}::text[]`);
+      }
+
+      whereConditions.push(sql`
+        NOT EXISTS (
+          SELECT 1 FROM quotes 
+          WHERE quotes.lead_id = calculator_leads.id 
+          AND quotes.created_at > NOW() - INTERVAL '30 days'
+        )
+      `);
+      whereConditions.push(sql`
+        NOT EXISTS (
+          SELECT 1 FROM contracts 
+          WHERE contracts.lead_id = calculator_leads.id 
+          AND contracts.created_at > NOW() - INTERVAL '30 days'
+        )
+      `);
+
+      const whereClause = sql.join(whereConditions, sql` AND `);
+
+      const result = await db.execute<{ count: number }>(sql`
+        SELECT COUNT(*) as count 
+        FROM calculator_leads 
+        WHERE ${whereClause}
+      `);
+
+      const eligibleCount = parseInt(result.rows?.[0]?.count?.toString() || '0');
+      const requiredCents = eligibleCount * unitPriceCents;
+
+      // Check advertiser credits
+      const credits = await db.execute<{ balance_cents: number }>(sql`
+        SELECT balance_cents FROM advertiser_credits WHERE advertiser_id = ${advertiserId}
+      `);
+
+      const balanceCents = credits.rows?.[0]?.balance_cents || 0;
+
+      if (balanceCents < requiredCents) {
+        return res.status(400).json({ 
+          error: 'Insufficient credits',
+          message: `Campaign requires ${requiredCents} cents (${eligibleCount} sends × ${unitPriceCents} cents), but balance is ${balanceCents} cents`,
+          requiredCents,
+          balanceCents,
+          shortfallCents: requiredCents - balanceCents
+        });
+      }
+
+      // Update campaign status to pending_review
+      await db.execute(sql`
+        UPDATE ad_campaigns
+        SET status = 'pending_review'
+        WHERE id = ${id}
+      `);
+
+      res.json({ 
+        success: true,
+        message: 'Campaign submitted for review',
+        eligibleCount,
+        requiredCents,
+        balanceCents
+      });
+    } catch (error) {
+      console.error('Error submitting campaign:', error);
+      res.status(500).json({ error: 'Failed to submit campaign' });
+    }
+  });
+
+  // Approve campaign (admin only)
+  app.post('/api/admin/campaigns/:id/approve', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      // Get campaign
+      const campaign = await db.execute<{ 
+        id: string; 
+        status: string;
+      }>(sql`
+        SELECT id, status 
+        FROM ad_campaigns 
+        WHERE id = ${id}
+        LIMIT 1
+      `);
+
+      if (!campaign.rows || campaign.rows.length === 0) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      if (campaign.rows[0].status !== 'pending_review') {
+        return res.status(400).json({ 
+          error: 'Invalid status',
+          message: 'Campaign must be in pending_review status to approve'
+        });
+      }
+
+      // Update status to approved
+      await db.execute(sql`
+        UPDATE ad_campaigns
+        SET status = 'approved', approved_at = NOW()
+        WHERE id = ${id}
+      `);
+
+      res.json({ 
+        success: true,
+        message: 'Campaign approved successfully'
+      });
+    } catch (error) {
+      console.error('Error approving campaign:', error);
+      res.status(500).json({ error: 'Failed to approve campaign' });
     }
   });
 
