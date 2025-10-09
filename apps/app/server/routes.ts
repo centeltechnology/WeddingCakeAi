@@ -3901,18 +3901,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contract API Routes
   app.get('/api/contracts', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId, customerId } = req.query;
+      const user = req.user;
       
-      let contracts;
-      if (bakerId) {
-        contracts = await storage.getContractsByBaker(bakerId as string);
-      } else if (customerId) {
-        contracts = await storage.getContractsByCustomer(customerId as string);
-      } else {
-        return res.status(400).json({ error: 'bakerId or customerId is required' });
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
+
+      // Filter by tenant for multi-tenancy
+      const rows = await db.select()
+        .from(contracts)
+        .where(eq(contracts.tenantId, user.tenantId || ''))
+        .orderBy(sql`${contracts.createdAt} DESC`);
       
-      res.json(contracts);
+      res.json(rows);
     } catch (error) {
       console.error('Error fetching contracts:', error);
       res.status(500).json({ error: 'Failed to fetch contracts' });
@@ -4279,7 +4280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { signerName, signerEmail, signerType, signatureData } = req.body;
       
-      // Wrap in transaction: create signature + update contract atomically
+      // Wrap in transaction: create signature + update contract + create invoice atomically
       const result = await db.transaction(async (tx) => {
         // Verify contract exists
         const [contract] = await tx.select().from(contracts).where(eq(contracts.id, req.params.id));
@@ -4311,11 +4312,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(contracts.id, req.params.id))
           .returning();
         
+        // Track signing event
+        await tx.insert(contractEvents).values({
+          tenantId: contract.tenantId || '',
+          contractId: contract.id,
+          type: 'signed',
+          meta: { signerName, signerEmail, signerType }
+        });
+        
         return { contract: updatedContract, signature };
       });
 
+      // Create deposit invoice after transaction completes
+      const invoice = await createDepositInvoice({
+        id: result.contract.id,
+        tenantId: result.contract.tenantId || '',
+        bakerId: result.contract.bakerId || '',
+        customerId: result.contract.customerId || '',
+        quoteId: result.contract.quoteId,
+        title: result.contract.title,
+        depositAmount: result.contract.depositAmount ? parseFloat(result.contract.depositAmount) : null,
+        eventDate: result.contract.eventDate
+      });
+
       res.json({ 
-        success: true, 
+        ok: true,
+        invoiceId: invoice.id,
         message: 'Contract signed successfully',
         contract: result.contract,
         signature: result.signature
