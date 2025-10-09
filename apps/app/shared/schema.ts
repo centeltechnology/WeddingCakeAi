@@ -894,7 +894,15 @@ export const quoteEvents = pgTable("quote_events", {
   quoteId: varchar("quote_id").notNull().references(() => quotes.id),
   event: text("event").notNull(), // 'created'|'updated'|'sent'|'viewed'|'approved'|'declined'|'expired'
   actorUserId: varchar("actor_user_id"),
-  meta: jsonb("meta"),
+  meta: jsonb("meta").$type<{
+    emailSubject?: string;
+    emailRecipient?: string;
+    previousStatus?: string;
+    newStatus?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    [key: string]: any;
+  }>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => {
   return {
