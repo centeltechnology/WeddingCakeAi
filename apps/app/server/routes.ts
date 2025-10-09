@@ -8672,6 +8672,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Lab stub endpoints
+  app.post('/api/ai/suggest-items', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      // Stub endpoint - returns success for testing
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Error in AI suggest-items stub:', error);
+      res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
+  app.post('/api/ai/summarize-quote', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      // Stub endpoint - returns success for testing
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Error in AI summarize-quote stub:', error);
+      res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
+  app.post('/api/ai/generate-contract', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      // Stub endpoint - returns success for testing
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Error in AI generate-contract stub:', error);
+      res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
