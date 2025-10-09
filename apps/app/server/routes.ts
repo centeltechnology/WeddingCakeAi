@@ -29,7 +29,7 @@ import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fn
 import { EmailAutomationService } from "./emailAutomation";
 import { renderContractTemplate, resolvePaymentMethod } from "./contractRenderer";
 import { createContractFromQuote } from "./services/contracts";
-import { createDepositInvoice } from "./services/invoices";
+import { createDepositInvoice, createSimpleInvoice } from "./services/invoices";
 import { sendContractEmail } from "./emails/sendContractEmail";
 import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
 
@@ -4394,40 +4394,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const { bakerId, customerId } = req.query;
+      // Filter by tenant for multi-tenancy
+      const rows = await db.select()
+        .from(invoices)
+        .where(eq(invoices.tenantId, user.tenantId || ''))
+        .orderBy(sql`${invoices.createdAt} DESC`);
       
-      let invoices;
-      
-      // Role-based access control with tenant isolation
-      if (user.role === 'baker') {
-        // Bakers can only fetch their own invoices
-        if (bakerId && bakerId !== user.userId) {
-          return res.status(403).json({ error: 'Access forbidden' });
-        }
-        invoices = await storage.getInvoicesByBaker(user.userId);
-      } else if (user.role === 'customer') {
-        // Customers can only fetch their own invoices
-        if (customerId && customerId !== user.userId) {
-          return res.status(403).json({ error: 'Access forbidden' });
-        }
-        if (!user.userId) {
-          return res.status(400).json({ error: 'Customer ID not available' });
-        }
-        invoices = await storage.getInvoicesByCustomer(user.userId);
-      } else if (user.role === 'super_admin' || user.role === 'admin') {
-        // Admins can fetch by bakerId or customerId
-        if (bakerId) {
-          invoices = await storage.getInvoicesByBaker(bakerId as string);
-        } else if (customerId) {
-          invoices = await storage.getInvoicesByCustomer(customerId as string);
-        } else {
-          return res.status(400).json({ error: 'bakerId or customerId is required for admin access' });
-        }
-      } else {
-        return res.status(403).json({ error: 'Insufficient permissions' });
-      }
-      
-      res.json(invoices);
+      res.json(rows);
     } catch (error) {
       console.error('Error fetching invoices:', error);
       res.status(500).json({ error: 'Failed to fetch invoices' });
@@ -4436,11 +4409,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/invoices', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
     try {
-      const invoice = await storage.createInvoice(req.body);
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { title, total, customerId } = req.body;
+
+      const invoice = await createSimpleInvoice({
+        tenantId: user.tenantId || '',
+        bakerId: user.id,
+        customerId: customerId || null,
+        title: title || 'New Invoice',
+        total: parseFloat(total || '0')
+      });
+
       res.status(201).json(invoice);
     } catch (error) {
       console.error('Error creating invoice:', error);
       res.status(500).json({ error: 'Failed to create invoice' });
+    }
+  });
+
+  // POST /api/invoices/:id/paid - Mark invoice as paid
+  app.post('/api/invoices/:id/paid', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get invoice to check ownership
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Check tenant access
+      if (invoice.tenantId !== user.tenantId) {
+        return res.status(403).json({ error: 'Access forbidden' });
+      }
+
+      // Update invoice status to paid
+      const [updatedInvoice] = await db.update(invoices)
+        .set({
+          status: 'paid',
+          paidAt: new Date(),
+          paidAmount: invoice.total,
+          remainingBalance: '0',
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, id))
+        .returning();
+
+      // Track payment event
+      await db.insert(invoiceEvents).values({
+        tenantId: invoice.tenantId || '',
+        invoiceId: invoice.id,
+        type: 'paid',
+        meta: { paidBy: user.id, amount: invoice.total }
+      });
+
+      res.json({ ok: true, invoice: updatedInvoice });
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      res.status(500).json({ error: 'Failed to mark invoice as paid' });
     }
   });
 
