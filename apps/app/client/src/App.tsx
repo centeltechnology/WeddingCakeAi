@@ -88,7 +88,8 @@ import AdvertiserReports from "@/pages/AdvertiserReports";
 import AdminNetworkReports from "@/pages/AdminNetworkReports";
 import { CreditsModalProvider } from "@/components/ai/CreditsModalContext";
 import MessagesPage from "@/pages/Messages";
-import QuotesPage from "@/pages/Quotes";
+import QuoteList from "@/pages/QuoteList";
+import { QuoteBuilder } from "@/components/QuoteBuilder";
 import CustomersPage from "@/pages/Customers";
 import AdminTenantsPage from "@/pages/AdminTenants";
 import AdminUsersPage from "@/pages/AdminUsers";
@@ -272,9 +273,27 @@ function Router() {
         </AppShell>
       </Route>
       <Route path="/quotes">
-        <AppShell>
-          <QuotesPage />
-        </AppShell>
+        <AuthGuard>
+          <AppShell>
+            <QuoteList />
+          </AppShell>
+        </AuthGuard>
+      </Route>
+      <Route path="/quotes/new">
+        <AuthGuard>
+          <AppShell>
+            <QuoteBuilder bakerId="" />
+          </AppShell>
+        </AuthGuard>
+      </Route>
+      <Route path="/quotes/:id">
+        {(params) => (
+          <AuthGuard>
+            <AppShell>
+              <QuoteBuilder bakerId="" />
+            </AppShell>
+          </AuthGuard>
+        )}
       </Route>
       <Route path="/customers">
         <AppShell>

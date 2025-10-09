@@ -1,0 +1,89 @@
+Make Quotes usable (list + create + approve)
+A) Add routes to the client
+
+apps/app/client/src/App.tsx – ensure these exist:
+
+<Route path="/quotes" component={QuoteList} />
+<Route path="/quotes/new" component={QuoteBuilder} />
+<Route path="/quotes/:id" component={QuoteBuilder} />
+
+B) Add a simple Quotes list (with “New” + Approve)
+
+apps/app/client/src/pages/QuoteList.tsx
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
+
+export default function QuoteList() {
+  const qc = useQueryClient();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['quotes'],
+    queryFn: async () => (await fetch('/api/quotes')).json()
+  });
+
+  const approve = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/quotes/${id}/approve`, { method:'POST' });
+      if (!r.ok) throw new Error('approve failed');
+      return r.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey:['quotes'] })
+  });
+
+  if (isLoading) return <div className="p-6">Loading…</div>;
+  if (error) return <div className="p-6 text-red-600">Failed to load quotes.</div>;
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-semibold">Quotes</h1>
+        <Link href="/quotes/new" className="px-3 py-2 rounded-lg bg-black text-white">New Quote</Link>
+      </div>
+      <div className="space-y-2">
+        {data?.map((q:any) => (
+          <div key={q.id} className="border rounded-xl p-4 flex justify-between items-center">
+            <div>
+              <div className="font-medium">{q.title ?? `Quote ${q.quoteNumber ?? q.id.slice(0,8)}`}</div>
+              <div className="text-sm opacity-70">Status: {q.status}</div>
+            </div>
+            <div className="flex gap-2">
+              <Link href={`/quotes/${q.id}`} className="px-3 py-1 rounded border">Open</Link>
+              {q.status !== 'approved' && (
+                <button onClick={() => approve.mutate(q.id)} className="px-3 py-1 rounded bg-emerald-600 text-white">
+                  {approve.isPending ? 'Approving…' : 'Approve'}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+C) Server: list + approve endpoints
+
+apps/app/server/routes.ts (or wherever REST is defined)
+
+// list
+app.get('/api/quotes', authGuard, async (req, res) => {
+  const rows = await db.select().from(quotes).where(eq(quotes.tenantId, req.tenant.id)).orderBy(desc(quotes.createdAt));
+  res.json(rows);
+});
+
+// approve → create contract (and event)
+app.post('/api/quotes/:id/approve', authGuard, async (req, res) => {
+  const id = req.params.id;
+  const [q] = await db.select().from(quotes)
+    .where(and(eq(quotes.id, id), eq(quotes.tenantId, req.tenant.id)));
+  if (!q) return res.status(404).json({ error:'not_found' });
+
+  await db.update(quotes).set({ status:'approved', approvedAt: new Date() }).where(eq(quotes.id, id));
+
+  // create contract
+  const contract = await createContractFromQuote(q); // from services/contracts.ts
+  res.json({ ok:true, contractId: contract.id });
+});
+
+
+Result: Quotes now has a real list, “New Quote,” and Approve triggers contract creation.

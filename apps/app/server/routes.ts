@@ -3148,18 +3148,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/quotes', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId, customerId } = req.query;
-      
-      let quotes;
-      if (bakerId) {
-        quotes = await storage.getQuotesByBaker(bakerId as string);
-      } else if (customerId) {
-        quotes = await storage.getQuotesByCustomer(customerId as string);
-      } else {
-        return res.status(400).json({ error: 'bakerId or customerId is required' });
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
+
+      // Filter by tenant for multi-tenancy
+      const rows = await db.select()
+        .from(quotes)
+        .where(eq(quotes.tenantId, user.tenantId))
+        .orderBy(sql`${quotes.createdAt} DESC`);
       
-      res.json(quotes);
+      res.json(rows);
     } catch (error) {
       console.error('Error fetching quotes:', error);
       res.status(500).json({ error: 'Failed to fetch quotes' });
@@ -3503,6 +3503,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating approval link:', error);
       res.status(500).json({ error: 'Failed to generate approval link' });
+    }
+  });
+
+  // Approve quote and create contract (baker-only)
+  app.post('/api/quotes/:id/approve', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get quote with tenant check
+      const [quote] = await db.select()
+        .from(quotes)
+        .where(and(
+          eq(quotes.id, id), 
+          eq(quotes.tenantId, user.tenantId || '')
+        ));
+      
+      if (!quote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+
+      // Update quote status to approved
+      await db.update(quotes)
+        .set({ 
+          status: 'approved', 
+          approvedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(quotes.id, id));
+
+      // Track approval event
+      await db.insert(quoteEvents).values({
+        tenantId: user.tenantId || '',
+        quoteId: quote.id,
+        type: 'approved',
+        meta: { approvedBy: user.id }
+      });
+
+      // Create contract from quote
+      const contract = await createContractFromQuote({
+        id: quote.id,
+        tenantId: quote.tenantId || '',
+        bakerId: quote.bakerId || '',
+        customerId: quote.customerId || '',
+        title: quote.title || `Quote ${quote.quoteNumber}`,
+        total: parseFloat(quote.total || '0'),
+        depositAmount: quote.depositAmount ? parseFloat(quote.depositAmount) : null,
+        eventDate: quote.eventDate
+      });
+
+      res.json({ 
+        ok: true, 
+        contractId: contract.id,
+        message: 'Quote approved and contract created'
+      });
+    } catch (error) {
+      console.error('Error approving quote:', error);
+      res.status(500).json({ error: 'Failed to approve quote' });
     }
   });
 
