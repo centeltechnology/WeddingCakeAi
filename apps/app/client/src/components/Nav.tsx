@@ -1,9 +1,22 @@
 import { Link } from "wouter";
 import { useMe } from "@/lib/useMe";
 import LogoutButton from "./LogoutButton";
+import React from "react";
+
+function useAiCredits() {
+  const [credits, setCredits] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    fetch("/api/ai/credits/me", { credentials: "include" })
+      .then(r => r.json())
+      .then(j => setCredits(j.balance))
+      .catch(() => setCredits(null));
+  }, []);
+  return credits;
+}
 
 export function Nav() {
   const { loading, error, me } = useMe();
+  const credits = useAiCredits();
 
   if (loading) {
     return null;
@@ -80,6 +93,11 @@ export function Nav() {
           </div>
           
           <div className="flex items-center">
+            {typeof credits === "number" && (
+              <span className="ml-3 text-xs px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-800/60 dark:border-gray-700">
+                ✨ {credits} credits
+              </span>
+            )}
             <LogoutButton />
           </div>
         </div>
