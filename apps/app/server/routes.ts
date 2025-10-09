@@ -28,6 +28,8 @@ import { SendyService, getSendyService } from "./sendy";
 import { format, parseISO, addMinutes, differenceInDays, isAfter } from "date-fns";
 import { EmailAutomationService } from "./emailAutomation";
 import { renderContractTemplate, resolvePaymentMethod } from "./contractRenderer";
+import { createContractFromQuote } from "./services/contracts";
+import { createDepositInvoice } from "./services/invoices";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -3604,6 +3606,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actorUserId: null,
         meta: { approvedAt: new Date().toISOString() }
       });
+      
+      // AUTO-CREATE CONTRACT from approved quote
+      try {
+        const contract = await createContractFromQuote({
+          id: quote.id,
+          tenantId: quote.tenantId || '',
+          bakerId: quote.bakerId || '',
+          customerId: quote.customerId || '',
+          title: quote.title || 'Untitled Quote',
+          total: parseFloat(quote.total || '0'),
+          depositAmount: quote.depositAmount ? parseFloat(quote.depositAmount) : null,
+          eventDate: quote.eventDate
+        });
+        console.log(`✅ Auto-created contract ${contract.id} from approved quote ${quote.id}`);
+      } catch (contractErr) {
+        console.error('Failed to auto-create contract:', contractErr);
+        // Don't fail the quote approval if contract creation fails
+      }
       
       // Sendy: Subscribe to customers list and update stage to 'contracted'
       try {
@@ -8405,6 +8425,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         return { signature, contract: updatedContract };
       });
+
+      // AUTO-CREATE INVOICE from signed contract
+      try {
+        const invoice = await createDepositInvoice({
+          id: result.contract.id,
+          tenantId: contract.tenantId || '',
+          bakerId: contract.bakerId || '',
+          customerId: contract.customerId || '',
+          quoteId: contract.quoteId || null,
+          title: contract.title || 'Untitled Contract',
+          depositAmount: contract.depositAmount ? parseFloat(contract.depositAmount) : null,
+          eventDate: contract.eventDate
+        });
+        console.log(`✅ Auto-created invoice ${invoice.id} from signed contract ${contract.id}`);
+      } catch (invoiceErr) {
+        console.error('Failed to auto-create invoice:', invoiceErr);
+        // Don't fail the contract signing if invoice creation fails
+      }
 
       // TODO: Send confirmation email to customer and baker
 

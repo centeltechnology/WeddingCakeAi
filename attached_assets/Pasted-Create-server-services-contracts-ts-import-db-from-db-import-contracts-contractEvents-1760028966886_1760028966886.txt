@@ -1,0 +1,73 @@
+Create server/services/contracts.ts:
+
+import { db } from '../db';
+import { contracts, contractEvents } from '../../shared/schema';
+import { randomUUID } from 'node:crypto';
+
+export async function createContractFromQuote(quote: {
+  id: string; tenantId: string; bakerId: string; customerId: string;
+  title: string; total: number; depositAmount: number | null; eventDate?: string | null;
+}) {
+  const [contract] = await db.insert(contracts).values({
+    id: randomUUID(),
+    tenantId: quote.tenantId,
+    bakerId: quote.bakerId,
+    customerId: quote.customerId,
+    quoteId: quote.id,
+    contractNumber: null, // your generator runs post-insert if you have one
+    title: `Contract - ${quote.title}`,
+    totalAmount: quote.total,
+    depositAmount: quote.depositAmount,
+    eventDate: quote.eventDate ?? null,
+    status: 'draft'
+  }).returning();
+
+  await db.insert(contractEvents).values({
+    id: randomUUID(),
+    tenantId: quote.tenantId,
+    contractId: contract.id,
+    type: 'created',
+    meta: { source: 'quote.approved' }
+  });
+
+  return contract;
+}
+
+
+Create server/services/invoices.ts:
+
+import { db } from '../db';
+import { invoices, invoiceEvents } from '../../shared/schema';
+import { randomUUID } from 'node:crypto';
+
+export async function createDepositInvoice(contract: {
+  id: string; tenantId: string; bakerId: string; customerId: string;
+  quoteId: string | null; title: string; depositAmount: number | null; eventDate?: string | null;
+}) {
+  const amount = contract.depositAmount ?? 0;
+  const [invoice] = await db.insert(invoices).values({
+    id: randomUUID(),
+    tenantId: contract.tenantId,
+    bakerId: contract.bakerId,
+    customerId: contract.customerId,
+    contractId: contract.id,
+    quoteId: contract.quoteId,
+    invoiceNumber: null,
+    title: `Deposit - ${contract.title}`,
+    subtotal: amount,
+    total: amount,
+    remainingBalance: amount,
+    dueDate: contract.eventDate ?? null,
+    status: 'pending'
+  }).returning();
+
+  await db.insert(invoiceEvents).values({
+    id: randomUUID(),
+    tenantId: contract.tenantId,
+    invoiceId: invoice.id,
+    type: 'created',
+    meta: { source: 'contract.signed' }
+  });
+
+  return invoice;
+}
