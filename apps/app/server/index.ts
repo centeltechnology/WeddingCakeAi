@@ -1533,52 +1533,8 @@ app.post("/api/app/invoices/:id/pay", ensureAuth, async (req, res) => {
   }
 });
 
-// Pipeline chart - quotes by status (tenant-aware)
-app.get("/api/app/charts/pipeline", ensureAuth, async (req, res) => {
-  try {
-    const userEmail = (req.session as any).email;
-    
-    const baker = await databaseStorage.getBakerByEmail(userEmail);
-    if (!baker || !baker.tenantId) {
-      return res.status(404).json({ error: "Baker or tenant not found" });
-    }
-    
-    const result = await db.execute<{ status: string; count: number }>(sql`
-      SELECT 
-        CASE 
-          WHEN status IN ('draft', 'pending') THEN 'draft'
-          WHEN status IN ('sent', 'delivered', 'viewed') THEN 'sent'
-          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 'accepted'
-          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 'rejected'
-          ELSE 'draft'
-        END as status,
-        COUNT(*)::int as count
-      FROM quotes
-      WHERE tenant_id = ${baker.tenantId}
-      GROUP BY 
-        CASE 
-          WHEN status IN ('draft', 'pending') THEN 'draft'
-          WHEN status IN ('sent', 'delivered', 'viewed') THEN 'sent'
-          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 'accepted'
-          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 'rejected'
-          ELSE 'draft'
-        END
-      ORDER BY 
-        CASE 
-          WHEN status IN ('draft', 'pending') THEN 1
-          WHEN status IN ('sent', 'delivered', 'viewed') THEN 2
-          WHEN status IN ('accepted', 'approved', 'confirmed') THEN 3
-          WHEN status IN ('rejected', 'declined', 'cancelled') THEN 4
-          ELSE 1
-        END
-    `);
-    
-    res.json(result.rows || []);
-  } catch (error) {
-    console.error("Error fetching pipeline chart:", error);
-    res.status(500).json({ error: "Failed to fetch pipeline data" });
-  }
-});
+// Pipeline chart - Moved to routes.ts (using Drizzle groupBy)
+// This endpoint is now handled by /api/app/charts/pipeline in routes.ts
 
 // Revenue MTD - current vs previous month (tenant-aware)
 app.get("/api/app/stats/revenue-mtd", ensureAuth, async (req, res) => {
