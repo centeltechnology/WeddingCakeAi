@@ -330,6 +330,13 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Express session store (managed by connect-pg-simple)
+export const sessions = pgTable("sessions", {
+  sid: varchar("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
 export const calculatorLeads = pgTable("calculator_leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerName: text("customer_name").notNull(),
@@ -350,6 +357,7 @@ export const calculatorLeads = pgTable("calculator_leads", {
   }>(),
   estimatedPrice: decimal("estimated_price", { precision: 10, scale: 2 }),
   syncedToSendy: boolean("synced_to_sendy").default(false),
+  syncedAt: timestamp("synced_at"),
   sendyListId: text("sendy_list_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -424,13 +432,14 @@ export const reviews = pgTable("reviews", {
 // Payment transactions
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: text("tenant_id"), // Added for multi-tenancy
   bakerId: varchar("baker_id").notNull(),
   customerId: varchar("customer_id"),
   leadId: varchar("lead_id"),
-  type: varchar("type").notNull(), // 'consultation', 'deposit', 'final_payment', 'subscription'
+  type: varchar("type").notNull(), // 'consultation', 'deposit', 'final_payment', 'subscription', 'payment'
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency").default("usd"),
-  status: varchar("status").notNull(), // 'pending', 'completed', 'failed', 'refunded'
+  status: varchar("status").notNull(), // 'pending', 'completed', 'failed', 'refunded', 'succeeded'
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
