@@ -1,0 +1,195 @@
+You are my integrator/implementer for BakerIQ (apps/app). Perform the following steps IN ORDER and return a single final report with PASS/FAIL per step and any diffs/paths you changed.
+
+If any paths differ from what I expect, adapt and state what you changed.
+
+# =========================
+# 0) Setup
+# =========================
+- Create a working branch (optional): git checkout -b feat/quotes-contracts-v1
+
+Assumptions:
+- Server: apps/app/server/index.ts (+ routes.ts or similar)
+- Client: apps/app/client/src (Vite + React + Wouter)
+- Auth today: mixture of express-session and JWT
+- DB: Postgres via Drizzle
+
+# =========================
+# 1) Unify API auth (session-first, JWT-compatible) + tenant guard
+# =========================
+Create file: apps/app/server/authUnified.ts
+------------------------------------------------
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+export function ensureAuthUnified(req: any, res: Response, next: NextFunction) {
+  // Session first
+  if (req.session?.userId) {
+    req.user = {
+      id: req.session.userId,
+      role: req.session.role || "baker",
+      tenantId: req.session.tenantId || req.session?.tenant_id || null,
+    };
+    return next();
+  }
+  // Legacy JWT (compat)
+  const auth = req.headers?.authorization || "";
+  if (auth.startsWith("Bearer ")) {
+    try {
+      const token = auth.slice(7);
+      const payload: any = jwt.verify(token, process.env.JWT_SECRET || "dev");
+      req.user = {
+        id: payload.sub || payload.id,
+        role: payload.role || "baker",
+        tenantId: payload.tenantId || payload.tenant_id || null,
+      };
+      return next();
+    } catch {}
+  }
+  return res.status(401).json({ ok: false, error: "Unauthenticated" });
+}
+
+export function requireTenant(req: any, res: Response, next: NextFunction) {
+  if (!req.user?.tenantId) return res.status(400).json({ ok:false, error:"Missing tenant context" });
+  return next();
+}
+------------------------------------------------
+
+Refactor routes that currently use JWT-only middleware:
+- For /api/quotes*, /api/contracts*, /api/invoices*:
+  Replace authenticateJWT with ensureAuthUnified (and add requireTenant where resource is tenant-owned).
+- Make sure /api/session returns: { authenticated, userId, role, tenantId, isImpersonating } and sets Cache-Control: no-store.
+
+Return a list of files edited.
+
+# =========================
+# 2) Public shortlinks + missing UIs (Contracts & Invoices)
+# =========================
+## 2A) Server shortlinks
+Add to server (index.ts or routes file):
+- GET /q/:id  → 302 to /quote-approval/:token
+  • Find quote by id for current tenant scope not required (public link), but do not leak anything.
+  • If quote.approval_token exists and not expired → 302 "/quote-approval/<token>"
+  • Else, generate token using existing generator and then 302.
+
+- GET /c/:id  → 302 to /contract-approval/:token
+  • If there is an existing token issuance path (e.g., /api/contracts/:id/send), reuse; else create one and store (7d expiry).
+  • 302 to "/contract-approval/<token>"
+
+Log minimal info (quote/contract id + issued token id).
+
+## 2B) Contract UI (protected + public)
+Create:
+- apps/app/client/src/pages/ContractsList.tsx
+  • Table of contracts: number, customer, status, signed_at (or accepted_at), updated
+  • Link to /contracts/:id
+
+- apps/app/client/src/pages/ContractEdit.tsx
+  • If template exists: choose template, variables JSON textarea, preview, “Send for signature” button
+  • Calls existing POST /api/contracts and /api/contracts/:id/send
+
+- apps/app/client/src/pages/contract-approval.tsx (public)
+  • Route: /contract-approval/:token
+  • Fetch via new GET /api/contracts/public/:id?token=<t> (implement below)
+  • Render HTML + inputs { name, email } → POST /api/contracts/:id/sign { token, name, email }
+  • Success screen
+
+Wire routes in App.tsx:
+  • Protected: /contracts, /contracts/:id
+  • Public: /contract-approval/:token
+
+## 2C) Public contract fetch (server)
+Add GET /api/contracts/public/:id
+- Validate ?token via your contract token store (expiry + match)
+- Return { html, summary } safe to render; 401/403 on invalid.
+
+## 2D) Invoice UI (protected)
+Create:
+- apps/app/client/src/pages/InvoicesList.tsx
+  • List: invoice number, customer, status, total, due date
+
+- apps/app/client/src/pages/InvoiceDetail.tsx
+  • Show amounts/payments
+  • If Stripe checkout endpoint exists, button → creates session and opens URL
+  • If manual methods exist, list buttons and modal to record manual payment
+
+Wire routes: /invoices, /invoices/:id (guarded by AuthGuard)
+
+Return files created/edited.
+
+# =========================
+# 3) Audit trail: quote_events + lifecycle hooks
+# =========================
+Create migration: apps/app/migrations/013_quote_events.sql
+------------------------------------------------
+BEGIN;
+CREATE TABLE IF NOT EXISTS quote_events (
+  id TEXT PRIMARY KEY,
+  quote_id TEXT NOT NULL REFERENCES quotes(id),
+  event TEXT NOT NULL,             -- 'created'|'updated'|'sent'|'viewed'|'approved'|'declined'|'expired'
+  actor_user_id TEXT,
+  meta JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_quote_events_q ON quote_events(quote_id, created_at);
+COMMIT;
+------------------------------------------------
+Run it.
+
+Server hooks (modify existing handlers):
+- On POST /api/quotes (create): insert event 'created'
+- On PUT /api/quotes/:id: insert 'updated'
+- On /api/quotes/:id/send: insert 'sent'
+- On first GET of /api/quotes/approve/:token (public view): if quotes.viewed_at is NULL, set it and insert 'viewed'
+- On approve / decline endpoints: insert 'approved' or 'declined'
+(If you have an expiry job, insert 'expired' there.)
+
+Add GET /api/quotes/:id/events (protected) → returns ordered events.
+
+Update the quote editor/detail UI to show a small vertical timeline (optional minimal UI: list with timestamp + event).
+
+Return migration output + files updated + sample payload for /api/quotes/:id/events.
+
+# =========================
+# 4) UAT — Quote → Contract → Invoice (end-to-end)
+# =========================
+Run this scripted flow and capture outputs:
+
+1) Seed a customer for my tenant (if none).
+2) Create a quote with 2 items via /api/quotes (or /api/app/quotes if bridged). Return {id,total}.
+3) Send the quote; capture:
+   - the email link (if logged)
+   - the public path /quote-approval/:token
+   - the shortlink /q/:id  (should 302 to the same token page)
+4) Visit the public quote page; ensure 'viewed' event recorded.
+5) Approve the quote via public endpoint; assert:
+   - quotes.status='approved'
+   - a contract row exists (id, status draft or sent)
+6) Send the contract; capture /contract-approval/:token
+   - Shortlink /c/:id should 302 to that token page
+7) Sign the contract (public page); assert:
+   - contracts.status='accepted' (or signed_at set)
+   - an invoice exists and is linked (id, unpaid)
+8) Open /invoices/:id in the app; confirm details render.
+   - If Stripe endpoint exists, create a checkout session (no need to complete payment).
+
+RETURN a final table:
+
+Quote
+- id, status, viewed_at, approved_at, total
+Contract
+- id, status, signed_at
+Invoice
+- id, status, total, due_date
+
+Also include:
+- Sample 302 Location for /q/:id and /c/:id
+- Sample /api/quotes/:id/events payload (first 5 rows)
+
+# =========================
+# 5) Deliverables
+# =========================
+- Files created/edited (paths)
+- Migrations applied
+- Endpoint list updated (added/bridged)
+- UAT PASS/FAIL summary with any stack traces
+- Any remaining JWT-only routes (if any) and where they live
