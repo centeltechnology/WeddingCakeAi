@@ -1,3 +1,5 @@
+Replace your current apps/app/scripts/enforceAppLayout.ts with this version (reads config, filters matches, then wraps only what’s allowed):
+
 // scripts/enforceAppLayout.ts
 import { Project, SyntaxKind } from "ts-morph";
 import fg from "fast-glob";
@@ -6,7 +8,7 @@ import { existsSync, mkdirSync, copyFileSync, readFileSync } from "node:fs";
 
 type Config = { include: string[]; exclude: string[] };
 
-const ROOT = resolve(process.cwd());
+const ROOT = resolve(process.cwd(), "apps/app");
 const CONFIG_PATH = resolve(ROOT, "scripts/enforceAppLayout.config.json");
 const DRY = process.argv.includes("--write") ? false : true;
 
@@ -30,7 +32,7 @@ const targets = [...includeFiles].filter(f => !excludeFiles.has(f));
 // ---------------------------------------
 
 const project = new Project({
-  tsConfigFilePath: resolve(ROOT, "tsconfig.json"),
+  tsConfigFilePath: resolve(ROOT, "client/tsconfig.json"),
   skipAddingFilesFromTsConfig: false,
 });
 
@@ -73,7 +75,7 @@ const wrapWithAppLayout = (sf:any) => {
   ensureImport(sf, "AppLayout", "@/components/AppLayout");
 
   const source = expr.getText();
-  expr.replaceWithText(`<AppLayout>${source}</AppLayout>`);
+  jsxReturn.setExpression(`<AppLayout>${source}</AppLayout>`);
   return true;
 };
 
