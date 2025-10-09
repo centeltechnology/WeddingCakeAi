@@ -41,6 +41,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import LeadsAiAssist from "./ai/LeadsAiAssist";
 
 interface Lead {
   id: string;
@@ -344,6 +345,11 @@ export default function BulkEmailLeads({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  <LeadsAiAssist
+                    bakeryName="Your Bakery"
+                    defaultTone="friendly"
+                    onInsertDraft={(draft) => setEmailBody(draft)}
+                  />
                   <div>
                     <Label htmlFor="email-subject">Subject</Label>
                     <Input
