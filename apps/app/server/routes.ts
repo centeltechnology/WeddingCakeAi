@@ -30,6 +30,8 @@ import { EmailAutomationService } from "./emailAutomation";
 import { renderContractTemplate, resolvePaymentMethod } from "./contractRenderer";
 import { createContractFromQuote } from "./services/contracts";
 import { createDepositInvoice } from "./services/invoices";
+import { sendContractEmail } from "./emails/sendContractEmail";
+import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -3620,6 +3622,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventDate: quote.eventDate
         });
         console.log(`✅ Auto-created contract ${contract.id} from approved quote ${quote.id}`);
+        
+        // AUTO-SEND CONTRACT EMAIL
+        try {
+          await sendContractEmail(contract.id);
+        } catch (emailErr) {
+          console.error('Failed to send contract email:', emailErr);
+          // Don't fail if email fails
+        }
       } catch (contractErr) {
         console.error('Failed to auto-create contract:', contractErr);
         // Don't fail the quote approval if contract creation fails
@@ -8439,6 +8449,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventDate: contract.eventDate
         });
         console.log(`✅ Auto-created invoice ${invoice.id} from signed contract ${contract.id}`);
+        
+        // AUTO-SEND INVOICE EMAIL
+        try {
+          await sendInvoiceEmail(invoice.id);
+        } catch (emailErr) {
+          console.error('Failed to send invoice email:', emailErr);
+          // Don't fail if email fails
+        }
       } catch (invoiceErr) {
         console.error('Failed to auto-create invoice:', invoiceErr);
         // Don't fail the contract signing if invoice creation fails
