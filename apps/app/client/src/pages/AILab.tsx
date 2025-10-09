@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, FileText, FileSignature } from "lucide-react";
+import AppLayout from "@/components/AppLayout";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function AILab() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -35,13 +37,8 @@ export default function AILab() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">AI Lab</h1>
-        <p className="text-muted-foreground">
-          Test AI-powered features for quotes and contracts
-        </p>
-      </div>
+    <AppLayout>
+      <PageHeader title="AI Lab" subtitle="Test AI-powered features for quotes and contracts" />
 
       <div className="grid gap-6">
         {/* Suggest Items Card */}
@@ -110,6 +107,6 @@ export default function AILab() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -3,6 +3,8 @@ import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { FileText, Plus, Eye, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AppLayout from '@/components/AppLayout';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function QuoteList() {
   const queryClient = useQueryClient();
@@ -47,36 +49,36 @@ export default function QuoteList() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading quotes...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-pulse text-muted-foreground">Loading quotes...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
+      <AppLayout>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <p className="text-red-600 dark:text-red-400">Failed to load quotes.</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-orange-500" />
-          <h1 className="text-2xl font-bold">Quotes</h1>
+    <AppLayout>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <PageHeader title="Quotes" subtitle="Create, review, and approve quotes" />
+          <Link href="/quotes/new">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Quote
+            </Button>
+          </Link>
         </div>
-        <Link href="/quotes/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Quote
-          </Button>
-        </Link>
-      </div>
 
       {!data || data.length === 0 ? (
         <div className="text-center py-12">
@@ -141,6 +143,7 @@ export default function QuoteList() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 }

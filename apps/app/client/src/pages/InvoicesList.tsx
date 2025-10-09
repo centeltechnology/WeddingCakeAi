@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Calendar, DollarSign, User, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AppLayout from '@/components/AppLayout';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Invoice {
   id: string;
@@ -73,26 +75,26 @@ export default function InvoicesList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading invoices...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading invoices...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Manage customer invoices and payments</p>
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <PageHeader title="Invoices" subtitle="Manage customer invoices and payments" />
+          <Link href="/invoices/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Invoice
+            </Button>
+          </Link>
         </div>
-        <Link href="/invoices/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Invoice
-          </Button>
-        </Link>
-      </div>
 
       {invoices.length === 0 ? (
         <Card>
@@ -157,6 +159,7 @@ export default function InvoicesList() {
           })}
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 }

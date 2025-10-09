@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Calendar, DollarSign, User, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AppLayout from '@/components/AppLayout';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Contract {
   id: string;
@@ -67,26 +69,26 @@ export default function ContractsList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading contracts...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading contracts...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Contracts</h1>
-          <p className="text-muted-foreground">Manage your customer contracts</p>
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <PageHeader title="Contracts" subtitle="Manage your customer contracts" />
+          <Link href="/contracts/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Contract
+            </Button>
+          </Link>
         </div>
-        <Link href="/contracts/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Contract
-          </Button>
-        </Link>
-      </div>
 
       {contracts.length === 0 ? (
         <Card>
@@ -145,6 +147,7 @@ export default function ContractsList() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 }
