@@ -7824,6 +7824,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ====== REPORTING ENDPOINTS ======
+
+  // Advertiser summary report
+  app.get('/api/advertisers/reports/summary', authenticateJWT, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { from, to } = req.query;
+      const advertiserId = req.user!.advertiserId;
+
+      if (!advertiserId) {
+        return res.status(403).json({ error: 'Not an advertiser account' });
+      }
+
+      // Build date filter
+      let dateFilter = sql`TRUE`;
+      if (from && typeof from === 'string') {
+        dateFilter = sql`${dateFilter} AND ad_deliveries.sent_at >= ${from}::timestamp`;
+      }
+      if (to && typeof to === 'string') {
+        dateFilter = sql`${dateFilter} AND ad_deliveries.sent_at <= ${to}::timestamp`;
+      }
+
+      // Get summary stats
+      const stats = await db.execute<{
+        sends: string;
+        opens: string;
+        clicks: string;
+        unsubscribes: string;
+      }>(sql`
+        SELECT 
+          COUNT(CASE WHEN ad_deliveries.status = 'sent' THEN 1 END) as sends,
+          COUNT(CASE WHEN ad_deliveries.opened_at IS NOT NULL THEN 1 END) as opens,
+          COUNT(CASE WHEN ad_deliveries.clicked_at IS NOT NULL THEN 1 END) as clicks,
+          COUNT(CASE WHEN ad_deliveries.status = 'unsub' THEN 1 END) as unsubscribes
+        FROM ad_deliveries
+        JOIN ad_campaigns ON ad_deliveries.campaign_id = ad_campaigns.id
+        WHERE ad_campaigns.advertiser_id = ${advertiserId}
+          AND ${dateFilter}
+      `);
+
+      // Get spend from ledger
+      let spendFilter = sql`TRUE`;
+      if (from && typeof from === 'string') {
+        spendFilter = sql`${spendFilter} AND created_at >= ${from}::timestamp`;
+      }
+      if (to && typeof to === 'string') {
+        spendFilter = sql`${spendFilter} AND created_at <= ${to}::timestamp`;
+      }
+
+      const spend = await db.execute<{ total: string }>(sql`
+        SELECT COALESCE(SUM(ABS(delta_cents)), 0) as total
+        FROM advertiser_credits_ledger
+        WHERE advertiser_id = ${advertiserId}
+          AND delta_cents < 0
+          AND ${spendFilter}
+      `);
+
+      const result = {
+        sends: parseInt(stats.rows?.[0]?.sends || '0'),
+        opens: parseInt(stats.rows?.[0]?.opens || '0'),
+        clicks: parseInt(stats.rows?.[0]?.clicks || '0'),
+        unsubscribes: parseInt(stats.rows?.[0]?.unsubscribes || '0'),
+        spendCents: parseInt(spend.rows?.[0]?.total || '0')
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching advertiser summary:', error);
+      res.status(500).json({ error: 'Failed to fetch summary' });
+    }
+  });
+
+  // Admin network report
+  app.get('/api/admin/reports/network', authenticateJWT, requireRole('admin', 'super_admin'), async (req: AuthenticatedRequest, res) => {
+    try {
+      // Top advertisers by spend
+      const topAdvertisers = await db.execute<{
+        advertiser_id: string;
+        company_name: string;
+        total_spend: string;
+        total_sends: string;
+      }>(sql`
+        SELECT 
+          a.id as advertiser_id,
+          a.company_name,
+          COALESCE(SUM(ABS(l.delta_cents)), 0) as total_spend,
+          COUNT(DISTINCT d.id) as total_sends
+        FROM advertisers a
+        LEFT JOIN advertiser_credits_ledger l ON a.id = l.advertiser_id AND l.delta_cents < 0
+        LEFT JOIN ad_campaigns c ON a.id = c.advertiser_id
+        LEFT JOIN ad_deliveries d ON c.id = d.campaign_id AND d.status = 'sent'
+        GROUP BY a.id, a.company_name
+        ORDER BY total_spend DESC
+        LIMIT 10
+      `);
+
+      // Top geos by deliveries
+      const topGeos = await db.execute<{
+        state: string;
+        city: string;
+        sends: string;
+      }>(sql`
+        SELECT 
+          cl.state,
+          cl.city,
+          COUNT(*) as sends
+        FROM ad_deliveries d
+        JOIN calculator_leads cl ON d.lead_id = cl.id
+        WHERE d.status = 'sent' AND cl.state IS NOT NULL
+        GROUP BY cl.state, cl.city
+        ORDER BY sends DESC
+        LIMIT 10
+      `);
+
+      // Unsub/complaint rates
+      const rates = await db.execute<{
+        total_sends: string;
+        total_unsubs: string;
+        total_opens: string;
+        total_clicks: string;
+      }>(sql`
+        SELECT 
+          COUNT(CASE WHEN status = 'sent' THEN 1 END) as total_sends,
+          COUNT(CASE WHEN status = 'unsub' THEN 1 END) as total_unsubs,
+          COUNT(CASE WHEN opened_at IS NOT NULL THEN 1 END) as total_opens,
+          COUNT(CASE WHEN clicked_at IS NOT NULL THEN 1 END) as total_clicks
+        FROM ad_deliveries
+      `);
+
+      const totalSends = parseInt(rates.rows?.[0]?.total_sends || '0');
+      const totalUnsubs = parseInt(rates.rows?.[0]?.total_unsubs || '0');
+      const totalOpens = parseInt(rates.rows?.[0]?.total_opens || '0');
+      const totalClicks = parseInt(rates.rows?.[0]?.total_clicks || '0');
+
+      const result = {
+        topAdvertisers: (topAdvertisers.rows || []).map(row => ({
+          advertiserId: row.advertiser_id,
+          companyName: row.company_name,
+          totalSpendCents: parseInt(row.total_spend || '0'),
+          totalSends: parseInt(row.total_sends || '0')
+        })),
+        topGeos: (topGeos.rows || []).map(row => ({
+          state: row.state,
+          city: row.city,
+          sends: parseInt(row.sends || '0')
+        })),
+        networkStats: {
+          totalSends,
+          totalUnsubs,
+          totalOpens,
+          totalClicks,
+          unsubRate: totalSends > 0 ? (totalUnsubs / totalSends * 100).toFixed(2) : '0.00',
+          openRate: totalSends > 0 ? (totalOpens / totalSends * 100).toFixed(2) : '0.00',
+          clickRate: totalSends > 0 ? (totalClicks / totalSends * 100).toFixed(2) : '0.00'
+        }
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching network report:', error);
+      res.status(500).json({ error: 'Failed to fetch network report' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
