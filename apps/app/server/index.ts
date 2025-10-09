@@ -1508,6 +1508,102 @@ app.get('/me', async (req, res) => {
   // Start email automation scheduler for subscription lifecycle management
   startEmailAutomationScheduler();
 
+  // Sendy sync service
+  const syncCalculatorLeadsToSendy = async () => {
+    const SENDY_BASE_URL = process.env.SENDY_BASE_URL;
+    const SENDY_API_KEY = process.env.SENDY_API_KEY;
+    const SENDY_LIST_ID = process.env.SENDY_LIST_ID;
+
+    if (!SENDY_BASE_URL || !SENDY_API_KEY) {
+      console.log('⚠️  Sendy not configured (missing SENDY_BASE_URL or SENDY_API_KEY), skipping sync');
+      return { synced: 0, failed: 0, skipped: 0 };
+    }
+
+    try {
+      // Query unsynced leads (limit 100)
+      const unsyncedLeads = await db.execute<{
+        id: string;
+        customer_name: string;
+        customer_email: string;
+        sendy_list_id: string | null;
+        created_at: Date;
+      }>(sql`
+        SELECT id, customer_name, customer_email, sendy_list_id, created_at
+        FROM calculator_leads
+        WHERE synced_to_sendy = false
+        ORDER BY created_at ASC
+        LIMIT 100
+      `);
+
+      let syncedCount = 0;
+      let failedCount = 0;
+
+      for (const lead of unsyncedLeads.rows || []) {
+        const listId = lead.sendy_list_id || SENDY_LIST_ID;
+        
+        if (!listId) {
+          console.log(`⚠️  No list ID for lead ${lead.id}, skipping`);
+          failedCount++;
+          continue;
+        }
+
+        try {
+          // Post to Sendy subscribe API
+          const formData = new URLSearchParams({
+            api_key: SENDY_API_KEY,
+            email: lead.customer_email,
+            name: lead.customer_name || '',
+            list: listId,
+            boolean: 'true', // Return 1/0 instead of text messages
+          });
+
+          const response = await fetch(`${SENDY_BASE_URL}/subscribe`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString(),
+          });
+
+          const result = await response.text();
+
+          // Sendy returns "1" for success, "Already subscribed" for duplicates
+          if (result === '1' || result.includes('Already subscribed')) {
+            // Mark as synced
+            await db.execute(sql`
+              UPDATE calculator_leads
+              SET synced_to_sendy = true, synced_at = NOW()
+              WHERE id = ${lead.id}
+            `);
+            syncedCount++;
+          } else {
+            console.error(`❌ Sendy sync failed for ${lead.customer_email}:`, result);
+            failedCount++;
+            // Exponential backoff: wait before continuing
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.min(failedCount, 5)));
+          }
+        } catch (error) {
+          console.error(`❌ Error syncing lead ${lead.id} to Sendy:`, error);
+          failedCount++;
+          // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.min(failedCount, 5)));
+        }
+      }
+
+      console.log(`📧 Sendy sync complete: ${syncedCount} synced, ${failedCount} failed`);
+      return { synced: syncedCount, failed: failedCount, skipped: 0 };
+    } catch (error) {
+      console.error('❌ Sendy sync service error:', error);
+      return { synced: 0, failed: 0, skipped: 0 };
+    }
+  };
+
+  // Run Sendy sync every 10 minutes
+  cron.schedule('*/10 * * * *', async () => {
+    await syncCalculatorLeadsToSendy();
+  });
+  console.log('Sendy sync job scheduled (runs every 10 minutes)');
+
   // Start daily cleanup job for expired/used password reset tokens
   // Runs every day at 2 AM
   cron.schedule('0 2 * * *', async () => {
