@@ -34,6 +34,7 @@ import jsPDF from 'jspdf';
 import { StripeCheckout, QuickPaymentButton } from './StripeCheckout';
 import { AdvancedQuoteTemplates } from './AdvancedQuoteTemplates';
 import { calculateAdvancedPrice } from '@/lib/advancedCalculator';
+import { QuoteTimeline } from './QuoteTimeline';
 import QuoteAiAssist from './ai/QuoteAiAssist';
 
 interface QuoteBuilderProps {
@@ -1313,6 +1314,11 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
                   <p className="text-sm text-muted-foreground">{selectedQuote.terms}</p>
                 </div>
               )}
+
+              {/* Quote Timeline */}
+              <div className="border-t pt-6">
+                <QuoteTimeline quoteId={selectedQuote.id} />
+              </div>
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">

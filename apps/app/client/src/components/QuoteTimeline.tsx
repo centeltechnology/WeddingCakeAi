@@ -57,6 +57,13 @@ const eventConfig = {
 export function QuoteTimeline({ quoteId }: QuoteTimelineProps) {
   const { data: events, isLoading, error } = useQuery<QuoteEvent[]>({
     queryKey: [`/api/quotes/${quoteId}/events`],
+    queryFn: async () => {
+      const response = await fetch(`/api/quotes/${quoteId}/events`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch quote events');
+      return response.json();
+    },
     enabled: !!quoteId,
   });
 
