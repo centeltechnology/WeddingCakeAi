@@ -80,7 +80,7 @@ export default function QuoteList() {
           </Link>
         </div>
 
-      {!data || data.length === 0 ? (
+        {!data || data.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium text-muted-foreground mb-2">No quotes yet</h3>
@@ -142,7 +142,7 @@ export default function QuoteList() {
             </div>
           ))}
         </div>
-      )}
+        )}
       </div>
     </AppLayout>
   );

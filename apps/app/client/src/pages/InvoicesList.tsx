@@ -96,7 +96,7 @@ export default function InvoicesList() {
           </Link>
         </div>
 
-      {invoices.length === 0 ? (
+        {invoices.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -158,7 +158,7 @@ export default function InvoicesList() {
             );
           })}
         </div>
-      )}
+        )}
       </div>
     </AppLayout>
   );

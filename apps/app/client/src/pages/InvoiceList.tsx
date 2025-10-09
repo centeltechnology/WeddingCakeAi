@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AppLayout from '@/components/AppLayout';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Invoice {
   id: string;
@@ -125,38 +127,38 @@ export default function InvoiceList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading invoices...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading invoices...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Manage customer invoices and payments</p>
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <PageHeader title="Invoices" subtitle="Manage customer invoices and payments" />
+          <Button onClick={handleCreateInvoice} disabled={creating}>
+            <Plus className="h-4 w-4 mr-2" />
+            {creating ? 'Creating...' : 'Create Invoice'}
+          </Button>
         </div>
-        <Button onClick={handleCreateInvoice} disabled={creating}>
-          <Plus className="h-4 w-4 mr-2" />
-          {creating ? 'Creating...' : 'Create Invoice'}
-        </Button>
-      </div>
 
-      {invoices.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No invoices yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first invoice to get started</p>
-            <Button onClick={handleCreateInvoice} disabled={creating}>
-              {creating ? 'Creating...' : 'Create Invoice'}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
+        {invoices.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No invoices yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first invoice to get started</p>
+              <Button onClick={handleCreateInvoice} disabled={creating}>
+                {creating ? 'Creating...' : 'Create Invoice'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
           {invoices.map((invoice) => {
             const isPaid = invoice.status === 'paid';
 
@@ -209,8 +211,9 @@ export default function InvoiceList() {
               </Card>
             );
           })}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }

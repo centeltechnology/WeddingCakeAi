@@ -209,9 +209,7 @@ function Router() {
       <Route path="/contract-approval/:token" component={ContractApprovalPage} />
       <Route path="/contracts">
         <AuthGuard>
-          <AppShell>
-            <ContractsList />
-          </AppShell>
+          <ContractsList />
         </AuthGuard>
       </Route>
       <Route path="/contracts/:id">
@@ -223,9 +221,7 @@ function Router() {
       </Route>
       <Route path="/invoices">
         <AuthGuard>
-          <AppShell>
-            <InvoiceList />
-          </AppShell>
+          <InvoiceList />
         </AuthGuard>
       </Route>
       <Route path="/invoices/:id">
@@ -237,9 +233,7 @@ function Router() {
       </Route>
       <Route path="/ai-lab">
         <AuthGuard>
-          <AppShell>
-            <AILab />
-          </AppShell>
+          <AILab />
         </AuthGuard>
       </Route>
       <Route path="/terms" component={Terms} />
@@ -290,9 +284,7 @@ function Router() {
       </Route>
       <Route path="/quotes">
         <AuthGuard>
-          <AppShell>
-            <QuoteList />
-          </AppShell>
+          <QuoteList />
         </AuthGuard>
       </Route>
       <Route path="/quotes/new">

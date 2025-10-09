@@ -90,7 +90,7 @@ export default function ContractsList() {
           </Link>
         </div>
 
-      {contracts.length === 0 ? (
+        {contracts.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -146,7 +146,7 @@ export default function ContractsList() {
             </Link>
           ))}
         </div>
-      )}
+        )}
       </div>
     </AppLayout>
   );
