@@ -1787,6 +1787,263 @@ app.get('/me', async (req, res) => {
     serveStatic(app);
   }
 
+  // ====== CAMPAIGN SENDER LOGIC ======
+  
+  async function processCampaignSends() {
+    try {
+      console.log('[Campaign Sender] Starting campaign send processing...');
+      
+      // Find approved campaigns that are ready to send
+      const campaigns = await db.execute<{
+        id: string;
+        advertiser_id: string;
+        name: string;
+        unit_price_cents: number;
+        max_sends: number;
+        targeting: any;
+      }>(sql`
+        SELECT id, advertiser_id, name, unit_price_cents, max_sends, targeting
+        FROM ad_campaigns
+        WHERE status = 'approved'
+          AND (scheduled_at IS NULL OR scheduled_at <= NOW())
+        LIMIT 10
+      `);
+
+      if (!campaigns.rows || campaigns.rows.length === 0) {
+        console.log('[Campaign Sender] No approved campaigns found');
+        return;
+      }
+
+      for (const campaign of campaigns.rows) {
+        try {
+          await processSingleCampaign(campaign);
+        } catch (error) {
+          console.error(`[Campaign Sender] Error processing campaign ${campaign.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('[Campaign Sender] Error in campaign sender:', error);
+    }
+  }
+
+  async function processSingleCampaign(campaign: any) {
+    const { id: campaignId, advertiser_id: advertiserId, unit_price_cents: unitPriceCents, max_sends: maxSends, targeting } = campaign;
+
+    // Get advertiser credits
+    const creditsResult = await db.execute<{ balance_cents: number }>(sql`
+      SELECT balance_cents FROM advertiser_credits WHERE advertiser_id = ${advertiserId}
+    `);
+    const balanceCents = creditsResult.rows?.[0]?.balance_cents || 0;
+
+    // Count already sent deliveries for this campaign
+    const sentCount = await db.execute<{ count: number }>(sql`
+      SELECT COUNT(*) as count FROM ad_deliveries WHERE campaign_id = ${campaignId} AND status != 'queued'
+    `);
+    const alreadySent = parseInt(sentCount.rows?.[0]?.count?.toString() || '0');
+
+    // Calculate how many we can send
+    const maxAffordable = Math.floor(balanceCents / unitPriceCents);
+    const maxAllowed = Math.min(maxSends - alreadySent, maxAffordable);
+
+    if (maxAllowed <= 0) {
+      console.log(`[Campaign ${campaignId}] No sends available (sent: ${alreadySent}, max: ${maxSends}, credits: ${balanceCents})`);
+      return;
+    }
+
+    // Build WHERE clause for eligible leads (same as preflight but with additional checks)
+    let whereConditions = [
+      sql`network_opt_in = true`,
+      sql`unsubscribed_network = false`,
+      sql`(last_network_contact_at IS NULL OR (NOW() - last_network_contact_at) > INTERVAL '7 days')`
+    ];
+
+    // Geographic targeting
+    if (targeting?.geo) {
+      if (targeting.geo.states && targeting.geo.states.length > 0) {
+        whereConditions.push(sql`state = ANY(${targeting.geo.states}::text[])`);
+      }
+      if (targeting.geo.cities && targeting.geo.cities.length > 0) {
+        whereConditions.push(sql`city = ANY(${targeting.geo.cities}::text[])`);
+      }
+      if (targeting.geo.zips && targeting.geo.zips.length > 0) {
+        whereConditions.push(sql`postal_code = ANY(${targeting.geo.zips}::text[])`);
+      }
+    }
+
+    // Date window targeting
+    if (targeting?.dateWindow) {
+      if (targeting.dateWindow.from) {
+        whereConditions.push(sql`event_date >= ${targeting.dateWindow.from}`);
+      }
+      if (targeting.dateWindow.to) {
+        whereConditions.push(sql`event_date <= ${targeting.dateWindow.to}`);
+      }
+    }
+
+    // Budget targeting
+    if (targeting?.budget) {
+      if (targeting.budget.min !== undefined) {
+        whereConditions.push(sql`budget_min >= ${targeting.budget.min}`);
+      }
+      if (targeting.budget.max !== undefined) {
+        whereConditions.push(sql`budget_max <= ${targeting.budget.max}`);
+      }
+    }
+
+    // Interests targeting
+    if (targeting?.interests && targeting.interests.length > 0) {
+      whereConditions.push(sql`interests && ${targeting.interests}::text[]`);
+    }
+
+    // Exclude recently quoted/contracted leads
+    whereConditions.push(sql`
+      NOT EXISTS (
+        SELECT 1 FROM quotes 
+        WHERE quotes.lead_id = calculator_leads.id 
+        AND quotes.created_at > NOW() - INTERVAL '30 days'
+      )
+    `);
+    whereConditions.push(sql`
+      NOT EXISTS (
+        SELECT 1 FROM contracts 
+        WHERE contracts.lead_id = calculator_leads.id 
+        AND contracts.created_at > NOW() - INTERVAL '30 days'
+      )
+    `);
+
+    // Exclude leads already contacted by THIS advertiser in last 30 days
+    whereConditions.push(sql`
+      NOT EXISTS (
+        SELECT 1 FROM ad_deliveries 
+        JOIN ad_campaigns ON ad_deliveries.campaign_id = ad_campaigns.id
+        WHERE ad_deliveries.lead_id = calculator_leads.id 
+        AND ad_campaigns.advertiser_id = ${advertiserId}
+        AND ad_deliveries.sent_at > NOW() - INTERVAL '30 days'
+      )
+    `);
+
+    const whereClause = sql.join(whereConditions, sql` AND `);
+
+    // Select eligible leads
+    const leads = await db.execute<{
+      id: string;
+      customer_name: string;
+      customer_email: string;
+    }>(sql`
+      SELECT id, customer_name, customer_email
+      FROM calculator_leads
+      WHERE ${whereClause}
+      LIMIT ${maxAllowed}
+    `);
+
+    if (!leads.rows || leads.rows.length === 0) {
+      console.log(`[Campaign ${campaignId}] No eligible leads found`);
+      return;
+    }
+
+    console.log(`[Campaign ${campaignId}] Sending to ${leads.rows.length} leads (max allowed: ${maxAllowed})`);
+
+    // Send emails
+    let successCount = 0;
+    for (const lead of leads.rows) {
+      try {
+        await sendCampaignEmail(campaignId, lead, campaign);
+        successCount++;
+      } catch (error) {
+        console.error(`[Campaign ${campaignId}] Error sending to ${lead.customer_email}:`, error);
+      }
+    }
+
+    console.log(`[Campaign ${campaignId}] Successfully sent ${successCount}/${leads.rows.length} emails`);
+  }
+
+  async function sendCampaignEmail(campaignId: string, lead: any, campaign: any) {
+    const { id: leadId, customer_email: email, customer_name: name } = lead;
+    const { advertiser_id: advertiserId, unit_price_cents: unitPriceCents } = campaign;
+
+    // Create or get unsubscribe token
+    const tokenPlain = crypto.randomUUID();
+    const tokenHash = crypto.createHash('sha256').update(tokenPlain).digest('hex');
+
+    // Check if token already exists for this lead
+    const existingToken = await db.execute<{ id: string }>(sql`
+      SELECT id FROM unsubscribe_tokens WHERE lead_id = ${leadId} LIMIT 1
+    `);
+
+    if (!existingToken.rows || existingToken.rows.length === 0) {
+      await db.execute(sql`
+        INSERT INTO unsubscribe_tokens (id, lead_id, token_hash, created_at)
+        VALUES (${crypto.randomUUID()}, ${leadId}, ${tokenHash}, NOW())
+      `);
+    }
+
+    // Create delivery record
+    const deliveryId = crypto.randomUUID();
+    await db.execute(sql`
+      INSERT INTO ad_deliveries (id, campaign_id, lead_id, status, created_at)
+      VALUES (${deliveryId}, ${campaignId}, ${leadId}, 'queued', NOW())
+    `);
+
+    // Build email
+    const subject = `Special Offer for ${name} - via BakerIQ`;
+    const openPixel = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/trk/o?d=${deliveryId}`;
+    const unsubLink = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/unsub?t=${tokenPlain}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Hello ${name},</h2>
+        <p>We have an exclusive offer for you from our partner advertiser.</p>
+        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/trk/c?d=${deliveryId}&u=${encodeURIComponent('https://example.com/offer')}">View Offer</a></p>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+        <p style="font-size: 12px; color: #666;">
+          This message brought to you via <strong>BakerIQ</strong>
+          <br>
+          <a href="${unsubLink}" style="color: #666;">Unsubscribe from partner offers</a>
+        </p>
+        <img src="${openPixel}" width="1" height="1" style="display:none;" />
+      </div>
+    `;
+
+    // Send via SES
+    await ses.send(new SendEmailCommand({
+      FromEmailAddress: 'partners@bakeriq.app',
+      Destination: { ToAddresses: [email] },
+      Content: {
+        Simple: {
+          Subject: { Data: subject },
+          Body: { Html: { Data: html } }
+        }
+      }
+    }));
+
+    // Update delivery status
+    await db.execute(sql`
+      UPDATE ad_deliveries
+      SET status = 'sent', sent_at = NOW()
+      WHERE id = ${deliveryId}
+    `);
+
+    // Update lead last contact
+    await db.execute(sql`
+      UPDATE calculator_leads
+      SET last_network_contact_at = NOW()
+      WHERE id = ${leadId}
+    `);
+
+    // Deduct credits
+    await db.execute(sql`
+      UPDATE advertiser_credits
+      SET balance_cents = balance_cents - ${unitPriceCents}, updated_at = NOW()
+      WHERE advertiser_id = ${advertiserId}
+    `);
+
+    // Write ledger entry
+    await db.execute(sql`
+      INSERT INTO advertiser_credits_ledger (id, advertiser_id, delta_cents, reason, campaign_id, created_at)
+      VALUES (${crypto.randomUUID()}, ${advertiserId}, ${-unitPriceCents}, 'Campaign send', ${campaignId}, NOW())
+    `);
+  }
+
   // Start email automation scheduler for subscription lifecycle management
   startEmailAutomationScheduler();
 
@@ -1812,6 +2069,12 @@ app.get('/me', async (req, res) => {
     }
   });
   console.log('Password reset token cleanup job scheduled (daily at 2 AM)');
+
+  // Campaign sender cron job - runs every 5 minutes
+  cron.schedule('*/5 * * * *', async () => {
+    await processCampaignSends();
+  });
+  console.log('Campaign sender job scheduled (runs every 5 minutes)');
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
