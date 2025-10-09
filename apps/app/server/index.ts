@@ -986,9 +986,10 @@ app.post("/api/admin/impersonate", ensureAuth, requireRole('admin', 'super_admin
         session.tenantId = profiles[0].tenantId;
       }
       
-      const bakers = await db.query.bakers.findMany({
-        where: (bakers, { eq }) => eq(bakers.email, targetUser.email)
-      });
+      const bakerResults = await db.execute<{ id: string }>(sql`
+        SELECT id FROM bakers WHERE email = ${targetUser.email} LIMIT 1
+      `);
+      const bakers = bakerResults.rows || [];
       if (bakers.length > 0) {
         session.bakerId = bakers[0].id;
       }

@@ -1,0 +1,76 @@
+You are my Sendy integrator for BakerIQ (apps/app).
+
+Goal: Implement our Sendy list strategy and syncing as follows:
+- Per tenant lists: leads, customers, (optional) newsletter
+- Platform BakerOps list segmented by TIER
+- Background sync + real-time hooks
+- Admin UI to configure list IDs per tenant
+
+# 0) ENV
+Add these (Replit Secrets):
+SENDY_BASE_URL=https://sendy.example.com
+SENDY_API_KEY=...
+SENDY_BRAND_ID=...            # optional, if used
+BAKEROPS_LIST_ID=...          # global list for baker communications
+
+# 1) DB changes (if missing)
+- Add/extend tenant settings table with:
+  sendy_leads_list_id TEXT,
+  sendy_customers_list_id TEXT,
+  sendy_newsletter_list_id TEXT,
+  sendy_sender_name TEXT,
+  sendy_sender_email TEXT,
+  sendy_reply_to TEXT
+- Add columns to calculator_leads:
+  sendy_subscriber_id TEXT,
+  synced_to_sendy BOOLEAN DEFAULT false,
+  synced_at TIMESTAMPTZ,
+  last_sync_error TEXT
+- Add columns to customers (optional mirror):
+  sendy_subscriber_id TEXT
+
+# 2) Server: Sendy client + helpers
+Create apps/app/server/sendy.ts with:
+- subscribe({ listId, email, name, fields }) -> POST to Sendy subscribe API
+- update({ listId, email, fields }) -> set custom fields
+- unsubscribe({ listId, email })
+All with basic retries and error logging. Include a guard that throws if listId is empty.
+
+# 3) Background job (node-cron every 10 min)
+- Query unsynced calculator_leads per tenant where sendy_leads_list_id is set LIMIT 100
+- subscribe() with fields: TENANT_ID, STAGE='lead', SOURCE, CITY/STATE, EVENT_DATE, CONSENTED_AT
+- On success: mark synced_to_sendy=true, synced_at=now(), store sendy_subscriber_id if returned
+- On failure: store last_sync_error
+- Log counts per run
+
+# 4) Real-time hooks
+- On quote status change to 'sent' or 'accepted':
+  update() fields: STAGE='quoted' or 'contracted'
+- On contract accepted:
+  subscribe() the contact to sendy_customers_list_id (copy fields + CONTRACT_ID)
+  (optionally) unsubscribe() from leads list
+
+# 5) BakerOps sync
+- On baker plan/tier change (user/baker update), upsert into BAKEROPS_LIST_ID with fields: TIER, TENANT_ID, BAKER_ID, REGION
+- Add an admin endpoint POST /api/admin/bakerops/sync-now to backfill all bakers.
+
+# 6) Admin UI (tenant settings)
+- Create a simple page /admin/tenant/:id/sendy to edit/paste Sendy list IDs + sender defaults.
+- Save to tenant settings table.
+
+# 7) Webhook receiver (optional)
+- POST /api/sendy/webhook (guard with shared secret)
+- Accept unsubscribe/bounce notifications; mark local record status (calculator_leads.status='unsubscribed' or 'bounced').
+
+# 8) Tests
+- Seed a tenant with list IDs (use ENV fallback for a demo).
+- Create a lead → verify it’s subscribed to the tenant’s leads list (DEV logs ok if Sendy unreachable).
+- Change STAGE to quoted → update() fired.
+- Contract accepted → subscribed to customers list.
+- Change baker tier → record in BakerOps list.
+
+Return:
+- Files created/edited
+- Any migrations applied
+- Example payloads sent to Sendy
+- A short usage note for the Admin UI
