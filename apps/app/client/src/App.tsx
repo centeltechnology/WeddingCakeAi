@@ -68,7 +68,7 @@ import QuoteApprovalPage from "@/pages/quote-approval";
 import ContractsList from "@/pages/ContractsList";
 import ContractEdit from "@/pages/ContractEdit";
 import ContractApprovalPage from "@/pages/contract-approval";
-import InvoicesList from "@/pages/InvoicesList";
+import InvoiceList from "@/pages/InvoiceList";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import { SuperAdminAuthWrapper } from "@/components/SuperAdminAuthWrapper";
 import { BakerAuthWrapper } from "@/components/BakerAuthWrapper";
@@ -222,12 +222,16 @@ function Router() {
       </Route>
       <Route path="/invoices">
         <AuthGuard>
-          <InvoicesList />
+          <AppShell>
+            <InvoiceList />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/invoices/:id">
         <AuthGuard>
-          <InvoiceDetail />
+          <AppShell>
+            <InvoiceDetail />
+          </AppShell>
         </AuthGuard>
       </Route>
       <Route path="/terms" component={Terms} />
