@@ -58,6 +58,9 @@ Preferred communication style: Simple, everyday language.
 - **Quote Approval System**: Customers receive email with secure approval link (/quote-approval/:token) to view, approve, or decline quotes. Links expire after 30 days.
 - **Quote-Lead-Customer Linkage**: Complete transactional flow with idempotent upserts ensuring quotes.lead_id and leads.signature are properly populated. Client stores customer details in form state to prevent race conditions. Quote creation stays on dashboard and opens quote details modal.
 - **Server-Side Contract Rendering**: Template system with variable replacement for baker/customer/payment info. Payment snapshots stored in contracts.payment_snapshot (jsonb) for audit trail. Supports Zelle, PayPal, CashApp, Venmo with XSS sanitization.
+- **Contract Management UI**: Complete contract workflow with ContractsList and ContractEdit pages for bakers. Public contract approval flow with secure token-based access (GET /c/:id shortlinks → /contract-approval/:token). Token validation with 30-day expiry, status gating, and sanitized public endpoints. Transaction-wrapped signature creation for data consistency.
+- **Invoice Management UI**: InvoicesList and InvoiceDetail pages for tracking invoices, payment status, and amounts. Integrated with Stripe payment processing.
+- **Public Shortlinks**: SEO-friendly short URLs for quotes (GET /q/:id) and contracts (GET /c/:id) that redirect to secure approval pages with auto-generated tokens.
 - **Transaction-Wrapped Mutations**: Atomic database operations for lead conversion, contract creation/signing preventing data inconsistencies.
 - **Dark Mode**: ThemeToggle component with Light/Dark/System options.
 - **Email Campaign Management**: Super admin system for sending segmented email campaigns to bakers.
