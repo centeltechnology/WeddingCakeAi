@@ -5,9 +5,17 @@ import { autoresponder, leadScore } from "./controllers/leads";
 import { suggestPrice } from "./controllers/quotes";
 import { captionForImage, marketingCopy } from "./controllers/marketing";
 import { draftContract } from "./controllers/contracts";
+import { getBalance } from "./util/credits";
 
 export function registerAiRoutes(app: Express) {
   const r = Router();
+
+  // Credits balance endpoint
+  r.get("/credits/me", async (req, res) => {
+    const tenantId = (req.session as any)?.tenantId || (req as any).user?.tenantId || "demo-tenant";
+    const row = await getBalance(tenantId);
+    res.json({ balance: row?.creditsBalance ?? 0, cycleEnd: row?.cycleEnd ?? null });
+  });
 
   // Dashboard (CSRF-protected) routes
   r.post("/leads/autoresponder", aiLimiter, autoresponder);
