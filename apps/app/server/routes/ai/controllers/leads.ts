@@ -2,13 +2,19 @@ import type { Request, Response } from "express";
 import { openai, AI_DEFAULT_MODEL, AI_MAX_OUTPUT_TOKENS } from "../clients/openai";
 import { LeadAutoResponderInput, LeadScoreInput } from "../schemas/leads.schema";
 import { safe } from "../util/http";
+import { chargeCredits } from "../util/credits";
+
+const tenantFrom = (req: any) => (req.session?.tenantId || req.user?.tenantId || "demo-tenant");
 
 export const autoresponder = safe(async (req: Request, res: Response) => {
   const parsed = LeadAutoResponderInput.parse(req.body);
   const { bakeryName, customerName, eventType, eventDate, guestCount, styleNotes, tone, emailSignature } = parsed;
+  const tenantId = tenantFrom(req);
 
-  const system = "You write concise, warm first-replies for a bakery. Keep it under 140 words. Ask 1-2 clarifying questions.";
-  const user = `
+  try {
+    const result = await chargeCredits(tenantId, "leads.autoresponder", 1, async () => {
+      const system = "You write concise, warm first-replies for a bakery. Keep it under 140 words. Ask 1-2 clarifying questions.";
+      const user = `
 Bakery: ${bakeryName}
 Tone: ${tone}
 Lead: { name: ${customerName ?? "N/A"}, eventType: ${eventType ?? "unknown"}, eventDate: ${eventDate ?? "unknown"}, guests: ${guestCount ?? "unknown"} }
@@ -16,24 +22,56 @@ Style notes: ${styleNotes ?? "N/A"}
 Signature: ${emailSignature ?? ""}
 
 Write a first reply email (no subject line), short paragraphs, include a friendly CTA to share inspo photos and confirm date.
-  `.trim();
+      `.trim();
 
-  const completion = await openai.chat.completions.create({
-    model: AI_DEFAULT_MODEL,
-    max_tokens: AI_MAX_OUTPUT_TOKENS,
-    temperature: 0.6,
-    messages: [{ role: "system", content: system }, { role: "user", content: user }],
-  });
+      const completion = await openai.chat.completions.create({
+        model: AI_DEFAULT_MODEL,
+        max_tokens: AI_MAX_OUTPUT_TOKENS,
+        temperature: 0.6,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      });
 
-  res.json({ reply: completion.choices?.[0]?.message?.content?.trim() ?? "" });
+      return { reply: completion.choices?.[0]?.message?.content?.trim() ?? "" };
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    if (err.code === 402) {
+      return res.status(402).json({ 
+        error: "insufficient_credits", 
+        have: err.have, 
+        need: err.need, 
+        topup: true 
+      });
+    }
+    throw err;
+  }
 });
 
 export const leadScore = safe(async (req: Request, res: Response) => {
   const parsed = LeadScoreInput.parse(req.body);
-  let score = 50;
-  if (parsed.guestCount && parsed.guestCount >= 100) score += 15;
-  if (parsed.budgetBand === "high") score += 20;
-  if ((parsed.distanceMiles ?? 0) > 25) score -= 10;
-  if (parsed.specialRequests?.toLowerCase().includes("sugar")) score += 5;
-  res.json({ score: Math.max(0, Math.min(100, score)) });
+  const tenantId = tenantFrom(req);
+
+  try {
+    const result = await chargeCredits(tenantId, "leads.score", 1, async () => {
+      let score = 50;
+      if (parsed.guestCount && parsed.guestCount >= 100) score += 15;
+      if (parsed.budgetBand === "high") score += 20;
+      if ((parsed.distanceMiles ?? 0) > 25) score -= 10;
+      if (parsed.specialRequests?.toLowerCase().includes("sugar")) score += 5;
+      return { score: Math.max(0, Math.min(100, score)) };
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    if (err.code === 402) {
+      return res.status(402).json({ 
+        error: "insufficient_credits", 
+        have: err.have, 
+        need: err.need, 
+        topup: true 
+      });
+    }
+    throw err;
+  }
 });
