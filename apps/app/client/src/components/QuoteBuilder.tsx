@@ -34,6 +34,7 @@ import jsPDF from 'jspdf';
 import { StripeCheckout, QuickPaymentButton } from './StripeCheckout';
 import { AdvancedQuoteTemplates } from './AdvancedQuoteTemplates';
 import { calculateAdvancedPrice } from '@/lib/advancedCalculator';
+import QuoteAiAssist from './ai/QuoteAiAssist';
 
 interface QuoteBuilderProps {
   bakerId: string;
@@ -783,6 +784,25 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
                   onChange={(e) => setNewQuote(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe the cake design and requirements..."
                   data-testid="textarea-description"
+                />
+              </div>
+
+              {/* AI Price Suggestion Tool */}
+              <div className="md:col-span-2 border-t pt-4">
+                <QuoteAiAssist 
+                  defaultGuestCount={newQuote.guestCount || 50}
+                  onApplyTotal={(total) => {
+                    const taxRate = parseFloat(newQuote.taxRate || '0.0875');
+                    const subtotalValue = total / (1 + taxRate);
+                    const taxAmount = total - subtotalValue;
+                    
+                    setNewQuote(prev => ({
+                      ...prev,
+                      subtotal: subtotalValue.toFixed(2),
+                      taxAmount: taxAmount.toFixed(2),
+                      total: total.toFixed(2)
+                    }));
+                  }}
                 />
               </div>
 
