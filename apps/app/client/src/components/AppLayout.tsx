@@ -44,6 +44,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <style>{`
+        #main-nav #marketing-nav {
+          display: none !important;
+        }
+      `}</style>
       <div id="main-nav" className="border-b bg-white dark:bg-gray-900 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
