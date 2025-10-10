@@ -10,9 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Save, Building2, Image as ImageIcon } from 'lucide-react';
+import { Save, Building2, Image as ImageIcon, X, Plus, Facebook, Instagram, Youtube, Pinterest } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SettingsTabs } from '@/components/SettingsTabs';
+
+interface SocialLinks {
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  pinterest?: string;
+}
 
 interface TenantProfile {
   id: string;
@@ -25,6 +33,7 @@ interface TenantProfile {
   specialties: string[] | null;
   logoUrl: string | null;
   coverUrl: string | null;
+  social: SocialLinks | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,7 +48,8 @@ export default function BusinessProfile() {
   const [website, setWebsite] = useState('');
   const [address, setAddress] = useState('');
   const [about, setAbout] = useState('');
-  const [specialtiesText, setSpecialtiesText] = useState('');
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [newSpecialty, setNewSpecialty] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
 
@@ -60,7 +70,7 @@ export default function BusinessProfile() {
       setWebsite(profile.website || '');
       setAddress(profile.address || '');
       setAbout(profile.about || '');
-      setSpecialtiesText(profile.specialties?.join(', ') || '');
+      setSpecialties(profile.specialties || []);
       setLogoUrl(profile.logoUrl || '');
       setCoverUrl(profile.coverUrl || '');
     }
@@ -88,12 +98,6 @@ export default function BusinessProfile() {
   });
 
   const handleSave = () => {
-    // Convert CSV to array
-    const specialties = specialtiesText
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-
     saveMutation.mutate({
       displayName,
       phone,
@@ -104,6 +108,25 @@ export default function BusinessProfile() {
       logoUrl,
       coverUrl,
     });
+  };
+
+  const addSpecialty = () => {
+    const trimmed = newSpecialty.trim();
+    if (trimmed && !specialties.includes(trimmed)) {
+      setSpecialties([...specialties, trimmed]);
+      setNewSpecialty('');
+    }
+  };
+
+  const removeSpecialty = (index: number) => {
+    setSpecialties(specialties.filter((_, i) => i !== index));
+  };
+
+  const handleSpecialtyKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSpecialty();
+    }
   };
 
   if (isLoading) {
@@ -202,33 +225,51 @@ export default function BusinessProfile() {
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                 />
-                <p className="text-sm text-muted-foreground">
-                  This will be displayed on your public profile
-                </p>
+                <div className="flex justify-between text-sm">
+                  <p className="text-muted-foreground">
+                    This will be displayed on your public profile
+                  </p>
+                  <p className={`${about.length >= 200 && about.length <= 400 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {about.length} chars {about.length >= 200 && about.length <= 400 ? '✓' : '(200–400 recommended)'}
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="specialties">Specialties & Services</Label>
-                <Textarea
-                  id="specialties"
-                  placeholder="Wedding cakes, Custom designs, Gluten-free options, Delivery available"
-                  rows={3}
-                  value={specialtiesText}
-                  onChange={(e) => setSpecialtiesText(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="specialties"
+                    placeholder="Enter a specialty (e.g., Wedding cakes)"
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    onKeyDown={handleSpecialtyKeyDown}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addSpecialty}
+                    disabled={!newSpecialty.trim()}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Enter specialties separated by commas. They'll appear as chips on your profile.
+                  Add specialties one at a time. They'll appear as chips on your profile.
                 </p>
-                {specialtiesText && (
+                {specialties.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {specialtiesText.split(',').map((item, idx) => {
-                      const trimmed = item.trim();
-                      return trimmed ? (
-                        <Badge key={idx} variant="secondary">
-                          {trimmed}
-                        </Badge>
-                      ) : null;
-                    })}
+                    {specialties.map((item, idx) => (
+                      <Badge key={idx} variant="secondary" className="gap-1">
+                        {item}
+                        <button
+                          onClick={() => removeSpecialty(idx)}
+                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
                   </div>
                 )}
               </div>
@@ -283,6 +324,120 @@ export default function BusinessProfile() {
                   Current cover: {coverUrl || 'None'}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                Preview Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-background rounded-lg p-6 border">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt={displayName || 'Business logo'} 
+                        className="w-20 h-20 object-cover rounded-lg border-2 border-primary/20"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-muted rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-semibold text-foreground mb-1">
+                      {displayName || 'Your Business Name'}
+                    </h3>
+                    {about && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        {about}
+                      </p>
+                    )}
+                    
+                    {specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {specialties.slice(0, 5).map((item, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {item}
+                          </Badge>
+                        ))}
+                        {specialties.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{specialties.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {profile?.social && (
+                      <div className="flex gap-2">
+                        {profile.social.facebook && (
+                          <a 
+                            href={profile.social.facebook} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Facebook className="w-4 h-4" />
+                          </a>
+                        )}
+                        {profile.social.instagram && (
+                          <a 
+                            href={profile.social.instagram} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Instagram className="w-4 h-4" />
+                          </a>
+                        )}
+                        {profile.social.tiktok && (
+                          <a 
+                            href={profile.social.tiktok} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                            </svg>
+                          </a>
+                        )}
+                        {profile.social.youtube && (
+                          <a 
+                            href={profile.social.youtube} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Youtube className="w-4 h-4" />
+                          </a>
+                        )}
+                        {profile.social.pinterest && (
+                          <a 
+                            href={profile.social.pinterest} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Pinterest className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                This is how your profile will appear to customers
+              </p>
             </CardContent>
           </Card>
 
