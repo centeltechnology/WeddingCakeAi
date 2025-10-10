@@ -49,6 +49,21 @@ export const tenantConfigurations = pgTable("tenant_configurations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const tenantProfiles = pgTable("tenant_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().unique().references(() => tenants.id),
+  displayName: text("display_name"),
+  phone: text("phone"),
+  website: text("website"),
+  address: text("address"),
+  about: text("about"),
+  specialties: text("specialties").array(),
+  logoUrl: text("logo_url"),
+  coverUrl: text("cover_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const tenantBakerNetworks = pgTable("tenant_baker_networks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
