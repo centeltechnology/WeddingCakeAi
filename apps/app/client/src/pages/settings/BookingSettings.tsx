@@ -24,7 +24,7 @@ interface BookingSettings {
   services: Service[];
 }
 
-export default function BookingSettings() {
+export default function BookingSettings({ embedded = false }: { embedded?: boolean }) {
   const queryClient = useQueryClient();
 
   const { data: settings, isLoading } = useQuery<BookingSettings>({

@@ -25,7 +25,7 @@ interface TenantProfile {
   social: SocialLinks | null;
 }
 
-export default function SocialLinks() {
+export default function SocialLinks({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -86,31 +86,30 @@ export default function SocialLinks() {
   };
 
   if (isLoading) {
+    const loadingContent = (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-2 text-muted-foreground">Loading social links...</p>
+        </div>
+      </div>
+    );
+
+    if (embedded) {
+      return loadingContent;
+    }
+
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mt-2 text-muted-foreground">Loading social links...</p>
-            </div>
-          </div>
+          {loadingContent}
         </div>
       </AppLayout>
     );
   }
 
-  return (
-    <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <PageHeader
-          title="Settings"
-          subtitle="Manage your calculator and business profile settings"
-        />
-
-        <SettingsTabs />
-
-        <div className="mt-6 space-y-6">
+  const content = (
+    <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -180,18 +179,37 @@ export default function SocialLinks() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+        </Card>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-              size="lg"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saveMutation.isPending ? 'Saving...' : 'Save Social Links'}
-            </Button>
-          </div>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+            size="lg"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saveMutation.isPending ? 'Saving...' : 'Save Social Links'}
+          </Button>
+        </div>
+      </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <PageHeader
+          title="Settings"
+          subtitle="Manage your calculator and business profile settings"
+        />
+
+        <SettingsTabs />
+
+        <div className="mt-6">
+          {content}
         </div>
       </div>
     </AppLayout>

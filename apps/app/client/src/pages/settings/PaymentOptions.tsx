@@ -25,7 +25,7 @@ interface TenantProfile {
   payments: PaymentOptions | null;
 }
 
-export default function PaymentOptions() {
+export default function PaymentOptions({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -86,18 +86,134 @@ export default function PaymentOptions() {
   };
 
   if (isLoading) {
+    const loadingContent = (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-2 text-muted-foreground">Loading payment options...</p>
+        </div>
+      </div>
+    );
+
+    if (embedded) {
+      return loadingContent;
+    }
+
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mt-2 text-muted-foreground">Loading payment options...</p>
-            </div>
-          </div>
+          {loadingContent}
         </div>
       </AppLayout>
     );
+  }
+
+  const content = (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-primary" />
+            Payment Methods
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            Add your payment methods to make it easy for customers to pay you
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cashapp">Cash App</Label>
+              <Input
+                id="cashapp"
+                placeholder="$yourcashtag"
+                value={cashapp}
+                onChange={(e) => setCashapp(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your Cash App tag (e.g., $yourbakery)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="venmo">Venmo</Label>
+              <Input
+                id="venmo"
+                placeholder="@yourbakery"
+                value={venmo}
+                onChange={(e) => setVenmo(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your Venmo username (e.g., @yourbakery)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paypal">PayPal</Label>
+              <Input
+                id="paypal"
+                type="email"
+                placeholder="payments@yourbakery.com"
+                value={paypal}
+                onChange={(e) => setPaypal(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your PayPal email address
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zelle">Zelle</Label>
+              <Input
+                id="zelle"
+                placeholder="Email or phone number"
+                value={zelle}
+                onChange={(e) => setZelle(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your Zelle email or phone number
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stripeLink">Stripe Payment Link</Label>
+              <Input
+                id="stripeLink"
+                type="url"
+                placeholder="https://buy.stripe.com/..."
+                value={stripeLink}
+                onChange={(e) => setStripeLink(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your Stripe payment link or profile URL
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
+            <p className="text-sm text-amber-800">
+              💡 These payment details will be shown to customers on invoices and contracts
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSave}
+          disabled={saveMutation.isPending}
+          size="lg"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {saveMutation.isPending ? 'Saving...' : 'Save Payment Options'}
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return content;
   }
 
   return (
@@ -110,106 +226,8 @@ export default function PaymentOptions() {
 
         <SettingsTabs />
 
-        <div className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-primary" />
-                Payment Methods
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Add your payment methods to make it easy for customers to pay you
-              </p>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cashapp">Cash App</Label>
-                  <Input
-                    id="cashapp"
-                    placeholder="$yourcashtag"
-                    value={cashapp}
-                    onChange={(e) => setCashapp(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your Cash App tag (e.g., $yourbakery)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="venmo">Venmo</Label>
-                  <Input
-                    id="venmo"
-                    placeholder="@yourbakery"
-                    value={venmo}
-                    onChange={(e) => setVenmo(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your Venmo username (e.g., @yourbakery)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="paypal">PayPal</Label>
-                  <Input
-                    id="paypal"
-                    type="email"
-                    placeholder="payments@yourbakery.com"
-                    value={paypal}
-                    onChange={(e) => setPaypal(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your PayPal email address
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="zelle">Zelle</Label>
-                  <Input
-                    id="zelle"
-                    placeholder="Email or phone number"
-                    value={zelle}
-                    onChange={(e) => setZelle(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your Zelle email or phone number
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="stripeLink">Stripe Payment Link</Label>
-                  <Input
-                    id="stripeLink"
-                    type="url"
-                    placeholder="https://buy.stripe.com/..."
-                    value={stripeLink}
-                    onChange={(e) => setStripeLink(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your Stripe payment link or profile URL
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
-                <p className="text-sm text-amber-800">
-                  💡 These payment details will be shown to customers on invoices and contracts
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-              size="lg"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saveMutation.isPending ? 'Saving...' : 'Save Payment Options'}
-            </Button>
-          </div>
+        <div className="mt-6">
+          {content}
         </div>
       </div>
     </AppLayout>

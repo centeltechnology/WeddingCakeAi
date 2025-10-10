@@ -20,7 +20,7 @@ interface MediaAsset {
   createdAt: string;
 }
 
-export default function MediaLibrary() {
+export default function MediaLibrary({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -133,18 +133,108 @@ export default function MediaLibrary() {
   };
 
   if (isLoading) {
+    const loadingContent = (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-2 text-muted-foreground">Loading media library...</p>
+        </div>
+      </div>
+    );
+
+    if (embedded) {
+      return loadingContent;
+    }
+
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mt-2 text-muted-foreground">Loading media library...</p>
-            </div>
-          </div>
+          {loadingContent}
         </div>
       </AppLayout>
     );
+  }
+
+  const content = (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <ImageIcon className="w-5 h-5 text-primary" />
+          Media Library
+        </CardTitle>
+        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Upload className="w-4 h-4 mr-2" />
+          {uploading ? 'Uploading...' : 'Upload Image'}
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload and manage your images. Click any image to set it as your logo.
+        </p>
+
+        {assets.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No images uploaded yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click "Upload Image" to get started
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {assets.map((asset) => (
+              <div
+                key={asset.id}
+                className="relative group rounded-lg overflow-hidden border hover:border-primary transition-colors"
+              >
+                <img
+                  src={asset.url}
+                  alt="Media asset"
+                  className="w-full h-40 object-cover"
+                />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setLogoMutation.mutate(asset.url)}
+                    disabled={setLogoMutation.isPending || asset.kind === 'logo'}
+                  >
+                    {asset.kind === 'logo' ? (
+                      <>
+                        <Check className="w-4 h-4 mr-1" />
+                        Current Logo
+                      </>
+                    ) : (
+                      'Set as Logo'
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deleteMutation.mutate(asset.id)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (embedded) {
+    return content;
   }
 
   return (
@@ -157,82 +247,8 @@ export default function MediaLibrary() {
 
         <SettingsTabs />
 
-        <div className="mt-6 space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-primary" />
-                Media Library
-              </CardTitle>
-              <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                <Upload className="w-4 h-4 mr-2" />
-                {uploading ? 'Uploading...' : 'Upload Image'}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Upload and manage your images. Click any image to set it as your logo.
-              </p>
-
-              {assets.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                  <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">No images uploaded yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Click "Upload Image" to get started
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {assets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      className="relative group rounded-lg overflow-hidden border hover:border-primary transition-colors"
-                    >
-                      <img
-                        src={asset.url}
-                        alt="Media asset"
-                        className="w-full h-40 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setLogoMutation.mutate(asset.url)}
-                          disabled={setLogoMutation.isPending || asset.kind === 'logo'}
-                        >
-                          {asset.kind === 'logo' ? (
-                            <>
-                              <Check className="w-4 h-4 mr-1" />
-                              Current Logo
-                            </>
-                          ) : (
-                            'Set as Logo'
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteMutation.mutate(asset.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="mt-6">
+          {content}
         </div>
       </div>
     </AppLayout>

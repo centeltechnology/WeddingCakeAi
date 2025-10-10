@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
-import { Calculator, User, Share2, CreditCard, Image, Calendar, Settings as SettingsIcon } from 'lucide-react';
+import { Calculator, User, Share2, CreditCard, Image, Calendar } from 'lucide-react';
 import BusinessProfile from './settings/BusinessProfile';
 import SocialLinks from './settings/SocialLinks';
 import PaymentOptions from './settings/PaymentOptions';
@@ -14,7 +15,7 @@ type Tab = {
   id: string;
   label: string;
   icon: React.ElementType;
-  component: React.ComponentType;
+  component: React.ComponentType<{ embedded?: boolean }>;
   enabled: boolean;
 };
 
@@ -36,55 +37,57 @@ export default function SettingsHub() {
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component || BusinessProfile;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <PageHeader
-        title="Settings"
-        subtitle="Manage your business profile and preferences"
-      />
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <PageHeader
+          title="Settings"
+          subtitle="Manage your business profile and preferences"
+        />
 
-      <div className="grid grid-cols-12 gap-6 mt-6">
-        <div className="col-span-12 md:col-span-3">
-          <Card>
-            <CardContent className="p-3">
-              <nav className="space-y-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      'flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left transition-colors',
-                      activeTab === tab.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    )}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            </CardContent>
-          </Card>
-
-          {calculatorEnabled && (
-            <Card className="mt-4">
+        <div className="grid grid-cols-12 gap-6 mt-6">
+          <div className="col-span-12 md:col-span-3">
+            <Card>
               <CardContent className="p-3">
-                <button
-                  onClick={() => setLocation('/calculator')}
-                  className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left hover:bg-muted transition-colors"
-                >
-                  <Calculator className="w-4 h-4" />
-                  Calculator Settings
-                </button>
+                <nav className="space-y-1">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        'flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left transition-colors',
+                        activeTab === tab.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      )}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        <div className="col-span-12 md:col-span-9">
-          <ActiveComponent />
+            {calculatorEnabled && (
+              <Card className="mt-4">
+                <CardContent className="p-3">
+                  <button
+                    onClick={() => setLocation('/calculator')}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left hover:bg-muted transition-colors"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calculator Settings
+                  </button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className="col-span-12 md:col-span-9">
+            <ActiveComponent embedded={true} />
+          </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
