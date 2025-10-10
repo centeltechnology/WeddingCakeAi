@@ -9976,14 +9976,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL is required' });
       }
 
-      // Update tenant profile logo
-      await db
-        .update(tenantProfiles)
-        .set({ logoUrl: url, updatedAt: new Date() })
-        .where(eq(tenantProfiles.tenantId, baker.tenantId));
-
-      // Create or update media asset record
-      const [existing] = await db
+      // Validate asset ownership - must belong to this tenant
+      const [asset] = await db
         .select()
         .from(mediaAssets)
         .where(and(
@@ -9992,18 +9986,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .limit(1);
 
-      if (!existing) {
-        await db.insert(mediaAssets).values({
-          tenantId: baker.tenantId,
-          url,
-          kind: 'logo',
-        });
-      } else {
-        await db
-          .update(mediaAssets)
-          .set({ kind: 'logo' })
-          .where(eq(mediaAssets.id, existing.id));
+      if (!asset) {
+        return res.status(404).json({ error: 'Asset not found or access denied' });
       }
+
+      // Update tenant profile logo
+      await db
+        .update(tenantProfiles)
+        .set({ logoUrl: url, updatedAt: new Date() })
+        .where(eq(tenantProfiles.tenantId, baker.tenantId));
+
+      // Update media asset kind
+      await db
+        .update(mediaAssets)
+        .set({ kind: 'logo' })
+        .where(eq(mediaAssets.id, asset.id));
 
       res.json({ success: true, logoUrl: url });
     } catch (error) {
@@ -10027,14 +10024,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL is required' });
       }
 
-      // Update tenant profile cover
-      await db
-        .update(tenantProfiles)
-        .set({ coverUrl: url, updatedAt: new Date() })
-        .where(eq(tenantProfiles.tenantId, baker.tenantId));
-
-      // Create or update media asset record
-      const [existing] = await db
+      // Validate asset ownership - must belong to this tenant
+      const [asset] = await db
         .select()
         .from(mediaAssets)
         .where(and(
@@ -10043,18 +10034,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .limit(1);
 
-      if (!existing) {
-        await db.insert(mediaAssets).values({
-          tenantId: baker.tenantId,
-          url,
-          kind: 'cover',
-        });
-      } else {
-        await db
-          .update(mediaAssets)
-          .set({ kind: 'cover' })
-          .where(eq(mediaAssets.id, existing.id));
+      if (!asset) {
+        return res.status(404).json({ error: 'Asset not found or access denied' });
       }
+
+      // Update tenant profile cover
+      await db
+        .update(tenantProfiles)
+        .set({ coverUrl: url, updatedAt: new Date() })
+        .where(eq(tenantProfiles.tenantId, baker.tenantId));
+
+      // Update media asset kind
+      await db
+        .update(mediaAssets)
+        .set({ kind: 'cover' })
+        .where(eq(mediaAssets.id, asset.id));
 
       res.json({ success: true, coverUrl: url });
     } catch (error) {
