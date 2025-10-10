@@ -61,10 +61,11 @@ export default function SettingsHub() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left transition-colors',
+                        'flex items-center gap-3 w-full px-3 py-2 rounded-xl text-left transition-colors',
+                        'focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white',
                         activeTab === tab.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-muted'
+                          ? 'bg-neutral-900 text-white dark:bg-white dark:text-black'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                       )}
                     >
                       <tab.icon className="w-4 h-4" />
@@ -80,7 +81,7 @@ export default function SettingsHub() {
                 <CardContent className="p-3">
                   <button
                     onClick={() => setLocation('/calculator')}
-                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-left hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-left transition-colors text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
                   >
                     <Calculator className="w-4 h-4" />
                     Calculator Settings

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import AppLayout from '@/components/AppLayout';
@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Save, Building2, Image as ImageIcon, X, Plus, Facebook, Instagram, Youtube } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SettingsTabs } from '@/components/SettingsTabs';
+import SaveBar from '@/components/SaveBar';
 
 interface SocialLinks {
   facebook?: string;
@@ -96,6 +97,24 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       });
     },
   });
+
+  // Compute dirty state - treat missing profile as empty baseline
+  const isDirty = useMemo(() => {
+    // Allow saving when user enters data, even if no profile exists yet
+    const hasData = !!(displayName || phone || website || address || about || specialties.length || logoUrl || coverUrl);
+    if (!profile) return hasData;
+    
+    return (
+      displayName !== (profile.displayName || '') ||
+      phone !== (profile.phone || '') ||
+      website !== (profile.website || '') ||
+      address !== (profile.address || '') ||
+      about !== (profile.about || '') ||
+      JSON.stringify(specialties) !== JSON.stringify(profile.specialties || []) ||
+      logoUrl !== (profile.logoUrl || '') ||
+      coverUrl !== (profile.coverUrl || '')
+    );
+  }, [profile, displayName, phone, website, address, about, specialties, logoUrl, coverUrl]);
 
   const handleSave = () => {
     saveMutation.mutate({
@@ -441,22 +460,16 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
               </p>
             </CardContent>
         </Card>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            size="lg"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saveMutation.isPending ? 'Saving...' : 'Save Profile'}
-          </Button>
-        </div>
       </div>
   );
 
   if (embedded) {
-    return content;
+    return (
+      <>
+        {content}
+        <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
+      </>
+    );
   }
 
   return (
@@ -473,6 +486,7 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
           {content}
         </div>
       </div>
+      <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
     </AppLayout>
   );
 }

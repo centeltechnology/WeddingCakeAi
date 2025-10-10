@@ -9474,6 +9474,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public booking settings (no auth, read-only)
+  app.get('/api/booking/public-settings', async (req, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'disabled' });
+      }
+
+      // Resolve tenant by query param or request context
+      const slug = (req.query.tenant as string) || null;
+      let tenant = req.tenant; // From middleware if available
+
+      if (!tenant && slug) {
+        tenant = await storage.getTenantBySlug(slug);
+      }
+
+      if (!tenant) {
+        return res.status(404).json({ error: 'tenant_not_found' });
+      }
+
+      const [settings] = await db
+        .select()
+        .from(bookingSettings)
+        .where(eq(bookingSettings.tenantId, tenant.id))
+        .limit(1);
+
+      // Provide only what the public page needs
+      res.json({
+        timezone: settings?.timezone ?? 'America/Chicago',
+        slotMinutes: settings?.slotMinutes ?? 30,
+        leadTimeDays: settings?.leadTimeDays ?? 1,
+        workdays: settings?.workdays ?? {},
+        services: (settings?.services ?? []).map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          minutes: s.minutes,
+          price: s.price,
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching public booking settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
   // Admin: GET bookings list
   app.get('/api/booking/list', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {

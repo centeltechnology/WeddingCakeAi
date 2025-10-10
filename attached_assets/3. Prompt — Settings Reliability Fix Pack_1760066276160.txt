@@ -1,0 +1,206 @@
+You’re working in apps/app (BakerIQ). The Settings pages don’t persist changes, the Save button is off-screen, and the side menu’s active item turns white on white. Do an idempotent fix pass with the following goals.
+
+A) Server: tenant-scoped profile endpoints (read + upsert)
+
+In apps/app/server/routes.ts, ensure these exist and work:
+
+// READ current tenant profile
+app.get('/api/me/profile', authGuard, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const row = await db.query.tenantProfiles.findFirst({
+    where: eq(tenantProfiles.tenantId, tenantId)
+  });
+  res.json(row ?? {});
+});
+
+// UPSERT current tenant profile (merge JSON fields)
+app.post('/api/me/profile', authGuard, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const body = req.body ?? {};
+  // allow flat fields and JSON buckets for social/payments
+  const patch: any = {
+    displayName: body.displayName ?? body.businessName ?? null,
+    phone: body.phone ?? null,
+    website: body.website ?? null,
+    address: body.address ?? null,
+    about: body.about ?? null,
+    specialties: body.specialties ?? null,
+    logoUrl: body.logoUrl ?? null,
+    coverUrl: body.coverUrl ?? null,
+  };
+
+  // merge JSON objects instead of clobbering
+  if (body.social && typeof body.social === 'object') {
+    patch.social = sql`COALESCE(${tenantProfiles.social}, '{}'::jsonb) || ${JSON.stringify(body.social)}::jsonb`;
+  }
+  if (body.payments && typeof body.payments === 'object') {
+    patch.payments = sql`COALESCE(${tenantProfiles.payments}, '{}'::jsonb) || ${JSON.stringify(body.payments)}::jsonb`;
+  }
+
+  const existing = await db.query.tenantProfiles.findFirst({ where: eq(tenantProfiles.tenantId, tenantId) });
+  if (existing) {
+    const [u] = await db.update(tenantProfiles)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(tenantProfiles.tenantId, tenantId))
+      .returning();
+    return res.json(u);
+  } else {
+    const [i] = await db.insert(tenantProfiles).values({
+      id: crypto.randomUUID(),
+      tenantId,
+      ...patch
+    }).returning();
+    return res.json(i);
+  }
+});
+
+
+Use your existing Drizzle table: tenantProfiles in apps/app/shared/schema.ts (add fields if missing: displayName, phone, website, address, about, specialties (text[] or text), logoUrl, coverUrl, social jsonb, payments jsonb, createdAt, updatedAt).
+
+B) Client: wire forms to API (React Query + visible Save)
+
+Common hooks (create if missing): client/src/hooks/useProfile.ts
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export function useProfile() {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => (await fetch('/api/me/profile')).json()
+  });
+}
+export function useSaveProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const r = await fetch('/api/me/profile', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!r.ok) throw new Error('save_failed');
+      return r.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] })
+  });
+}
+
+
+Business Profile page client/src/pages/settings/BusinessProfile.tsx
+
+Use useProfile() to prefill inputs.
+
+On submit, call useSaveProfile().mutate(formData).
+
+Show inline error + toast on failure; success toast on save.
+
+Social Links & Payment Options pages
+
+Bind to the same endpoints:
+
+Send social: { instagram, facebook, ... } or payments: { cashapp, venmo, ... } — the server merges JSON.
+
+Sticky Save Bar (always visible)
+
+Create client/src/components/SaveBar.tsx:
+
+export default function SaveBar({onSave, saving, disabled}:{onSave:()=>void;saving?:boolean;disabled?:boolean}) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-end gap-3">
+        <button
+          onClick={onSave}
+          disabled={disabled || saving}
+          className="px-4 py-2 rounded-lg bg-black text-white disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+In each Settings subpage, render <SaveBar onSave={handleSubmit} saving={mutation.isPending} disabled={!dirty} />.
+
+Ensure AppLayout’s <main> has bottom padding so content doesn’t hide under the bar:
+
+In AppLayout.tsx set main class to "... pt-6 pb-28" (note the pb-28).
+
+Remove any old bottom “Save” buttons inside the form so there’s only one SaveBar.
+
+Prevent overflow clipping
+
+Make sure no ancestor sets overflow-hidden on the whole page. The body may scroll; keep html, body, #root full height.
+
+In Settings pages, ensure the main container uses standard flow (no nested sticky headers) to avoid the Save bar being off-screen.
+
+C) Side menu (left) — accessible active state
+
+In client/src/pages/settings/SettingsHub.tsx (or the component that renders the left menu):
+
+Fix active/hover classes so text remains readable.
+
+Example:
+
+const base = "w-full text-left px-3 py-2 rounded-xl transition";
+const active = "bg-neutral-900 text-white";          // high contrast
+const idle   = "text-neutral-700 hover:bg-neutral-100";
+// for the disabled/coming-soon items, use: "text-neutral-400 cursor-not-allowed"
+
+
+Apply active when the current route matches.
+
+Add focus styles: focus:outline-none focus:ring-2 focus:ring-black.
+
+If the menu was turning text white on white, you likely had text-white + bg-white. Ensure the active state always pairs dark bg with light text, or light bg with dark text. Do not apply text-white unless the background is dark.
+
+D) Visual/UX polish (quick)
+
+Add a small “Saved ✓” toast/inline badge after successful POST, then auto-hide.
+
+Disable Save until form is dirty: compute dirty by comparing local state to useProfile().data.
+
+While loading profile, show skeletons or “Loading…” rather than blank inputs.
+
+E) Sanity tests to run
+
+After implementing:
+
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Manual checks:
+
+Business Profile
+
+Enter Business Name, Phone, Website, Address, About, Specialties.
+
+Click Save Changes in the sticky Save Bar.
+
+Reload page → changes persist (verify with GET /api/me/profile in Network tab).
+
+Social Links
+
+Update Instagram + Facebook → Save → reload → values remain.
+
+Payment Options
+
+Update CashApp/Venmo → Save → reload → values remain.
+
+Side menu
+
+Click each item → active item shows high-contrast style; text is readable.
+
+No hidden Save button
+
+Scroll to top/bottom: Save Bar remains visible at bottom of the viewport.
+
+Acceptance
+
+/api/me/profile returns updated fields after each save.
+
+The Save button is always visible (sticky) and functional.
+
+Side menu active state is readable and accessible (contrast + focus ring).

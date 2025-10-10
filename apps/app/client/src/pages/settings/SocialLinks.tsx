@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AppLayout from '@/components/AppLayout';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Save, Share2 } from 'lucide-react';
 import { SettingsTabs } from '@/components/SettingsTabs';
+import SaveBar from '@/components/SaveBar';
 
 interface SocialLinks {
   facebook?: string;
@@ -72,6 +73,22 @@ export default function SocialLinks({ embedded = false }: { embedded?: boolean }
       });
     },
   });
+
+  // Compute dirty state - treat missing profile as empty baseline
+  const isDirty = useMemo(() => {
+    // Allow saving when user enters data, even if no profile exists yet
+    const hasData = !!(facebook || instagram || tiktok || youtube || pinterest);
+    if (!profile?.social) return hasData;
+    
+    const social = profile.social;
+    return (
+      facebook !== (social.facebook || '') ||
+      instagram !== (social.instagram || '') ||
+      tiktok !== (social.tiktok || '') ||
+      youtube !== (social.youtube || '') ||
+      pinterest !== (social.pinterest || '')
+    );
+  }, [profile, facebook, instagram, tiktok, youtube, pinterest]);
 
   const handleSave = () => {
     saveMutation.mutate({
@@ -180,22 +197,16 @@ export default function SocialLinks({ embedded = false }: { embedded?: boolean }
               </div>
             </CardContent>
         </Card>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            size="lg"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saveMutation.isPending ? 'Saving...' : 'Save Social Links'}
-          </Button>
-        </div>
       </div>
   );
 
   if (embedded) {
-    return content;
+    return (
+      <>
+        {content}
+        <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
+      </>
+    );
   }
 
   return (
@@ -212,6 +223,7 @@ export default function SocialLinks({ embedded = false }: { embedded?: boolean }
           {content}
         </div>
       </div>
+      <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
     </AppLayout>
   );
 }

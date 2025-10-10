@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AppLayout from '@/components/AppLayout';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Save, Wallet } from 'lucide-react';
 import { SettingsTabs } from '@/components/SettingsTabs';
+import SaveBar from '@/components/SaveBar';
 
 interface PaymentOptions {
   cashapp?: string;
@@ -72,6 +73,22 @@ export default function PaymentOptions({ embedded = false }: { embedded?: boolea
       });
     },
   });
+
+  // Compute dirty state - treat missing profile as empty baseline
+  const isDirty = useMemo(() => {
+    // Allow saving when user enters data, even if no profile exists yet
+    const hasData = !!(cashapp || venmo || paypal || zelle || stripeLink);
+    if (!profile?.payments) return hasData;
+    
+    const payments = profile.payments;
+    return (
+      cashapp !== (payments.cashapp || '') ||
+      venmo !== (payments.venmo || '') ||
+      paypal !== (payments.paypal || '') ||
+      zelle !== (payments.zelle || '') ||
+      stripeLink !== (payments.stripeLink || '')
+    );
+  }, [profile, cashapp, venmo, paypal, zelle, stripeLink]);
 
   const handleSave = () => {
     saveMutation.mutate({
@@ -198,22 +215,16 @@ export default function PaymentOptions({ embedded = false }: { embedded?: boolea
           </div>
         </CardContent>
       </Card>
-
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSave}
-          disabled={saveMutation.isPending}
-          size="lg"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saveMutation.isPending ? 'Saving...' : 'Save Payment Options'}
-        </Button>
-      </div>
     </div>
   );
 
   if (embedded) {
-    return content;
+    return (
+      <>
+        {content}
+        <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
+      </>
+    );
   }
 
   return (
@@ -230,6 +241,7 @@ export default function PaymentOptions({ embedded = false }: { embedded?: boolea
           {content}
         </div>
       </div>
+      <SaveBar onSave={handleSave} saving={saveMutation.isPending} disabled={!isDirty} />
     </AppLayout>
   );
 }

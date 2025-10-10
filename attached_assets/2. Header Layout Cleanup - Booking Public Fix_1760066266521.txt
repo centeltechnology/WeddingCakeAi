@@ -1,0 +1,169 @@
+Work in apps/app (BakerIQ). Please:
+
+A) Normalize AppLayout header (single bar, consistent spacing)
+
+Update client/src/components/AppLayout.tsx:
+
+Make the header a single sticky bar at the top with proper stacking.
+
+Ensure the page body has enough top padding so content doesn’t hide under the header.
+
+Keep one Logout button (right side). Credits/Top-Up may sit to the left of Logout.
+
+Add an optional headerActions slot (but don’t render a second bar).
+
+Add an anti-nesting style to hide any stray #marketing-nav if it ever gets included.
+
+Implementation details (Tailwind-ish):
+
+export default function AppLayout({ children, headerActions }: { children: React.ReactNode; headerActions?: React.ReactNode }) {
+  const demo = import.meta.env.VITE_DEMO_MODE === 'true';
+
+  const AntiNestStyles = () => (
+    <style>{`#marketing-nav{display:none!important;visibility:hidden!important}`}</style>
+  );
+
+  return (
+    <div className="min-h-screen bg-white text-neutral-900">
+      <AntiNestStyles />
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
+        <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between gap-3">
+          <nav className="flex items-center gap-3">
+            <a href="/baker/dashboard" className="px-2 py-1 rounded hover:bg-neutral-100">BakerIQ</a>
+            <a href="/baker/dashboard" className="px-2 py-1 rounded hover:bg-neutral-100">Dashboard</a>
+            <a href="/quotes" className="px-2 py-1 rounded hover:bg-neutral-100">Quotes</a>
+            <a href="/contracts" className="px-2 py-1 rounded hover:bg-neutral-100">Contracts</a>
+            <a href="/invoices" className="px-2 py-1 rounded hover:bg-neutral-100">Invoices</a>
+            {import.meta.env.VITE_CALCULATOR_ENABLED === 'true' && (
+              <a href="/baker/calculator" className="px-2 py-1 rounded hover:bg-neutral-100">Calculator</a>
+            )}
+            {import.meta.env.VITE_BOOKING_ENABLED === 'true' && (
+              <a href="/booking/settings" className="px-2 py-1 rounded hover:bg-neutral-100">Bookings</a>
+            )}
+            <a href="/customers" className="px-2 py-1 rounded hover:bg-neutral-100">Customers</a>
+            <a href="/settings" className="px-2 py-1 rounded hover:bg-neutral-100">Settings</a>
+            <a href="/ai-lab" className="px-2 py-1 rounded hover:bg-neutral-100">AI Lab</a>
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {headerActions}
+            {/* credits/top-up elements can render here if you have them */}
+            <form action="/logout" method="post">
+              <button className="px-3 py-1 rounded border hover:bg-neutral-100">Logout</button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content padded under header */}
+      <main className="max-w-6xl mx-auto px-4 pt-6 pb-12">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+
+Remove duplicate header bits from Settings pages:
+
+In client/src/pages/settings/SettingsHub.tsx and any nested settings pages:
+
+Keep <PageHeader … /> + content only.
+
+Delete any extra “Back to Home” header row if it duplicates the layout; replace with the existing Back button in PageHeader.
+
+Ensure settings tabs render inside the page body — not as a second sticky bar.
+
+Sanity checks:
+
+Ensure no page imports a marketing/public header.
+
+Ensure main has pt-6 (or pt-16 if your header is taller) so nothing overlaps.
+
+B) Unblank the Public Booking page
+
+Problem: /book likely calls an authed endpoint and gets 401, so nothing renders.
+
+Server: add a public settings endpoint (read-only):
+
+In apps/app/server/routes.ts, add:
+
+// Public booking settings (no auth). Returns a safe subset.
+app.get('/api/booking/public-settings', async (req, res) => {
+  if (process.env.BOOKING_ENABLED !== 'true') return res.status(403).json({ error: 'disabled' });
+  // Resolve tenant by host or query (?tenant=slug). Fallback to req.tenant if you have middleware.
+  const slug = (req.query.tenant as string) || null;
+  const tenant = await resolveTenantFromRequestOrSlug(req, slug); // implement using your existing helper
+  if (!tenant) return res.status(404).json({ error: 'tenant_not_found' });
+
+  const settings = await db.query.bookingSettings.findFirst({
+    where: eq(bookingSettings.tenantId, tenant.id)
+  });
+
+  // Provide only what the public page needs
+  res.json({
+    timezone: settings?.timezone ?? 'America/Chicago',
+    slotMinutes: settings?.slotMinutes ?? 30,
+    leadTimeDays: settings?.leadTimeDays ?? 1,
+    workdays: settings?.workdays ?? {},
+    services: (settings?.services ?? []).map((s:any)=>({ id: s.id, name: s.name, minutes: s.minutes, price: s.price })),
+  });
+});
+
+
+Implement resolveTenantFromRequestOrSlug by reusing your existing tenant resolver; if you don’t have one, accept ?tenant=<slug> for now.
+
+Client: BookingPublic.tsx must use the public endpoint and show states:
+
+Update client/src/pages/public/BookingPublic.tsx to fetch /api/booking/public-settings (not the authed one).
+
+If fetch returns 403/404, show a friendly message (“Booking is disabled” / “Not found”).
+
+Add an Empty state if no services are configured.
+
+On submit, keep using POST /api/booking/create.
+
+Minimal fetch pattern:
+
+const { data, isLoading, error } = useQuery({
+  queryKey: ['booking-public-settings', tenantSlug],
+  queryFn: async () => {
+    const r = await fetch(`/api/booking/public-settings${tenantSlug ? `?tenant=${tenantSlug}`:''}`);
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.json();
+  }
+});
+if (isLoading) return <div className="p-6">Loading…</div>;
+if (error) return <div className="p-6 text-red-600">Booking is unavailable right now.</div>;
+if (!data?.services?.length) return <div className="p-6">No services configured yet.</div>;
+
+
+Guard public page with a simple layout:
+
+Ensure /book and /b/:slug/book use PublicLayout (not AppLayout), so there’s no admin header there.
+
+C) Tiny diagnostic switch (helps QA)
+
+In PublicBooking and BookingSettings pages, when import.meta.env.VITE_DEMO_MODE === 'true', render a small diagnostic line at the bottom showing which endpoint was hit and the status (200/403/401). Keep it subtle.
+
+D) Acceptance
+
+Settings page: one clean top bar, content not overlapped, a single Logout (right side).
+
+All admin pages: same as above; no marketing header anywhere.
+
+/book (public):
+
+Shows services and slots; not blank.
+
+If booking disabled, shows a friendly message (not empty screen).
+
+/booking/settings (admin):
+
+Still loads and saves.
+
+Build succeeds; quick QA:
+
+pnpm -w -r build
+pnpm -w -r dev

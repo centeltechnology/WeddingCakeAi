@@ -24,7 +24,17 @@ function useAiCredits() {
   return credits;
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+const AntiNestStyles = () => (
+  <style>{`#marketing-nav{display:none!important;visibility:hidden!important}`}</style>
+);
+
+export default function AppLayout({ 
+  children, 
+  headerActions 
+}: { 
+  children: React.ReactNode; 
+  headerActions?: React.ReactNode;
+}) {
   const [location] = useLocation();
   const { me } = useMe();
   const credits = useAiCredits();
@@ -43,37 +53,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <style>{`
-        #main-nav #marketing-nav {
-          display: none !important;
-        }
-      `}</style>
-      <div id="main-nav" className="border-b bg-white dark:bg-gray-900 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="font-semibold text-gray-900 dark:text-white">BakerIQ</div>
-            <nav className="flex gap-3">
-              {items.map(it => {
-                const active = location === it.href || location.startsWith(it.href + '/');
-                return (
-                  <Link 
-                    key={it.href} 
-                    href={it.href} 
-                    className={`px-2 py-1 rounded text-sm transition-colors ${
-                      active 
-                        ? 'bg-black dark:bg-white text-white dark:text-black' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    {it.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <AntiNestStyles />
+      
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur dark:bg-gray-900/90 dark:border-gray-800">
+        <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between gap-3">
+          <nav className="flex items-center gap-3">
+            <Link href="/baker/dashboard" className="font-semibold text-gray-900 dark:text-white">
+              BakerIQ
+            </Link>
+            {items.map(it => {
+              const active = location === it.href || location.startsWith(it.href + '/');
+              return (
+                <Link 
+                  key={it.href} 
+                  href={it.href} 
+                  className={`px-2 py-1 rounded text-sm transition-colors ${
+                    active 
+                      ? 'bg-black dark:bg-white text-white dark:text-black' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {it.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {headerActions}
             {typeof credits === "number" && (
               <>
                 <span className="text-xs px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-800/60 dark:border-gray-700">
@@ -98,8 +107,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </div>
-      </div>
-      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+      </header>
+
+      {/* Main content padded under header and above SaveBar */}
+      <main className="max-w-6xl mx-auto px-4 pt-6 pb-28">
+        {children}
+      </main>
     </div>
   );
 }
