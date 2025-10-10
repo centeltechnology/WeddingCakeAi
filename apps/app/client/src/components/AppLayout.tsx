@@ -2,6 +2,7 @@ import { Link, useLocation } from 'wouter';
 import { NAV_ITEMS } from '@/navigation/navConfig';
 import { useMe } from '@/lib/useMe';
 import { useCreditsModal } from '@/components/ai/CreditsModalContext';
+import PreviewButtons from '@/components/PreviewButtons';
 import React from 'react';
 
 function useAiCredits() {
@@ -97,6 +98,7 @@ export default function AppLayout({
                 </button>
               </>
             )}
+            <PreviewButtons size="sm" className="hidden md:flex" />
             {me && (
               <button 
                 onClick={handleLogout}

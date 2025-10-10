@@ -6,6 +6,7 @@ import { TaskList } from "../components/TaskList";
 import AiToolsCard from "@/components/ai/AiToolsCard";
 import AppLayout from "@/components/AppLayout";
 import { TopLeads } from "@/components/dashboard/TopLeads";
+import PreviewButtons from "@/components/PreviewButtons";
 
 interface DashboardStats {
   leadsToday: number;
@@ -98,7 +99,10 @@ export default function BakerDashboard() {
   return (
     <AppLayout>
       <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-        <h1 style={{ marginBottom: 32 }}>Baker Dashboard 🧁</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+          <h1 style={{ margin: 0 }}>Baker Dashboard 🧁</h1>
+          <PreviewButtons size="md" />
+        </div>
 
             {/* AI Tools quick actions */}
             <section className="mb-4">

@@ -292,6 +292,9 @@ function Router() {
         </AuthGuard>
       </Route>
       <Route path="/book" component={BookingPublic} />
+      <Route path="/b/:slug/book" component={BookingPublic} />
+      <Route path="/p/:slug" component={BakerProfile} />
+      <Route path="/p/demo" component={BakerProfile} />
       <Route path="/billing" component={Billing} />
       <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
       <Route path="/advertiser/reports" component={AdvertiserReports} />

@@ -14,6 +14,7 @@ import { Save, Building2, Image as ImageIcon, X, Plus, Facebook, Instagram, Yout
 import { Badge } from '@/components/ui/badge';
 import { SettingsTabs } from '@/components/SettingsTabs';
 import SaveBar from '@/components/SaveBar';
+import PreviewButtons from '@/components/PreviewButtons';
 
 interface SocialLinks {
   facebook?: string;
@@ -475,10 +476,15 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <PageHeader
-          title="Settings"
-          subtitle="Manage your calculator and business profile settings"
-        />
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <PageHeader
+              title="Settings"
+              subtitle="Manage your calculator and business profile settings"
+            />
+          </div>
+          <PreviewButtons size="sm" />
+        </div>
 
         <SettingsTabs />
 
