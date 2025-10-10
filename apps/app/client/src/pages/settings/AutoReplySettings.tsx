@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,12 +53,12 @@ export default function AutoReplySettings({ embedded = false }: AutoReplySetting
     },
   });
 
-  // Update settings when data is loaded
-  if (data && !isLoading) {
-    if (JSON.stringify(settings) !== JSON.stringify(data)) {
+  // Update settings when data is loaded - using useEffect to avoid render-time mutation
+  useEffect(() => {
+    if (data && !isLoading) {
       setSettings(data);
     }
-  }
+  }, [data, isLoading]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<AutoReplySettings>) => {
