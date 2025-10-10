@@ -1,0 +1,91 @@
+8) MEGA PROMPT — Observability Pack (health, logs, error boundary, doctor++)
+
+Prompt:
+Add observability and resilience without changing features.
+
+Goals
+
+Server:
+
+/healthz → { ok:true, version, now }
+
+Logger middleware: request id, user id, tenant id, route, status, ms; structured JSON logs.
+
+Expand doctorReport to include flags, counts, latest events.
+
+Client:
+
+Global ErrorBoundary around routes; friendly “Something went wrong” with Reload button.
+
+Turn off Vite overlay in dev if it blocks UX: server: { hmr: { overlay: false } }
+
+Monitoring:
+
+Add counters (in-memory or lightweight): quotes_approved, contracts_signed, invoices_paid.
+
+Acceptance
+
+/healthz returns ok; logs show structured entries.
+
+Errors show the friendly boundary; no raw stack to users.
+
+Updated doctor report prints green sections.
+
+9) MEGA PROMPT — Testing Pack (Playwright E2E + API checks)
+
+Prompt:
+Add Playwright E2E for the core loop and API contract tests.
+
+Goals
+
+E2E (Playwright):
+
+Test: login → create/approve quote → sign contract → pay invoice (mock Stripe if needed) → assert statuses and events.
+
+API (Vitest):
+
+Tests for /api/quotes, /api/contracts/:id/sign, /api/invoices/:id/paid, /api/leads, /api/auto-reply/*.
+
+CI:
+
+GitHub Actions workflow to run headless tests on push; cache deps.
+
+Acceptance
+
+pnpm test:e2e runs green locally.
+
+CI workflow passes on main.
+
+10) MEGA PROMPT — Importer Pack (CSV → validate → import)
+
+Prompt:
+Create CSV importers for Customers, Leads, and Catalog Items.
+
+Goals
+
+Server:
+
+Endpoints: POST /api/import/customers, /leads, /items (multipart CSV).
+
+Parse CSV → dry-run → respond with preview (detected columns, row count, validation errors).
+
+With ?commit=1, insert valid rows; return counts + error CSV for rejects.
+
+Client:
+
+Admin pages (Settings → Import) with upload, preview grid, and Import button.
+
+Validation:
+
+Email/phone normalization for customers/leads; price/qty for items.
+
+Acceptance
+
+Upload CSV shows preview; committing inserts records; user can download error CSV if any.
+
+How to run each pack
+
+After pasting each prompt (one at a time, in order):
+
+pnpm -w -r build
+pnpm -w -r dev
