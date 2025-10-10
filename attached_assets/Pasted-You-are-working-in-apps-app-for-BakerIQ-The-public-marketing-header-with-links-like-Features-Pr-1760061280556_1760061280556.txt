@@ -1,0 +1,123 @@
+You are working in apps/app for BakerIQ. The public marketing header (with links like “Features / Pricing / Find Bakers / Support / Baker Login / Get Started / Live Demo”) is showing on admin pages (e.g., /settings). Clean this up so only AppLayout renders a header in authenticated pages.
+
+1) Identify marketing header component(s)
+
+Search in client/src for likely component names/strings:
+
+SiteHeader, MarketingHeader, PublicHeader, TopBar, Navbar, LandingHeader
+
+Strings: Features, Pricing, Find Bakers, Support, Baker Login, Get Started, Live Demo
+
+Note the file(s) that render this marketing header; typical candidates:
+
+client/src/components/public/*
+
+client/src/layouts/PublicLayout.tsx (if it exists)
+
+2) Export a single PublicLayout for public pages only
+
+If not present, create client/src/layouts/PublicLayout.tsx that renders the marketing header and a simple container for children.
+
+Make sure PublicLayout is not imported by any authenticated page.
+
+// client/src/layouts/PublicLayout.tsx
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div>
+      <div id="marketing-nav">{/* existing marketing header component goes here */}</div>
+      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+    </div>
+  );
+}
+
+3) Ensure admin pages use AppLayout only
+
+For these paths (at minimum): /baker/dashboard, /quotes*, /contracts*, /invoices*, /baker/calculator, /customers*, /settings*, /ai-lab*, /booking*
+
+Verify each page under client/src/pages/** does not import or render any marketing/public header or PublicLayout.
+
+Each should render inside AppLayout only (we already enforce AppLayout; remove any additional header).
+
+Specifically check and fix:
+
+client/src/pages/settings/SettingsHub.tsx (and any nested settings pages)
+
+client/src/pages/*Dashboard*.tsx
+
+Any *List.tsx, *Detail.tsx that still import a PublicHeader/MarketingHeader.
+
+4) Remove the extra Logout in public header (admin context)
+
+Marketing header must not render at all in admin. But as a protection, add a CSS “kill switch” inside AppLayout to hide #marketing-nav if someone accidentally includes it again.
+
+// client/src/components/AppLayout.tsx (inside the component, near top)
+const AntiNestStyles = () => (
+  <style>{`
+    /* Hide any marketing header accidentally rendered inside admin pages */
+    #marketing-nav { display: none !important; visibility: hidden !important; }
+  `}</style>
+);
+
+// In the AppLayout JSX, insert <AntiNestStyles /> at the top
+
+5) Route hygiene
+
+In client/src/App.tsx:
+
+Public pages (landing, features, pricing, support, calculator demo, approvals, help/legal) should render with PublicLayout.
+
+Authenticated pages must not render PublicLayout anywhere; only AppLayout.
+
+Remove any nested “public header” usage inside admin routes.
+
+6) Static header strings scan (guard)
+
+Add a tiny script apps/app/scripts/noMarketingHeaderInAdmin.ts that scans client/src/pages and fails if it finds the marketing labels in any file that also imports AppLayout.
+
+// scripts/noMarketingHeaderInAdmin.ts
+import fg from 'fast-glob';
+import { readFileSync } from 'fs';
+import { resolve, relative } from 'path';
+
+const ROOT = resolve(process.cwd(), 'apps/app');
+const pages = fg.sync('client/src/pages/**/*.tsx', { cwd: ROOT, absolute: true });
+
+const BAD_STRINGS = ['Features','Pricing','Find Bakers','Support','Baker Login','Get Started','Live Demo'];
+let bad: string[] = [];
+
+for (const file of pages) {
+  const src = readFileSync(file, 'utf8');
+  const usesAppLayout = src.includes("from '@/components/AppLayout'") || src.includes('<AppLayout');
+  if (!usesAppLayout) continue;
+  if (BAD_STRINGS.some(s => src.includes(s))) {
+    bad.push(relative(ROOT, file));
+  }
+}
+
+if (bad.length) {
+  console.error('Found marketing header strings inside admin pages:\n' + bad.map(f=>' - '+f).join('\n'));
+  process.exit(1);
+} else {
+  console.log('PASS: no marketing header strings inside admin pages.');
+}
+
+
+Add a package script (optional):
+
+// package.json (workspace root or apps/app/client)
+"scripts": {
+  "lint:no-marketing-admin": "tsx apps/app/scripts/noMarketingHeaderInAdmin.ts"
+}
+
+7) Clean build and quick checks
+pnpm -w -r build
+pnpm -w -r dev
+pnpm run lint:no-marketing-admin
+
+✅ Acceptance
+
+On /settings (and any admin page), there is one header bar (from AppLayout) and one Logout button.
+
+The marketing header (with Features/Pricing/etc.) appears only on true public pages (landing, pricing, etc.).
+
+pnpm run lint:no-marketing-admin prints: PASS: no marketing header strings inside admin pages.
