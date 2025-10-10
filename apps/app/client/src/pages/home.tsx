@@ -1,5 +1,4 @@
-import { NavigationHeader } from "@/components/NavigationHeader";
-import { Footer } from "@/components/Footer";
+import PublicLayout from "@/layouts/PublicLayout";
 import SEOHead from "@/components/SEOHead";
 import { useTenant } from "@/components/TenantBrandProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +10,11 @@ export default function Home() {
   const { tenant, branding } = useTenant();
 
   return (
-    <div className="min-h-screen bg-white">
+    <PublicLayout>
       <SEOHead 
         title="BakerIQ - Smart Cake Pricing & Planning Made Simple"
         description="BakerIQ helps cake designers and bakeries price, plan, and scale their business with ease. Automate planning and client quotes."
       />
-      
-      <NavigationHeader />
       
       {/* Hero Section */}
       <div className="container mx-auto px-4 pt-20 pb-16">
@@ -384,8 +381,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </PublicLayout>
   );
 }

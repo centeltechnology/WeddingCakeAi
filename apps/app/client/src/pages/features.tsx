@@ -1,5 +1,4 @@
-import { NavigationHeader } from "@/components/NavigationHeader";
-import { Footer } from "@/components/Footer";
+import PublicLayout from "@/layouts/PublicLayout";
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,13 +21,11 @@ import {
 
 export default function Features() {
   return (
-    <div className="min-h-screen bg-white">
+    <PublicLayout>
       <SEOHead 
         title="Features - BakerIQ SaaS Platform for Bakeries"
         description="Powerful SaaS tools for bakery businesses. Manage customers, create quotes, process payments, and grow your bakery business efficiently."
       />
-      
-      <NavigationHeader />
       
       {/* Hero Section */}
       <div className="container mx-auto px-4 pt-20 pb-16">
@@ -383,8 +380,6 @@ export default function Features() {
           <p className="text-sm text-gray-500 mt-4">Free forever plan available • No credit card required</p>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </PublicLayout>
   );
 }
