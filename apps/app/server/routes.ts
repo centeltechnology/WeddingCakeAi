@@ -8778,7 +8778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Tenant not found' });
       }
 
-      const { displayName, phone, website, address, about, specialties, logoUrl, coverUrl } = req.body;
+      const { displayName, phone, website, address, about, specialties, logoUrl, coverUrl, social, payments } = req.body;
 
       // Check if profile exists
       const [existing] = await db
@@ -8789,6 +8789,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let profile;
       if (existing) {
+        // Merge JSON fields with existing data to prevent field loss
+        const mergedSocial = social ? { ...(existing.social as any || {}), ...social } : existing.social;
+        const mergedPayments = payments ? { ...(existing.payments as any || {}), ...payments } : existing.payments;
+
         // Update existing profile
         [profile] = await db
           .update(tenantProfiles)
@@ -8801,6 +8805,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             specialties: specialties || [],
             logoUrl,
             coverUrl,
+            social: mergedSocial,
+            payments: mergedPayments,
             updatedAt: new Date(),
           })
           .where(eq(tenantProfiles.tenantId, baker.tenantId))
@@ -8819,6 +8825,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             specialties: specialties || [],
             logoUrl,
             coverUrl,
+            social: social || null,
+            payments: payments || null,
           })
           .returning();
       }
