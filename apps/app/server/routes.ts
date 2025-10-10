@@ -4980,7 +4980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST /api/invoices/:id/paid - Mark invoice as paid
+  // POST /api/invoices/:id/paid - Mark invoice as paid (manual bookkeeping)
   app.post('/api/invoices/:id/paid', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
       const { id } = req.params;
@@ -5018,13 +5018,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: invoice.tenantId || '',
         invoiceId: invoice.id,
         type: 'paid',
-        meta: { paidBy: user.id, amount: invoice.total }
+        meta: { paidBy: user.id, amount: invoice.total, method: 'manual' }
       });
 
       res.json({ ok: true, invoice: updatedInvoice });
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       res.status(500).json({ error: 'Failed to mark invoice as paid' });
+    }
+  });
+
+  // POST /api/invoices/:id/checkout - Create Stripe Checkout Session for invoice payment
+  app.post('/api/invoices/:id/checkout', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { returnUrl, isPortal } = req.body;
+
+      // Get invoice
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Validate amount
+      const amount = parseFloat(invoice.total as string);
+      if (amount <= 0) {
+        return res.status(400).json({ error: 'Invoice amount must be greater than 0' });
+      }
+
+      if (!platformStripe) {
+        return res.status(500).json({ error: 'Stripe not configured' });
+      }
+
+      const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+      
+      // Determine success and cancel URLs based on context (portal vs admin)
+      const successUrl = returnUrl || (isPortal ? `${appBaseUrl}/portal/i/success` : `${appBaseUrl}/invoices/${id}`);
+      const cancelUrl = returnUrl || (isPortal ? `${appBaseUrl}/portal/i/${id}` : `${appBaseUrl}/invoices/${id}`);
+
+      // Create Stripe Checkout Session with idempotency key
+      const session = await platformStripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: invoice.title,
+                description: invoice.description || undefined,
+              },
+              unit_amount: Math.round(amount * 100), // Convert to cents
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          invoiceId: invoice.id,
+          tenantId: invoice.tenantId || '',
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      }, {
+        idempotencyKey: `invoice:${id}`,
+      });
+
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+  });
+
+  // POST /api/stripe/webhook - Handle Stripe webhook events
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !webhookSecret) {
+      console.warn('Missing Stripe signature or webhook secret');
+      return res.status(400).send('Webhook signature or secret missing');
+    }
+
+    try {
+      if (!platformStripe) {
+        return res.status(500).send('Stripe not configured');
+      }
+
+      const event = platformStripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+      // Handle checkout.session.completed event
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as any;
+        const invoiceId = session.metadata?.invoiceId;
+        const tenantId = session.metadata?.tenantId;
+
+        if (!invoiceId) {
+          console.warn('Checkout session completed without invoiceId in metadata');
+          return res.json({ received: true });
+        }
+
+        console.log(`Processing Stripe payment for invoice ${invoiceId}`);
+
+        // Get invoice
+        const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+        
+        if (!invoice) {
+          console.error(`Invoice ${invoiceId} not found`);
+          return res.json({ received: true });
+        }
+
+        // Verify tenant matches
+        if (tenantId && invoice.tenantId !== tenantId) {
+          console.error(`Tenant mismatch for invoice ${invoiceId}`);
+          return res.json({ received: true });
+        }
+
+        // Check if already paid (idempotency)
+        if (invoice.status === 'paid') {
+          console.log(`Invoice ${invoiceId} already marked as paid`);
+          return res.json({ received: true });
+        }
+
+        // Mark invoice as paid
+        await db.update(invoices)
+          .set({
+            status: 'paid',
+            paidAt: new Date(),
+            paidAmount: invoice.total,
+            remainingBalance: '0',
+            updatedAt: new Date()
+          })
+          .where(eq(invoices.id, invoiceId));
+
+        // Track payment event
+        await db.insert(invoiceEvents).values({
+          tenantId: invoice.tenantId || '',
+          invoiceId: invoice.id,
+          type: 'paid',
+          meta: { 
+            method: 'stripe', 
+            sessionId: session.id,
+            amount: invoice.total 
+          }
+        });
+
+        console.log(`Invoice ${invoiceId} marked as paid via Stripe`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error.message);
+      return res.status(400).send(`Webhook Error: ${error.message}`);
     }
   });
 
