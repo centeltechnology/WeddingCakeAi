@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
 type Size = 'xs' | 'sm' | 'md' | 'lg';
@@ -37,7 +38,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({
-  asChild,
+  asChild = false,
   href,
   variant = 'primary',
   size = 'sm',
@@ -50,8 +51,17 @@ export function Button({
 }: ButtonProps) {
   const cls = `${base} ${sizeCls[size]} ${varCls[variant]} ${className}`;
   
+  // If asChild is true, use Slot to merge props with child element
+  if (asChild) {
+    return (
+      <Slot className={cls} {...rest}>
+        {children}
+      </Slot>
+    );
+  }
+  
+  // Link-as-button
   if (href) {
-    // link-as-button
     return (
       <a href={href} className={cls} {...(rest as any)}>
         {loading ? <Spinner /> : leftIcon}
@@ -61,6 +71,7 @@ export function Button({
     );
   }
   
+  // Regular button
   return (
     <button className={cls} aria-busy={loading || undefined} {...rest}>
       {loading ? <Spinner /> : leftIcon}
