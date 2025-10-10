@@ -5220,7 +5220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invoice amount must be greater than 0' });
       }
 
-      if (!platformStripe) {
+      if (!stripe) {
         return res.status(500).json({ error: 'Stripe not configured' });
       }
 
@@ -5231,7 +5231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cancelUrl = returnUrl || (isPortal ? `${appBaseUrl}/portal/i/${id}` : `${appBaseUrl}/invoices/${id}`);
 
       // Create Stripe Checkout Session with idempotency key
-      const session = await platformStripe.checkout.sessions.create({
+      const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
         line_items: [
@@ -5275,11 +5275,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      if (!platformStripe) {
+      if (!stripe) {
         return res.status(500).send('Stripe not configured');
       }
 
-      const event = platformStripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
 
       // Handle checkout.session.completed event
       if (event.type === 'checkout.session.completed') {

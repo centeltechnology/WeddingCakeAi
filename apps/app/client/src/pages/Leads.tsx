@@ -20,7 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { RefreshCw, TrendingUp, Mail, Phone, Calendar, DollarSign, Info } from 'lucide-react';
+import { RefreshCw, TrendingUp, Mail, Phone, Calendar, DollarSign, Info, MessageSquare } from 'lucide-react';
+import { Link } from 'wouter';
 
 type Lead = {
   id: string;
@@ -257,14 +258,22 @@ export default function Leads() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRecalculate(lead.id)}
-                          disabled={recalculating === lead.id}
-                        >
-                          <RefreshCw className={`h-4 w-4 ${recalculating === lead.id ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/leads/${lead.id}`}>
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Open
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRecalculate(lead.id)}
+                            disabled={recalculating === lead.id}
+                          >
+                            <RefreshCw className={`h-4 w-4 ${recalculating === lead.id ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

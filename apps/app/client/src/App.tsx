@@ -106,6 +106,7 @@ import BookingList from "@/pages/settings/BookingList";
 import BookingSettings from "@/pages/settings/BookingSettings";
 import BookingPublic from "@/pages/BookingPublic";
 import Leads from "@/pages/Leads";
+import LeadInbox from "@/pages/LeadInbox";
 import PortalQuote from "@/pages/public/PortalQuote";
 import PortalContract from "@/pages/public/PortalContract";
 import PortalInvoice from "@/pages/public/PortalInvoice";
@@ -328,6 +329,11 @@ function Router() {
       </Route>
       <Route path="/customers">
         <CustomersPage />
+      </Route>
+      <Route path="/leads/:id">
+        <AuthGuard>
+          <LeadInbox />
+        </AuthGuard>
       </Route>
       <Route path="/leads">
         <AuthGuard>
