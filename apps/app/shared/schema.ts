@@ -1697,3 +1697,21 @@ export const insertBookingSettingsSchema = createInsertSchema(bookingSettings);
 
 export type BookingSettings = typeof bookingSettings.$inferSelect;
 export type InsertBookingSettings = z.infer<typeof insertBookingSettingsSchema>;
+
+// --- Public Tokens (Customer Portal) ---
+export const publicTokens = pgTable("public_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  entity: text("entity").notNull(), // 'quote' | 'contract' | 'invoice'
+  entityId: varchar("entity_id").notNull(),
+  token: varchar("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tenantEntityIdx: index("public_tokens_tenant_entity_idx").on(table.tenantId, table.entity, table.entityId),
+}));
+
+export const insertPublicTokenSchema = createInsertSchema(publicTokens);
+
+export type PublicToken = typeof publicTokens.$inferSelect;
+export type InsertPublicToken = z.infer<typeof insertPublicTokenSchema>;
