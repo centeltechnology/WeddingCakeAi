@@ -8,11 +8,11 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/baker/dashboard' },
-  { label: 'Quotes', href: '/quotes' },
   { 
     label: 'Clients',
     children: [
       { label: 'Leads', href: '/leads', requiresFlag: 'VITE_LEAD_SCORING_ENABLED' },
+      { label: 'Quotes', href: '/quotes' },
       { label: 'Contracts', href: '/contracts' },
       { label: 'Invoices', href: '/invoices' },
     ]
