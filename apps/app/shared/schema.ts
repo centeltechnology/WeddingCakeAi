@@ -1011,6 +1011,7 @@ export const quotes = pgTable("quotes", {
   approvalTokenExpiresAt: timestamp("approval_token_expires_at"),
   declinedAt: timestamp("declined_at"),
   declineReason: text("decline_reason"),
+  renderedHtml: text("rendered_html"), // Snapshot of rendered template
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   sentAt: timestamp("sent_at"),
@@ -1093,6 +1094,7 @@ export const contracts = pgTable("contracts", {
   cancellationReason: text("cancellation_reason"),
   approvalToken: text("approval_token").unique(),
   approvalTokenExpiresAt: timestamp("approval_token_expires_at"),
+  renderedHtml: text("rendered_html"), // Snapshot of rendered template
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1120,6 +1122,18 @@ export const contractEvents = pgTable('contract_events', {
   idx_contract: index('contract_events_contract_idx').on(t.contractId),
   idx_tenant: index('contract_events_tenant_idx').on(t.tenantId),
 }));
+
+// Universal Template System
+export const templates = pgTable("templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  type: text("type").notNull(), // 'quote' | 'contract' | 'email'
+  name: text("name").notNull(),
+  content: text("content").notNull(), // HTML template with {{variables}}
+  variables: jsonb("variables").$type<string[]>().default([]), // List of available variables
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Enhanced Payment System
 export const paymentPlans = pgTable("payment_plans", {
@@ -1223,6 +1237,9 @@ export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({ id: t
 export const insertContractTemplateSchema = createInsertSchema(contractTemplates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertContractSignatureSchema = createInsertSchema(contractSignatures).omit({ id: true, signedAt: true });
+
+// Template schemas
+export const insertTemplateSchema = createInsertSchema(templates).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Payment schemas
 export const insertPaymentPlanSchema = createInsertSchema(paymentPlans).omit({ id: true, createdAt: true, updatedAt: true });
