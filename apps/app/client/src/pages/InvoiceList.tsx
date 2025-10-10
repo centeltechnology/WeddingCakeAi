@@ -118,10 +118,10 @@ export default function InvoiceList() {
     const Icon = config.icon;
 
     return (
-      <AppLayout><Badge variant={config.variant} className="flex items-center gap-1">
-                <Icon className="h-3 w-3" />
-                {status}
-              </Badge></AppLayout>
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
   };
 
@@ -163,52 +163,52 @@ export default function InvoiceList() {
             const isPaid = invoice.status === 'paid';
 
             return (
-              <AppLayout><Card key={invoice.id} className="hover:bg-accent/50 transition-colors">
-                                <CardHeader className="pb-3">
-                                  <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
-                                        {getStatusBadge(invoice.status)}
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">{invoice.title}</p>
-                                    </div>
-                                    <div className="text-right flex flex-col items-end gap-2">
-                                      <div className="text-lg font-semibold">${parseFloat(invoice.total).toFixed(2)}</div>
-                                      {!isPaid && (
-                                        <Button 
-                                          size="sm" 
-                                          onClick={() => handleMarkPaid(invoice.id)}
-                                          className="h-7 text-xs"
-                                        >
-                                          Mark Paid
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                  <div className="flex gap-6 text-sm text-muted-foreground">
-                                    {invoice.dueDate && (
-                                      <div className="flex items-center gap-1">
-                                        <Calendar className="h-4 w-4" />
-                                        Due {new Date(invoice.dueDate).toLocaleDateString()}
-                                      </div>
-                                    )}
-                                    {invoice.paidAmount && parseFloat(invoice.paidAmount) > 0 && (
-                                      <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                        <DollarSign className="h-4 w-4" />
-                                        ${parseFloat(invoice.paidAmount).toFixed(2)} paid
-                                      </div>
-                                    )}
-                                    <Link href={`/invoices/${invoice.id}`}>
-                                      <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                                        View Details
-                                      </Button>
-                                    </Link>
-                                  </div>
-                                </CardContent>
-                              </Card></AppLayout>
+              <Card key={invoice.id} className="hover:bg-accent/50 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
+                        {getStatusBadge(invoice.status)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{invoice.title}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <div className="text-lg font-semibold">${parseFloat(invoice.total).toFixed(2)}</div>
+                      {!isPaid && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleMarkPaid(invoice.id)}
+                          className="h-7 text-xs"
+                        >
+                          Mark Paid
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex gap-6 text-muted-foreground">
+                    {invoice.dueDate && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        Due {new Date(invoice.dueDate).toLocaleDateString()}
+                      </div>
+                    )}
+                    {invoice.paidAmount && parseFloat(invoice.paidAmount) > 0 && (
+                      <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                        <DollarSign className="h-4 w-4" />
+                        ${parseFloat(invoice.paidAmount).toFixed(2)} paid
+                      </div>
+                    )}
+                    <Link href={`/invoices/${invoice.id}`}>
+                      <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
           </div>

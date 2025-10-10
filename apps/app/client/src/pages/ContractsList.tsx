@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Calendar, DollarSign, User, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { FileText, Plus, Calendar, DollarSign, User, CheckCircle, Clock, XCircle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/AppLayout';
 import { PageHeader } from '@/components/PageHeader';
@@ -21,31 +21,45 @@ interface Contract {
 }
 
 export default function ContractsList() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchContracts();
-  }, []);
-
-  const fetchContracts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/contracts');
-      if (!response.ok) throw new Error('Failed to fetch contracts');
-      const data = await response.json();
-      setContracts(data);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load contracts'
-      });
-    } finally {
-      setLoading(false);
+  const { data: contracts, isLoading: loading } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: async () => {
+      const res = await fetch('/api/contracts', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch contracts');
+      return res.json() as Promise<Contract[]>;
     }
-  };
+  });
+
+  const signMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/contracts/${id}/sign`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Sign failed');
+      }
+      return res.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({
+        title: 'Contract Signed!',
+        description: result.invoiceId ? `Deposit invoice created. ID: ${result.invoiceId.slice(0, 8)}...` : 'Contract signed successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Sign Failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive', icon: any }> = {
@@ -60,10 +74,10 @@ export default function ContractsList() {
     const Icon = config.icon;
 
     return (
-      <AppLayout><Badge variant={config.variant} className="flex items-center gap-1">
-                <Icon className="h-3 w-3" />
-                {status}
-              </Badge></AppLayout>
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
   };
 
@@ -90,7 +104,7 @@ export default function ContractsList() {
           </Link>
         </div>
 
-        {contracts.length === 0 ? (
+        {!contracts || contracts.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -103,9 +117,11 @@ export default function ContractsList() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {contracts.map((contract) => (
-            <Link key={contract.id} href={`/contracts/${contract.id}`}>
-              <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+          {contracts.map((contract) => {
+            const isSigned = contract.status === 'signed' || contract.status === 'completed';
+
+            return (
+              <Card key={contract.id} className="hover:bg-accent/50 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -115,8 +131,27 @@ export default function ContractsList() {
                       </div>
                       <p className="text-sm text-muted-foreground">{contract.title}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-2">
                       <div className="text-lg font-semibold">${parseFloat(contract.totalAmount).toFixed(2)}</div>
+                      <div className="flex gap-2">
+                        <Link href={`/contracts/${contract.id}`}>
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                            <Edit className="h-3 w-3" />
+                            Open
+                          </Button>
+                        </Link>
+                        {!isSigned && (
+                          <Button
+                            size="sm"
+                            onClick={() => signMutation.mutate(contract.id)}
+                            disabled={signMutation.isPending}
+                            className="bg-emerald-600 hover:bg-emerald-700 h-7 text-xs gap-1"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            {signMutation.isPending ? 'Signing...' : 'Sign'}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -143,8 +178,8 @@ export default function ContractsList() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            );
+          })}
         </div>
         )}
       </div>
