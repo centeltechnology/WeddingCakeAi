@@ -9649,6 +9649,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public tenant profile endpoint (no auth required)
+  app.get('/api/public/profile/:slug', async (req, res) => {
+    try {
+      const slug = req.params.slug;
+
+      // Find tenant by subdomain (slug)
+      const [tenant] = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.subdomain, slug))
+        .limit(1);
+
+      if (!tenant) {
+        return res.status(404).json({ error: 'Bakery not found' });
+      }
+
+      // Load tenant profile
+      const [profile] = await db
+        .select()
+        .from(tenantProfiles)
+        .where(eq(tenantProfiles.tenantId, tenant.id))
+        .limit(1);
+
+      // Load media assets
+      const assets = await db
+        .select()
+        .from(mediaAssets)
+        .where(eq(mediaAssets.tenantId, tenant.id))
+        .orderBy(sql`${mediaAssets.createdAt} DESC`)
+        .limit(20);
+
+      res.json({
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          subdomain: tenant.subdomain,
+        },
+        profile: profile || null,
+        assets: assets || [],
+      });
+    } catch (error) {
+      console.error('Error loading public profile:', error);
+      res.status(500).json({ error: 'Failed to load profile' });
+    }
+  });
+
   // Tenant Profile endpoints
   app.get('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {

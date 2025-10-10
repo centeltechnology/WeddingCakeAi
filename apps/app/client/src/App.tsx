@@ -110,6 +110,8 @@ import LeadInbox from "@/pages/LeadInbox";
 import PortalQuote from "@/pages/public/PortalQuote";
 import PortalContract from "@/pages/public/PortalContract";
 import PortalInvoice from "@/pages/public/PortalInvoice";
+import MarketplaceListing from "@/pages/MarketplaceListing";
+import { HelmetProvider } from 'react-helmet-async';
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -299,7 +301,7 @@ function Router() {
       </Route>
       <Route path="/book" component={BookingPublic} />
       <Route path="/b/:slug/book" component={BookingPublic} />
-      <Route path="/p/:slug" component={BakerProfile} />
+      <Route path="/p/:slug" component={MarketplaceListing} />
       <Route path="/p/demo" component={BakerProfile} />
       <Route path="/billing" component={Billing} />
       <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
@@ -365,21 +367,23 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="wedding-cake-theme">
-          <TenantBrandProvider>
-            <TooltipProvider>
-              <CreditsModalProvider>
-                <Toaster />
-                <Router />
-                <ScrollToTopButton />
-              </CreditsModalProvider>
-            </TooltipProvider>
-          </TenantBrandProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light" storageKey="wedding-cake-theme">
+            <TenantBrandProvider>
+              <TooltipProvider>
+                <CreditsModalProvider>
+                  <Toaster />
+                  <Router />
+                  <ScrollToTopButton />
+                </CreditsModalProvider>
+              </TooltipProvider>
+            </TenantBrandProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 }
 
