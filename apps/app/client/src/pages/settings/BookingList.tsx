@@ -74,7 +74,7 @@ export default function BookingList() {
     <div className="p-6 max-w-6xl mx-auto">
       <PageHeader
         title="Bookings"
-        description="Manage your consultation bookings"
+        subtitle="Manage your consultation bookings"
       />
 
       <div className="grid gap-4 mt-6">

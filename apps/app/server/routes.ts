@@ -9264,10 +9264,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'Booking feature is disabled' });
       }
 
-      const { tenantId, customerName, customerEmail, serviceId, serviceName, startISO, endISO, notes } = req.body;
+      const { customerName, customerEmail, serviceId, startISO, endISO, notes } = req.body;
 
-      if (!tenantId || !customerName || !customerEmail || !serviceId || !startISO) {
+      if (!customerName || !customerEmail || !serviceId || !startISO) {
         return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Get tenantId from subdomain or authenticated session (server-side only)
+      const tenantId = getTenantId(req);
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context required. Please book through tenant-specific URL.' });
       }
 
       const [booking] = await db.insert(bookings).values({

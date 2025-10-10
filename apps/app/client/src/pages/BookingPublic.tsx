@@ -19,7 +19,7 @@ export default function BookingPublic() {
   const [submitted, setSubmitted] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof formData & { tenantId: string }) => {
+    mutationFn: async (data: typeof formData) => {
       const res = await fetch('/api/booking/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,13 +35,8 @@ export default function BookingPublic() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams(window.location.search);
-    const tenantId = params.get('tenant') || 'demo-tenant';
-    
-    createMutation.mutate({
-      ...formData,
-      tenantId,
-    });
+    // tenantId is now derived server-side from subdomain/session
+    createMutation.mutate(formData);
   };
 
   if (submitted) {

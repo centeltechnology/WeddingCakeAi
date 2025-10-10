@@ -91,7 +91,7 @@ export default function BookingSettings() {
     <div className="p-6 max-w-4xl mx-auto">
       <PageHeader
         title="Booking Settings"
-        description="Configure your consultation booking system"
+        subtitle="Configure your consultation booking system"
       />
 
       <div className="grid gap-6 mt-6">

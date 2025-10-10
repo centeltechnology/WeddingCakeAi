@@ -39,7 +39,7 @@ export default function SettingsHub() {
     <div className="p-6 max-w-7xl mx-auto">
       <PageHeader
         title="Settings"
-        description="Manage your business profile and preferences"
+        subtitle="Manage your business profile and preferences"
       />
 
       <div className="grid grid-cols-12 gap-6 mt-6">
