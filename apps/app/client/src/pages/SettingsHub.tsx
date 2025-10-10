@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
-import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap } from 'lucide-react';
+import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap, History } from 'lucide-react';
 import BusinessProfile from './settings/BusinessProfile';
 import SocialLinks from './settings/SocialLinks';
 import PaymentOptions from './settings/PaymentOptions';
@@ -13,6 +13,7 @@ import BookingSettings from './settings/BookingSettings';
 import AutoReplySettings from './settings/AutoReplySettings';
 import AutoReplyTemplates from './settings/AutoReplyTemplates';
 import AutoReplyRules from './settings/AutoReplyRules';
+import AutoReplyLogs from './settings/AutoReplyLogs';
 
 type Tab = {
   id: string;
@@ -37,6 +38,7 @@ export default function SettingsHub() {
     { id: 'auto-reply-settings', label: 'Auto-Reply Settings', icon: Bell, component: AutoReplySettings, enabled: autoReplyEnabled },
     { id: 'auto-reply-templates', label: 'Email Templates', icon: Mail, component: AutoReplyTemplates, enabled: autoReplyEnabled },
     { id: 'auto-reply-rules', label: 'Auto-Reply Rules', icon: Zap, component: AutoReplyRules, enabled: autoReplyEnabled },
+    { id: 'auto-reply-logs', label: 'Activity Logs', icon: History, component: AutoReplyLogs, enabled: autoReplyEnabled },
   ].filter((tab) => tab.enabled);
 
   const [activeTab, setActiveTab] = useState(tabs[0].id);
