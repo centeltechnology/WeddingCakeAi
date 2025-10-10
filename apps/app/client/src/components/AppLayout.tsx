@@ -89,10 +89,8 @@ function NavDropdown({ item, location }: { item: NavItem; location: string }) {
       <button
         onClick={toggleOpen}
         onFocus={() => setOpen(true)}
-        className={`px-2 py-1 rounded text-sm transition-colors flex items-center gap-1 ${
-          isActive 
-            ? 'bg-black dark:bg-white text-white dark:text-black' 
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+        className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 hover:bg-white/10 ${
+          isActive ? 'bg-white/15' : ''
         }`}
         aria-expanded={open}
         aria-haspopup="true"
@@ -101,7 +99,7 @@ function NavDropdown({ item, location }: { item: NavItem; location: string }) {
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && filteredChildren.length > 0 && (
-        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded shadow-lg py-1 min-w-[140px] z-50">
+        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[140px] z-50">
           {filteredChildren.map(child => child.href && (
             <Link
               key={child.href}
@@ -143,14 +141,14 @@ export default function AppLayout({
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
       <AntiNestStyles />
       
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur dark:bg-gray-900/90 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between gap-3">
-          <nav className="flex items-center gap-3">
-            <Link href="/baker/dashboard" className="font-semibold text-gray-900 dark:text-white">
+      {/* Brand Dark Header */}
+      <header className="sticky top-0 z-50 bg-[var(--brand)] text-white border-b border-black/10">
+        <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between gap-2">
+          <nav className="flex items-center gap-2">
+            <Link href="/baker/dashboard" className="font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10">
               BakerIQ
             </Link>
             {items.map(it => {
@@ -163,11 +161,10 @@ export default function AppLayout({
                 <Link 
                   key={it.href} 
                   href={it.href} 
-                  className={`px-2 py-1 rounded text-sm transition-colors ${
-                    active 
-                      ? 'bg-black dark:bg-white text-white dark:text-black' 
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  className={`px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors ${
+                    active ? 'bg-white/15' : ''
                   }`}
+                  data-active={active}
                 >
                   {it.label}
                 </Link>
@@ -179,12 +176,12 @@ export default function AppLayout({
             {headerActions}
             {typeof credits === "number" && (
               <>
-                <span className="text-xs px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-800/60 dark:border-gray-700">
-                  ✨ {credits} credits
+                <span className="text-xs px-2 py-1 rounded-full border border-white/30 bg-white/10">
+                  ✨ {credits}
                 </span>
                 <button
                   type="button"
-                  className="text-xs px-2 py-1 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-700"
+                  className="text-xs px-2 py-1 rounded-lg border border-white/60 hover:bg-white/10"
                   onClick={() => creditsModal.open({ reason: "Top up credits" })}
                 >
                   Top-Up
@@ -195,7 +192,7 @@ export default function AppLayout({
             {me && (
               <button 
                 onClick={handleLogout}
-                className="px-3 py-1 text-sm border rounded hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-700"
+                className="px-3 py-1.5 text-sm border border-white/60 rounded-lg hover:bg-white/10"
               >
                 Logout
               </button>
@@ -204,7 +201,7 @@ export default function AppLayout({
         </div>
       </header>
 
-      {/* Main content padded under header and above SaveBar */}
+      {/* Main content with tinted background */}
       <main className="max-w-6xl mx-auto px-4 pt-6 pb-28">
         {children}
       </main>

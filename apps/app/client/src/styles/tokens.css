@@ -1,15 +1,17 @@
 :root {
-  --bg: #ffffff;
-  --fg: #0a0a0a;
-  --muted: #6b7280;
-  --muted-2: #9ca3af;
-  --brand: #111111;
-  --brand-2: #000000;
-  --primary: #111111;      /* button primary bg */
-  --primary-fg: #ffffff;   /* button primary fg */
-  --border: #e5e7eb;
-  --ring: #111111;
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --danger: #dc2626;
+  /* Brand & neutrals (AAA-ish on white) */
+  --brand: #0F172A;        /* slate-900 */
+  --brand-600: #334155;    /* slate-700 */
+  --brand-500: #475569;    /* slate-600 */
+  --brand-200: #E2E8F0;    /* slate-200 */
+
+  --accent: #F1F5F9;       /* slate-100 (surface) */
+  --accent-2: #E5E7EB;     /* gray-200 (borders) */
+  --bg: #F8FAFC;           /* slate-50 (page background) */
+  --fg: #0B1221;           /* near-black text */
+
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --danger: #DC2626;
+  --ring: #0F172A;         /* focus ring */
 }

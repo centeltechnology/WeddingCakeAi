@@ -1,0 +1,227 @@
+Context: You’re working in apps/app (BakerIQ). Eliminate white-on-white buttons and ship a cohesive, higher-contrast design: brand header, tinted surfaces, consistent cards, and accessible buttons. Idempotent changes.
+
+0) Design Tokens (accessible palette)
+
+Create/replace client/src/styles/tokens.css:
+
+:root{
+  /* Brand & neutrals (AAA-ish on white) */
+  --brand: #0F172A;        /* slate-900 */
+  --brand-600: #334155;    /* slate-700 */
+  --brand-500: #475569;    /* slate-600 */
+  --brand-200: #E2E8F0;    /* slate-200 */
+
+  --accent: #F1F5F9;       /* slate-100 (surface) */
+  --accent-2: #E5E7EB;     /* gray-200 (borders) */
+  --bg: #F8FAFC;           /* slate-50 (page background) */
+  --fg: #0B1221;           /* near-black text */
+
+  --success:#16A34A; --warning:#F59E0B; --danger:#DC2626;
+  --ring: #0F172A; /* focus ring */
+}
+
+
+Import once (if missing) in client/src/main.tsx:
+
+import '@/styles/tokens.css';
+
+1) Global Layout polish
+
+Update client/src/components/AppLayout.tsx:
+
+Page background and content spacing:
+
+Root wrapper: className="min-h-screen bg-[var(--bg)] text-[var(--fg)]"
+
+<main>: className="max-w-6xl mx-auto px-4 pt-6 pb-28" (keep pb for sticky bars)
+
+Header: brand bar with white nav text
+
+<header className="sticky top-0 z-50 bg-[var(--brand)] text-white border-b border-black/10">
+  <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between">
+    <nav className="flex items-center gap-2">
+      {/* active link gets a pill */}
+      <a className="px-3 py-1.5 rounded-lg hover:bg-white/10 data-[active=true]:bg-white/15">Dashboard</a>
+      {/* ...other items same treatment */}
+    </nav>
+    <div className="flex items-center gap-2">
+      {/* preview buttons can use outline (white border on dark header) */}
+      {/* Logout uses outline-light variant (added below) */}
+    </div>
+  </div>
+</header>
+
+2) Card & table look
+
+Create/replace client/src/components/ui/Card.tsx:
+
+export function Card({title,subtitle,action,children,className=''}:{
+  title?:React.ReactNode; subtitle?:React.ReactNode; action?:React.ReactNode; children:React.ReactNode; className?:string;
+}){
+  return (
+    <div className={`rounded-2xl border border-[var(--accent-2)] bg-white shadow-sm ${className}`}>
+      {(title||action||subtitle) && (
+        <div className="px-4 py-3 border-b border-[var(--accent-2)] flex items-center justify-between">
+          <div>
+            {title && <div className="font-semibold">{title}</div>}
+            {subtitle && <div className="text-xs text-[color:var(--brand-500)]">{subtitle}</div>}
+          </div>
+          {action}
+        </div>
+      )}
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+
+Light slab section on dashboards: wrap groups in a <div className="rounded-2xl bg-[var(--accent)] p-4 border border-[var(--accent-2)]">.
+
+3) Button system — FIX CONTRAST & HOVER
+
+Replace client/src/components/ui/Button.tsx with:
+
+import * as React from 'react';
+
+type Variant = 'primary'|'secondary'|'outline'|'outline-light'|'ghost'|'danger'|'success';
+type Size = 'xs'|'sm'|'md'|'lg';
+
+const base = "inline-flex items-center justify-center gap-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50 disabled:cursor-not-allowed";
+
+const sizeCls: Record<Size,string> = {
+  xs:"px-2 py-1 text-xs", sm:"px-3 py-1.5 text-sm", md:"px-4 py-2 text-sm", lg:"px-5 py-2.5 text-base"
+};
+
+/* IMPORTANT: no white-on-white anywhere */
+const varCls: Record<Variant,string> = {
+  primary:       "bg-[var(--brand)] text-white hover:bg-black",
+  secondary:     "bg-[var(--brand-600)] text-white hover:bg-[var(--brand)]",
+  outline:       "border border-[var(--brand-500)] text-[var(--brand)] bg-transparent hover:bg-[var(--accent)]",
+  outline-light: "border border-white/60 text-white bg-transparent hover:bg-white/10", /* for dark header */
+  ghost:         "text-[var(--brand)] hover:bg-[var(--accent)]",
+  danger:        "bg-[var(--danger)] text-white hover:bg-red-600",
+  success:       "bg-[var(--success)] text-white hover:bg-green-600",
+};
+
+export function Spinner(){ return <div aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />; }
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  href?: string; variant?: Variant; size?: Size; loading?: boolean;
+  leftIcon?: React.ReactNode; rightIcon?: React.ReactNode;
+};
+export function Button({ href, variant='primary', size='sm', loading=false, leftIcon, rightIcon, className='', children, ...rest }: ButtonProps){
+  const cls = `${base} ${sizeCls[size]} ${varCls[variant]} ${className}`;
+  if (href) return <a href={href} className={cls} {...(rest as any)}>{loading? <Spinner/>:leftIcon}<span>{children}</span>{rightIcon}</a>;
+  return <button className={cls} aria-busy={loading||undefined} {...rest}>{loading? <Spinner/>:leftIcon}<span>{children}</span>{rightIcon}</button>;
+}
+
+
+Why this fixes it:
+
+outline now has dark text and a visible border on light backgrounds (no white-on-white).
+
+outline-light is only for dark header (white text + semi-white border).
+
+ghost always uses brand text and a subtle hover slab (no invisible text).
+
+4) Sweep critical spots
+
+Header: Convert any header anchors to Button variant="outline-light" size="sm" if they’re actions; keep nav links as plain links with white text & hover pill.
+
+Tables & lists: Replace ad hoc action links:
+
+Primary actions → variant="primary" size="xs|sm"
+
+Secondary actions → variant="outline" size="xs|sm"
+
+Destructive → variant="danger" size="xs|sm"
+
+Preview buttons (top-right): use outline-light in header; use outline on pages.
+
+5) Empty states & slabs (reduce “wall of white”)
+
+On Dashboard and list pages, wrap groups in the accent slab:
+
+<div className="rounded-2xl bg-[var(--accent)] p-4 border border-[var(--accent-2)]">
+  <Card title="Quotes" ... />
+  {/* other cards */}
+</div>
+
+
+Ensure page bg uses var(--bg), not white.
+
+6) Quick codemod (optional but helpful)
+
+Create apps/app/scripts/codemods/fixOutlineButtons.ts:
+
+import fg from 'fast-glob';
+import { readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
+
+const ROOT = resolve(process.cwd(), 'apps/app/client/src');
+const files = fg.sync(['**/*.{tsx,jsx}'], { cwd: ROOT, absolute: true });
+
+let changed = 0;
+for (const f of files){
+  let src = readFileSync(f,'utf8');
+  const before = src;
+
+  // Ensure Button import exists if using Button already
+  if (src.includes('<Button') && !src.includes("from '@/components/ui/Button'")){
+    src = src.replace(/^(\s*import .+\n)+/s, (m)=> m + `import { Button } from '@/components/ui/Button';\n`);
+  }
+
+  // Fix common anti-patterns:
+  // 1) outline-like class with white text → convert to safe outline variant
+  src = src.replace(/<Button([^>]*?)className="[^"]*(?:text-white)[^"]*"([^>]*)>/g, (m, pre, post)=>{
+    // If it's inside a dark header we might want outline-light; we can't detect here, so default to 'outline'
+    if (/variant="/.test(m)) return m.replace(/variant="[^"]*"/, 'variant="outline"').replace(/className="[^"]*"/, 'className=""');
+    return `<Button variant="outline"${pre}${post}>`;
+  });
+
+  // 2) ghost with white text on white → enforce brand text
+  src = src.replace(/<Button([^>]*?)variant="ghost"([^>]*?)className="[^"]*text-white[^"]*"([^>]*)>/g, '<Button$1variant="ghost"$2$3>');
+
+  if (src !== before) { writeFileSync(f, src, 'utf8'); changed++; }
+}
+console.log('Updated files:', changed);
+
+
+Run:
+
+pnpm tsx apps/app/scripts/codemods/fixOutlineButtons.ts
+
+7) Tiny UX niceties
+
+Active nav state: add data-active=true on the current route and style with bg-white/15.
+
+Focus rings: all interactive items get visible ring (already in Button).
+
+Toasts: Ensure toast background uses brand (you already have a toast host—use brand bg).
+
+8) Acceptance (visual + functional)
+
+Buttons on every page are readable without hover. No white-on-white anywhere.
+
+Header is brand dark, nav text is white, action buttons use outline-light.
+
+Dashboard doesn’t feel “all white”: page has light slate background; cards sit on a tinted slab.
+
+Outline/ghost variants look distinct and accessible; destructive buttons are clearly marked.
+
+No component lost functionality due to styling changes.
+
+9) Build & verify
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Check quickly:
+
+Dashboard top actions and cards
+
+Quotes/Contracts/Invoices/Leads table action buttons
+
+Settings tabs (especially Business Profile, Media, Booking, Auto-Reply)
+
+Public pages (portal, booking, calculator): buttons remain readable
