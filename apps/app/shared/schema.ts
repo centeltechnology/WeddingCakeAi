@@ -78,6 +78,19 @@ export const tenantProfiles = pgTable("tenant_profiles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const mediaAssets = pgTable("media_assets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  url: text("url").notNull(),
+  mime: text("mime"),
+  kind: text("kind"),
+  width: integer("width"),
+  height: integer("height"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tenantKindIdx: index("media_assets_tenant_kind_idx").on(table.tenantId, table.kind),
+}));
+
 export const tenantBakerNetworks = pgTable("tenant_baker_networks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
