@@ -2,6 +2,7 @@ import { db } from '../db';
 import { autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, leads } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { format } from 'date-fns';
+import { sendEmail } from '../emailService';
 
 // In-memory rate limiting (simple implementation)
 const rateLimitStore = new Map<string, { count: number; resetAt: number; lastSent: Map<string, number> }>();
@@ -22,21 +23,32 @@ export async function renderTemplate(body: string, vars: Record<string, any>): P
 }
 
 /**
- * Send auto-reply email (stub-safe)
+ * Send auto-reply email (SES or stub)
  */
 export async function sendAutoReplyEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; id: string; error?: string }> {
-  // If no provider configured, log and return ok
-  if (!process.env.EMAIL_PROVIDER) {
+  // If no SES configured, log and return ok (stub mode)
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     console.log('[AUTO-REPLY EMAIL STUB]', { to, subject, bodyLength: html.length });
     return { ok: true, id: `stub-${Date.now()}` };
   }
 
-  // TODO: Wire real provider (SES, Resend, etc.)
+  // Send via SES
   try {
-    // Add your email provider integration here
-    // Example: await sendgridClient.send({ to, subject, html });
-    console.log('[AUTO-REPLY EMAIL]', { to, subject });
-    return { ok: true, id: `provider-${Date.now()}` };
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@bakeriq.app';
+    const success = await sendEmail({
+      to,
+      from: fromEmail,
+      subject,
+      htmlPart: html,
+      textPart: html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+    });
+    
+    if (success) {
+      console.log('[AUTO-REPLY EMAIL SENT]', { to, subject });
+      return { ok: true, id: `ses-${Date.now()}` };
+    } else {
+      return { ok: false, id: '', error: 'SES send failed' };
+    }
   } catch (error: any) {
     console.error('[AUTO-REPLY EMAIL ERROR]', error);
     return { ok: false, id: '', error: error.message };

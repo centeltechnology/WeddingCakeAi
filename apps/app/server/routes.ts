@@ -3003,6 +3003,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-Reply Logs - Get last 50
+  app.get('/api/auto-reply/logs', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const logs = await db
+        .select()
+        .from(autoReplyLogs)
+        .where(eq(autoReplyLogs.tenantId, tenantId))
+        .orderBy(sql`${autoReplyLogs.createdAt} DESC`)
+        .limit(50);
+      
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching auto-reply logs:', error);
+      res.status(500).json({ error: 'Failed to fetch logs' });
+    }
+  });
+
   app.get('/api/customers/:id', async (req, res) => {
     try {
       const customer = await storage.getCustomer(req.params.id);
