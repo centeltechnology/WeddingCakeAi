@@ -94,6 +94,8 @@ import CustomersPage from "@/pages/Customers";
 import AdminTenantsPage from "@/pages/AdminTenants";
 import AdminUsersPage from "@/pages/AdminUsers";
 import AILab from "@/pages/AILab";
+import BakerCalculator from "@/pages/BakerCalculator";
+import PublicCalculatorV1Redirect from "@/pages/PublicCalculatorV1Redirect";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -196,11 +198,18 @@ function Router() {
           </BakerSlugWrapper>
         )}
       </Route>
+      {/* Authenticated Baker Calculator */}
+      <Route path="/baker/calculator">
+        <AuthGuard>
+          <BakerCalculator />
+        </AuthGuard>
+      </Route>
+      {/* Public Calculator - redirects to /baker/calculator if authenticated */}
+      <Route path="/calculator" component={PublicCalculatorV1Redirect} />
       {/* Direct baker ID calculator route */}
       <Route path="/calculator/:bakerId">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>
-      <Route path="/calculator" component={() => <CakeCalculator bakerId="567d2421-7a5a-454f-8cc8-66b2f5f803f8" />} />
       <Route path="/quote-approval/:token" component={QuoteApprovalPage} />
       <Route path="/contract-approval/:token" component={ContractApprovalPage} />
       <Route path="/contracts">

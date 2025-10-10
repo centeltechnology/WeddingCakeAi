@@ -8737,6 +8737,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Baker Calculator endpoint
+  app.post('/api/calculator/estimate', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.CALCULATOR_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Calculator feature is disabled' });
+      }
+
+      const { servings = 12, complexity = 'standard', rush = false, deliveryMiles = 0, items = [] } = req.body ?? {};
+      
+      // Simple heuristic pricing (can be replaced by AI/price engine later)
+      const basePerServing = complexity === 'simple' ? 3.5 : complexity === 'premium' ? 7.5 : 5.0;
+      const itemsTotal = (Array.isArray(items) ? items : []).reduce((n: number, i: any) => n + (+i.total || 0), 0);
+      const product = servings * basePerServing;
+      const rushFee = rush ? Math.round((product + itemsTotal) * 0.25) : 0;
+      const deliveryFee = deliveryMiles > 0 ? Math.ceil(deliveryMiles) * 2 : 0;
+      const subtotal = product + itemsTotal;
+      const suggested = Math.round(subtotal + rushFee + deliveryFee);
+      const margin = subtotal ? Math.round(((suggested - subtotal) / suggested) * 100) : 0;
+      
+      res.json({
+        subtotal,
+        rushFee,
+        deliveryFee,
+        suggested,
+        margin,
+        inputs: { servings, complexity, rush, deliveryMiles, items }
+      });
+    } catch (error) {
+      console.error('Error calculating estimate:', error);
+      res.status(500).json({ error: 'Failed to calculate estimate' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
