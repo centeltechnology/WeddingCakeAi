@@ -81,7 +81,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Redirect } from "wouter";
 import ResetRequest from "@/pages/ResetRequest";
 import ResetConfirm from "@/pages/ResetConfirm";
-import { AppShell } from "@/components/AppShell";
+// AppShell deprecated - using AppLayout in pages instead
 import AdminImpersonate from "@/pages/AdminImpersonate";
 import AdvertiserCampaigns from "@/pages/AdvertiserCampaigns";
 import AdvertiserReports from "@/pages/AdvertiserReports";
@@ -123,9 +123,7 @@ function Router() {
       <Route path="/reset/:token" component={ResetConfirm} />
       <Route path="/dashboard">
         <AuthGuard>
-          <AppShell>
-            <Dashboard />
-          </AppShell>
+          <Dashboard />
         </AuthGuard>
       </Route>
       <Route path="/home" component={Home} />
@@ -170,9 +168,7 @@ function Router() {
       </Route>
       <Route path="/baker/dashboard">
         <AuthGuard>
-          <AppShell>
-            <BakerDashboardPage />
-          </AppShell>
+          <BakerDashboardPage />
         </AuthGuard>
       </Route>
       <Route path="/baker-login" component={BakerLogin} />
@@ -214,9 +210,7 @@ function Router() {
       </Route>
       <Route path="/contracts/:id">
         <AuthGuard>
-          <AppShell>
-            <ContractEdit />
-          </AppShell>
+          <ContractEdit />
         </AuthGuard>
       </Route>
       <Route path="/invoices">
@@ -226,9 +220,7 @@ function Router() {
       </Route>
       <Route path="/invoices/:id">
         <AuthGuard>
-          <AppShell>
-            <InvoiceDetail />
-          </AppShell>
+          <InvoiceDetail />
         </AuthGuard>
       </Route>
       <Route path="/ai-lab">
@@ -278,9 +270,7 @@ function Router() {
       
       {/* Placeholder pages for nav links */}
       <Route path="/messages">
-        <AppShell>
-          <MessagesPage />
-        </AppShell>
+        <MessagesPage />
       </Route>
       <Route path="/quotes">
         <AuthGuard>
@@ -289,34 +279,24 @@ function Router() {
       </Route>
       <Route path="/quotes/new">
         <AuthGuard>
-          <AppShell>
-            <QuoteBuilder bakerId="" />
-          </AppShell>
+          <QuoteBuilder bakerId="" />
         </AuthGuard>
       </Route>
       <Route path="/quotes/:id">
         {(params) => (
           <AuthGuard>
-            <AppShell>
-              <QuoteBuilder bakerId="" />
-            </AppShell>
+            <QuoteBuilder bakerId="" />
           </AuthGuard>
         )}
       </Route>
       <Route path="/customers">
-        <AppShell>
-          <CustomersPage />
-        </AppShell>
+        <CustomersPage />
       </Route>
       <Route path="/admin/tenants">
-        <AppShell>
-          <AdminTenantsPage />
-        </AppShell>
+        <AdminTenantsPage />
       </Route>
       <Route path="/admin/users">
-        <AppShell>
-          <AdminUsersPage />
-        </AppShell>
+        <AdminUsersPage />
       </Route>
       
       <Route component={NotFound} />

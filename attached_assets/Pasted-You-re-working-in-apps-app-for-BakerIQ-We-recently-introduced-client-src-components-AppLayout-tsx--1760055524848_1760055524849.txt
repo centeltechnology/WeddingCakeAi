@@ -1,0 +1,67 @@
+You’re working in apps/app for BakerIQ. We recently introduced client/src/components/AppLayout.tsx. Some pages still render an older nav (or their own header) which causes double menus and two Logout buttons. Please perform an idempotent cleanup so only AppLayout renders the nav + Logout.
+
+Goals
+
+AppLayout owns the nav & Logout (single source of truth).
+
+In client/src/components/AppLayout.tsx:
+
+Ensure a single top nav with items: Dashboard (/baker/dashboard), Quotes (/quotes), Contracts (/contracts), Invoices (/invoices), AI Lab (/ai-lab), Customers (/customers if present), Settings (/settings if present).
+
+Include the only Logout button in the right side of this bar.
+
+Add an attribute for sanity checks: <div id="main-nav">…</div> wrapping the nav area.
+
+Remove legacy nav/Logout from pages & components.
+
+Search and delete or comment out any nav/Logout markup from:
+
+client/src/components/AppShell.tsx, TopNav.tsx, Header.tsx (if they exist). If other components consume these, replace usage with AppLayout.
+
+Pages with inlined nav or Logout: client/src/pages/**/Dashboard*.tsx, BakerDashboard*.tsx, Quotes*.tsx, Contract*.tsx, Invoice*.tsx, Customers*.tsx, Settings*.tsx, Messages*.tsx, and any other authenticated pages.
+
+Heuristics to detect legacy navs (remove these blocks):
+
+A row of links that includes some combo of: Dashboard / Quotes / Contracts / Invoices / AI Lab / Customers / Settings.
+
+Buttons or links labeled Logout outside of AppLayout.
+
+If a page wraps itself with AppShell or renders a “mini top nav,” remove that wrapper/section and keep the page content inside AppLayout (which we already enforce project-wide).
+
+Prevent nested layouts.
+
+Ensure no page imports AppLayout twice or wraps a component that also renders a nav.
+
+If a page uses AppLayout and another wrapper that includes nav (e.g., AppShell), remove the other wrapper and only keep AppLayout.
+
+Back button stays.
+
+Keep PageHeader Back button inside page bodies (that’s fine); just ensure it’s not another Logout or nav bar.
+
+ESLint guard (optional but preferred).
+
+Add a lightweight rule or pre-commit script scripts/lint-no-second-nav.ts that fails if any page contains both <AppLayout> and common nav labels (Dashboard/Quotes/Contracts/Invoices/AI Lab/Settings/Logout) outside the #main-nav container. Print the file path(s) if found.
+
+Edits to make (examples)
+
+Remove any Logout button located outside AppLayout.tsx.
+
+Delete entire duplicated nav <nav>…</nav> blocks in pages/components (keep content below).
+
+Replace AppShell usage with AppLayout across pages; delete AppShell if it becomes unused.
+
+Acceptance Criteria
+
+On /baker/dashboard, there is one top nav and one Logout (right side), no extra bars beneath it.
+
+Same for /quotes, /contracts, /invoices, /ai-lab, /customers, /settings.
+
+grep -R "Logout" apps/app/client/src | wc -l shows 1 occurrence in AppLayout.tsx (plus tests, if any).
+
+Optional linter prints PASS (no second-nav found).
+
+Quick Commands (after changes)
+pnpm -w -r build
+pnpm -w -r dev
+# sanity: only one Logout in client src (adjust if test files exist)
+grep -R "Logout" apps/app/client/src | grep -v ".test." | wc -l

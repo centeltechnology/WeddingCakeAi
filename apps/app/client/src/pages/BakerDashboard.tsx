@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import LogoutButton from "../components/LogoutButton";
 import { PipelineChart } from "../components/PipelineChart";
 import { RevenueStat } from "../components/RevenueStat";
 import { TaskList } from "../components/TaskList";
@@ -75,34 +74,30 @@ export default function BakerDashboard() {
 
   if (loading) {
     return (
-      <AppLayout><div style={{ padding: 24 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                  <h1>Baker Dashboard 🧁</h1>
-                  <LogoutButton />
-                </div>
-                <p>Loading dashboard data...</p>
-              </div></AppLayout>
+      <AppLayout>
+        <div style={{ padding: 24 }}>
+          <h1>Baker Dashboard 🧁</h1>
+          <p>Loading dashboard data...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   if (error) {
     return (
-      <AppLayout><div style={{ padding: 24 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                  <h1>Baker Dashboard 🧁</h1>
-                  <LogoutButton />
-                </div>
-                <div style={{ color: 'red' }}>{error}</div>
-              </div></AppLayout>
+      <AppLayout>
+        <div style={{ padding: 24 }}>
+          <h1>Baker Dashboard 🧁</h1>
+          <div style={{ color: 'red' }}>{error}</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <AppLayout><div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-              <h1>Baker Dashboard 🧁</h1>
-              <LogoutButton />
-            </div>
+    <AppLayout>
+      <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+        <h1 style={{ marginBottom: 32 }}>Baker Dashboard 🧁</h1>
 
             {/* AI Tools quick actions */}
             <section className="mb-4">
