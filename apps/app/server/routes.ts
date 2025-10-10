@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -34,6 +34,7 @@ import { createContractFromQuote } from "./services/contracts";
 import { createDepositInvoice, createSimpleInvoice } from "./services/invoices";
 import { sendContractEmail } from "./emails/sendContractEmail";
 import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
+import { upsertLeadScore } from "./services/leadScoring";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -2481,6 +2482,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error exporting leads:', error);
       res.status(500).json({ error: 'Failed to export leads' });
+    }
+  });
+
+  // Lead Scoring - Recalculate score for one lead
+  app.post('/api/leads/:id/score/recalc', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.LEAD_SCORING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Lead scoring feature is disabled' });
+      }
+
+      const tenantId = getTenantId(req);
+      if (!tenantId) {
+        return res.status(403).json({ error: 'No tenant context' });
+      }
+
+      const row = await upsertLeadScore(tenantId, req.params.id);
+      if (!row) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      res.json(row);
+    } catch (error) {
+      console.error('Error recalculating lead score:', error);
+      res.status(500).json({ error: 'Failed to recalculate score' });
+    }
+  });
+
+  // Lead Scoring - List leads with scores
+  app.get('/api/leads/scored', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.LEAD_SCORING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Lead scoring feature is disabled' });
+      }
+
+      const tenantId = getTenantId(req);
+      if (!tenantId) {
+        return res.status(403).json({ error: 'No tenant context' });
+      }
+
+      const rows = await db.execute(sql`
+        SELECT 
+          l.*,
+          s.score,
+          s.explanations,
+          s.computed_at
+        FROM leads l
+        LEFT JOIN lead_scores s ON s.lead_id = l.id
+        WHERE l.tenant_id = ${tenantId}
+        ORDER BY COALESCE(s.score, 0) DESC, l.created_at DESC
+        LIMIT 100
+      `);
+
+      res.json(rows.rows);
+    } catch (error) {
+      console.error('Error fetching scored leads:', error);
+      res.status(500).json({ error: 'Failed to fetch leads' });
     }
   });
 
