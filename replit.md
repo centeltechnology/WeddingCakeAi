@@ -15,6 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: Wouter.
 - **Forms**: React Hook Form with Zod validation.
 - **Navigation**: Centralized system with `navConfig.ts`, `AppLayout`, and `PageHeader` components, supporting demo mode and role-based visibility.
+- **Layout Separation**: Clean architecture separating public marketing pages from admin pages. PublicLayout (NavigationHeader + Footer) for public pages; AppLayout (admin nav) for authenticated pages. Anti-nest CSS protection prevents marketing headers in admin contexts. Guard script (`scripts/guard-admin-clean.sh`) validates separation.
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js.
