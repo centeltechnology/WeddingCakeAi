@@ -1715,3 +1715,38 @@ export const insertPublicTokenSchema = createInsertSchema(publicTokens);
 
 export type PublicToken = typeof publicTokens.$inferSelect;
 export type InsertPublicToken = z.infer<typeof insertPublicTokenSchema>;
+
+// --- Lead Messages & Notes (Inbox) ---
+export const leadMessages = pgTable("lead_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
+  direction: text("direction").notNull(), // 'in' | 'out'
+  channel: text("channel").notNull().default('email'), // 'email' | 'sms' | 'phone'
+  subject: text("subject"),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  leadIdx: index("lead_messages_lead_idx").on(table.leadId),
+  tenantIdx: index("lead_messages_tenant_idx").on(table.tenantId),
+}));
+
+export const leadNotes = pgTable("lead_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
+  body: text("body").notNull(),
+  authorId: varchar("author_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  leadIdx: index("lead_notes_lead_idx").on(table.leadId),
+  tenantIdx: index("lead_notes_tenant_idx").on(table.tenantId),
+}));
+
+export const insertLeadMessageSchema = createInsertSchema(leadMessages);
+export const insertLeadNoteSchema = createInsertSchema(leadNotes);
+
+export type LeadMessage = typeof leadMessages.$inferSelect;
+export type InsertLeadMessage = z.infer<typeof insertLeadMessageSchema>;
+export type LeadNote = typeof leadNotes.$inferSelect;
+export type InsertLeadNote = z.infer<typeof insertLeadNoteSchema>;
