@@ -26,13 +26,15 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const { data: assets = [], isLoading } = useQuery<MediaAsset[]>({
+  const { data, isLoading } = useQuery({
     queryKey: ['/api/media'],
     queryFn: async () => {
       const data = await apiRequest('GET', '/api/media', undefined);
-      return data as MediaAsset[];
+      return data;
     },
   });
+  
+  const assets = Array.isArray(data?.assets) ? data.assets : Array.isArray(data) ? data : [];
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {

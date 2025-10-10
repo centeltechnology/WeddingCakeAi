@@ -16,15 +16,15 @@ export default function BuyCreditsModal({ onClose, meta }:{ onClose: () => void;
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <button onClick={()=>setPack("200")} className={`border rounded p-2 ${pack==="200"?"bg-white shadow":""}`}>
+        <button onClick={()=>setPack("200")} className={`rounded-xl border p-3 ${pack==="200" ? 'ring-2 ring-black border-black' : 'hover:border-black/40'}`}>
           <div className="font-medium">200</div>
           <div className="text-xs text-gray-600">$9</div>
         </button>
-        <button onClick={()=>setPack("500")} className={`border rounded p-2 ${pack==="500"?"bg-white shadow":""}`}>
+        <button onClick={()=>setPack("500")} className={`rounded-xl border p-3 ${pack==="500" ? 'ring-2 ring-black border-black' : 'hover:border-black/40'}`}>
           <div className="font-medium">500</div>
           <div className="text-xs text-gray-600">$19</div>
         </button>
-        <button onClick={()=>setPack("1000")} className={`border rounded p-2 ${pack==="1000"?"bg-white shadow":""}`}>
+        <button onClick={()=>setPack("1000")} className={`rounded-xl border p-3 ${pack==="1000" ? 'ring-2 ring-black border-black' : 'hover:border-black/40'}`}>
           <div className="font-medium">1000</div>
           <div className="text-xs text-gray-600">$35</div>
         </button>

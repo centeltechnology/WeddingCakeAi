@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
+import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -2236,19 +2236,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRM API Routes
-  app.get('/api/customers', async (req, res) => {
+  app.get('/api/customers', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId, tenantId, search } = req.query;
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const { search } = req.query;
+      
+      // Derive bakerId and tenantId from auth context
+      const bakerId = user.bakerId || user.id;
+      const tenantId = user.tenantId;
       
       let customers;
       if (search && typeof search === 'string') {
-        customers = await storage.searchCustomers(bakerId as string, search);
-      } else if (bakerId) {
-        customers = await storage.getCustomersByBaker(bakerId as string);
+        customers = await storage.searchCustomers(bakerId, search);
       } else if (tenantId) {
-        customers = await storage.getCustomersByTenant(tenantId as string);
+        customers = await storage.getCustomersByTenant(tenantId);
       } else {
-        return res.status(400).json({ error: 'bakerId or tenantId is required' });
+        customers = await storage.getCustomersByBaker(bakerId);
       }
       
       res.json(customers);
@@ -3403,13 +3410,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Advanced Quote API Routes
-  app.get('/api/quote-templates', async (req, res) => {
+  app.get('/api/quote-templates', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId, category, isActive } = req.query;
-      if (!bakerId) {
-        return res.status(400).json({ error: 'bakerId is required' });
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
-      const templates = await storage.getQuoteTemplates(bakerId as string);
+      
+      // Resolve bakerId from auth context
+      const bakerId = user.bakerId || user.id;
+      const templates = await storage.getQuoteTemplates(bakerId);
       res.json(templates);
     } catch (error) {
       console.error('Error fetching quote templates:', error);
@@ -3498,9 +3508,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Filter by tenant for multi-tenancy
-      const rows = await db.select()
+      // Filter by tenant for multi-tenancy with customer info
+      const rows = await db.select({
+        id: quotes.id,
+        tenantId: quotes.tenantId,
+        bakerId: quotes.bakerId,
+        customerId: quotes.customerId,
+        quoteNumber: quotes.quoteNumber,
+        title: quotes.title,
+        description: quotes.description,
+        totalAmount: quotes.totalAmount,
+        status: quotes.status,
+        eventDate: quotes.eventDate,
+        validUntil: quotes.validUntil,
+        createdAt: quotes.createdAt,
+        updatedAt: quotes.updatedAt,
+        customerName: customers.name,
+        customerEmail: customers.email,
+      })
         .from(quotes)
+        .leftJoin(customers, eq(quotes.customerId, customers.id))
         .where(eq(quotes.tenantId, user.tenantId))
         .orderBy(sql`${quotes.createdAt} DESC`);
       
@@ -4281,20 +4308,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Contract not found' });
       }
 
-      // Authorization: only baker or super_admin can view contract events
-      if (user.role === 'baker' && user.id !== contract.bakerId) {
-        return res.status(403).json({ error: 'Access forbidden' });
-      } else if (user.role !== 'baker' && user.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Insufficient permissions' });
+      // Authorization: Check tenant ownership (allow same tenant access)
+      if (contract.tenantId !== user.tenantId && user.role !== 'super_admin') {
+        return res.status(404).json({ error: 'Contract not found' });
       }
 
-      // Get events for this contract
+      // Get events for this contract (return empty array if none)
       const events = await db.select()
         .from(contractEvents)
         .where(eq(contractEvents.contractId, id))
         .orderBy(contractEvents.createdAt);
 
-      res.json(events);
+      res.json(events || []);
     } catch (error) {
       console.error('Error fetching contract events:', error);
       res.status(500).json({ error: 'Failed to fetch contract events' });
@@ -4536,13 +4561,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contract Template API Routes
-  app.get('/api/contract-templates', async (req, res) => {
+  app.get('/api/contract-templates', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId } = req.query;
-      if (!bakerId) {
-        return res.status(400).json({ error: 'bakerId is required' });
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
-      const templates = await storage.getContractTemplates(bakerId as string);
+      
+      // Resolve bakerId from auth context
+      const bakerId = user.bakerId || user.id;
+      const templates = await storage.getContractTemplates(bakerId);
       res.json(templates);
     } catch (error) {
       console.error('Error fetching contract templates:', error);
@@ -4708,13 +4736,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment API Routes
-  app.get('/api/payment-plans', async (req, res) => {
+  app.get('/api/payment-plans', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const { bakerId } = req.query;
-      if (!bakerId) {
-        return res.status(400).json({ error: 'bakerId is required' });
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
-      const plans = await storage.getPaymentPlansByBaker(bakerId as string);
+      
+      // Resolve bakerId from auth context
+      const bakerId = user.bakerId || user.id;
+      const plans = await storage.getPaymentPlansByBaker(bakerId);
       res.json(plans);
     } catch (error) {
       console.error('Error fetching payment plans:', error);
@@ -4840,20 +4871,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Invoice not found' });
       }
 
-      // Authorization: only baker or super_admin can view invoice events
-      if (user.role === 'baker' && user.id !== invoice.bakerId) {
-        return res.status(403).json({ error: 'Access forbidden' });
-      } else if (user.role !== 'baker' && user.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Insufficient permissions' });
+      // Authorization: Check tenant ownership (allow same tenant access)
+      if (invoice.tenantId !== user.tenantId && user.role !== 'super_admin') {
+        return res.status(404).json({ error: 'Invoice not found' });
       }
 
-      // Get events for this invoice
+      // Get events for this invoice (return empty array if none)
       const events = await db.select()
         .from(invoiceEvents)
         .where(eq(invoiceEvents.invoiceId, id))
         .orderBy(invoiceEvents.createdAt);
 
-      res.json(events);
+      res.json(events || []);
     } catch (error) {
       console.error('Error fetching invoice events:', error);
       res.status(500).json({ error: 'Failed to fetch invoice events' });
@@ -9676,6 +9705,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to create booking' });
     }
   });
+
+  // DEV ONLY: Health/Admin Report Endpoint
+  if (process.env.VITE_DEMO_MODE === 'true' || process.env.NODE_ENV === 'development') {
+    app.get('/health/admin', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // Get counts
+        const quotesCount = await db.select({ count: sql`count(*)` }).from(quotes).where(eq(quotes.tenantId, user.tenantId || ''));
+        const contractsCount = await db.select({ count: sql`count(*)` }).from(contracts).where(eq(contracts.tenantId, user.tenantId || ''));
+        const invoicesCount = await db.select({ count: sql`count(*)` }).from(invoices).where(eq(invoices.tenantId, user.tenantId || ''));
+        const leadsCount = await db.select({ count: sql`count(*)` }).from(leads).where(eq(leads.tenantId, user.tenantId || ''));
+
+        // Get latest 5 events
+        const latestQuoteEvents = await db.select().from(quoteEvents).where(eq(quoteEvents.tenantId, user.tenantId || '')).orderBy(sql`${quoteEvents.createdAt} DESC`).limit(5);
+        const latestContractEvents = await db.select().from(contractEvents).where(eq(contractEvents.tenantId, user.tenantId || '')).orderBy(sql`${contractEvents.createdAt} DESC`).limit(5);
+        const latestInvoiceEvents = await db.select().from(invoiceEvents).where(eq(invoiceEvents.tenantId, user.tenantId || '')).orderBy(sql`${invoiceEvents.createdAt} DESC`).limit(5);
+
+        res.json({
+          counts: {
+            quotes: quotesCount[0]?.count || 0,
+            contracts: contractsCount[0]?.count || 0,
+            invoices: invoicesCount[0]?.count || 0,
+            leads: leadsCount[0]?.count || 0,
+          },
+          latestEvents: {
+            quotes: latestQuoteEvents,
+            contracts: latestContractEvents,
+            invoices: latestInvoiceEvents,
+          },
+          featureFlags: {
+            leadScoring: process.env.LEAD_SCORING_ENABLED === 'true',
+            booking: process.env.BOOKING_ENABLED === 'true',
+            autoReply: process.env.AUTO_REPLY_ENABLED === 'true',
+            calculator: process.env.CALCULATOR_ENABLED === 'true',
+          },
+          tenantBaker: {
+            userId: user.id,
+            tenantId: user.tenantId,
+            bakerId: user.bakerId || user.id,
+            role: user.role,
+          },
+        });
+      } catch (error) {
+        console.error('Error fetching admin health:', error);
+        res.status(500).json({ error: 'Failed to fetch health data' });
+      }
+    });
+  }
 
   const httpServer = createServer(app);
   return httpServer;

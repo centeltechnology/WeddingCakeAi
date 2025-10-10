@@ -134,6 +134,14 @@ export default function QuoteList() {
                 <div className="font-medium text-lg">
                   {quote.title || `Quote ${quote.quoteNumber || quote.id.slice(0, 8)}`}
                 </div>
+                {quote.customerName && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Customer: <span className="font-medium">{quote.customerName}</span>
+                    {quote.customerEmail && (
+                      <span className="opacity-75"> ({quote.customerEmail})</span>
+                    )}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground mt-1">
                   Status: <span className={`font-medium ${
                     quote.status === 'approved' ? 'text-green-600 dark:text-green-400' :

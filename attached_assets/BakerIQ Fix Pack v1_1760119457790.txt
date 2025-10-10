@@ -1,0 +1,246 @@
+You are the Replit AI agent for apps/app (BakerIQ). Apply an idempotent stabilization patch covering routing, UI/UX, data shape safety, and backend fixes. Keep existing data. Use Drizzle + existing auth.
+
+0) Assumptions
+
+Frontend: React + Vite; AppLayout is the only header/nav.
+
+Auth: authGuard attaches req.user, req.tenant.
+
+Demo flags may be on; don’t remove them.
+
+A) Routing & Page Wiring (fix issue 1)
+
+Quotes “View” must open the v2 list/detail, not the public V1:
+
+Audit all “View” links/buttons under client/src/pages/Quotes*.tsx, QuoteList.tsx, QuoteBuilder.tsx, any card components.
+
+Replace links pointing to /calculator/quotes or /v1/... with:
+
+List: /quotes
+
+Detail: /quotes/:id
+
+Ensure client/src/App.tsx has routes for /quotes, /quotes/:id, /quotes/new.
+
+Customer info in quote rows:
+
+Update list query to JOIN customers or fetch customer name/email and render columns “Customer / Email”.
+
+Acceptance: Clicking View stays in v2 admin and shows customer info.
+
+B) Crash-Proof Timelines & Media Lists (issues 2 & 5 & 11)
+
+Add array guards to components so .map never runs on non-arrays:
+
+client/src/components/ContractTimeline.tsx
+
+const list = Array.isArray(data) ? data : [];
+return <div className="space-y-3">
+  {list.map((e)=>(
+    <div key={e.id} className="rounded-xl border p-3">
+      <div className="text-sm opacity-70">{new Date(e.createdAt).toLocaleString()}</div>
+      <div className="font-medium">{e.type}</div>
+      {e.meta && <pre className="text-xs opacity-80 overflow-auto">{JSON.stringify(e.meta,null,2)}</pre>}
+    </div>
+  ))}
+</div>;
+
+
+client/src/pages/settings/MediaLibrary.tsx
+
+const assets = Array.isArray(data?.assets) ? data.assets : Array.isArray(data) ? data : [];
+
+
+Ensure server always returns arrays:
+
+GET /api/contracts/:id/events → [] when none.
+
+GET /api/invoices/:id/events → [] when none.
+
+GET /api/media → { assets: [] } or [] consistently; pick one and update client accordingly.
+
+Acceptance: No more data.map is not a function or assets.map is not a function.
+
+C) Invoices “Test” click error (issue 3)
+
+Add a try/catch and toast around the test button handler on Invoice list page; log r.status and JSON in console.
+
+Verify endpoints exist:
+
+GET /api/invoices
+
+POST /api/invoices (manual create)
+
+POST /api/invoices/:id/paid
+
+If the test button uses a missing path, point it to POST /api/invoices with { title:'Test', total:100 }.
+
+Acceptance: Clicking the test action yields either a new invoice or a readable toast with the failing path/status.
+
+D) AI Lab buttons (issue 4)
+
+On /ai-lab, render 3 buttons with fetch calls:
+
+POST /api/ai/suggest-items
+
+POST /api/ai/summarize-quote
+
+POST /api/ai/generate-contract
+
+Show success/failure toasts; disable while in-flight.
+
+Acceptance: All 3 buttons exist and return stub {ok:true} or friendly error.
+
+E) Booking Settings UX (issue 6)
+
+Add a sticky SaveBar at bottom (components/SaveBar.tsx) and call POST /api/booking/settings on click.
+
+Label inputs in Services section:
+
+“Service name”, “Duration (minutes)”, “Price ($)”.
+
+Ensure form state → API shape matches server (services: [{id?,name,minutes,price}]).
+
+Acceptance: Fields are labeled; Save bar visible; saving persists and reload shows values.
+
+F) Auto-Reply Settings & Templates/Rules (issues 7–9)
+
+Auto-Reply Settings tab
+
+Add SaveBar; wire to POST /api/auto-reply/settings.
+
+Email Templates tab
+
+List from GET /api/auto-reply/templates.
+
+If none, show empty state with “Create Template” form (Name, Subject, Body).
+
+POST /api/auto-reply/templates to create/update; refetch list.
+
+Auto-Reply Rules tab
+
+CRUD UI:
+
+New rule (name, trigger new_lead|after_hours|no_response, select template, conditions object).
+
+Save via POST /api/auto-reply/rules.
+
+Toggle active via POST /api/auto-reply/rules/:id/toggle.
+
+Show table of rules; allow delete (optional).
+
+Acceptance: You can create a template, create & toggle a rule, and save settings.
+
+G) AI Credits Top-Up highlight (issue 10)
+
+When a credit amount card is clicked, apply a selected style (rounded ring/border).
+
+const selected = amount === state.amount;
+<button className={`rounded-xl border p-3 ${selected ? 'ring-2 ring-black border-black' : 'hover:border-black/40'}`} ...>
+
+
+Ensure only one card is highlighted at a time.
+
+Acceptance: Selected credit box is visibly highlighted.
+
+H) Business Profile save & logo upload (issue 11)
+
+Ensure GET/POST /api/me/profile works and merges JSON (social/payments) without overwriting.
+
+On Business Profile:
+
+Bind inputs to profile state; SaveBar persists via POST /api/me/profile.
+
+Logo upload:
+
+Fix MediaLibrary list fetch to use the standardized array shape from section B.
+
+Ensure POST /api/media/logo sets tenant_profiles.logo_url and returns updated profile; UI refreshes logo.
+
+Acceptance: Editing business fields saves and persists. Logo upload works with no assets.map error.
+
+I) Backend fixes from backend_error_log.md
+
+Quote Approval 500
+
+In server/routes.ts:3886, import/define quoteEvents (Drizzle table). Insert event with a safe call:
+
+await db.insert(quoteEvents).values({
+  id: crypto.randomUUID(), tenantId: quote.tenantId, quoteId: quote.id,
+  type: 'approved', meta: { actor: req.user?.id ?? null }
+}).catch(()=>{});
+
+
+Tenant & Baker resolution
+
+Never require bakerId from the client. Resolve server-side:
+
+const tenantId = req.tenant.id;
+const bakerId = req.user?.bakerId || await getBakerIdForTenant(tenantId);
+
+
+Update endpoints that 400 on bakerId (templates, customers, leads) to derive it from auth context.
+
+Event timeline permissions
+
+Adjust guards to allow owners:
+
+// example for contracts events
+const [c] = await db.select().from(contracts).where(eq(contracts.id, id));
+if (!c || c.tenantId !== req.tenant.id) return res.status(404).json({error:'not_found'});
+// then return events
+
+
+Return [] (not 403) if item exists and belongs to tenant but has no events.
+
+Venue not found on contract create
+
+In contract creation, treat venueId as optional. If provided, validate; if not, continue without failing hard.
+
+Or ensure seed venue for demo tenant and map quote → venue relationship correctly.
+
+Leads with tenant=null (Sendy warnings)
+
+Backfill script: set tenant_id on orphan leads to current demo tenant; skip Sendy when tenant missing.
+
+Acceptance: Approving quotes works, timelines load, and endpoints no longer demand bakerId from the client.
+
+J) QA: Add a temporary /health/admin report
+
+Create apps/app/server/routes.dev.ts or section in routes.ts (dev-only, guarded by DEMO_MODE):
+
+Returns JSON with:
+
+counts for quotes/contracts/invoices/leads
+
+latest 5 events per type
+
+feature flags
+
+tenant/baker resolution result
+This helps confirm fixes without opening devtools.
+
+K) Build & Smoke
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Checklist (print PASS/FAIL):
+
+Quotes View is v2; Approve works → contract created.
+
+Contracts list opens without crash; timeline shows [] or events.
+
+Invoices test action creates invoice OR shows readable error.
+
+AI Lab shows 3 working buttons.
+
+Media Library lists/sets logo without crash.
+
+Booking Settings has labeled fields + Save works.
+
+Auto-Reply Settings/Email Templates/Rules support create/save/toggle.
+
+Credits top-up selection highlights.
+
+Business Profile saves; logo upload persists.
