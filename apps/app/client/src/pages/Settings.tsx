@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { NavigationHeader } from "@/components/NavigationHeader";
-import { Footer } from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,12 +36,11 @@ export default function Settings() {
   };
 
   return (
-    <AppLayout><div className="min-h-screen bg-gray-50">
+    <AppLayout>
             <SEOHead 
               title="Calculator Settings - BakerIQ"
               description="Customize your calculator themes and appearance settings"
             />
-            <NavigationHeader />
             
             <div className="container mx-auto px-4 py-8 max-w-6xl">
               <div className="mb-6">
@@ -201,9 +198,6 @@ export default function Settings() {
                 </Card>
               </div>
             </div>
-            </div>
-            
-            <Footer />
-          </div></AppLayout>
+    </AppLayout>
   );
 }

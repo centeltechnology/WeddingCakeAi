@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard, CheckCircle } from "lucide-react";
 import { BillingDashboard } from "@/components/BillingDashboard";
-import { NavigationHeader } from "@/components/NavigationHeader";
+import AppLayout from "@/components/AppLayout";
 
 export default function Billing() {
   const [, setLocation] = useLocation();
@@ -33,9 +33,7 @@ export default function Billing() {
   }, [setLocation]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      <NavigationHeader />
-      
+    <AppLayout>
       <div className="container mx-auto py-20 px-4">
         <div className="max-w-2xl mx-auto">
           <Card className="border-0 shadow-lg">
@@ -66,6 +64,6 @@ export default function Billing() {
           </Card>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
