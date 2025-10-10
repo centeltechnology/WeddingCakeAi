@@ -1,0 +1,127 @@
+You’re working in apps/app (BakerIQ). Implement an authenticated, tenant-scoped Baker Calculator page and API. Keep /calculator as the public V1 demo, but when a logged-in baker hits /calculator, redirect them to the new /baker/calculator. Add a menu item so bakers can find it from the dashboard.
+
+Goals
+
+Feature flags
+
+Client .env → ensure:
+
+VITE_CALCULATOR_ENABLED=true
+
+
+Server .env (or Replit secrets) → ensure:
+
+CALCULATOR_ENABLED=true
+
+
+Nav item (AppLayout)
+
+In client/src/components/AppLayout.tsx, add a Calculator link that appears when:
+
+VITE_CALCULATOR_ENABLED === 'true' AND user is authenticated.
+
+Link: /baker/calculator.
+
+Keep it consistent with the other items (Dashboard, Quotes, Contracts, Invoices, AI Lab, Customers, Settings).
+
+Client routes
+
+In client/src/App.tsx add:
+
+<Route path="/baker/calculator" component={BakerCalculator} />
+
+
+Add a public route that preserves the V1 demo:
+
+<Route path="/calculator" component={PublicCalculatorV1Redirect} />
+
+
+PublicCalculatorV1Redirect behavior:
+
+If user is authenticated and VITE_CALCULATOR_ENABLED=true → navigate('/baker/calculator').
+
+Else → render the existing V1 demo component or a small “This is the public demo” wrapper that links to login.
+
+Calculator page (authenticated)
+
+Create client/src/pages/BakerCalculator.tsx using AppLayout + PageHeader.
+
+UI requirements:
+
+Inputs: servings, complexity (simple/standard/premium), rush flag, delivery miles, custom line items.
+
+Button: Calculate.
+
+Output panel: subtotal, rush fee, delivery fee, profit margin, suggested price.
+
+“Save as Quote” button (for now, can show a toast if Quotes API not yet tied in).
+
+Use React Query to call /api/calculator/estimate.
+
+Server API
+
+In server/routes.ts add (tenant-scoped, behind auth):
+
+app.post('/api/calculator/estimate', authGuard, async (req,res)=>{
+  if (process.env.CALCULATOR_ENABLED !== 'true') return res.status(403).json({error:'disabled'});
+  const { servings=12, complexity='standard', rush=false, deliveryMiles=0, items=[] } = req.body ?? {};
+  // simple heuristic pricing (can be replaced by your AI/price engine later)
+  const basePerServing = complexity === 'simple' ? 3.5 : complexity === 'premium' ? 7.5 : 5.0;
+  const itemsTotal = (Array.isArray(items) ? items : []).reduce((n:any,i:any)=> n + (+i.total || 0), 0);
+  const product = servings * basePerServing;
+  const rushFee = rush ? Math.round((product + itemsTotal) * 0.25) : 0;
+  const deliveryFee = deliveryMiles > 0 ? Math.ceil(deliveryMiles) * 2 : 0;
+  const subtotal = product + itemsTotal;
+  const suggested = Math.round(subtotal + rushFee + deliveryFee);
+  const margin = subtotal ? Math.round(((suggested - subtotal) / suggested) * 100) : 0;
+  res.json({ subtotal, rushFee, deliveryFee, suggested, margin, inputs:{ servings, complexity, rush, deliveryMiles, items } });
+});
+
+
+(Optional) Add /api/calculator/settings (GET/POST) later to store per-tenant defaults; for now defaults can be hardcoded as above.
+
+Back-compat redirect behavior
+
+PublicCalculatorV1Redirect should:
+
+Detect auth via your existing auth store/hook.
+
+If authed & enabled → navigate('/baker/calculator').
+
+Else → render the current public V1 demo component or a simple message:
+
+“You’re viewing the public demo calculator. Log in to use your tenant-scoped calculator.”
+
+Wire to AI (optional)
+
+If VITE_AI_ENABLED=true, add a small “AI Suggest Price Range” button that calls your existing /api/ai/suggest-items or a new /api/ai/price-suggest stub; show a toast with a notional range. This is optional; keep it off if not ready.
+
+Deliverables
+
+client/src/pages/BakerCalculator.tsx
+
+client/src/pages/PublicCalculatorV1Redirect.tsx
+
+Updated client/src/components/AppLayout.tsx (nav item)
+
+Updated client/src/App.tsx (routes)
+
+Updated server/routes.ts (POST /api/calculator/estimate)
+
+(Optional) server env check for CALCULATOR_ENABLED
+
+Acceptance
+
+From any authenticated page, the top nav shows Calculator.
+
+Visiting /baker/calculator renders the tenant-scoped calculator UI inside AppLayout.
+
+Submitting the form calls POST /api/calculator/estimate and shows a suggested price without errors.
+
+Visiting /calculator while logged in redirects to /baker/calculator.
+
+Visiting /calculator while logged out shows the public V1 demo (unchanged).
+
+Quick run
+pnpm -w -r build
+pnpm -w -r dev

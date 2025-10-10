@@ -31,7 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const creditsModal = useCreditsModal();
   const demo = import.meta.env.VITE_DEMO_MODE === 'true';
 
-  const items = NAV_ITEMS.filter(i => demo || !i.demoOnly);
+  const items = NAV_ITEMS.filter(i => {
+    if (i.demoOnly && !demo) return false;
+    if (i.requiresFlag && import.meta.env[i.requiresFlag] !== 'true') return false;
+    return true;
+  });
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
