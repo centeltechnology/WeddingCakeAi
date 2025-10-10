@@ -116,8 +116,7 @@ export default function Leads() {
     <AppLayout>
       <PageHeader
         title="Lead Scoring"
-        description="View and manage lead scores based on transparent criteria"
-        icon={<TrendingUp className="w-6 h-6" />}
+        subtitle="View and manage lead scores based on transparent criteria"
       />
 
       <Card>
