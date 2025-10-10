@@ -18,7 +18,7 @@ import {
   paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
 import { authorizeBakerWithData, authorizeLeadOwnership, requireFeature, type AuthenticatedRequest } from "./authMiddleware";
-import { ensureAuthUnified, requireRole, type UnifiedRequest } from "./authUnified";
+import { ensureAuthUnified, requireRole, requireTenant as requireTenantAuth, type UnifiedRequest } from "./authUnified";
 import { tenantMiddleware, requireTenant, injectTenantBranding, enforceTenantIsolation, getTenantId } from "./tenantMiddleware";
 import { ObjectStorageService } from "./objectStorage";
 import { sendEmail, emailTemplates } from "./emailService";
@@ -2486,16 +2486,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lead Scoring - Recalculate score for one lead
-  app.post('/api/leads/:id/score/recalc', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+  app.post('/api/leads/:id/score/recalc', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
     try {
       if (process.env.LEAD_SCORING_ENABLED !== 'true') {
         return res.status(403).json({ error: 'Lead scoring feature is disabled' });
       }
 
-      const tenantId = getTenantId(req);
-      if (!tenantId) {
-        return res.status(403).json({ error: 'No tenant context' });
-      }
+      const tenantId = req.user!.tenantId!;
 
       const row = await upsertLeadScore(tenantId, req.params.id);
       if (!row) {
@@ -2510,16 +2507,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lead Scoring - List leads with scores
-  app.get('/api/leads/scored', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+  app.get('/api/leads/scored', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
     try {
       if (process.env.LEAD_SCORING_ENABLED !== 'true') {
         return res.status(403).json({ error: 'Lead scoring feature is disabled' });
       }
 
-      const tenantId = getTenantId(req);
-      if (!tenantId) {
-        return res.status(403).json({ error: 'No tenant context' });
-      }
+      const tenantId = req.user!.tenantId!;
 
       const rows = await db.execute(sql`
         SELECT 

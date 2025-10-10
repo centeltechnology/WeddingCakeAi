@@ -619,7 +619,14 @@ export function setupAuthRoutes(app: Express) {
         });
       }
 
-      // Create JWT token
+      // Set session for unified auth
+      (req.session as any).userId = baker.id;
+      (req.session as any).email = baker.email;
+      (req.session as any).role = 'baker';
+      (req.session as any).tenantId = baker.tenantId; // Set tenantId from baker record
+      (req.session as any).bakerId = baker.id;
+
+      // Create JWT token (for backward compatibility)
       const token = createToken(baker.id, baker.email, 'baker');
 
       res.json({
