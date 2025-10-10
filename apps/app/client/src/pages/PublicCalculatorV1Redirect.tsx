@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useMe } from '@/lib/useMe';
-import CakeCalculator from '@/components/CakeCalculator';
+import { CakeCalculator } from '@/components/CakeCalculator';
 
 export default function PublicCalculatorV1Redirect() {
   const [, navigate] = useLocation();
