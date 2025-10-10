@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { Project } from 'ts-morph';
+import { Project, SyntaxKind } from 'ts-morph';
 import * as path from 'path';
 
 interface NavIssue {
@@ -11,14 +11,14 @@ interface NavIssue {
 
 const issues: NavIssue[] = [];
 
-function checkFile(filePath: string) {
-  const project = new Project();
-  const sourceFile = project.addSourceFileAtPath(filePath);
-  
-  // Check for duplicate nav IDs
-  const mainNavs = sourceFile.getDescendantsOfKind(13).filter(n => 
-    n.getText().includes('id="main-nav"') || n.getText().includes("id='main-nav'")
-  );
+function checkFile(filePath: string, sourceFile: any) {
+  // Check for duplicate nav IDs by searching all JSX attributes
+  const jsxAttributes = sourceFile.getDescendantsOfKind(SyntaxKind.JsxAttribute);
+  const mainNavs = jsxAttributes.filter((attr: any) => {
+    const name = attr.getNameNode().getText();
+    const value = attr.getInitializer()?.getText() || '';
+    return name === 'id' && (value.includes('main-nav'));
+  });
   
   if (mainNavs.length > 1) {
     issues.push({
@@ -31,7 +31,7 @@ function checkFile(filePath: string) {
   // Check for LogoutButton in pages (should use AppLayout instead)
   const isPage = filePath.includes('/pages/');
   if (isPage) {
-    const logoutImports = sourceFile.getImportDeclarations().filter(i => 
+    const logoutImports = sourceFile.getImportDeclarations().filter((i: any) => 
       i.getModuleSpecifierValue().includes('LogoutButton')
     );
     
@@ -45,10 +45,10 @@ function checkFile(filePath: string) {
   }
   
   // Check for nested AppLayout + AppShell
-  const appLayoutImport = sourceFile.getImportDeclarations().find(i => 
+  const appLayoutImport = sourceFile.getImportDeclarations().find((i: any) => 
     i.getModuleSpecifierValue().includes('AppLayout')
   );
-  const appShellImport = sourceFile.getImportDeclarations().find(i => 
+  const appShellImport = sourceFile.getImportDeclarations().find((i: any) => 
     i.getModuleSpecifierValue().includes('AppShell')
   );
   
@@ -61,8 +61,12 @@ function checkFile(filePath: string) {
   }
   
   // Check for duplicate nav elements
-  const navElements = sourceFile.getDescendantsOfKind(285).filter(n => 
-    n.getTagNameNode()?.getText() === 'nav'
+  const jsxElements = [
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.JsxOpeningElement)
+  ];
+  const navElements = jsxElements.filter((el: any) => 
+    el.getTagNameNode()?.getText() === 'nav'
   );
   
   if (navElements.length > 1 && !filePath.includes('AppLayout')) {
@@ -83,7 +87,7 @@ project.addSourceFilesAtPaths(`${clientDir}/**/*.{ts,tsx}`);
 const files = project.getSourceFiles();
 
 for (const file of files) {
-  checkFile(file.getFilePath());
+  checkFile(file.getFilePath(), file);
 }
 
 if (issues.length === 0) {
