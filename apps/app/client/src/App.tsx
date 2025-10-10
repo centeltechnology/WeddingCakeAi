@@ -106,6 +106,9 @@ import BookingList from "@/pages/settings/BookingList";
 import BookingSettings from "@/pages/settings/BookingSettings";
 import BookingPublic from "@/pages/BookingPublic";
 import Leads from "@/pages/Leads";
+import PortalQuote from "@/pages/public/PortalQuote";
+import PortalContract from "@/pages/public/PortalContract";
+import PortalInvoice from "@/pages/public/PortalInvoice";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -337,6 +340,11 @@ function Router() {
       <Route path="/admin/users">
         <AdminUsersPage />
       </Route>
+
+      {/* Customer Portal Routes (Public, tokenized access) */}
+      <Route path="/portal/q/:token" component={PortalQuote} />
+      <Route path="/portal/c/:token" component={PortalContract} />
+      <Route path="/portal/i/:token" component={PortalInvoice} />
       
       <Route component={NotFound} />
     </Switch>

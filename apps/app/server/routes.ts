@@ -9961,6 +9961,282 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // =====================================
+  // CUSTOMER PORTAL TOKEN GENERATION (Admin only)
+  // =====================================
+  const { issuePublicToken, validatePublicToken } = await import('./portalUtils');
+
+  // POST /api/portal/token/issue - Generate a portal token for an entity
+  app.post('/api/portal/token/issue', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user;
+      if (!user?.tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { entity, entityId } = req.body;
+      
+      if (!entity || !entityId) {
+        return res.status(400).json({ error: 'entity and entityId are required' });
+      }
+
+      if (!['quote', 'contract', 'invoice'].includes(entity)) {
+        return res.status(400).json({ error: 'Invalid entity type' });
+      }
+
+      // Generate token
+      const token = await issuePublicToken(user.tenantId, entity, entityId);
+      
+      // Build full URL
+      const baseUrl = process.env.REPLIT_DOMAINS ? 
+        `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 
+        `http://localhost:5000`;
+      const portalUrl = `${baseUrl}/portal/${entity[0]}/${token.token}`;
+
+      res.json({ 
+        ok: true, 
+        token: token.token,
+        url: portalUrl,
+        expiresAt: token.expiresAt
+      });
+    } catch (error) {
+      console.error('Error generating portal token:', error);
+      res.status(500).json({ error: 'Failed to generate portal token' });
+    }
+  });
+
+  // =====================================
+  // CUSTOMER PORTAL DATA ROUTES (Public, tokenized access)
+  // =====================================
+
+  // GET /api/portal/q/:token - Fetch quote data for customer portal
+  app.get('/api/portal/q/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const validation = await validatePublicToken(token);
+
+      if (!validation.valid || !validation.tokenData) {
+        return res.status(404).json({ error: validation.error || 'Invalid token' });
+      }
+
+      const { tokenData } = validation;
+      const quote = await storage.getQuote(tokenData.entityId);
+
+      if (!quote || quote.tenantId !== tokenData.tenantId) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+
+      // Get associated data
+      const items = await storage.getQuoteItems(quote.id);
+      const customer = quote.customerId ? await storage.getCustomer(quote.customerId) : null;
+      
+      // Get template snapshot if available
+      const template = quote.templateId ? await storage.getQuoteTemplate(quote.templateId) : null;
+
+      res.json({
+        quote: { ...quote, items },
+        customer,
+        template: template ? {
+          id: template.id,
+          name: template.name,
+          content: template.content,
+          snapshot: template.snapshot
+        } : null
+      });
+    } catch (error) {
+      console.error('Error fetching quote in portal:', error);
+      res.status(500).json({ error: 'Failed to load quote' });
+    }
+  });
+
+  // POST /api/portal/q/:token/approve - Approve quote from customer portal
+  app.post('/api/portal/q/:token/approve', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const validation = await validatePublicToken(token);
+
+      if (!validation.valid || !validation.tokenData) {
+        return res.status(404).json({ error: validation.error || 'Invalid token' });
+      }
+
+      const { tokenData } = validation;
+      const quote = await storage.getQuote(tokenData.entityId);
+
+      if (!quote || quote.tenantId !== tokenData.tenantId) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+
+      // Update quote status
+      await storage.updateQuote(quote.id, { 
+        status: 'approved',
+        approvedAt: new Date()
+      });
+
+      // Create quote event
+      await storage.createQuoteEvent({
+        quoteId: quote.id,
+        tenantId: quote.tenantId,
+        event: 'approved',
+        actorUserId: null,
+        meta: { source: 'customer_portal' }
+      });
+
+      res.json({ ok: true, message: 'Quote approved successfully' });
+    } catch (error) {
+      console.error('Error approving quote:', error);
+      res.status(500).json({ error: 'Failed to approve quote' });
+    }
+  });
+
+  // GET /api/portal/c/:token - Fetch contract data for customer portal
+  app.get('/api/portal/c/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const validation = await validatePublicToken(token);
+
+      if (!validation.valid || !validation.tokenData) {
+        return res.status(404).json({ error: validation.error || 'Invalid token' });
+      }
+
+      const { tokenData } = validation;
+      const contract = await storage.getContract(tokenData.entityId);
+
+      if (!contract || contract.tenantId !== tokenData.tenantId) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Get customer details
+      const customer = contract.customerId ? await storage.getCustomer(contract.customerId) : null;
+      
+      // Get template snapshot if available
+      const template = contract.templateId ? await storage.getContractTemplate(contract.templateId) : null;
+
+      res.json({
+        contract,
+        customer,
+        template: template ? {
+          id: template.id,
+          name: template.name,
+          content: template.content,
+          snapshot: template.snapshot
+        } : null
+      });
+    } catch (error) {
+      console.error('Error fetching contract in portal:', error);
+      res.status(500).json({ error: 'Failed to load contract' });
+    }
+  });
+
+  // POST /api/portal/c/:token/sign - Sign contract from customer portal
+  app.post('/api/portal/c/:token/sign', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { signature } = req.body;
+      const validation = await validatePublicToken(token);
+
+      if (!validation.valid || !validation.tokenData) {
+        return res.status(404).json({ error: validation.error || 'Invalid token' });
+      }
+
+      const { tokenData } = validation;
+      const contract = await storage.getContract(tokenData.entityId);
+
+      if (!contract || contract.tenantId !== tokenData.tenantId) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      // Update contract status
+      await storage.updateContract(contract.id, { 
+        status: 'signed',
+        signedAt: new Date()
+      });
+
+      // Create contract signature
+      if (signature) {
+        await storage.createContractSignature({
+          contractId: contract.id,
+          tenantId: contract.tenantId,
+          signedBy: contract.customerId || 'customer',
+          signatureData: signature,
+          signedAt: new Date()
+        });
+      }
+
+      // Create contract event
+      await storage.createContractEvent({
+        contractId: contract.id,
+        tenantId: contract.tenantId,
+        event: 'signed',
+        actorUserId: null,
+        meta: { source: 'customer_portal', hasSignature: !!signature }
+      });
+
+      // Create deposit invoice if configured
+      let invoiceId = null;
+      if (contract.depositAmount && parseFloat(contract.depositAmount) > 0) {
+        const invoice = await storage.createInvoice({
+          tenantId: contract.tenantId,
+          contractId: contract.id,
+          customerId: contract.customerId,
+          invoiceNumber: `INV-${Date.now()}`,
+          description: `Deposit for ${contract.title}`,
+          subtotal: contract.depositAmount,
+          total: contract.depositAmount,
+          status: 'pending',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+        });
+        invoiceId = invoice.id;
+      }
+
+      res.json({ 
+        ok: true, 
+        message: 'Contract signed successfully',
+        invoiceId
+      });
+    } catch (error) {
+      console.error('Error signing contract:', error);
+      res.status(500).json({ error: 'Failed to sign contract' });
+    }
+  });
+
+  // GET /api/portal/i/:token - Fetch invoice data for customer portal
+  app.get('/api/portal/i/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const validation = await validatePublicToken(token);
+
+      if (!validation.valid || !validation.tokenData) {
+        return res.status(404).json({ error: validation.error || 'Invalid token' });
+      }
+
+      const { tokenData } = validation;
+      const invoice = await storage.getInvoice(tokenData.entityId);
+
+      if (!invoice || invoice.tenantId !== tokenData.tenantId) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Get customer details
+      const customer = invoice.customerId ? await storage.getCustomer(invoice.customerId) : null;
+      
+      // Get contract details if linked
+      const contract = invoice.contractId ? await storage.getContract(invoice.contractId) : null;
+
+      res.json({
+        invoice,
+        customer,
+        contract: contract ? {
+          id: contract.id,
+          title: contract.title,
+          contractNumber: contract.contractNumber
+        } : null
+      });
+    } catch (error) {
+      console.error('Error fetching invoice in portal:', error);
+      res.status(500).json({ error: 'Failed to load invoice' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

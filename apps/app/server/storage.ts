@@ -15,6 +15,7 @@ import {
   type SuperAdminCampaign, type InsertSuperAdminCampaign, type SuperAdminCampaignSend, type InsertSuperAdminCampaignSend,
   type SendySettings, type InsertSendySettings,
   type CalculatorLead, type InsertCalculatorLead,
+  type PublicToken, type InsertPublicToken,
   users, profiles, estimates, bakers, leads, messages, reviews, transactions, availability, consultations, analytics, bakerProfiles,
   tenants, tenantConfigurations, tenantBakerNetworks, tenantRevenueSharing,
   customers, customerNotes, quoteTemplates, quotes, quoteItems, quoteEvents, contractTemplates, contracts, contractSignatures,
@@ -24,7 +25,7 @@ import {
   type SystemHealthMetric, type InsertSystemHealthMetric, type DataExportJob, type InsertDataExportJob,
   type MaintenanceSchedule, type InsertMaintenanceSchedule,
   announcements, emailJobs, activityLogs, emailCampaignEnrollments, emailCampaignEvents,
-  superAdminCampaigns, superAdminCampaignSends, sendySettings, calculatorLeads,
+  superAdminCampaigns, superAdminCampaignSends, sendySettings, calculatorLeads, publicTokens,
   type Announcement, type InsertAnnouncement, type EmailJob, type InsertEmailJob,
   type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -303,6 +304,12 @@ export interface IStorage {
   getSendySettings(): Promise<SendySettings | undefined>;
   updateSendySettings(updates: Partial<InsertSendySettings>): Promise<SendySettings>;
   createSendySettings(settings: InsertSendySettings): Promise<SendySettings>;
+
+  // Public Token operations (Customer Portal)
+  createPublicToken(token: InsertPublicToken): Promise<PublicToken>;
+  getPublicTokenByToken(token: string): Promise<PublicToken | undefined>;
+  getPublicTokenByEntity(tenantId: string, entity: string, entityId: string): Promise<PublicToken | undefined>;
+  deletePublicToken(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -358,6 +365,9 @@ export class MemStorage implements IStorage {
   private announcements: Map<string, Announcement>;
   private emailJobs: Map<string, EmailJob>;
   private activityLogs: Map<string, ActivityLog>;
+  
+  // Public Portal storage
+  private publicTokensMap: Map<string, PublicToken>;
 
   private initializeSuperAdminUser() {
     // Create default super admin user for development
@@ -437,6 +447,9 @@ export class MemStorage implements IStorage {
     this.announcements = new Map();
     this.emailJobs = new Map();
     this.activityLogs = new Map();
+    
+    // Public Portal storage
+    this.publicTokensMap = new Map();
     
     // Initialize with sample data
     this.initializeSuperAdminUser();
@@ -2521,6 +2534,35 @@ export class MemStorage implements IStorage {
     this.pricingConfigs.set(bakerId, updated);
     return updated;
   }
+
+  // Public Token operations (Customer Portal)
+  async createPublicToken(insertToken: InsertPublicToken): Promise<PublicToken> {
+    const id = randomUUID();
+    const token: PublicToken = {
+      ...insertToken,
+      id,
+      createdAt: new Date()
+    };
+    this.publicTokensMap.set(token.token, token);
+    return token;
+  }
+
+  async getPublicTokenByToken(token: string): Promise<PublicToken | undefined> {
+    return this.publicTokensMap.get(token);
+  }
+
+  async getPublicTokenByEntity(tenantId: string, entity: string, entityId: string): Promise<PublicToken | undefined> {
+    return Array.from(this.publicTokensMap.values()).find(
+      t => t.tenantId === tenantId && t.entity === entity && t.entityId === entityId
+    );
+  }
+
+  async deletePublicToken(id: string): Promise<void> {
+    const token = Array.from(this.publicTokensMap.values()).find(t => t.id === id);
+    if (token) {
+      this.publicTokensMap.delete(token.token);
+    }
+  }
 }
 
 // Helper function to convert undefined to null for database operations
@@ -4102,6 +4144,44 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return result;
+  }
+
+  // Public Token operations (Customer Portal)
+  async createPublicToken(insertToken: InsertPublicToken): Promise<PublicToken> {
+    const [token] = await db
+      .insert(publicTokens)
+      .values({
+        ...insertToken,
+        id: randomUUID()
+      })
+      .returning();
+    return token;
+  }
+
+  async getPublicTokenByToken(token: string): Promise<PublicToken | undefined> {
+    const [result] = await db
+      .select()
+      .from(publicTokens)
+      .where(eq(publicTokens.token, token));
+    return result;
+  }
+
+  async getPublicTokenByEntity(tenantId: string, entity: string, entityId: string): Promise<PublicToken | undefined> {
+    const [result] = await db
+      .select()
+      .from(publicTokens)
+      .where(
+        and(
+          eq(publicTokens.tenantId, tenantId),
+          eq(publicTokens.entity, entity),
+          eq(publicTokens.entityId, entityId)
+        )
+      );
+    return result;
+  }
+
+  async deletePublicToken(id: string): Promise<void> {
+    await db.delete(publicTokens).where(eq(publicTokens.id, id));
   }
 }
 
