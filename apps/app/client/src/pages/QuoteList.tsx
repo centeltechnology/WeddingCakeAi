@@ -72,12 +72,39 @@ export default function QuoteList() {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <PageHeader title="Quotes" subtitle="Create, review, and approve quotes" />
-          <Link href="/quotes/new">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Quote
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {import.meta.env.VITE_DEMO_MODE === 'true' && (
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    await fetch('/api/quotes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        title: 'Demo Quote',
+                        status: 'draft',
+                        total: '500',
+                      })
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+                    toast({ title: 'Demo quote created' });
+                  } catch (e) {
+                    toast({ title: 'Failed to create demo quote', variant: 'destructive' });
+                  }
+                }}
+              >
+                Seed Draft Quote
+              </Button>
+            )}
+            <Link href="/quotes/new">
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Quote
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {!data || data.length === 0 ? (

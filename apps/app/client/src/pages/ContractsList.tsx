@@ -96,12 +96,39 @@ export default function ContractsList() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <PageHeader title="Contracts" subtitle="Manage your customer contracts" />
-          <Link href="/contracts/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Contract
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {import.meta.env.VITE_DEMO_MODE === 'true' && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await fetch('/api/contracts', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        title: 'Demo Contract',
+                        status: 'draft',
+                        totalAmount: '750',
+                      })
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['contracts'] });
+                    toast({ title: 'Demo contract created' });
+                  } catch (e) {
+                    toast({ title: 'Failed to create demo contract', variant: 'destructive' });
+                  }
+                }}
+              >
+                Seed Draft Contract
+              </Button>
+            )}
+            <Link href="/contracts/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Contract
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {!contracts || contracts.length === 0 ? (

@@ -112,12 +112,45 @@ export default function Leads() {
     );
   };
 
+  const seedLeadsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          customer_name: 'Demo Lead',
+          customer_email: `demo-${Date.now()}@example.com`,
+          budget: '3000',
+          source: 'website',
+          status: 'new'
+        })
+      });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/leads/scored'] });
+      toast({ title: 'Demo lead created' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to create demo lead', variant: 'destructive' });
+    }
+  });
+
   return (
     <AppLayout>
-      <PageHeader
-        title="Lead Scoring"
-        subtitle="View and manage lead scores based on transparent criteria"
-      />
+      <div className="flex justify-between items-center mb-4">
+        <PageHeader
+          title="Lead Scoring"
+          subtitle="View and manage lead scores based on transparent criteria"
+        />
+        {import.meta.env.VITE_DEMO_MODE === 'true' && (
+          <Button variant="outline" onClick={() => seedLeadsMutation.mutate()}>
+            Seed Demo Leads
+          </Button>
+        )}
+      </div>
 
       <Card>
         <CardContent className="p-6">
