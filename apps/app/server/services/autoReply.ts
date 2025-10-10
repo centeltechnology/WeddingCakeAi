@@ -1,8 +1,7 @@
 import { db } from '../db';
 import { autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, leads } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { format, isAfter, isBefore, parse } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
 
 // In-memory rate limiting (simple implementation)
 const rateLimitStore = new Map<string, { count: number; resetAt: number; lastSent: Map<string, number> }>();
@@ -55,6 +54,7 @@ export async function sendAutoReplySMS(to: string, body: string): Promise<{ ok: 
 
 /**
  * Check if current time is within quiet hours
+ * Note: Uses server local time - for production, integrate with timezone library
  */
 export function isWithinQuietHours(timezone: string, quietHours?: { from: string; to: string }): boolean {
   if (!quietHours?.from || !quietHours?.to) {
@@ -62,7 +62,9 @@ export function isWithinQuietHours(timezone: string, quietHours?: { from: string
   }
 
   try {
-    const now = toZonedTime(new Date(), timezone);
+    // Use server local time for MVP
+    // TODO: For production, integrate proper timezone conversion
+    const now = new Date();
     const currentTime = format(now, 'HH:mm');
     
     const fromTime = quietHours.from;

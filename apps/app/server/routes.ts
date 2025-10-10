@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -35,6 +35,7 @@ import { createDepositInvoice, createSimpleInvoice } from "./services/invoices";
 import { sendContractEmail } from "./emails/sendContractEmail";
 import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
 import { upsertLeadScore } from "./services/leadScoring";
+import { evaluateAndSendAutoReplies, renderTemplate, sendAutoReplyEmail } from "./services/autoReply";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -2532,6 +2533,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching scored leads:', error);
       res.status(500).json({ error: 'Failed to fetch leads' });
+    }
+  });
+
+  // Auto-Reply System Routes
+  
+  // Auto-Reply Settings - Get
+  app.get('/api/auto-reply/settings', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const [settings] = await db.select().from(autoReplySettings).where(eq(autoReplySettings.tenantId, tenantId)).limit(1);
+      
+      res.json(settings || { tenantId, enabled: true, timezone: 'America/Chicago', channels: { email: true, sms: false } });
+    } catch (error) {
+      console.error('Error fetching auto-reply settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  // Auto-Reply Settings - Update
+  app.post('/api/auto-reply/settings', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const { enabled, timezone, quietHours, channels } = req.body;
+
+      const [existing] = await db.select().from(autoReplySettings).where(eq(autoReplySettings.tenantId, tenantId)).limit(1);
+
+      if (existing) {
+        const [updated] = await db
+          .update(autoReplySettings)
+          .set({ enabled, timezone, quietHours, channels, updatedAt: new Date() })
+          .where(eq(autoReplySettings.tenantId, tenantId))
+          .returning();
+        res.json(updated);
+      } else {
+        const [created] = await db
+          .insert(autoReplySettings)
+          .values({ tenantId, enabled, timezone, quietHours, channels })
+          .returning();
+        res.json(created);
+      }
+    } catch (error) {
+      console.error('Error updating auto-reply settings:', error);
+      res.status(500).json({ error: 'Failed to update settings' });
+    }
+  });
+
+  // Auto-Reply Templates - List
+  app.get('/api/auto-reply/templates', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const templates = await db.select().from(autoReplyTemplates).where(eq(autoReplyTemplates.tenantId, tenantId));
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+  });
+
+  // Auto-Reply Templates - Create/Update
+  app.post('/api/auto-reply/templates', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const { id, name, channel, subject, body, variables } = req.body;
+
+      if (id) {
+        // Update existing
+        const [updated] = await db
+          .update(autoReplyTemplates)
+          .set({ name, channel, subject, body, variables, updatedAt: new Date() })
+          .where(and(eq(autoReplyTemplates.id, id), eq(autoReplyTemplates.tenantId, tenantId)))
+          .returning();
+        res.json(updated);
+      } else {
+        // Create new
+        const [created] = await db
+          .insert(autoReplyTemplates)
+          .values({ tenantId, name, channel, subject, body, variables })
+          .returning();
+        res.json(created);
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      res.status(500).json({ error: 'Failed to save template' });
+    }
+  });
+
+  // Auto-Reply Templates - Delete
+  app.delete('/api/auto-reply/templates/:id', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      await db.delete(autoReplyTemplates).where(and(eq(autoReplyTemplates.id, req.params.id), eq(autoReplyTemplates.tenantId, tenantId)));
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      res.status(500).json({ error: 'Failed to delete template' });
+    }
+  });
+
+  // Auto-Reply Rules - List
+  app.get('/api/auto-reply/rules', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const rules = await db.select().from(autoReplyRules).where(eq(autoReplyRules.tenantId, tenantId));
+      res.json(rules);
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+      res.status(500).json({ error: 'Failed to fetch rules' });
+    }
+  });
+
+  // Auto-Reply Rules - Create/Update
+  app.post('/api/auto-reply/rules', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const { id, name, trigger, templateId, conditions, active } = req.body;
+
+      if (id) {
+        // Update existing
+        const [updated] = await db
+          .update(autoReplyRules)
+          .set({ name, trigger, templateId, conditions, active, updatedAt: new Date() })
+          .where(and(eq(autoReplyRules.id, id), eq(autoReplyRules.tenantId, tenantId)))
+          .returning();
+        res.json(updated);
+      } else {
+        // Create new
+        const [created] = await db
+          .insert(autoReplyRules)
+          .values({ tenantId, name, trigger, templateId, conditions, active })
+          .returning();
+        res.json(created);
+      }
+    } catch (error) {
+      console.error('Error saving rule:', error);
+      res.status(500).json({ error: 'Failed to save rule' });
+    }
+  });
+
+  // Auto-Reply Rules - Toggle Active
+  app.post('/api/auto-reply/rules/:id/toggle', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const [rule] = await db.select().from(autoReplyRules).where(and(eq(autoReplyRules.id, req.params.id), eq(autoReplyRules.tenantId, tenantId))).limit(1);
+      
+      if (!rule) {
+        return res.status(404).json({ error: 'Rule not found' });
+      }
+
+      const [updated] = await db
+        .update(autoReplyRules)
+        .set({ active: !rule.active, updatedAt: new Date() })
+        .where(eq(autoReplyRules.id, req.params.id))
+        .returning();
+      
+      res.json(updated);
+    } catch (error) {
+      console.error('Error toggling rule:', error);
+      res.status(500).json({ error: 'Failed to toggle rule' });
+    }
+  });
+
+  // Auto-Reply Test Send
+  app.post('/api/auto-reply/test', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const { to, templateId, variables } = req.body;
+
+      if (!to || !templateId) {
+        return res.status(400).json({ error: 'Missing required fields: to, templateId' });
+      }
+
+      const [template] = await db.select().from(autoReplyTemplates).where(and(eq(autoReplyTemplates.id, templateId), eq(autoReplyTemplates.tenantId, tenantId))).limit(1);
+      
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+
+      const renderedBody = await renderTemplate(template.body, variables || {});
+      const renderedSubject = template.subject ? await renderTemplate(template.subject, variables || {}) : 'Test Email';
+
+      const sendResult = await sendAutoReplyEmail(to, renderedSubject, renderedBody);
+
+      await db.insert(autoReplyLogs).values({
+        tenantId,
+        channel: template.channel,
+        templateId: template.id,
+        toAddress: to,
+        status: sendResult.ok ? 'sent' : 'failed',
+        meta: sendResult.error ? { error: sendResult.error, test: true } : { test: true },
+      });
+
+      res.json({ ok: sendResult.ok, message: sendResult.ok ? 'Test email sent successfully' : 'Failed to send test email' });
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({ error: 'Failed to send test email' });
+    }
+  });
+
+  // Auto-Reply Trigger - New Lead
+  app.post('/api/auto-reply/trigger/new-lead/:leadId', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const leadId = req.params.leadId;
+
+      const results = await evaluateAndSendAutoReplies(tenantId, leadId, 'new_lead');
+      res.json({ ok: true, ...results });
+    } catch (error) {
+      console.error('Error triggering new lead auto-reply:', error);
+      res.status(500).json({ error: 'Failed to trigger auto-reply' });
+    }
+  });
+
+  // Auto-Reply Trigger - No Response
+  app.post('/api/auto-reply/trigger/no-response/:leadId', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const leadId = req.params.leadId;
+
+      const results = await evaluateAndSendAutoReplies(tenantId, leadId, 'no_response');
+      res.json({ ok: true, ...results });
+    } catch (error) {
+      console.error('Error triggering no-response auto-reply:', error);
+      res.status(500).json({ error: 'Failed to trigger auto-reply' });
+    }
+  });
+
+  // Auto-Reply Trigger - After Hours
+  app.post('/api/auto-reply/trigger/after-hours/:leadId', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.AUTO_REPLY_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Auto-reply feature is disabled' });
+      }
+
+      const tenantId = req.user!.tenantId!;
+      const leadId = req.params.leadId;
+
+      const results = await evaluateAndSendAutoReplies(tenantId, leadId, 'after_hours');
+      res.json({ ok: true, ...results });
+    } catch (error) {
+      console.error('Error triggering after-hours auto-reply:', error);
+      res.status(500).json({ error: 'Failed to trigger auto-reply' });
     }
   });
 
