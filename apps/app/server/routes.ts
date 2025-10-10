@@ -9105,6 +9105,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tenant info endpoint (for building public URLs)
+  app.get('/api/me/tenant', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      if (!userEmail) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      // Get tenant info with subdomain (used as slug)
+      const [tenant] = await db
+        .select({ id: tenants.id, slug: tenants.subdomain })
+        .from(tenants)
+        .where(eq(tenants.id, baker.tenantId))
+        .limit(1);
+
+      res.json({ 
+        id: tenant?.id || baker.tenantId, 
+        slug: tenant?.slug || null 
+      });
+    } catch (error) {
+      console.error('Error loading tenant info:', error);
+      res.status(500).json({ error: 'Failed to load tenant info' });
+    }
+  });
+
   // Tenant Profile endpoints
   app.get('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {

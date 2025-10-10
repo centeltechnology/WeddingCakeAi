@@ -1,0 +1,181 @@
+Prompt:
+You’re working in apps/app (BakerIQ). Add two tenant-scoped preview buttons:
+
+Preview Marketplace Listing → /p/<tenant-slug> (public profile)
+
+Preview Customer Calculator → /b/<tenant-slug>/book if booking is your funnel, or /calculator public V1 if booking disabled (configurable below)
+
+Make them available in:
+
+Top nav (right side) as small buttons
+
+Dashboard quick actions
+
+Settings → Business Profile (header)
+
+Do this idempotently and with safe fallbacks when tenant.slug is missing.
+
+0) Flags (create if missing)
+
+Client .env
+
+VITE_PUBLIC_MARKETPLACE_ENABLED=true
+VITE_PUBLIC_CALCULATOR_ENABLED=true
+
+
+Server .env
+
+MARKETPLACE_ENABLED=true
+BOOKING_ENABLED=true
+CALCULATOR_ENABLED=true
+
+1) Server helpers to expose tenant slug (auth)
+
+Add a tiny endpoint in server/routes.ts:
+
+app.get('/api/me/tenant', authGuard, async (req,res)=>{
+  // return minimally needed public info for building URLs
+  res.json({ id: req.tenant.id, slug: req.tenant.slug ?? null });
+});
+
+
+If slug doesn’t exist yet, return null and the client will fall back.
+
+2) Public routes (ensure exist; stubs ok)
+
+Marketplace: ensure a public profile route exists (or stub):
+
+Client: <Route path="/p/:slug" component={PublicProfile} /> (simple placeholder ok).
+
+Public booking (already added):
+<Route path="/b/:slug/book" component={BookingPublic} />
+If you don’t use subdomains/slugs yet, also keep <Route path="/book" component={BookingPublic} />.
+
+Public calculator fallback: keep /calculator (V1 demo) route intact.
+
+3) Client utility to compute preview URLs
+
+Create client/src/lib/publicLinks.ts:
+
+export function buildMarketplaceUrl(slug?: string|null){
+  return slug ? `/p/${slug}` : '/p/demo'; // fallback stub
+}
+export function buildLeadGenUrl(slug?: string|null, opts?: { preferBooking?: boolean }){
+  const preferBooking = opts?.preferBooking ?? true;
+  const bookingOn = import.meta.env.VITE_BOOKING_ENABLED === 'true';
+  const calcOn = import.meta.env.VITE_PUBLIC_CALCULATOR_ENABLED === 'true';
+  if (preferBooking && bookingOn && slug) return `/b/${slug}/book`;
+  // fallback to non-slug booking if supported
+  if (preferBooking && bookingOn && !slug) return `/book`;
+  // else use public V1 calculator if allowed
+  if (calcOn) return `/calculator`;
+  return '/'; // safe fallback
+}
+
+4) Fetch tenant slug once (hook)
+
+Create client/src/hooks/useTenant.ts:
+
+import { useQuery } from '@tanstack/react-query';
+export function useTenant() {
+  return useQuery({
+    queryKey: ['tenant-min'],
+    queryFn: async ()=> (await fetch('/api/me/tenant')).json(),
+  });
+}
+
+5) Buttons component (reusable)
+
+Create client/src/components/PreviewButtons.tsx:
+
+import { buildMarketplaceUrl, buildLeadGenUrl } from '@/lib/publicLinks';
+import { useTenant } from '@/hooks/useTenant';
+import { Button } from '@/components/ui/Button';
+
+export default function PreviewButtons({ size='sm', className='' }:{ size?:'sm'|'md'; className?:string }){
+  const { data } = useTenant();
+  const slug = data?.slug ?? null;
+  const marketUrl = buildMarketplaceUrl(slug);
+  const leadUrl = buildLeadGenUrl(slug, { preferBooking: true });
+
+  const btnClass = size==='sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm';
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {import.meta.env.VITE_PUBLIC_MARKETPLACE_ENABLED === 'true' && (
+        <a href={marketUrl} target="_blank" rel="noreferrer">
+          <Button variant="outline" className={btnClass}>Preview Listing</Button>
+        </a>
+      )}
+      {import.meta.env.VITE_PUBLIC_CALCULATOR_ENABLED === 'true' && (
+        <a href={leadUrl} target="_blank" rel="noreferrer">
+          <Button className={btnClass}>Preview Lead-Gen</Button>
+        </a>
+      )}
+    </div>
+  );
+}
+
+6) Add to AppLayout (top-right cluster)
+
+In client/src/components/AppLayout.tsx:
+
+Import and render <PreviewButtons size="sm" className="hidden md:flex" /> to the right, before Logout.
+
+On small screens, it’s okay that they’re hidden; they still exist on Dashboard/Settings (below).
+
+7) Add to Dashboard quick actions
+
+Open your Dashboard component (BakerDashboard.tsx or Dashboard.tsx) and add:
+
+import PreviewButtons from '@/components/PreviewButtons';
+// inside page content, near the top actions row:
+<PreviewButtons size="md" />
+
+8) Add to Settings → Business Profile
+
+In client/src/pages/settings/BusinessProfile.tsx:
+
+Import PreviewButtons.
+
+In the heading row (PageHeader action or Card header action), add:
+
+<PreviewButtons size="sm" />
+
+9) (Optional) “Copy public link” affordances
+
+Next to the Preview buttons, you may add tiny “Copy link” icons:
+
+async function copy(s:string){ await navigator.clipboard.writeText(s); /* toast ok */ }
+
+
+Not required for acceptance.
+
+10) Acceptance
+
+AppLayout (auth pages): Preview Listing and Preview Lead-Gen show on desktop view (hidden on xs to avoid crowding).
+
+Dashboard and Business Profile always show the two buttons (desktop & mobile).
+
+Clicking Preview Listing opens /p/<slug> in a new tab (or /p/demo fallback).
+
+Clicking Preview Lead-Gen:
+
+If Booking is enabled: opens /b/<slug>/book (or /book fallback).
+
+Else: opens /calculator (public V1) if enabled.
+
+No crashes if slug is null.
+
+11) Build & quick check
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Verify:
+
+Top-right buttons in header on md+ screens.
+
+Buttons present on Dashboard & Business Profile.
+
+URLs open in a new tab and render.
