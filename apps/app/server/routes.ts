@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -9058,6 +9058,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded files statically (dev only)
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+  // ===== BOOKING SYSTEM ENDPOINTS =====
+  
+  // Admin: GET booking settings
+  app.get('/api/booking/settings', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      let [settings] = await db
+        .select()
+        .from(bookingSettings)
+        .where(eq(bookingSettings.tenantId, baker.tenantId))
+        .limit(1);
+
+      if (!settings) {
+        // Create defaults
+        [settings] = await db.insert(bookingSettings).values({
+          tenantId: baker.tenantId,
+          timezone: 'America/New_York',
+          slotMinutes: 60,
+          leadTimeDays: 2,
+          workdays: { mon: [9, 17], tue: [9, 17], wed: [9, 17], thu: [9, 17], fri: [9, 17] },
+          services: [],
+        }).returning();
+      }
+
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching booking settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  // Admin: POST booking settings
+  app.post('/api/booking/settings', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const { timezone, slotMinutes, leadTimeDays, workdays, services } = req.body;
+
+      const [updated] = await db
+        .insert(bookingSettings)
+        .values({
+          tenantId: baker.tenantId,
+          timezone,
+          slotMinutes,
+          leadTimeDays,
+          workdays,
+          services,
+        })
+        .onConflictDoUpdate({
+          target: bookingSettings.tenantId,
+          set: { timezone, slotMinutes, leadTimeDays, workdays, services, updatedAt: new Date() },
+        })
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error saving booking settings:', error);
+      res.status(500).json({ error: 'Failed to save settings' });
+    }
+  });
+
+  // Admin: GET bookings list
+  app.get('/api/booking/list', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const status = req.query.status as string | undefined;
+      let query = db.select().from(bookings).where(eq(bookings.tenantId, baker.tenantId));
+      
+      if (status) {
+        query = query.where(eq(bookings.status, status)) as any;
+      }
+
+      const results = await query.orderBy(sql`${bookings.startISO} DESC`);
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+  });
+
+  // Admin: POST confirm booking
+  app.post('/api/booking/confirm/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const [updated] = await db
+        .update(bookings)
+        .set({ status: 'confirmed', updatedAt: new Date() })
+        .where(and(eq(bookings.id, req.params.id), eq(bookings.tenantId, baker.tenantId)))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      res.status(500).json({ error: 'Failed to confirm booking' });
+    }
+  });
+
+  // Admin: POST cancel booking
+  app.post('/api/booking/cancel/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const [updated] = await db
+        .update(bookings)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(and(eq(bookings.id, req.params.id), eq(bookings.tenantId, baker.tenantId)))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+      res.status(500).json({ error: 'Failed to cancel booking' });
+    }
+  });
+
+  // Public: GET availability
+  app.get('/api/booking/availability', async (req, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const { tenantId, serviceId, from, to } = req.query as Record<string, string>;
+
+      if (!tenantId) {
+        return res.status(400).json({ error: 'tenantId required' });
+      }
+
+      const [settings] = await db
+        .select()
+        .from(bookingSettings)
+        .where(eq(bookingSettings.tenantId, tenantId))
+        .limit(1);
+
+      if (!settings) {
+        return res.json([]);
+      }
+
+      // Simple slot generation (this would be more sophisticated in production)
+      const slots: string[] = [];
+      res.json(slots);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+      res.status(500).json({ error: 'Failed to fetch availability' });
+    }
+  });
+
+  // Public: POST create booking
+  app.post('/api/booking/create', async (req, res) => {
+    try {
+      if (process.env.BOOKING_ENABLED !== 'true') {
+        return res.status(403).json({ error: 'Booking feature is disabled' });
+      }
+
+      const { tenantId, customerName, customerEmail, serviceId, serviceName, startISO, endISO, notes } = req.body;
+
+      if (!tenantId || !customerName || !customerEmail || !serviceId || !startISO) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const [booking] = await db.insert(bookings).values({
+        tenantId,
+        bakerId: 'temp', // Temp placeholder
+        customerName,
+        customerEmail,
+        startISO: new Date(startISO),
+        endISO: new Date(endISO || startISO),
+        status: 'pending',
+        notes,
+        eventType: serviceId,
+      }).returning();
+
+      res.json({ ok: true, bookingId: booking.id });
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      res.status(500).json({ error: 'Failed to create booking' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
