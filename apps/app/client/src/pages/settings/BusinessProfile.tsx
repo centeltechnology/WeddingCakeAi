@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import AppLayout from '@/components/AppLayout';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Save, Building2 } from 'lucide-react';
+import { Save, Building2, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SettingsTabs } from '@/components/SettingsTabs';
 
@@ -31,6 +32,7 @@ interface TenantProfile {
 export default function BusinessProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
@@ -239,17 +241,33 @@ export default function BusinessProfile() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="logoUrl">Logo URL</Label>
-                <Input
-                  id="logoUrl"
-                  type="url"
-                  placeholder="https://example.com/logo.png"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Current logo: {logoUrl || 'None'}
-                </p>
+                <Label>Logo</Label>
+                <div className="flex items-center gap-4">
+                  {logoUrl ? (
+                    <img 
+                      src={logoUrl} 
+                      alt="Current logo" 
+                      className="w-20 h-20 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-muted rounded-lg border flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/settings/media')}
+                      className="w-full sm:w-auto"
+                    >
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      {logoUrl ? 'Change Logo' : 'Upload Logo'}
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Upload images in the Media Library and set as logo
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -263,12 +281,6 @@ export default function BusinessProfile() {
                 />
                 <p className="text-sm text-muted-foreground">
                   Current cover: {coverUrl || 'None'}
-                </p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  📸 Image uploader will be added in the next update. For now, upload images to your hosting and paste the URLs here.
                 </p>
               </div>
             </CardContent>
