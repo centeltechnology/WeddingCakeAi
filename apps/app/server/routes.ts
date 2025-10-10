@@ -8789,26 +8789,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let profile;
       if (existing) {
+        // Build update object with only provided fields
+        const updateData: any = { updatedAt: new Date() };
+        
+        if (displayName !== undefined) updateData.displayName = displayName;
+        if (phone !== undefined) updateData.phone = phone;
+        if (website !== undefined) updateData.website = website;
+        if (address !== undefined) updateData.address = address;
+        if (about !== undefined) updateData.about = about;
+        if (specialties !== undefined) updateData.specialties = specialties;
+        if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+        if (coverUrl !== undefined) updateData.coverUrl = coverUrl;
+        
         // Merge JSON fields with existing data to prevent field loss
-        const mergedSocial = social ? { ...(existing.social as any || {}), ...social } : existing.social;
-        const mergedPayments = payments ? { ...(existing.payments as any || {}), ...payments } : existing.payments;
+        if (social !== undefined) {
+          updateData.social = { ...(existing.social as any || {}), ...social };
+        }
+        if (payments !== undefined) {
+          updateData.payments = { ...(existing.payments as any || {}), ...payments };
+        }
 
         // Update existing profile
         [profile] = await db
           .update(tenantProfiles)
-          .set({
-            displayName,
-            phone,
-            website,
-            address,
-            about,
-            specialties: specialties || [],
-            logoUrl,
-            coverUrl,
-            social: mergedSocial,
-            payments: mergedPayments,
-            updatedAt: new Date(),
-          })
+          .set(updateData)
           .where(eq(tenantProfiles.tenantId, baker.tenantId))
           .returning();
       } else {
