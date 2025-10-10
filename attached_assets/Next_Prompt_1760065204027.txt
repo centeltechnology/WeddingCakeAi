@@ -1,0 +1,187 @@
+In apps/app implement a tenant-scoped Auto-Reply system that can send message replies based on templates and rules (e.g., new lead received, after-hours, no response within X hours). Provide API endpoints, admin UI for rules/templates, safe send stubs, and a toggle per tenant.
+
+0) Feature flags
+
+Client .env:
+
+VITE_AUTO_REPLY_ENABLED=true
+
+
+Server .env / secrets:
+
+AUTO_REPLY_ENABLED=true
+
+
+(If email/SMS providers are not configured, we’ll keep senders as stubs that log to server and return {ok:true}.)
+
+1) Database (Drizzle)
+
+In shared/schema.ts add:
+
+auto_reply_settings
+
+tenant_id uuid pk, enabled boolean default true,
+timezone text default 'America/Chicago',
+quiet_hours jsonb (e.g., { from:'21:00', to:'07:00' }),
+channels jsonb (e.g., { email:true, sms:false })
+
+auto_reply_templates
+
+id uuid pk, tenant_id uuid, name text, channel text('email'|'sms'),
+subject text null, body text, variables jsonb (e.g., ['customer_name','event_date','quote_link']),
+created_at, updated_at
+
+auto_reply_rules
+
+id uuid pk, tenant_id uuid, name text, trigger text('new_lead'|'after_hours'|'no_response'),
+template_id uuid references auto_reply_templates(id),
+conditions jsonb (e.g., { minBudget: 200, sources:['website','instagram'], hoursSinceLastMsg: 12 }),
+active boolean default true,
+created_at, updated_at
+
+auto_reply_logs
+
+id uuid pk, tenant_id, lead_id uuid null, channel text,
+template_id uuid, rule_id uuid,
+to_address text, status text('sent'|'skipped'|'failed'),
+meta jsonb, created_at default now()
+
+2) Server — send service (stub-safe)
+
+Create server/services/autoReply.ts:
+
+export async function renderTemplate(body:string, vars:Record<string,any>){
+  return body.replace(/\{\{(\w+)\}\}/g, (_,k)=> (vars?.[k] ?? ''));
+}
+
+export async function sendAutoReplyEmail(to:string, subject:string, html:string){
+  // If no provider configured, log + return ok
+  if (!process.env.EMAIL_PROVIDER) { console.log('AUTO-REPLY EMAIL (stub):', {to,subject}); return { ok:true, id:'stub' }; }
+  // TODO: wire real provider (SES, Resend, etc.)
+  return { ok:true, id:'provider-id' };
+}
+
+3) Server — rule engine & routes (auth)
+
+In server/routes.ts:
+
+Settings CRUD
+
+app.get('/api/auto-reply/settings', authGuard, async (req,res)=>{ /* load by tenant */ });
+app.post('/api/auto-reply/settings', authGuard, async (req,res)=>{ /* upsert */ });
+
+
+Templates CRUD
+
+app.get('/api/auto-reply/templates', authGuard, async (req,res)=>{ /* list */ });
+app.post('/api/auto-reply/templates', authGuard, async (req,res)=>{ /* create/update */ });
+app.delete('/api/auto-reply/templates/:id', authGuard, async (req,res)=>{ /* delete */ });
+
+
+Rules CRUD
+
+app.get('/api/auto-reply/rules', authGuard, async (req,res)=>{ /* list */ });
+app.post('/api/auto-reply/rules', authGuard, async (req,res)=>{ /* create/update */ });
+app.post('/api/auto-reply/rules/:id/toggle', authGuard, async (req,res)=>{ /* active on/off */ });
+
+
+Manual test send
+
+app.post('/api/auto-reply/test', authGuard, async (req,res)=>{
+  if (process.env.AUTO_REPLY_ENABLED!=='true') return res.status(403).json({error:'disabled'});
+  const { to, templateId, variables } = req.body ?? {};
+  // load template by tenant, render, call send, write auto_reply_logs
+  res.json({ ok:true });
+});
+
+
+Triggers (webhook-ish)
+Provide internal endpoints to fire rules for a lead:
+
+app.post('/api/auto-reply/trigger/new-lead/:leadId', authGuard, async (req,res)=>{ /* evaluate new_lead rules */ });
+app.post('/api/auto-reply/trigger/no-response/:leadId', authGuard, async (req,res)=>{ /* evaluate no_response rules */ });
+
+
+These will be called by your lead intake or a scheduled job. For now, allow manual testing.
+
+Evaluation (pseudo)
+
+Load tenant rules of that trigger where active=true.
+
+Build variables for template: { customer_name, event_date, budget, lead_source, quote_link } (where available).
+
+Respect quiet_hours — if now within quiet hours, either skip or queue (for MVP, skip with status:'skipped' and meta.reason='quiet_hours').
+
+Render & send via stub or provider.
+
+Insert into auto_reply_logs.
+
+4) Client — Auto-Reply UI (Settings)
+
+Create pages under Settings (all inside AppLayout + PageHeader):
+
+client/src/pages/settings/AutoReplySettings.tsx
+
+Toggle Enabled
+
+Quiet hours (from/to)
+
+Channels: Email (on/off), SMS (placeholder off)
+
+Save → /api/auto-reply/settings
+
+client/src/pages/settings/AutoReplyTemplates.tsx
+
+List templates, create/edit:
+
+Fields: Name, Channel=Email, Subject, Body (supports {{customer_name}}, {{event_date}}, {{quote_link}}, etc.)
+
+Save to /api/auto-reply/templates
+
+“Test Send” button → POST /api/auto-reply/test (with a test email)
+
+client/src/pages/settings/AutoReplyRules.tsx
+
+List rules with Trigger: new_lead | after_hours | no_response
+
+Conditions form (budget min, sources multi-select, hoursSinceLastMsg for no_response)
+
+Set Template (select)
+
+Toggle Active
+
+Buttons to trigger manually for a given lead ID (for testing)
+
+Add a tab in Settings Hub: Auto-Reply → shows these three sections as sub-tabs or a single page with accordions.
+
+5) Wiring triggers (MVP)
+
+When a lead is created (wherever that happens now), call:
+
+POST /api/auto-reply/trigger/new-lead/:leadId
+
+(Optional) Add a small script server/scripts/scanNoResponse.ts that:
+
+Finds leads with no outgoing message for >= X hours and calls trigger/no-response/:leadId.
+
+6) Rate limiting & safety (MVP)
+
+Add a simple in-memory throttle in send service to prevent more than 1 auto-reply per lead per 12 hours and more than 50 sends per tenant per day (configurable).
+
+Respect AUTO_REPLY_ENABLED and channels.email===true.
+
+Always write auto_reply_logs with status sent|skipped|failed.
+
+7) Acceptance & Smoke
+
+Settings loads/saves.
+
+Templates create/edit; Test Send returns {ok:true} (stub ok).
+
+Rules create/toggle; manual trigger returns {ok:true} and logs an entry.
+
+Quiet hours skip is recorded (status:'skipped').
+
+Rate limits prevent spam.
+
+Flags off → routes 403 and UI hides (or shows disabled state).

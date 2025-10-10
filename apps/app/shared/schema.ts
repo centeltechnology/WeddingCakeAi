@@ -370,6 +370,87 @@ export const leadScores = pgTable("lead_scores", {
   tenantLeadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS lead_scores_tenant_lead_idx ON ${table} (tenant_id, lead_id)`,
 }));
 
+// Auto-Reply System
+export const autoReplySettings = pgTable("auto_reply_settings", {
+  tenantId: varchar("tenant_id").primaryKey().references(() => tenants.id),
+  enabled: boolean("enabled").default(true),
+  timezone: text("timezone").default('America/Chicago'),
+  quietHours: jsonb("quiet_hours").$type<{
+    from: string;
+    to: string;
+  }>(),
+  channels: jsonb("channels").$type<{
+    email: boolean;
+    sms: boolean;
+  }>().default({ email: true, sms: false }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const autoReplyTemplates = pgTable("auto_reply_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  name: text("name").notNull(),
+  channel: text("channel").notNull(), // 'email' | 'sms'
+  subject: text("subject"),
+  body: text("body").notNull(),
+  variables: jsonb("variables").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdx: index("auto_reply_templates_tenant_idx").on(table.tenantId),
+}));
+
+export const autoReplyRules = pgTable("auto_reply_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  name: text("name").notNull(),
+  trigger: text("trigger").notNull(), // 'new_lead' | 'after_hours' | 'no_response'
+  templateId: varchar("template_id").references(() => autoReplyTemplates.id),
+  conditions: jsonb("conditions").$type<{
+    minBudget?: number;
+    sources?: string[];
+    hoursSinceLastMsg?: number;
+  }>().default({}),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdx: index("auto_reply_rules_tenant_idx").on(table.tenantId),
+  triggerIdx: index("auto_reply_rules_trigger_idx").on(table.trigger),
+}));
+
+export const autoReplyLogs = pgTable("auto_reply_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  leadId: varchar("lead_id").references(() => leads.id),
+  channel: text("channel").notNull(),
+  templateId: varchar("template_id").references(() => autoReplyTemplates.id),
+  ruleId: varchar("rule_id").references(() => autoReplyRules.id),
+  toAddress: text("to_address").notNull(),
+  status: text("status").notNull(), // 'sent' | 'skipped' | 'failed'
+  meta: jsonb("meta").$type<{
+    reason?: string;
+    error?: string;
+    [key: string]: any;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tenantIdx: index("auto_reply_logs_tenant_idx").on(table.tenantId),
+  leadIdx: index("auto_reply_logs_lead_idx").on(table.leadId),
+  createdIdx: index("auto_reply_logs_created_idx").on(table.createdAt),
+}));
+
+export const insertAutoReplySettingsSchema = createInsertSchema(autoReplySettings);
+export const insertAutoReplyTemplateSchema = createInsertSchema(autoReplyTemplates);
+export const insertAutoReplyRuleSchema = createInsertSchema(autoReplyRules);
+export const insertAutoReplyLogSchema = createInsertSchema(autoReplyLogs);
+
+export type AutoReplySettings = typeof autoReplySettings.$inferSelect;
+export type AutoReplyTemplate = typeof autoReplyTemplates.$inferSelect;
+export type AutoReplyRule = typeof autoReplyRules.$inferSelect;
+export type AutoReplyLog = typeof autoReplyLogs.$inferSelect;
+
 // Old messages table (kept for backward compatibility)
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
