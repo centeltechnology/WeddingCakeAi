@@ -113,6 +113,27 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
     },
   });
 
+  const setCoverMutation = useMutation({
+    mutationFn: async (url: string) => {
+      return await apiRequest('POST', '/api/media/cover', { url });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/media'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/profile'] });
+      toast({
+        title: 'Cover Updated',
+        description: 'Your cover image has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Unable to set cover',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -178,7 +199,7 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">
-          Upload and manage your images. Click any image to set it as your logo.
+          Upload and manage your images. Hover over any image to set it as your logo or cover photo.
         </p>
 
         {assets.length === 0 ? (
@@ -215,6 +236,21 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
                       </>
                     ) : (
                       'Set as Logo'
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setCoverMutation.mutate(asset.url)}
+                    disabled={setCoverMutation.isPending || asset.kind === 'cover'}
+                  >
+                    {asset.kind === 'cover' ? (
+                      <>
+                        <Check className="w-4 h-4 mr-1" />
+                        Current Cover
+                      </>
+                    ) : (
+                      'Set as Cover'
                     )}
                   </Button>
                   <Button

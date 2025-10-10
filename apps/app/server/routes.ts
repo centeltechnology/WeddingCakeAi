@@ -10012,6 +10012,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set cover from media library
+  app.post('/api/media/cover', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      // Update tenant profile cover
+      await db
+        .update(tenantProfiles)
+        .set({ coverUrl: url, updatedAt: new Date() })
+        .where(eq(tenantProfiles.tenantId, baker.tenantId));
+
+      // Create or update media asset record
+      const [existing] = await db
+        .select()
+        .from(mediaAssets)
+        .where(and(
+          eq(mediaAssets.tenantId, baker.tenantId),
+          eq(mediaAssets.url, url)
+        ))
+        .limit(1);
+
+      if (!existing) {
+        await db.insert(mediaAssets).values({
+          tenantId: baker.tenantId,
+          url,
+          kind: 'cover',
+        });
+      } else {
+        await db
+          .update(mediaAssets)
+          .set({ kind: 'cover' })
+          .where(eq(mediaAssets.id, existing.id));
+      }
+
+      res.json({ success: true, coverUrl: url });
+    } catch (error) {
+      console.error('Error setting cover:', error);
+      res.status(500).json({ error: 'Failed to set cover' });
+    }
+  });
+
   // Serve uploaded files statically (dev only)
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
