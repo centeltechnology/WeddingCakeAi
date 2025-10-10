@@ -2,10 +2,12 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
+import multer from "multer";
+import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -8874,6 +8876,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to calculate estimate' });
     }
   });
+
+  // Media Library endpoints
+  
+  // Configure multer for local file uploads
+  const uploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const userEmail = (req.session as any).email;
+      if (!userEmail) {
+        return cb(new Error('Not authenticated'), '');
+      }
+      
+      storage.getBakerByEmail(userEmail).then(baker => {
+        if (!baker?.tenantId) {
+          return cb(new Error('Tenant not found'), '');
+        }
+        
+        const uploadDir = path.join(process.cwd(), 'uploads', baker.tenantId);
+        fs.mkdirSync(uploadDir, { recursive: true });
+        cb(null, uploadDir);
+      }).catch(err => cb(err, ''));
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const filename = `${randomUUID()}${ext}`;
+      cb(null, filename);
+    },
+  });
+
+  const upload = multer({ 
+    storage: uploadStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only images are allowed'));
+      }
+    },
+  });
+
+  // Upload file endpoint
+  app.post('/api/uploads/presign', ensureAuthUnified, upload.single('file'), async (req: UnifiedRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const url = `/uploads/${baker.tenantId}/${req.file.filename}`;
+      
+      res.json({ 
+        url,
+        mime: req.file.mimetype,
+        size: req.file.size,
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      res.status(500).json({ error: 'Failed to upload file' });
+    }
+  });
+
+  // List media assets
+  app.get('/api/media', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const assets = await db
+        .select()
+        .from(mediaAssets)
+        .where(eq(mediaAssets.tenantId, baker.tenantId))
+        .orderBy(sql`${mediaAssets.createdAt} DESC`);
+
+      res.json(assets);
+    } catch (error) {
+      console.error('Error fetching media:', error);
+      res.status(500).json({ error: 'Failed to fetch media' });
+    }
+  });
+
+  // Delete media asset
+  app.delete('/api/media/:id', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const [asset] = await db
+        .select()
+        .from(mediaAssets)
+        .where(and(
+          eq(mediaAssets.id, req.params.id),
+          eq(mediaAssets.tenantId, baker.tenantId)
+        ))
+        .limit(1);
+
+      if (!asset) {
+        return res.status(404).json({ error: 'Asset not found' });
+      }
+
+      // Delete file from disk
+      const filePath = path.join(process.cwd(), asset.url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      // Delete from database
+      await db.delete(mediaAssets).where(eq(mediaAssets.id, req.params.id));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      res.status(500).json({ error: 'Failed to delete media' });
+    }
+  });
+
+  // Set logo from media library
+  app.post('/api/media/logo', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      // Update tenant profile logo
+      await db
+        .update(tenantProfiles)
+        .set({ logoUrl: url, updatedAt: new Date() })
+        .where(eq(tenantProfiles.tenantId, baker.tenantId));
+
+      // Create or update media asset record
+      const [existing] = await db
+        .select()
+        .from(mediaAssets)
+        .where(and(
+          eq(mediaAssets.tenantId, baker.tenantId),
+          eq(mediaAssets.url, url)
+        ))
+        .limit(1);
+
+      if (!existing) {
+        await db.insert(mediaAssets).values({
+          tenantId: baker.tenantId,
+          url,
+          kind: 'logo',
+        });
+      } else {
+        await db
+          .update(mediaAssets)
+          .set({ kind: 'logo' })
+          .where(eq(mediaAssets.id, existing.id));
+      }
+
+      res.json({ success: true, logoUrl: url });
+    } catch (error) {
+      console.error('Error setting logo:', error);
+      res.status(500).json({ error: 'Failed to set logo' });
+    }
+  });
+
+  // Serve uploaded files statically (dev only)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   const httpServer = createServer(app);
   return httpServer;
