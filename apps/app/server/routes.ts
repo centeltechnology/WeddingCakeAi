@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
+import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";

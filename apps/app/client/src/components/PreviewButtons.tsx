@@ -27,7 +27,7 @@ export default function PreviewButtons({ size = 'sm', className = '' }: PreviewB
       {import.meta.env.VITE_PUBLIC_CALCULATOR_ENABLED === 'true' && (
         <a href={leadUrl} target="_blank" rel="noreferrer">
           <Button className={btnClass}>
-            Preview Lead-Gen
+            Preview Calculator
           </Button>
         </a>
       )}
