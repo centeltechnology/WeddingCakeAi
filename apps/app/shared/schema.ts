@@ -348,8 +348,26 @@ export const leads = pgTable("leads", {
   cityOrZip: text("city_or_zip"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   signatureIdx: sql`CREATE INDEX IF NOT EXISTS leads_signature_idx ON ${table} (signature)`,
+  tenantCreatedIdx: sql`CREATE INDEX IF NOT EXISTS leads_tenant_created_idx ON ${table} (tenant_id, created_at)`,
+}));
+
+// Lead scoring system
+export const leadScores = pgTable("lead_scores", {
+  leadId: varchar("lead_id").primaryKey().references(() => leads.id, { onDelete: 'cascade' }),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  score: integer("score").notNull(),
+  explanations: json("explanations").$type<Array<{
+    factor: string;
+    weight: number;
+    value: number;
+    contribution: number;
+  }>>(),
+  computedAt: timestamp("computed_at").defaultNow(),
+}, (table) => ({
+  tenantLeadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS lead_scores_tenant_lead_idx ON ${table} (tenant_id, lead_id)`,
 }));
 
 // Old messages table (kept for backward compatibility)

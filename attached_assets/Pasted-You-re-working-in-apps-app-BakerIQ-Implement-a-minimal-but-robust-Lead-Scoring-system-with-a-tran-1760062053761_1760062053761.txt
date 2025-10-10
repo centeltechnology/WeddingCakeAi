@@ -1,0 +1,184 @@
+You’re working in apps/app (BakerIQ). Implement a minimal but robust Lead Scoring system with a transparent scoring model, an API for recalculation, a UI to view/sort leads by score, and a dashboard card. Make this tenant-scoped and idempotent.
+
+0) Feature flags
+
+Client .env:
+
+VITE_LEAD_SCORING_ENABLED=true
+
+
+Server .env / secrets:
+
+LEAD_SCORING_ENABLED=true
+
+1) Database (Drizzle)
+
+In apps/app/shared/schema.ts, create/extend:
+
+leads (create if missing):
+
+id uuid pk, tenant_id uuid, name text, email text, phone text,
+source text (e.g., website, instagram, referral, manual),
+budget int, event_date date null, message text,
+status text (new|contacted|quoted|won|lost),
+created_at timestamptz default now(), updated_at timestamptz default now().
+
+Index (tenant_id, created_at).
+
+lead_scores:
+
+lead_id uuid pk references leads(id), tenant_id uuid,
+score int, explanations jsonb (array of {factor, weight, value, contribution}),
+computed_at timestamptz default now().
+
+Unique (tenant_id, lead_id).
+
+Optional: lead_events for audit (created, contacted, replied, quoted, won, lost).
+
+2) Server — scoring service
+
+Create apps/app/server/services/leadScoring.ts:
+
+import { db } from '../db';
+import { leads, leadScores } from '../../shared/schema';
+import { sql, eq, and } from 'drizzle-orm';
+
+type ScoreExplain = { factor:string; weight:number; value:number; contribution:number };
+
+export function computeLeadScore(input: {
+  createdAt: Date; budget?: number|null; source?: string|null;
+  respondedMinutes?: number|null; hasRecentActivity?: boolean;
+}): { score:number; explanations: ScoreExplain[] } {
+  // Weights (tunable)
+  const W = {
+    budget: 0.35,          // higher budget → higher score
+    recency: 0.25,         // newer leads → higher score
+    responseSpeed: 0.25,   // faster response → higher score
+    sourceQuality: 0.10,   // organic/referral > ads > unknown
+    activity: 0.05         // recent quote/messages bump
+  };
+
+  // Normalize features to 0..1
+  const now = new Date().getTime();
+  const ageHrs = Math.max(0, (now - input.createdAt.getTime()) / 36e5);
+  const recency = Math.max(0, Math.min(1, 1 - ageHrs / 168)); // 0 after ~7 days
+  const budget = Math.max(0, Math.min(1, (input.budget ?? 0) / 5000)); // clamp 5k+
+  const resp = (() => {
+    if (input.respondedMinutes == null) return 0;
+    const m = input.respondedMinutes;
+    // 0–10min≈1.0, 60min≈0.6, 6h≈0.2, 24h≈0.05
+    if (m <= 10) return 1;
+    if (m <= 60) return 0.6;
+    if (m <= 360) return 0.2;
+    if (m <= 1440) return 0.05;
+    return 0;
+  })();
+  const src = ((): number => {
+    const s = (input.source ?? '').toLowerCase();
+    if (['referral','returning','instagram','website'].includes(s)) return 1;
+    if (['ad','facebook','tiktok','pinterest'].includes(s)) return 0.6;
+    if (!s || s==='unknown') return 0.2;
+    return 0.5;
+  })();
+  const act = input.hasRecentActivity ? 1 : 0;
+
+  const parts: ScoreExplain[] = [
+    { factor: 'Budget',          weight: W.budget,        value: budget,  contribution: W.budget*budget },
+    { factor: 'Recency',         weight: W.recency,       value: recency, contribution: W.recency*recency },
+    { factor: 'Response Speed',  weight: W.responseSpeed, value: resp,    contribution: W.responseSpeed*resp },
+    { factor: 'Source Quality',  weight: W.sourceQuality, value: src,     contribution: W.sourceQuality*src },
+    { factor: 'Recent Activity', weight: W.activity,      value: act,     contribution: W.activity*act },
+  ];
+
+  const score = Math.round(parts.reduce((n,p)=>n+p.contribution,0) * 100);
+  return { score, explanations: parts };
+}
+
+export async function upsertLeadScore(tenantId: string, leadId: string) {
+  const [L] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
+  if (!L) return null;
+
+  // TODO: derive response time & activity from your events/messages/quotes tables
+  const model = computeLeadScore({
+    createdAt: L.createdAt!,
+    budget: (L as any).budget ?? null,
+    source: (L as any).source ?? null,
+    respondedMinutes: null,
+    hasRecentActivity: false,
+  });
+
+  const [row] = await db.insert(leadScores).values({
+    leadId, tenantId, score: model.score, explanations: model.explanations
+  }).onConflictDoUpdate({
+    target: [leadScores.leadId],
+    set: { score: model.score, explanations: model.explanations, computedAt: sql`now()` }
+  }).returning();
+  return row;
+}
+
+3) Server — routes (tenant-scoped, behind auth)
+
+In apps/app/server/routes.ts:
+
+// Recalculate one
+app.post('/api/leads/:id/score/recalc', authGuard, async (req,res)=>{
+  if (process.env.LEAD_SCORING_ENABLED!=='true') return res.status(403).json({error:'disabled'});
+  const row = await upsertLeadScore(req.tenant.id, req.params.id);
+  if (!row) return res.status(404).json({error:'not_found'});
+  res.json(row);
+});
+
+// List with score (join)
+app.get('/api/leads', authGuard, async (req,res)=>{
+  // return top 100 by score desc, then created_at desc
+  const rows = await db.execute(sql`
+    SELECT l.*, s.score
+    FROM leads l
+    LEFT JOIN lead_scores s ON s.lead_id = l.id
+    WHERE l.tenant_id = ${req.tenant.id}
+    ORDER BY COALESCE(s.score,0) DESC, l.created_at DESC
+    LIMIT 100
+  `);
+  res.json(rows);
+});
+
+4) Client — Leads page + Dashboard card
+
+New page: client/src/pages/Leads.tsx (inside AppLayout + PageHeader)
+
+Table columns: Name, Source, Budget, Status, Score
+
+Buttons: “Recalculate” (per row), “Open Lead” (stub)
+
+Sort by Score (desc default)
+
+Dashboard card:
+
+In the dashboard component, add a “Top Leads” widget (top 5 by score). Click → /leads.
+
+Route(s) in client/src/App.tsx:
+
+<Route path="/leads" component={Leads} />
+
+
+Nav (AppLayout):
+
+Optionally show Leads between Dashboard and Quotes when VITE_LEAD_SCORING_ENABLED==='true'.
+
+5) Background recalculation (optional)
+
+Script apps/app/server/scripts/recalcLeadScores.ts:
+
+Recompute scores for leads updated in the last 30 days.
+
+Cron (dev): run manually; production: schedule as desired.
+
+6) Acceptance & Smoke
+
+GET /api/leads returns JSON with score.
+
+Press “Recalculate” on a row → POST /api/leads/:id/score/recalc updates score.
+
+Dashboard “Top Leads” shows 0–5 rows without error.
+
+Toggle flags: when off, routes return 403 and nav hides.
