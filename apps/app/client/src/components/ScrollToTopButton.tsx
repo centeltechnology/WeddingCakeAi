@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { ChevronUp } from 'lucide-react';
 
 export function ScrollToTopButton() {

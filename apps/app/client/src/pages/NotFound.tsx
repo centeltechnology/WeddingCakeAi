@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import AppLayout from '@/components/AppLayout';
 import { PageHeader } from '@/components/PageHeader';
 import { AlertCircle } from 'lucide-react';

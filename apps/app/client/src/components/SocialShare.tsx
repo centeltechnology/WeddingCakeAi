@@ -1,5 +1,5 @@
 import { Share2, Facebook, Twitter, Link2, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Cake, Share, Store, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Calculator from "@/components/Calculator";
 import BakerDirectory from "@/components/BakerDirectory";

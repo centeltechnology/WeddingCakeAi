@@ -2,7 +2,7 @@ import PublicLayout from "@/layouts/PublicLayout";
 import SEOHead from "@/components/SEOHead";
 import { useTenant } from "@/components/TenantBrandProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Link } from "wouter";
 import { Calculator, Clock, TrendingUp, Smartphone, Check, Star } from "lucide-react";
 

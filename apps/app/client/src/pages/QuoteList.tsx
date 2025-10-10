@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { FileText, Plus, Eye, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/AppLayout';

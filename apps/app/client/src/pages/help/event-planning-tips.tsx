@@ -1,7 +1,7 @@
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Link } from "wouter";
 import { Calendar, Clock, MapPin, Users, Camera, Gift, ArrowLeft, Lightbulb, CheckCircle2 } from "lucide-react";
 

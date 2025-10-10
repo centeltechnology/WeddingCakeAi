@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Upload, X, CheckCircle, AlertCircle } from "lucide-react";

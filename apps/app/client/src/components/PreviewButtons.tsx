@@ -1,6 +1,6 @@
 import { buildMarketplaceUrl, buildLeadGenUrl } from '@/lib/publicLinks';
 import { useTenant } from '@/hooks/useTenant';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 interface PreviewButtonsProps {
   size?: 'sm' | 'md';

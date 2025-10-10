@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Separator } from "@/components/ui/separator";
 import { Settings as SettingsIcon, Calculator as CalculatorIcon, Eye, Save, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
