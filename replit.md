@@ -53,6 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard Widgets**: Tenant-aware components (PipelineChart, RevenueStat, TaskList).
 - **Timeline & Event Tracking**: Comprehensive audit systems for quotes, contracts, and invoices with visual timelines and API access.
 - **AI Lab**: Testing interface for AI features (suggest items, summarize, generate contract) with stub endpoints.
+- **Baker Calculator**: Authenticated business pricing calculator with feature flags (VITE_CALCULATOR_ENABLED, CALCULATOR_ENABLED), custom line items, complexity pricing ($3.5-$7.5 per serving), rush fees (25%), delivery charges ($2/mile), and smart routing (unauthenticated → V1 demo, authenticated → business calculator).
 
 ### Development Architecture
 - **Build System**: Vite (frontend), ESBuild (server).
