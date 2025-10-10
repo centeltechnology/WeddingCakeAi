@@ -56,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 - **Baker Calculator**: Authenticated business pricing calculator with feature flags (VITE_CALCULATOR_ENABLED, CALCULATOR_ENABLED), custom line items, complexity pricing ($3.5-$7.5 per serving), rush fees (25%), delivery charges ($2/mile), and smart routing (unauthenticated → V1 demo, authenticated → business calculator).
 - **Business Profile**: Tenant-scoped profile management with display name, contact info, about section, specialties (CSV → chips), and image URLs. Accessible via Settings tab navigation with GET/POST /api/me/profile endpoints.
 - **Social Links & Payment Options**: Extended Settings with social media links (Facebook, Instagram, TikTok, YouTube, Pinterest) and payment methods (Cash App, Venmo, PayPal, Zelle, Stripe). JSONB columns in tenant_profiles with partial-update merge logic to preserve unrelated fields during saves.
+- **Media Library**: Tenant-scoped image upload and management system with local disk storage (dev) and pluggable S3 adapter (production). Features include: multipart file upload via multer, thumbnail grid UI, delete functionality, and set-as-logo action. Security: 10MB file size limit, image MIME type validation, tenant isolation via directory structure (/uploads/<tenant>/). Endpoints: POST /api/uploads/presign, GET /api/media, DELETE /api/media/:id, POST /api/media/logo. Static serving in dev mode; production should use S3 signed URLs.
 
 ### Development Architecture
 - **Build System**: Vite (frontend), ESBuild (server).
