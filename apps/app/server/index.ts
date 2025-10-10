@@ -1373,13 +1373,35 @@ function ensureAuth(req: express.Request, res: express.Response, next: express.N
   return res.status(401).json({ ok: false, error: "Unauthenticated" });
 }
 
-// Protected route example
-app.get("/api/app/me", ensureAuth, (req, res) => {
+// Protected route example with session refresh
+app.get("/api/app/me", ensureAuth, async (req, res) => {
+  const session = req.session as any;
+  const userId = session.userId;
+  const userEmail = session.email;
+
+  // Session refresh: backfill tenantId if missing
+  if (session && userId && !session.tenantId && userEmail) {
+    try {
+      // Look up baker by email to get tenantId
+      const bakerResults = await db.execute<{ id: string; tenant_id: string }>(sql`
+        SELECT id, tenant_id FROM bakers WHERE email = ${userEmail} LIMIT 1
+      `);
+      const bakers = bakerResults.rows || [];
+      if (bakers.length > 0 && bakers[0].tenant_id) {
+        session.tenantId = bakers[0].tenant_id;
+        session.bakerId = bakers[0].id;
+        console.log(`✓ Session refreshed with tenantId for user ${userId}`);
+      }
+    } catch (refreshError) {
+      console.error('Error refreshing session:', refreshError);
+    }
+  }
+
   res.json({ 
     ok: true, 
-    userId: (req.session as any).userId,
-    email: (req.session as any).email,
-    role: (req.session as any).role
+    userId,
+    email: userEmail,
+    role: session.role
   });
 });
 

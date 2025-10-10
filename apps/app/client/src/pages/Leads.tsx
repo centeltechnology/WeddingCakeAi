@@ -246,27 +246,23 @@ export default function Leads() {
       {leads.length > 0 && (
         <Card className="mt-6">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Scoring Methodology</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <h3 className="text-lg font-semibold mb-4">Transparent Scoring Methodology</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="font-medium mb-1">Budget (35%)</p>
-                <p className="text-muted-foreground">Higher budget increases score. Normalized to $5,000 cap.</p>
+                <p className="font-medium mb-1">Recency (40%)</p>
+                <p className="text-muted-foreground">How recent the lead is. Newer leads score higher, decreases over 7 days.</p>
               </div>
               <div>
-                <p className="font-medium mb-1">Recency (25%)</p>
-                <p className="text-muted-foreground">Newer leads score higher. Decreases over 7 days.</p>
+                <p className="font-medium mb-1">Budget (25%)</p>
+                <p className="text-muted-foreground">Lead budget value. Higher budgets increase score, normalized to $5,000 cap.</p>
               </div>
               <div>
-                <p className="font-medium mb-1">Response Speed (25%)</p>
-                <p className="text-muted-foreground">Faster responses indicate higher interest.</p>
+                <p className="font-medium mb-1">Engagement (20%)</p>
+                <p className="text-muted-foreground">Response speed and interaction. Faster responses indicate higher interest.</p>
               </div>
               <div>
-                <p className="font-medium mb-1">Source Quality (10%)</p>
-                <p className="text-muted-foreground">Referrals and organic sources score higher than ads.</p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Recent Activity (5%)</p>
-                <p className="text-muted-foreground">Recent quotes or messages boost the score.</p>
+                <p className="font-medium mb-1">Completeness (15%)</p>
+                <p className="text-muted-foreground">Data completeness and source quality. Referrals and organic sources score higher.</p>
               </div>
             </div>
           </CardContent>

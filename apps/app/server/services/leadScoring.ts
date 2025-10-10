@@ -24,11 +24,10 @@ type ScoreResult = {
 
 export function computeLeadScore(input: ScoreInput): ScoreResult {
   const weights = {
-    budget: 0.35,
-    recency: 0.25,
-    responseSpeed: 0.25,
-    sourceQuality: 0.10,
-    activity: 0.05
+    recency: 0.40,        // 40% - How recent the lead is
+    budget: 0.25,         // 25% - Lead budget value
+    engagement: 0.20,     // 20% - Response speed/interaction
+    completeness: 0.15    // 15% - Data completeness
   };
 
   const now = new Date().getTime();
@@ -38,7 +37,7 @@ export function computeLeadScore(input: ScoreInput): ScoreResult {
   
   const budget = Math.max(0, Math.min(1, (input.budget ?? 0) / 5000));
   
-  const responseSpeed = (() => {
+  const engagement = (() => {
     if (input.respondedMinutes == null) return 0;
     const m = input.respondedMinutes;
     if (m <= 10) return 1.0;
@@ -48,46 +47,38 @@ export function computeLeadScore(input: ScoreInput): ScoreResult {
     return 0;
   })();
   
-  const sourceQuality = ((): number => {
+  const completeness = ((): number => {
     const s = (input.source ?? '').toLowerCase();
     if (['referral', 'returning', 'instagram', 'website'].includes(s)) return 1.0;
     if (['ad', 'facebook', 'tiktok', 'pinterest'].includes(s)) return 0.6;
     if (!s || s === 'unknown') return 0.2;
     return 0.5;
   })();
-  
-  const activity = input.hasRecentActivity ? 1 : 0;
 
   const parts: ScoreExplanation[] = [
     {
-      factor: 'Budget',
-      weight: weights.budget,
-      value: budget,
-      contribution: weights.budget * budget
-    },
-    {
-      factor: 'Recency',
+      factor: 'Recency (40%)',
       weight: weights.recency,
       value: recency,
       contribution: weights.recency * recency
     },
     {
-      factor: 'Response Speed',
-      weight: weights.responseSpeed,
-      value: responseSpeed,
-      contribution: weights.responseSpeed * responseSpeed
+      factor: 'Budget (25%)',
+      weight: weights.budget,
+      value: budget,
+      contribution: weights.budget * budget
     },
     {
-      factor: 'Source Quality',
-      weight: weights.sourceQuality,
-      value: sourceQuality,
-      contribution: weights.sourceQuality * sourceQuality
+      factor: 'Engagement (20%)',
+      weight: weights.engagement,
+      value: engagement,
+      contribution: weights.engagement * engagement
     },
     {
-      factor: 'Recent Activity',
-      weight: weights.activity,
-      value: activity,
-      contribution: weights.activity * activity
+      factor: 'Completeness (15%)',
+      weight: weights.completeness,
+      value: completeness,
+      contribution: weights.completeness * completeness
     },
   ];
 
