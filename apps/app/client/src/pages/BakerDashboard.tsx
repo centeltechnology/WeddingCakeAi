@@ -5,6 +5,7 @@ import { RevenueStat } from "../components/RevenueStat";
 import { TaskList } from "../components/TaskList";
 import AiToolsCard from "@/components/ai/AiToolsCard";
 import AppLayout from "@/components/AppLayout";
+import { TopLeads } from "@/components/dashboard/TopLeads";
 
 interface DashboardStats {
   leadsToday: number;
@@ -122,6 +123,13 @@ export default function BakerDashboard() {
             <div style={{ marginBottom: 24 }}>
               <PipelineChart />
             </div>
+
+            {/* Top Leads Widget */}
+            {import.meta.env.VITE_LEAD_SCORING_ENABLED === 'true' && (
+              <div style={{ marginBottom: 24 }}>
+                <TopLeads />
+              </div>
+            )}
 
             {/* Data Panels */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
