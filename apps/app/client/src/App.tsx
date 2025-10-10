@@ -104,6 +104,7 @@ import SettingsHub from "@/pages/SettingsHub";
 import BookingList from "@/pages/settings/BookingList";
 import BookingSettings from "@/pages/settings/BookingSettings";
 import BookingPublic from "@/pages/BookingPublic";
+import Leads from "@/pages/Leads";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -319,6 +320,11 @@ function Router() {
       </Route>
       <Route path="/customers">
         <CustomersPage />
+      </Route>
+      <Route path="/leads">
+        <AuthGuard>
+          <Leads />
+        </AuthGuard>
       </Route>
       <Route path="/admin/tenants">
         <AdminTenantsPage />
