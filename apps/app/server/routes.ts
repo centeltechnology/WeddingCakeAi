@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, templates, quoteItems } from "@shared/schema";
+import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, templates, quoteItems, leadMessages, leadNotes } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -2541,6 +2541,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching scored leads:', error);
       res.status(500).json({ error: 'Failed to fetch leads' });
+    }
+  });
+
+  // =====================================
+  // LEAD INBOX ROUTES (Messages & Notes)
+  // =====================================
+
+  // POST /api/public/leads - Public lead capture endpoint
+  app.post('/api/public/leads', async (req, res) => {
+    try {
+      const { name, email, phone, message, source, tenantId } = req.body;
+
+      if (!name || !email) {
+        return res.status(400).json({ error: 'Name and email are required' });
+      }
+
+      // Create lead
+      const [lead] = await db.insert(leads).values({
+        tenantId: tenantId || null,
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone || null,
+        message: message || null,
+        source: source || 'public_form',
+        status: 'new'
+      }).returning();
+
+      // If message provided, create initial message
+      if (message && lead.tenantId) {
+        await db.insert(leadMessages).values({
+          tenantId: lead.tenantId,
+          leadId: lead.id,
+          direction: 'in',
+          channel: 'email',
+          subject: 'New inquiry',
+          body: message
+        });
+      }
+
+      // Calculate initial lead score
+      if (lead.tenantId && process.env.LEAD_SCORING_ENABLED === 'true') {
+        await upsertLeadScore(lead.tenantId, lead.id);
+      }
+
+      res.status(201).json({ ok: true, leadId: lead.id });
+    } catch (error) {
+      console.error('Error creating public lead:', error);
+      res.status(500).json({ error: 'Failed to create lead' });
+    }
+  });
+
+  // GET /api/leads/:id/thread - Get messages and notes for a lead
+  app.get('/api/leads/:id/thread', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.user!.tenantId!;
+
+      // Check lead ownership
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      if (!lead || lead.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Get messages
+      const messages = await db.select()
+        .from(leadMessages)
+        .where(eq(leadMessages.leadId, id))
+        .orderBy(leadMessages.createdAt);
+
+      // Get notes
+      const notes = await db.select()
+        .from(leadNotes)
+        .where(eq(leadNotes.leadId, id))
+        .orderBy(leadNotes.createdAt);
+
+      res.json({ messages, notes });
+    } catch (error) {
+      console.error('Error fetching lead thread:', error);
+      res.status(500).json({ error: 'Failed to fetch thread' });
+    }
+  });
+
+  // POST /api/leads/:id/messages - Send message to lead (stub)
+  app.post('/api/leads/:id/messages', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { subject, body } = req.body;
+      const tenantId = req.user!.tenantId!;
+
+      // Check lead ownership
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      if (!lead || lead.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Create outgoing message (stub - no actual email sent)
+      const [message] = await db.insert(leadMessages).values({
+        tenantId,
+        leadId: id,
+        direction: 'out',
+        channel: 'email',
+        subject: subject || 'Message from bakery',
+        body
+      }).returning();
+
+      // Recalculate lead score (recent activity)
+      if (process.env.LEAD_SCORING_ENABLED === 'true') {
+        await upsertLeadScore(tenantId, id);
+      }
+
+      res.json({ ok: true, message });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ error: 'Failed to send message' });
+    }
+  });
+
+  // POST /api/leads/:id/notes - Add note to lead
+  app.post('/api/leads/:id/notes', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { body } = req.body;
+      const tenantId = req.user!.tenantId!;
+      const userId = req.user!.id;
+
+      // Check lead ownership
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      if (!lead || lead.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Create note
+      const [note] = await db.insert(leadNotes).values({
+        tenantId,
+        leadId: id,
+        body,
+        authorId: userId
+      }).returning();
+
+      // Recalculate lead score (recent activity)
+      if (process.env.LEAD_SCORING_ENABLED === 'true') {
+        await upsertLeadScore(tenantId, id);
+      }
+
+      res.json({ ok: true, note });
+    } catch (error) {
+      console.error('Error adding note:', error);
+      res.status(500).json({ error: 'Failed to add note' });
+    }
+  });
+
+  // POST /api/leads/:id/status - Update lead status (optional)
+  app.post('/api/leads/:id/status', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const tenantId = req.user!.tenantId!;
+
+      // Check lead ownership
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      if (!lead || lead.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Update status
+      const [updated] = await db.update(leads)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(leads.id, id))
+        .returning();
+
+      res.json({ ok: true, lead: updated });
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      res.status(500).json({ error: 'Failed to update status' });
     }
   });
 
