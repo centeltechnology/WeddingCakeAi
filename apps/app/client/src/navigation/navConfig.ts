@@ -12,4 +12,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Invoices', href: '/invoices' },
   { label: 'Calculator', href: '/baker/calculator', requiresFlag: 'VITE_CALCULATOR_ENABLED' },
   { label: 'AI Lab', href: '/ai-lab' },
+  { label: 'Settings', href: '/settings' },
 ];
