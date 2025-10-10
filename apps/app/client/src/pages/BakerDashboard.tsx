@@ -6,7 +6,8 @@ import { TaskList } from "../components/TaskList";
 import AiToolsCard from "@/components/ai/AiToolsCard";
 import AppLayout from "@/components/AppLayout";
 import { TopLeads } from "@/components/dashboard/TopLeads";
-import PreviewButtons from "@/components/PreviewButtons";
+import QuickActions from "@/components/QuickActions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface DashboardStats {
   leadsToday: number;
@@ -44,7 +45,6 @@ export default function BakerDashboard() {
       try {
         setLoading(true);
         
-        // Fetch all data in parallel
         const [statsRes, messagesRes, invoicesRes] = await Promise.all([
           fetch("/api/app/stats", { credentials: "include" }),
           fetch("/api/app/recent/messages?limit=5", { credentials: "include" }),
@@ -77,9 +77,9 @@ export default function BakerDashboard() {
   if (loading) {
     return (
       <AppLayout>
-        <div style={{ padding: 24 }}>
-          <h1>Baker Dashboard 🧁</h1>
-          <p>Loading dashboard data...</p>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Baker Dashboard 🧁</h1>
+          <p className="text-muted-foreground">Loading dashboard data...</p>
         </div>
       </AppLayout>
     );
@@ -88,9 +88,9 @@ export default function BakerDashboard() {
   if (error) {
     return (
       <AppLayout>
-        <div style={{ padding: 24 }}>
-          <h1>Baker Dashboard 🧁</h1>
-          <div style={{ color: 'red' }}>{error}</div>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Baker Dashboard 🧁</h1>
+          <div className="text-destructive">{error}</div>
         </div>
       </AppLayout>
     );
@@ -98,125 +98,135 @@ export default function BakerDashboard() {
 
   return (
     <AppLayout>
-      <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <h1 style={{ margin: 0 }}>Baker Dashboard 🧁</h1>
-          <PreviewButtons size="md" />
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl font-bold">Baker Dashboard 🧁</h1>
         </div>
 
-            {/* AI Tools quick actions */}
-            <section className="mb-4">
-              <AiToolsCard />
-            </section>
+        {/* Quick Actions Card */}
+        <Card className="rounded-2xl bg-[var(--accent)] border-[var(--accent-2)]">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuickActions variant="full" />
+          </CardContent>
+        </Card>
 
-            {/* Stats Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
-              <StatCard title="Leads Today" value={stats?.leadsToday || 0} />
-              <StatCard title="Quotes Pending" value={stats?.quotesPending || 0} onClick={() => navigate('/quotes')} />
-              <StatCard title="Invoices Due" value={stats?.invoicesDue || 0} onClick={() => navigate('/invoices')} />
-              <StatCard title="Awaiting Signature" value={stats?.contractsAwaitingSignature || 0} onClick={() => navigate('/contracts')} />
-            </div>
+        {/* AI Tools */}
+        <AiToolsCard />
 
-            {/* Revenue and Tasks Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 24 }}>
-              <RevenueStat />
-              <TaskList />
-            </div>
+        {/* Stats Cards - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Leads Today" value={stats?.leadsToday || 0} />
+          <StatCard 
+            title="Quotes Pending" 
+            value={stats?.quotesPending || 0} 
+            onClick={() => navigate('/quotes')} 
+          />
+          <StatCard 
+            title="Invoices Due" 
+            value={stats?.invoicesDue || 0} 
+            onClick={() => navigate('/invoices')} 
+          />
+          <StatCard 
+            title="Awaiting Signature" 
+            value={stats?.contractsAwaitingSignature || 0} 
+            onClick={() => navigate('/contracts')} 
+          />
+        </div>
 
-            {/* Pipeline Chart */}
-            <div style={{ marginBottom: 24 }}>
-              <PipelineChart />
-            </div>
+        {/* Revenue and Tasks Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RevenueStat />
+          <TaskList />
+        </div>
 
-            {/* Top Leads Widget */}
-            {import.meta.env.VITE_LEAD_SCORING_ENABLED === 'true' && (
-              <div style={{ marginBottom: 24 }}>
-                <TopLeads />
-              </div>
-            )}
+        {/* Pipeline Chart - Hide on mobile, show compact stats instead */}
+        <div className="hidden md:block">
+          <PipelineChart />
+        </div>
 
-            {/* Data Panels */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
-              {/* Recent Messages */}
-              <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 16 }}>Recent Messages</h2>
-                {messages.length === 0 ? (
-                  <p style={{ color: '#666' }}>No recent messages</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {messages.map((msg) => (
-                      <div key={msg.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                        <div style={{ fontWeight: 600 }}>{msg.name}</div>
-                        <div style={{ color: '#666', fontSize: 14, marginTop: 4 }}>{msg.snippet}</div>
-                        <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>
-                          {new Date(msg.time).toLocaleString()}
+        {/* Top Leads Widget */}
+        {import.meta.env.VITE_LEAD_SCORING_ENABLED === 'true' && (
+          <TopLeads />
+        )}
+
+        {/* Recent Activity - Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Messages */}
+          <Card className="rounded-2xl border-[var(--accent-2)]">
+            <CardHeader>
+              <CardTitle>Recent Messages</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {messages.length === 0 ? (
+                <p className="text-muted-foreground">No recent messages</p>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                      <div className="font-semibold">{msg.name}</div>
+                      <div className="text-sm text-muted-foreground mt-1">{msg.snippet}</div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        {new Date(msg.time).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Invoices Coming Due */}
+          <Card className="rounded-2xl border-[var(--accent-2)]">
+            <CardHeader>
+              <CardTitle>Invoices Coming Due</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {invoices.length === 0 ? (
+                <p className="text-muted-foreground">No upcoming invoices</p>
+              ) : (
+                <div className="space-y-4">
+                  {invoices.map((inv) => (
+                    <div key={inv.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="min-w-0">
+                          <div className="font-semibold truncate">{inv.customer}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Due: {new Date(inv.dueDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-semibold">${inv.amount}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{inv.invoiceNumber}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Invoices Coming Due */}
-              <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 16 }}>Invoices Coming Due</h2>
-                {invoices.length === 0 ? (
-                  <p style={{ color: '#666' }}>No upcoming invoices</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {invoices.map((inv) => (
-                      <div key={inv.id} style={{ borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{inv.customer}</div>
-                            <div style={{ color: '#666', fontSize: 14 }}>
-                              Due: {new Date(inv.dueDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 600 }}>${inv.amount}</div>
-                            <div style={{ color: '#999', fontSize: 12 }}>{inv.invoiceNumber}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div></AppLayout>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </AppLayout>
   );
 }
 
 function StatCard({ title, value, onClick }: { title: string; value: number; onClick?: () => void }) {
   return (
-    <div 
-      style={{ 
-        border: '1px solid #ddd', 
-        borderRadius: 8, 
-        padding: 20,
-        backgroundColor: '#f9f9f9',
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s ease'
-      }}
+    <Card 
+      className={`rounded-2xl bg-[var(--accent)] border-[var(--accent-2)] transition-all ${
+        onClick ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''
+      }`}
       onClick={onClick}
-      onMouseEnter={(e) => {
-        if (onClick) {
-          e.currentTarget.style.backgroundColor = '#f0f0f0';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onClick) {
-          e.currentTarget.style.backgroundColor = '#f9f9f9';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }
-      }}
     >
-      <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>{title}</div>
-      <div style={{ fontSize: 32, fontWeight: 'bold' }}>{value}</div>
-    </div>
+      <CardContent className="p-5">
+        <div className="text-sm text-muted-foreground mb-2">{title}</div>
+        <div className="text-3xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
   );
 }
