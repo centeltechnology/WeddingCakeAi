@@ -102,7 +102,7 @@ export default function ContractsList() {
                 variant="outline"
                 onClick={async () => {
                   try {
-                    await fetch('/api/contracts', {
+                    const res = await fetch('/api/contracts', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       credentials: 'include',
@@ -112,10 +112,14 @@ export default function ContractsList() {
                         totalAmount: '750',
                       })
                     });
+                    if (!res.ok) {
+                      const error = await res.json();
+                      throw new Error(error.error || 'Failed to create contract');
+                    }
                     queryClient.invalidateQueries({ queryKey: ['contracts'] });
                     toast({ title: 'Demo contract created' });
-                  } catch (e) {
-                    toast({ title: 'Failed to create demo contract', variant: 'destructive' });
+                  } catch (e: any) {
+                    toast({ title: 'Failed to create demo contract', description: e.message, variant: 'destructive' });
                   }
                 }}
               >

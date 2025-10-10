@@ -78,7 +78,7 @@ export default function QuoteList() {
                 variant="outline" 
                 onClick={async () => {
                   try {
-                    await fetch('/api/quotes', {
+                    const res = await fetch('/api/quotes', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       credentials: 'include',
@@ -88,10 +88,14 @@ export default function QuoteList() {
                         total: '500',
                       })
                     });
+                    if (!res.ok) {
+                      const error = await res.json();
+                      throw new Error(error.error || 'Failed to create quote');
+                    }
                     queryClient.invalidateQueries({ queryKey: ['quotes'] });
                     toast({ title: 'Demo quote created' });
-                  } catch (e) {
-                    toast({ title: 'Failed to create demo quote', variant: 'destructive' });
+                  } catch (e: any) {
+                    toast({ title: 'Failed to create demo quote', description: e.message, variant: 'destructive' });
                   }
                 }}
               >
