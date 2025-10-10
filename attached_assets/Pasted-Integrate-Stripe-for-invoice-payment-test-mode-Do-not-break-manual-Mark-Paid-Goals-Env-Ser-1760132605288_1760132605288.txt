@@ -1,0 +1,84 @@
+Integrate Stripe for invoice payment (test mode). Do not break manual “Mark Paid”.
+
+Goals
+
+Env:
+
+Server: STRIPE_SECRET_KEY, APP_BASE_URL
+
+Client: VITE_STRIPE_PUBLISHABLE_KEY
+
+Server:
+
+POST /api/invoices/:id/checkout → creates Checkout Session with invoice total; success_url and cancel_url return to /portal/i/:token if public, or /invoices/:id if admin.
+
+POST /api/stripe/webhook → on checkout.session.completed, mark invoice paid, insert invoice_events.paid.
+
+Client:
+
+On invoice view (admin & portal), show Pay with Stripe button if pending; opens Checkout (Stripe.js).
+
+Safety:
+
+Verify invoice belongs to tenant; amount > 0.
+
+Idempotency key for session creation: invoice:<id>.
+
+Manual: keep “Mark Paid” button for bookkeeping/testing.
+
+Acceptance
+
+Clicking Pay with Stripe on a pending invoice opens checkout and, on completion, marks the invoice paid and logs an event.
+
+Webhook handles duplicate calls safely.
+
+Manual Mark Paid still works.
+
+4) MEGA PROMPT — Leads + Inbox Pack (capture, list, reply, notes)
+
+Prompt:
+Implement Lead capture + Inbox (threads + notes), consuming existing Lead Scoring v1.
+
+Goals
+
+DB:
+
+lead_messages: id, tenant_id, lead_id, direction (in|out), channel (email), subject, body, created_at.
+
+lead_notes: id, tenant_id, lead_id, body, author_id, created_at.
+
+Public intake:
+
+POST /api/public/leads → { name, email, phone?, message?, source? } → create lead; call upsertLeadScore.
+
+Admin:
+
+GET /api/leads (already): include score.
+
+GET /api/leads/:id/thread → messages + notes.
+
+POST /api/leads/:id/messages (stub send) → logs out message; return { ok:true }.
+
+POST /api/leads/:id/notes → create note.
+
+Optional: POST /api/leads/:id/status to update pipeline.
+
+UI:
+
+/leads list uses DataTable: Name/Email, Source, Budget, Score, Status, Actions → Open.
+
+/leads/:id inbox: left panel thread, right panel details & score; form to Send email (stub) and Add note.
+
+Add New Lead (admin) and ensure public form (marketing site) posts to intake endpoint.
+
+Scoring:
+
+After intake and after each message/note, call upsertLeadScore (recent activity → small boost).
+
+Acceptance
+
+Submitting the public form creates a lead with score; appears in /leads.
+
+Inbox thread shows; you can send a stub email and add notes; score recalculates.
+
+List filters by status and sorts by score.
