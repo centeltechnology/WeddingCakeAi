@@ -1,0 +1,111 @@
+Finish Auto-Reply: rules, templates, SES email send, quiet hours, throttles, logs view.
+
+Goals
+
+Env: AUTO_REPLY_ENABLED=true, EMAIL_PROVIDER=ses, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, EMAIL_FROM.
+
+Server:
+
+SES adapter (if env present; else stub).
+
+Throttles: max 1 reply per lead per 12h, max 50 per tenant per day; store counters in memory + DB backup (auto_reply_counters optional).
+
+Evaluate rules on triggers:
+
+POST /api/auto-reply/trigger/new-lead/:leadId
+
+POST /api/auto-reply/trigger/no-response/:leadId
+
+Respect quiet hours (skip with status:'skipped' + reason).
+
+Log every attempt in auto_reply_logs (existing table).
+
+UI (Settings):
+
+Settings: enable, quiet hours, channels.
+
+Templates: create/edit (Name, Subject, Body; variables).
+
+Rules: create/toggle for new_lead, no_response; conditions include min budget, allowed sources, hoursSinceLastMsg.
+
+Logs: simple table of last 50 attempts with status.
+
+Manual test: POST /api/auto-reply/test to send one to your email (or stub).
+
+Acceptance
+
+Create template + rule; creating a lead triggers new_lead auto-reply (or skips during quiet hours with a logged reason).
+
+Throttles prevent spam; logs table updates.
+
+6) MEGA PROMPT — Public Presence Pack (Marketplace Listing + Lead-Gen CTA)
+
+Prompt:
+Build the public Marketplace Listing /p/:slug with SEO basics and a lead-gen CTA to booking or calculator.
+
+Goals
+
+Public page /p/:slug:
+
+Sections: Hero (logo, name, city), About, Specialties (chips), Gallery, Social icons, Contact CTA.
+
+Button(s): Request a Consultation → /b/:slug/book (if booking enabled) else Try Calculator → /calculator.
+
+SEO:
+
+Set <title>, <meta name="description">, basic OpenGraph; safe defaults if fields missing.
+
+Admin:
+
+Ensure Preview Listing button opens /p/<slug> (already added).
+
+Tracking:
+
+Append ?utm_source=marketplace to create leads with source='marketplace'.
+
+Acceptance
+
+/p/<slug> renders tenant profile info and gallery; CTA works.
+
+If booking is disabled, CTA falls back to calculator.
+
+Basic SEO meta present.
+
+7) MEGA PROMPT — Media Library v2 (upload → crop → set logo/cover)
+
+Prompt:
+Improve Media Library for profile branding.
+
+Goals
+
+Client:
+
+Add lightweight client-side crop/resize (e.g., Canvas) to 1024px max edge; compress JPEG/webp before upload.
+
+Drag-and-drop area; upload progress.
+
+On asset card: Set as Logo, Set as Cover, Delete.
+
+Server:
+
+Validate mime/size; save to /uploads/<tenant>/<uuid>.jpg (dev). Return { id, url, width, height, kind }.
+
+Endpoints (ensure stable array shapes):
+
+GET /api/media → { assets: [] }
+
+POST /api/uploads (multipart) → returns { url }
+
+POST /api/media/logo / POST /api/media/cover
+
+DELETE /api/media/:id
+
+Settings → Business Profile:
+
+Show current logo/cover with instant update on set.
+
+Acceptance
+
+Upload works with progress; assets appear without .map errors.
+
+Setting logo/cover updates profile UI with no reload.
