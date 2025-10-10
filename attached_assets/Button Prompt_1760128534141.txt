@@ -1,0 +1,242 @@
+You’re working in apps/app (BakerIQ). Replace ad-hoc buttons/links with a unified, accessible Button system. Make this change idempotent. After migration, every action should use the shared component with proper contrast, focus, disabled, and loading states.
+
+0) Tokens (ensure contrast)
+
+Create or update client/src/styles/tokens.css:
+
+:root{
+  --bg:#ffffff; --fg:#0a0a0a;
+  --muted:#6b7280; --muted-2:#9ca3af;
+  --brand:#111111; --brand-2:#000000;
+  --primary:#111111;      /* button primary bg */
+  --primary-fg:#ffffff;   /* button primary fg */
+  --border:#e5e7eb;
+  --ring:#111111;
+  --success:#16a34a; --warning:#f59e0b; --danger:#dc2626;
+}
+
+
+Import once (if not already) in client entry (e.g., client/src/main.tsx):
+
+import '@/styles/tokens.css';
+
+1) Core Button primitives
+
+Create client/src/components/ui/Button.tsx:
+
+import * as React from 'react';
+
+type Variant = 'primary'|'secondary'|'outline'|'ghost'|'danger'|'success';
+type Size = 'xs'|'sm'|'md'|'lg';
+
+const base = "inline-flex items-center justify-center gap-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50 disabled:cursor-not-allowed";
+
+const sizeCls: Record<Size,string> = {
+  xs: "px-2 py-1 text-xs",
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-4 py-2 text-sm",
+  lg: "px-5 py-2.5 text-base"
+};
+
+const varCls: Record<Variant,string> = {
+  primary:  "bg-[var(--primary)] text-[var(--primary-fg)] hover:bg-black",
+  secondary:"bg-neutral-900 text-white hover:bg-black",
+  outline:  "border border-[var(--border)] text-[var(--fg)] bg-white hover:bg-neutral-50",
+  ghost:    "text-[var(--fg)] hover:bg-neutral-100",
+  danger:   "bg-[var(--danger)] text-white hover:bg-red-600",
+  success:  "bg-[var(--success)] text-white hover:bg-green-600",
+};
+
+export function Spinner(){ return <div aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-transparent" />; }
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  asChild?: boolean;
+  href?: string;
+  variant?: Variant;
+  size?: Size;
+  loading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  'data-variant'?: string; // debug
+};
+export function Button({
+  asChild, href, variant='primary', size='sm', loading=false, leftIcon, rightIcon, className='', children, ...rest
+}: ButtonProps){
+  const cls = `${base} ${sizeCls[size]} ${varCls[variant]} ${className}`;
+  if (href){
+    // link-as-button
+    return (
+      <a href={href} className={cls} {...(rest as any)}>
+        {loading ? <Spinner/> : leftIcon}
+        <span>{children}</span>
+        {rightIcon}
+      </a>
+    );
+  }
+  return (
+    <button className={cls} aria-busy={loading || undefined} {...rest}>
+      {loading ? <Spinner/> : leftIcon}
+      <span>{children}</span>
+      {rightIcon}
+    </button>
+  );
+}
+
+/** Minimal button group for segmented actions */
+export function ButtonGroup({children}:{children:React.ReactNode}){
+  return <div className="inline-flex items-stretch [&>*]:rounded-none [&>*:first-child]:rounded-l-lg [&>*:last-child]:rounded-r-lg">{children}</div>;
+}
+
+
+Notes:
+
+Primary/secondary use dark BG with white text; outline/ghost always use dark text on light BG → no white-on-white ever.
+
+Every button has a focus ring and disabled state.
+
+loading swaps content with a spinner.
+
+2) Replace scattered CTA styles
+
+Create a codemod to replace common ad-hoc buttons in client/src:
+
+apps/app/scripts/codemods/standardizeButtons.ts
+
+import fg from 'fast-glob';
+import { readFileSync, writeFileSync } from 'fs';
+import { resolve, relative } from 'path';
+
+const ROOT = resolve(process.cwd(), 'apps/app/client/src');
+const files = fg.sync(['**/*.{tsx,jsx}'], { cwd: ROOT, absolute: true, dot:false });
+
+const buttonRegexes = [
+  // Replace obvious white-on-white patterns or ad-hoc styles with Button
+  { find: /<button([^>]*)className="([^"]*?)(btn|px-\d|py-\d|rounded|bg-white|text-white|border|hover:[^"]*?)[^"]*"([^>]*)>([\s\S]*?)<\/button>/g, variant:'primary' },
+  { find: /<a([^>]*)className="([^"]*?)(btn|px-\d|py-\d|rounded|bg-white|text-white|border|hover:[^"]*?)[^"]*"([^>]*)>([\s\S]*?)<\/a>/g, variant:'outline' },
+];
+
+let changed: string[] = [];
+
+for (const f of files){
+  let src = readFileSync(f,'utf8');
+  const before = src;
+
+  // ensure import
+  if (!src.includes("from '@/components/ui/Button'")){
+    src = src.replace(/^(\s*import .+\n)+/s, (m)=> m + `import { Button } from '@/components/ui/Button';\n`);
+  }
+
+  for (const rule of buttonRegexes){
+    src = src.replace(rule.find, (_, pre1, cls, marker, post1, inner)=>{
+      // crude heuristics → choose variant
+      const hasDanger = /text-red|bg-red|danger/i.test(cls);
+      const hasSuccess = /text-green|bg-green|success/i.test(cls);
+      const variant = hasDanger ? 'danger' : hasSuccess ? 'success' : /border|outline/.test(cls) ? 'outline' : /bg-white/.test(cls) ? 'outline' : rule.variant;
+      const size = /text-xs|px-2|py-1/.test(cls) ? 'xs' : /px-5|py-2\.5|text-base/.test(cls) ? 'lg' : /px-4|py-2/.test(cls) ? 'md' : 'sm';
+
+      // prefer Button as link when original was <a>
+      if (_.startsWith('<a')){
+        // try to preserve href
+        const hrefMatch = _.match(/href="([^"]+)"/);
+        const href = hrefMatch ? hrefMatch[1] : '#';
+        return `<Button href="${href}" variant="${variant}" size="${size}">${inner.trim()}</Button>`;
+      }
+      return `<Button variant="${variant}" size="${size}">${inner.trim()}</Button>`;
+    });
+  }
+
+  if (src !== before){
+    writeFileSync(f, src, 'utf8');
+    changed.push(relative(ROOT, f));
+  }
+}
+
+console.log('Button codemod updated files:', changed.length);
+changed.forEach(f=>console.log(' -', f));
+
+
+This codemod is conservative: it catches most obvious DIY buttons and replaces them with <Button>. It also standardizes many risky white/outline patterns to safe contrast variants.
+
+Run:
+
+pnpm tsx apps/app/scripts/codemods/standardizeButtons.ts
+
+3) Fix critical pages by hand (guaranteed)
+
+Ensure these import and use <Button> exclusively for primary CTAs:
+
+client/src/pages/Quotes*.tsx, Contract*.tsx, Invoice*.tsx, Leads*.tsx
+
+client/src/pages/settings/**/*
+
+client/src/pages/public/**/* (portal/booking/calculator)
+
+client/src/components/AppLayout.tsx (Logout, preview buttons)
+
+Replace any “text-white bg-white” combos with either:
+
+<Button variant="primary"> for primary actions
+
+<Button variant="outline"> for secondary/neutral actions
+
+<Button variant="danger"> for destructive actions
+
+4) Enforce going forward (lint guard)
+
+Create apps/app/scripts/lint-no-raw-button.ts:
+
+import fg from 'fast-glob'; import { readFileSync } from 'fs'; import { resolve, relative } from 'path';
+const ROOT = resolve(process.cwd(), 'apps/app/client/src');
+const files = fg.sync(['**/*.{tsx,jsx}'], { cwd: ROOT, absolute: true });
+const offenders:string[]=[];
+for(const f of files){
+  const src = readFileSync(f,'utf8');
+  const usesRaw = /<(button|a)\b[^>]*className=/.test(src) && !src.includes("from '@/components/ui/Button'");
+  if (usesRaw) offenders.push(relative(ROOT,f));
+}
+if (offenders.length){
+  console.error('Found raw <button>/<a> elements styled without using <Button>:\n'+offenders.map((x)=>' - '+x).join('\n'));
+  process.exit(1);
+}
+console.log('PASS: no raw buttons detected (or they import <Button>).');
+
+
+Add a package script:
+
+"scripts": {
+  "lint:buttons": "tsx apps/app/scripts/lint-no-raw-button.ts"
+}
+
+5) Visual defaults for “link-looking” actions
+
+If you have plain text links used as actions in tables (“View”, “Open”):
+
+Switch to buttons for actions, or style anchors safely:
+
+import { Button } from '@/components/ui/Button';
+// Example in a table cell:
+<Button variant="ghost" size="xs">Open</Button>
+<Button variant="outline" size="xs">Approve</Button>
+<Button variant="danger" size="xs">Delete</Button>
+
+6) Acceptance (must pass)
+
+No visible white text on white background anywhere (scan Quotes, Contracts, Invoices, Leads, Settings, AI Lab, Booking, public pages).
+
+All primary CTAs use <Button variant="primary"> with dark bg and white text.
+
+Secondary actions render as outline or ghost with dark text on light bg.
+
+Disabled & loading states look correct; focus ring visible via keyboard.
+
+pnpm run lint:buttons passes (or lists exactly where a raw button remains to fix).
+
+Codemod reports replaced files; critical pages hand-verified.
+
+7) Build & smoke
+pnpm -w -r build
+pnpm -w -r dev
+pnpm run lint:buttons
+
+
+If any page still shows low-contrast actions, list the route + screenshot and I’ll give you an ultra-targeted patch (sometimes table toolbars or legacy components hide their own styles).

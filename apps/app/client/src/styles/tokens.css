@@ -1,0 +1,15 @@
+:root {
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --brand: #111111;
+  --brand-2: #000000;
+  --primary: #111111;      /* button primary bg */
+  --primary-fg: #ffffff;   /* button primary fg */
+  --border: #e5e7eb;
+  --ring: #111111;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+}
