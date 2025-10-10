@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { Building2, Palette } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const tabs = [
 ];
 
 export function SettingsTabs() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
 
   return (
     <div className="border-b border-gray-200 mb-6">
@@ -26,24 +26,24 @@ export function SettingsTabs() {
           const Icon = tab.icon;
           
           return (
-            <Link key={tab.name} href={tab.href}>
-              <a
+            <button
+              key={tab.name}
+              onClick={() => navigate(tab.href)}
+              className={cn(
+                isActive
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300',
+                'group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm cursor-pointer transition-colors'
+              )}
+            >
+              <Icon
                 className={cn(
-                  isActive
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300',
-                  'group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm cursor-pointer transition-colors'
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                  'mr-2 h-5 w-5'
                 )}
-              >
-                <Icon
-                  className={cn(
-                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
-                    'mr-2 h-5 w-5'
-                  )}
-                />
-                {tab.name}
-              </a>
-            </Link>
+              />
+              {tab.name}
+            </button>
           );
         })}
       </nav>
