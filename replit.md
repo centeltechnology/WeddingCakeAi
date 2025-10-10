@@ -1,7 +1,7 @@
 # BakerIQ
 
 ## Overview
-BakerIQ is a professional SaaS platform for bakeries, designed to modernize business management with a clean, orange-accented UI and comprehensive dark mode. It provides features like CRM, quotes, contracts, payments, and email automation, all tailored for bakers. The platform aims to be the leading solution for bakery business management, enhancing efficiency and customer engagement.
+BakerIQ is a professional SaaS platform for bakeries, designed to modernize business management with a cohesive, high-contrast UI featuring a brand dark header and slate-based design system. It provides features like CRM, quotes, contracts, payments, and email automation, all tailored for bakers. The platform aims to be the leading solution for bakery business management, enhancing efficiency and customer engagement.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -10,12 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 - **Frameworks**: React, TypeScript, Vite.
-- **UI**: Shadcn/ui (built on Radix UI), Tailwind CSS with a custom wedding-themed palette.
+- **UI**: Shadcn/ui (built on Radix UI), Tailwind CSS with slate-based design tokens.
+- **Design System**: Token-based theming (`styles/tokens.css`) with slate-900 brand dark header, tinted slate-50 page backgrounds, and accessible color palette. Unified Button component with 7 variants (primary, secondary, outline, outline-light, ghost, danger, success) ensuring AAA contrast. Reusable Card component for consistent surfaces.
 - **State Management**: TanStack Query.
 - **Routing**: Wouter.
 - **Forms**: React Hook Form with Zod validation.
-- **Navigation**: Centralized system with `navConfig.ts`, `AppLayout`, and `PageHeader` components, supporting demo mode and role-based visibility.
-- **Layout Separation**: Clean architecture separating public marketing pages from admin pages. PublicLayout (NavigationHeader + Footer) for public pages; AppLayout (admin nav) for authenticated pages. Anti-nest CSS protection prevents marketing headers in admin contexts. Guard script (`scripts/guard-admin-clean.sh`) validates separation.
+- **Navigation**: Brand dark header with white text and active pills. Centralized system with `navConfig.ts`, `AppLayout`, and `PageHeader` components, supporting demo mode and role-based visibility.
+- **Layout Separation**: Clean architecture separating public marketing pages from admin pages. PublicLayout (NavigationHeader + Footer) for public pages; AppLayout (admin nav with brand header) for authenticated pages. Anti-nest CSS protection prevents marketing headers in admin contexts. Guard script (`scripts/guard-admin-clean.sh`) validates separation.
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js.
