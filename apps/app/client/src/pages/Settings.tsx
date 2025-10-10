@@ -13,6 +13,7 @@ import { useCalculatorTheme } from "@/hooks/useCalculatorTheme";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AppLayout from "@/components/AppLayout";
+import { SettingsTabs } from "@/components/SettingsTabs";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -61,14 +62,16 @@ export default function Settings() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-serif font-bold text-foreground">
-                    Calculator Settings
+                    Settings
                   </h1>
                   <p className="text-muted-foreground">
-                    Customize how your calculator appears to customers
+                    Manage your calculator and business profile settings
                   </p>
                 </div>
               </div>
               </div>
+
+              <SettingsTabs />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Theme Selector */}

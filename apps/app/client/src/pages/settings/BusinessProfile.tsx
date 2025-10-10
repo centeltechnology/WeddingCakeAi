@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Save, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { SettingsTabs } from '@/components/SettingsTabs';
 
 interface TenantProfile {
   id: string;
@@ -122,9 +123,11 @@ export default function BusinessProfile() {
     <AppLayout>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <PageHeader
-          title="Business Profile"
-          subtitle="Manage your bakery's public information and specialties"
+          title="Settings"
+          subtitle="Manage your calculator and business profile settings"
         />
+
+        <SettingsTabs />
 
         <div className="mt-6 space-y-6">
           <Card>

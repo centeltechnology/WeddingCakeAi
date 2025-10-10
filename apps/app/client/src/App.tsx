@@ -27,6 +27,7 @@ import Cookies from "@/pages/cookies";
 import AcceptableUse from "@/pages/acceptable-use";
 import Help from "@/pages/help";
 import Settings from "@/pages/Settings";
+import BusinessProfile from "@/pages/settings/BusinessProfile";
 import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
@@ -271,6 +272,7 @@ function Router() {
       <Route path="/baker/:slug" component={BakerProfile} />
       <Route path="/baker/:slug/profile" component={BakerProfile} />
       <Route path="/settings" component={Settings} />
+      <Route path="/settings/profile" component={BusinessProfile} />
       <Route path="/account-settings" component={Settings} />
       <Route path="/billing" component={Billing} />
       <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
