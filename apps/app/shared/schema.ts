@@ -1551,3 +1551,53 @@ export type AiBalance = typeof aiBalances.$inferSelect;
 export type InsertAiBalance = z.infer<typeof insertAiBalanceSchema>;
 export type AiUsage = typeof aiUsage.$inferSelect;
 export type InsertAiUsage = z.infer<typeof insertAiUsageSchema>;
+
+// --- Booking System ---
+export const bookingSettings = pgTable("booking_settings", {
+  tenantId: varchar("tenant_id").primaryKey().references(() => tenants.id),
+  timezone: text("timezone").default('America/New_York'),
+  slotMinutes: integer("slot_minutes").default(60),
+  leadTimeDays: integer("lead_time_days").default(2),
+  workdays: jsonb("workdays").$type<{
+    mon?: number[];
+    tue?: number[];
+    wed?: number[];
+    thu?: number[];
+    fri?: number[];
+    sat?: number[];
+    sun?: number[];
+  }>().default({}),
+  services: jsonb("services").$type<Array<{
+    id: string;
+    name: string;
+    minutes: number;
+    price: number;
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const bookings = pgTable("bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  serviceId: text("service_id").notNull(),
+  serviceName: text("service_name").notNull(),
+  startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+  endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+  status: text("status").notNull().default('pending'), // pending, confirmed, canceled
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  tenantIdx: index("bookings_tenant_idx").on(table.tenantId),
+  tenantStartIdx: index("bookings_tenant_start_idx").on(table.tenantId, table.startAt),
+}));
+
+export const insertBookingSettingsSchema = createInsertSchema(bookingSettings);
+export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
+
+export type BookingSettings = typeof bookingSettings.$inferSelect;
+export type InsertBookingSettings = z.infer<typeof insertBookingSettingsSchema>;
+export type Booking = typeof bookings.$inferSelect;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;

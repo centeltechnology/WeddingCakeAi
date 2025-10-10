@@ -1,0 +1,224 @@
+You’re working in apps/app (BakerIQ). Add a minimal, tenant-scoped Booking system (admin + public), create a unified Settings Hub with tabs, and update the top navigation to include Calculator and Booking (flag-controlled). Keep all changes idempotent.
+
+0) Feature Flags (create if missing)
+
+client .env
+
+VITE_CALCULATOR_ENABLED=true
+VITE_BOOKING_ENABLED=true
+
+
+server .env / secrets
+
+CALCULATOR_ENABLED=true
+BOOKING_ENABLED=true
+
+1) Database (Drizzle) — Booking
+
+Add these tables to apps/app/shared/schema.ts (create if missing):
+
+booking_settings (1 row per tenant)
+
+tenant_id (uuid, pk/unique), timezone text, slot_minutes int, lead_time_days int,
+workdays jsonb (e.g., {mon:[9,17], tue:[9,17], ...}),
+services jsonb[] (each {id, name, minutes, price})
+
+created_at, updated_at
+
+bookings
+
+id uuid pk, tenant_id uuid, customer_name text, customer_email text,
+service_id text, service_name text, start_at timestamptz, end_at timestamptz,
+status text check('pending'|'confirmed'|'canceled'), notes text,
+created_at timestamptz default now()
+
+Create indexes on (tenant_id) and (tenant_id, start_at).
+
+Run migrations (or db:push) safely.
+
+2) Server — Booking API (auth + public)
+
+In apps/app/server/routes.ts (tenant-scoped, behind authGuard unless stated):
+
+Admin (auth)
+
+GET /api/booking/settings → load by tenant_id (create defaults if none).
+
+POST /api/booking/settings → upsert settings (validate services array).
+
+GET /api/booking/list?status=pending|confirmed|canceled → list tenant bookings.
+
+POST /api/booking/confirm/:id → set status confirmed.
+
+POST /api/booking/cancel/:id → set status canceled.
+
+Public
+
+GET /api/booking/availability?serviceId=&from=YYYY-MM-DD&to=YYYY-MM-DD
+
+Compute slots from booking_settings (workdays + slot_minutes + lead_time_days),
+remove conflicts using existing bookings with status != 'canceled'.
+
+Return an array of ISO datetimes.
+
+POST /api/booking/create
+
+Body: { tenantSlug|subdomain?, customer_name, customer_email, serviceId, start_at, notes? }
+
+Resolve tenant from slug/subdomain or current host; validate slot is still free; insert pending booking; return { ok:true, bookingId }.
+
+Keep it simple: no email/webhooks yet. Both endpoints must respect BOOKING_ENABLED.
+
+3) Client — Admin Booking UI
+
+Add pages (wrapped in AppLayout and using PageHeader):
+
+client/src/pages/booking/BookingSettings.tsx
+
+Form: timezone (select), slot length, lead time days
+
+Workdays editor (simple checkboxes + hours)
+
+Services CRUD (name, minutes, price)
+
+Save → POST /api/booking/settings
+
+Button: View Public Link (copies /b/<tenant-slug>/book or /book if slug unknown)
+
+client/src/pages/booking/BookingList.tsx
+
+Tabs: Pending / Confirmed / Canceled
+
+Table: date/time, customer, service, status
+
+Actions: Confirm, Cancel (call endpoints, refetch)
+
+Routes (ensure in client/src/App.tsx):
+
+<Route path="/booking/settings" component={BookingSettings} />
+<Route path="/booking/list" component={BookingList} />
+
+4) Client — Public Booking Page
+
+Add client/src/pages/public/BookingPublic.tsx (no AppLayout; public page):
+
+Query GET /api/booking/settings (public version or reuse admin one with a public proxy if needed).
+
+Form:
+
+Service select (from settings.services)
+
+Date range picker (or next 14/30 days quick selector)
+
+Load available slots via GET /api/booking/availability
+
+Collect name/email, notes
+
+Submit → POST /api/booking/create → show success (“We’ll confirm by email”)
+
+Route(s):
+
+Public friendly route:
+
+<Route path="/b/:slug/book" component={BookingPublic} />
+
+
+Fallback (current tenant context) if no slug system:
+
+<Route path="/book" component={BookingPublic} />
+
+5) Settings Hub (tabs)
+
+Create client/src/pages/settings/SettingsHub.tsx which renders a tab bar that links to:
+
+Business Profile → /settings/profile
+
+Social Links → /settings/social
+
+Payment Options → /settings/payments
+
+Media → /settings/media
+
+Booking → /booking/settings (opens the booking page but keep tab cohesion with a visible “Booking” tab)
+
+Ensure /settings route loads this hub and defaults to Business Profile. If you don’t have the previous pages yet, render placeholders that link to the right endpoints (we’ll hook them up next pass).
+
+Routes:
+
+<Route path="/settings" component={SettingsHub} />
+
+6) Top Navigation (AppLayout)
+
+In client/src/components/AppLayout.tsx:
+
+Ensure items (order):
+
+Dashboard → /baker/dashboard
+
+Quotes → /quotes
+
+Contracts → /contracts
+
+Invoices → /invoices
+
+Calculator → /baker/calculator (only if VITE_CALCULATOR_ENABLED==='true')
+
+Booking → /booking/settings (only if VITE_BOOKING_ENABLED==='true')
+
+Customers → /customers (if exists)
+
+Settings → /settings
+
+AI Lab → /ai-lab (if you want always or flag‐gated)
+
+Keep Logout only in AppLayout (we already de-duplicated).
+
+Optional: add a “View Public Profile” icon button that opens /b/<tenant-slug> in a new tab (no-op if slug unknown).
+
+7) Public Calculator Redirect (compat)
+
+If not already done, keep /calculator public V1:
+
+If authed & VITE_CALCULATOR_ENABLED=true → redirect to /baker/calculator
+
+Else render the public demo.
+
+8) Acceptance Criteria
+
+Nav shows Calculator and Booking when flags are true. Hides them when false.
+
+/booking/settings: save settings; changes persist.
+
+/booking/list: bookings load; Confirm/Cancel update status.
+
+Public booking: /b/<slug>/book (or /book) loads services, shows available slots, creates pending booking.
+
+All APIs enforce tenant scope and BOOKING_ENABLED.
+
+Settings Hub exists at /settings with tabs; Booking tab routes to booking settings.
+
+9) Smoke Test (print PASS/FAIL)
+
+After building & running dev, execute these (or simulate via fetch in a script) and print results:
+
+GET /api/booking/settings (auth) → 200 with defaults or saved settings.
+
+POST /api/booking/settings (auth) → 200, re-get shows updated values.
+
+GET /api/booking/availability?serviceId=<id>&from=<today>&to=<+14d> → returns slots.
+
+POST /api/booking/create (public) → 200 with { bookingId }.
+
+GET /api/booking/list?status=pending (auth) → includes the created booking.
+
+POST /api/booking/confirm/:id → 200; list shows confirmed.
+
+Toggle VITE_BOOKING_ENABLED=false → Booking nav disappears; routes guard (403 on API).
+
+Build/Run
+
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Output: Show a concise PASS/FAIL per step with failing path+method if any.
