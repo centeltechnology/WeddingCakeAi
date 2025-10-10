@@ -58,7 +58,7 @@ export default function LeadInbox() {
   const [activeTab, setActiveTab] = useState<'email' | 'note'>('email');
 
   // Fetch lead details
-  const { data: lead, isLoading: leadLoading } = useQuery<Lead>({
+  const { data: lead, isLoading: leadLoading, isError: leadError, refetch: refetchLead } = useQuery<Lead>({
     queryKey: [`/api/leads/${leadId}`],
     queryFn: async () => {
       const res = await fetch(`/api/leads/${leadId}`, { credentials: 'include' });
@@ -66,10 +66,11 @@ export default function LeadInbox() {
       return res.json();
     },
     enabled: !!leadId,
+    retry: 2,
   });
 
   // Fetch thread (messages + notes)
-  const { data: thread, isLoading: threadLoading } = useQuery<ThreadData>({
+  const { data: thread, isLoading: threadLoading, isError: threadError, refetch: refetchThread } = useQuery<ThreadData>({
     queryKey: [`/api/leads/${leadId}/thread`],
     queryFn: async () => {
       const res = await fetch(`/api/leads/${leadId}/thread`, { credentials: 'include' });
@@ -77,6 +78,7 @@ export default function LeadInbox() {
       return res.json();
     },
     enabled: !!leadId,
+    retry: 2,
   });
 
   // Send message mutation
@@ -172,6 +174,35 @@ export default function LeadInbox() {
     );
   }
 
+  if (leadError) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="text-destructive">Error Loading Lead</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Failed to load lead details. This could be due to network issues or insufficient permissions.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => refetchLead()}>
+                  Try Again
+                </Button>
+                <Link href="/leads">
+                  <Button variant="outline">
+                    Back to Leads
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!lead) {
     return (
       <AppLayout>
@@ -187,11 +218,11 @@ export default function LeadInbox() {
     );
   }
 
-  // Combine and sort messages + notes by timestamp
-  const timeline = [
-    ...(thread?.messages || []).map(m => ({ ...m, type: 'message' as const })),
-    ...(thread?.notes || []).map(n => ({ ...n, type: 'note' as const })),
-  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // Combine and sort messages + notes by timestamp (only if thread loaded successfully)
+  const timeline = thread && !threadError ? [
+    ...(thread.messages || []).map(m => ({ ...m, type: 'message' as const })),
+    ...(thread.notes || []).map(n => ({ ...n, type: 'note' as const })),
+  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) : [];
 
   return (
     <AppLayout>
@@ -216,7 +247,14 @@ export default function LeadInbox() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                {timeline.length === 0 ? (
+                {threadError ? (
+                  <div className="text-center py-8 space-y-4">
+                    <p className="text-destructive">Failed to load conversation thread</p>
+                    <Button variant="outline" size="sm" onClick={() => refetchThread()}>
+                      Try Again
+                    </Button>
+                  </div>
+                ) : timeline.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">No messages or notes yet</p>
                 ) : (
                   timeline.map((item, idx) => (
