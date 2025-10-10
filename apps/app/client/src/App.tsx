@@ -100,6 +100,10 @@ import AdminUsersPage from "@/pages/AdminUsers";
 import AILab from "@/pages/AILab";
 import BakerCalculator from "@/pages/BakerCalculator";
 import PublicCalculatorV1Redirect from "@/pages/PublicCalculatorV1Redirect";
+import SettingsHub from "@/pages/SettingsHub";
+import BookingList from "@/pages/settings/BookingList";
+import BookingSettings from "@/pages/settings/BookingSettings";
+import BookingPublic from "@/pages/BookingPublic";
 
 function RootGate() {
   const [, navigate] = useLocation();
@@ -274,12 +278,19 @@ function Router() {
       <Route path="/bakers" component={Bakers} />
       <Route path="/baker/:slug" component={BakerProfile} />
       <Route path="/baker/:slug/profile" component={BakerProfile} />
-      <Route path="/settings" component={Settings} />
+      <Route path="/settings" component={SettingsHub} />
       <Route path="/settings/profile" component={BusinessProfile} />
       <Route path="/settings/social" component={SocialLinks} />
       <Route path="/settings/payments" component={PaymentOptions} />
       <Route path="/settings/media" component={MediaLibrary} />
+      <Route path="/settings/booking" component={BookingSettings} />
       <Route path="/account-settings" component={Settings} />
+      <Route path="/bookings">
+        <AuthGuard>
+          <BookingList />
+        </AuthGuard>
+      </Route>
+      <Route path="/book" component={BookingPublic} />
       <Route path="/billing" component={Billing} />
       <Route path="/advertiser/campaigns/new" component={AdvertiserCampaigns} />
       <Route path="/advertiser/reports" component={AdvertiserReports} />
