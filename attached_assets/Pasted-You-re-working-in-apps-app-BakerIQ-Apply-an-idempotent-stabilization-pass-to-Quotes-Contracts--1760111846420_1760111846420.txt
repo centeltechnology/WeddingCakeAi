@@ -1,0 +1,117 @@
+You’re working in apps/app (BakerIQ). Apply an idempotent stabilization pass to Quotes → Contracts → Invoices → Leads and layout. Keep existing data. Use Drizzle + existing auth guards. Make minimal, reliable UIs with React Query.
+
+A) Layout sanity (global)
+
+Ensure client/src/components/AppLayout.tsx is the only header/nav + Logout.
+
+Add <main className="max-w-6xl mx-auto px-4 pt-6 pb-28"> (note pb-28 for sticky bars).
+
+Delete/stop rendering any marketing/public header on auth pages; add CSS kill-switch #marketing-nav{display:none!important}.
+
+Remove any AppShell/duplicate header usages.
+
+B) Settings reliability
+
+Ensure /api/me/profile GET/POST exist and merge JSON (social, payments) without clobbering.
+
+In settings pages, use useProfile() + useSaveProfile() hooks.
+
+Add components/SaveBar.tsx (fixed bottom); remove hidden bottom buttons.
+
+Fix left menu active styles (dark bg + white text or vice-versa).
+
+C) Quotes (list + approve)
+
+Route /quotes → QuoteList.tsx:
+
+Table: number/title, customer, total, status, actions: Open, Approve.
+
+GET /api/quotes powers list.
+
+Approve → POST /api/quotes/:id/approve creates a contract; toast success; refetch.
+
+/quotes/:id minimal editor is OK; if missing, stub read-only view.
+
+D) Contracts (list + sign → invoice)
+
+/contracts → ContractList.tsx:
+
+Table: title, status, value, actions: Open, Sign.
+
+GET /api/contracts powers list.
+
+Sign → POST /api/contracts/:id/sign sets signed, emits contract_events.signed, creates deposit invoice; toast + refetch.
+
+Fix ContractTimeline data shape (always return [] not object on empty).
+
+E) Invoices (list + mark paid)
+
+/invoices → InvoiceList.tsx:
+
+Table: title/number, status, total, actions: Mark Paid (if pending).
+
+GET /api/invoices powers list.
+
+Mark Paid → POST /api/invoices/:id/paid sets status, emits invoice_events.paid; toast + refetch.
+
+Ensure POST /api/invoices exists for manual create (used by QA button).
+
+F) Leads (CRUD minimal + score)
+
+/leads → Leads.tsx:
+
+Table: name, source, budget, status, Score; buttons New, Recalc.
+
+GET /api/leads returns rows with score join; Recalc → POST /api/leads/:id/score/recalc.
+
+Dashboard: add Top Leads widget (top 5 by score); links to /leads.
+
+G) Public booking blank page
+
+Add read-only public endpoint GET /api/booking/public-settings (no auth).
+
+BookingPublic.tsx must fetch that endpoint; show friendly empty/disabled states.
+
+H) Event timelines (verify)
+
+Ensure create/signed/paid events are inserted (you already added backfill).
+
+Endpoints GET /api/contracts/:id/events, GET /api/invoices/:id/events return arrays.
+
+I) QA hooks (temporary)
+
+Add Test buttons on each list page (visible only in VITE_DEMO_MODE):
+
+Quotes: “Seed Draft Quote”
+
+Contracts: “Seed Draft Contract”
+
+Invoices: “Create Demo Invoice”
+
+Leads: “Seed Demo Leads”
+
+Buttons call tiny seed endpoints (idempotent).
+
+Acceptance (must pass)
+
+Quotes: Approving a draft creates a contract (toast, list updates).
+
+Contracts: Signing creates an invoice (toast, list updates).
+
+Invoices: Marking paid updates status and inserts invoice_events.paid.
+
+Leads: List shows rows with scores; Recalc updates a row.
+
+Layouts: Exactly one header + one Logout on all auth pages.
+
+Settings: Editing → Save → refresh shows persisted values.
+
+Booking public: /book shows services/slots or “disabled” message (not blank).
+
+Run:
+
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Print a concise PASS/FAIL summary with any failing route names.
