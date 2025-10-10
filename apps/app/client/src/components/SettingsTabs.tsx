@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
-import { Building2, Palette } from 'lucide-react';
+import { Building2, Palette, Share2, Wallet } from 'lucide-react';
 
 const tabs = [
   {
@@ -12,6 +12,16 @@ const tabs = [
     name: 'Business Profile',
     href: '/settings/profile',
     icon: Building2,
+  },
+  {
+    name: 'Social Links',
+    href: '/settings/social',
+    icon: Share2,
+  },
+  {
+    name: 'Payment Options',
+    href: '/settings/payments',
+    icon: Wallet,
   },
 ];
 
