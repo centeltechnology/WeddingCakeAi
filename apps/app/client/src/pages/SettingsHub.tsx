@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentType, type ElementType } from 'react';
 import { useLocation } from 'wouter';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,8 +14,8 @@ import BookingSettings from './settings/BookingSettings';
 type Tab = {
   id: string;
   label: string;
-  icon: React.ElementType;
-  component: React.ComponentType<{ embedded?: boolean }>;
+  icon: ElementType;
+  component: ComponentType<{ embedded?: boolean }>;
   enabled: boolean;
 };
 
