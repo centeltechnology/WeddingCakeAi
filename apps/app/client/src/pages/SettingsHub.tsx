@@ -4,12 +4,15 @@ import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
-import { Calculator, User, Share2, CreditCard, Image, Calendar } from 'lucide-react';
+import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap } from 'lucide-react';
 import BusinessProfile from './settings/BusinessProfile';
 import SocialLinks from './settings/SocialLinks';
 import PaymentOptions from './settings/PaymentOptions';
 import MediaLibrary from './settings/MediaLibrary';
 import BookingSettings from './settings/BookingSettings';
+import AutoReplySettings from './settings/AutoReplySettings';
+import AutoReplyTemplates from './settings/AutoReplyTemplates';
+import AutoReplyRules from './settings/AutoReplyRules';
 
 type Tab = {
   id: string;
@@ -23,6 +26,7 @@ export default function SettingsHub() {
   const [, setLocation] = useLocation();
   const calculatorEnabled = import.meta.env.VITE_CALCULATOR_ENABLED === 'true';
   const bookingEnabled = import.meta.env.VITE_BOOKING_ENABLED === 'true';
+  const autoReplyEnabled = import.meta.env.VITE_AUTO_REPLY_ENABLED === 'true';
 
   const tabs: Tab[] = [
     { id: 'profile', label: 'Business Profile', icon: User, component: BusinessProfile, enabled: true },
@@ -30,6 +34,9 @@ export default function SettingsHub() {
     { id: 'payment', label: 'Payment Options', icon: CreditCard, component: PaymentOptions, enabled: true },
     { id: 'media', label: 'Media Library', icon: Image, component: MediaLibrary, enabled: true },
     { id: 'booking', label: 'Booking', icon: Calendar, component: BookingSettings, enabled: bookingEnabled },
+    { id: 'auto-reply-settings', label: 'Auto-Reply Settings', icon: Bell, component: AutoReplySettings, enabled: autoReplyEnabled },
+    { id: 'auto-reply-templates', label: 'Email Templates', icon: Mail, component: AutoReplyTemplates, enabled: autoReplyEnabled },
+    { id: 'auto-reply-rules', label: 'Auto-Reply Rules', icon: Zap, component: AutoReplyRules, enabled: autoReplyEnabled },
   ].filter((tab) => tab.enabled);
 
   const [activeTab, setActiveTab] = useState(tabs[0].id);

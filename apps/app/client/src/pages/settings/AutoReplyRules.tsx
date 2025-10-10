@@ -174,10 +174,10 @@ export default function AutoReplyRules({ embedded = false }: AutoReplyRulesProps
       name: rule.name,
       trigger: rule.trigger,
       templateId: rule.templateId || '',
-      conditions: rule.conditions || {
-        minBudget: undefined,
-        sources: [],
-        hoursSinceLastMsg: undefined,
+      conditions: {
+        minBudget: rule.conditions?.minBudget,
+        sources: rule.conditions?.sources || [],
+        hoursSinceLastMsg: rule.conditions?.hoursSinceLastMsg,
       },
       active: rule.active,
     });

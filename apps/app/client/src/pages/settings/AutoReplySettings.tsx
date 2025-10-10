@@ -51,10 +51,14 @@ export default function AutoReplySettings({ embedded = false }: AutoReplySetting
       if (!res.ok) throw new Error('Failed to fetch settings');
       return res.json() as Promise<AutoReplySettings>;
     },
-    onSuccess: (data: AutoReplySettings) => {
-      setSettings(data);
-    },
   });
+
+  // Update settings when data is loaded
+  if (data && !isLoading) {
+    if (JSON.stringify(settings) !== JSON.stringify(data)) {
+      setSettings(data);
+    }
+  }
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<AutoReplySettings>) => {
