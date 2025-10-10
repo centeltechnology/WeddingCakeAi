@@ -60,6 +60,20 @@ export const tenantProfiles = pgTable("tenant_profiles", {
   specialties: text("specialties").array(),
   logoUrl: text("logo_url"),
   coverUrl: text("cover_url"),
+  social: jsonb("social").$type<{
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+    youtube?: string;
+    pinterest?: string;
+  }>(),
+  payments: jsonb("payments").$type<{
+    cashapp?: string;
+    venmo?: string;
+    paypal?: string;
+    zelle?: string;
+    stripeLink?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
