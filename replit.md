@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query.
 - **Routing**: Wouter.
 - **Forms**: React Hook Form with Zod validation.
-- **Navigation**: Brand dark header with white text and active pills. Centralized system with `navConfig.ts`, `AppLayout`, and `PageHeader` components, supporting demo mode and role-based visibility.
+- **Navigation**: Brand dark header with white text and active pills. Centralized system with `config/nav.ts` (MAIN_NAV array, featureOn utility), responsive `AppHeader` component with mobile hamburger drawer, `AppLayout`, and `PageHeader` components. Features: mobile-first responsive design, scroll-locking drawer, active route highlighting, feature flag filtering, unified logout flow. QuickActions component provides tenant-aware preview links and credits top-up in both compact (header) and full (dashboard) modes.
 - **Layout Separation**: Clean architecture separating public marketing pages from admin pages. PublicLayout (NavigationHeader + Footer) for public pages; AppLayout (admin nav with brand header) for authenticated pages. Anti-nest CSS protection prevents marketing headers in admin contexts. Guard script (`scripts/guard-admin-clean.sh`) validates separation.
 
 ### Backend Architecture
