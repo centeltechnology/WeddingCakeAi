@@ -1,0 +1,206 @@
+You’re working in apps/app (BakerIQ).
+Refactor the global header & navigation for clarity and responsiveness, add a reusable Quick Actions block, make the dashboard mobile-friendly, and fix the Logout flow. Do this idempotently.
+
+0) Assumptions & Flags
+
+Auth is cookie or token based; if cookies: server /logout clears session; if JWT in localStorage: client clears token + redirects. We’ll support both.
+
+Feature flags already used:
+
+VITE_CALCULATOR_ENABLED, VITE_BOOKING_ENABLED, VITE_PUBLIC_MARKETPLACE_ENABLED, VITE_PUBLIC_CALCULATOR_ENABLED, VITE_DEMO_MODE.
+
+If your logout endpoint differs, define LOGOUT_PATH in one place.
+
+A) Navigation System (desktop + mobile)
+
+Create a single source of truth for menu items
+client/src/config/nav.ts
+
+export type NavItem = { label:string; href:string; feature?: 'calculator'|'booking'|'ai'; exact?:boolean };
+export const MAIN_NAV: NavItem[] = [
+  { label:'Dashboard', href:'/baker/dashboard', exact:true },
+  { label:'Leads', href:'/leads' },
+  { label:'Quotes', href:'/quotes' },
+  { label:'Contracts', href:'/contracts' },
+  { label:'Invoices', href:'/invoices' },
+  { label:'Calculator', href:'/baker/calculator', feature:'calculator' },
+  { label:'Booking', href:'/booking/settings', feature:'booking' },
+  { label:'Customers', href:'/customers' },
+  { label:'AI Lab', href:'/ai-lab', feature:'ai' },
+  { label:'Settings', href:'/settings' },
+];
+export function featureOn(feature?: NavItem['feature']) {
+  if (!feature) return true;
+  if (feature==='calculator') return import.meta.env.VITE_CALCULATOR_ENABLED === 'true';
+  if (feature==='booking') return import.meta.env.VITE_BOOKING_ENABLED === 'true';
+  if (feature==='ai') return import.meta.env.VITE_AI_ENABLED === 'true';
+  return true;
+}
+
+
+Responsive AppHeader + Mobile Drawer
+Create client/src/components/AppHeader.tsx:
+
+Left: brand + hamburger (sm & down).
+
+Middle (md+): nav links (filter by featureOn), active item pill.
+
+Right: QuickActions (icon-only on mobile) + Logout button (working).
+
+Add a slide-over drawer for mobile nav.
+
+Wire in AppLayout
+Update client/src/components/AppLayout.tsx to use <AppHeader /> and ensure:
+
+Root: min-h-screen bg-[var(--bg)] text-[var(--fg)]
+
+Main: max-w-6xl mx-auto px-4 pt-6 pb-28
+
+Anti-nesting CSS to hide any stray marketing header.
+
+Active state utility
+Use current location (react-router) to set data-active=true when the route starts with the item’s href; style with a subtle pill (white/10 on brand header).
+
+B) Quick Actions (Top-Up, Preview Listing, Preview Calculator)
+
+Tenant mini endpoint
+Server routes.ts (auth):
+
+app.get('/api/me/tenant', authGuard, async (req,res)=>{
+  res.json({ id:req.tenant.id, slug:req.tenant.slug ?? null });
+});
+
+
+URL builders
+client/src/lib/publicLinks.ts (if not already):
+
+export const buildMarketplaceUrl = (slug?:string|null)=> slug ? `/p/${slug}` : '/p/demo';
+export const buildLeadGenUrl = (slug?:string|null, preferBooking=true)=>{
+  const bookingOn = import.meta.env.VITE_BOOKING_ENABLED === 'true';
+  const calcOn = import.meta.env.VITE_PUBLIC_CALCULATOR_ENABLED === 'true';
+  if (preferBooking && bookingOn) return slug ? `/b/${slug}/book` : '/book';
+  if (calcOn) return '/calculator';
+  return '/';
+};
+
+
+QuickActions component
+Create client/src/components/QuickActions.tsx:
+
+Large buttons for Top-Up, Preview Listing, Preview Calculator (desktop).
+
+Compact icon buttons (header) for mobile.
+
+Top-Up opens your existing credit modal or a placeholder toast if not wired.
+
+Place QuickActions
+
+Dashboard: insert a “Quick Actions” Card near top with 3 buttons.
+
+AppHeader (right side): compact QuickActions (icon-only) + Logout.
+
+C) Mobile-Friendly Dashboard
+
+Responsive grid
+In client/src/pages/BakerDashboard.tsx (or Dashboard.tsx):
+
+Wrap sections in a slab: rounded-2xl bg-[var(--accent)] p-4 border border-[var(--accent-2)].
+
+Use responsive grid:
+
+grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3
+
+Heavy charts: hide on small (hidden md:block), show a small stats summary instead.
+
+All tables: wrap with overflow-x-auto so they scroll horizontally on mobile.
+
+Cards: minimum tap target (py-3 buttons, text-sm).
+
+DataTable tweak
+Ensure your DataTable wrapper uses:
+
+<div className="overflow-x-auto rounded-2xl border border-[var(--accent-2)] bg-white">
+  <table className="min-w-full text-sm">...</table>
+</div>
+
+D) Fix Logout (works for cookie or token)
+
+Client util client/src/lib/auth.ts:
+
+export const LOGOUT_PATH = '/logout'; // adjust here if needed
+export async function logout(){
+  // try server logout (for cookie sessions)
+  try { await fetch(LOGOUT_PATH, { method:'POST', credentials:'include' }); } catch {}
+  // client-side cleanup (for JWT/localStorage)
+  try { localStorage.removeItem('token'); sessionStorage.removeItem('token'); } catch {}
+  window.location.href = '/login';
+}
+
+
+Header Logout button uses logout() (not a bare <form action>).
+
+Server (if cookie sessions): implement /logout
+routes.ts:
+
+app.post('/logout', (req,res)=>{
+  // clear session cookie/csrf/etc.
+  res.clearCookie('sid'); // or your cookie name
+  return res.status(200).json({ ok:true });
+});
+
+E) Visual theme touches (reduce “too much white”)
+
+Header: keep brand dark background with white nav text.
+
+Background: page uses var(--bg) (slate-50); group content on accent slabs.
+
+Card borders: var(--accent-2), card body stays white for readability.
+
+Buttons: use primary/secondary/outline-light in header; primary/outline/ghost in content (no white-on-white).
+
+Focus rings everywhere (focus:ring-2).
+
+F) Acceptance Checklist (must pass)
+
+Header & Menu
+
+Desktop: one clean brand header with readable nav; active item has a pill.
+
+Mobile: hamburger opens a drawer with the same items; all links work.
+
+No duplicate headers or overlapping bars.
+
+Quick Actions
+
+New Quick Actions Card on Dashboard with: Top-Up, Preview Listing, Preview Calculator (buttons visible and working).
+
+Compact Quick Actions (icons) in header on mobile.
+
+Preview links open correct public pages (use slug when available; fallback safe).
+
+Logout
+
+Clicking Logout returns you to /login reliably (works for cookie or token auth).
+
+Mobile Dashboard
+
+On a phone-sized viewport, cards stack, charts collapse to summaries, tables scroll horizontally (no layout explosions).
+
+No white-on-white
+
+Buttons are legible without hover across all pages.
+
+G) Build & Quick Smoke
+pnpm -w -r build
+pnpm -w -r dev
+
+
+Manual quick checks:
+
+Resize to mobile: hamburger works; dashboard stacks; tables scroll.
+
+Quick Actions show on Dashboard; header shows compact icons on mobile.
+
+Preview Listing/Calculator open in new tabs.
+
+Logout → /login (no errors).

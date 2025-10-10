@@ -25,3 +25,28 @@ export const tokenManager = {
     return this.getToken() !== null;
   }
 };
+
+// Logout path configuration
+export const LOGOUT_PATH = '/api/auth/logout';
+
+// Unified logout function (works for both cookie and token auth)
+export async function logout() {
+  // Try server logout (for cookie sessions)
+  try {
+    await fetch(LOGOUT_PATH, { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    console.error('Logout request failed:', e);
+  }
+  
+  // Client-side cleanup (for JWT/localStorage)
+  try {
+    tokenManager.clearToken();
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+  } catch (e) {
+    console.error('Local storage cleanup failed:', e);
+  }
+  
+  // Redirect to login
+  window.location.href = '/login';
+}
