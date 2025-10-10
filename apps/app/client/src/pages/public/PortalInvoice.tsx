@@ -34,6 +34,7 @@ export default function PortalInvoice() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<InvoiceData | null>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -54,6 +55,37 @@ export default function PortalInvoice() {
         setLoading(false);
       });
   }, [token]);
+
+  const handlePayment = async () => {
+    if (!data || !token) return;
+
+    setProcessingPayment(true);
+    try {
+      const response = await fetch(`/api/invoices/${data.invoice.id}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          isPortal: true,
+          returnUrl: window.location.href
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const result = await response.json();
+      
+      // Redirect to Stripe Checkout
+      if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError('Failed to initiate payment. Please try again.');
+      setProcessingPayment(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -160,12 +192,17 @@ export default function PortalInvoice() {
               <p className="text-slate-600">
                 Ready to pay your invoice?
               </p>
-              <Button variant="primary" className="w-full sm:w-auto">
+              <Button 
+                variant="primary" 
+                className="w-full sm:w-auto"
+                onClick={handlePayment}
+                disabled={processingPayment}
+              >
                 <CreditCard className="h-4 w-4 mr-2" />
-                Pay ${invoice.total}
+                {processingPayment ? 'Processing...' : `Pay $${invoice.total}`}
               </Button>
               <p className="text-xs text-slate-500">
-                Secure payment processing
+                Secure payment powered by Stripe
               </p>
             </div>
           </Card>
