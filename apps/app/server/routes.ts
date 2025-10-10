@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs } from "@shared/schema";
+import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, templates, quoteItems } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -36,6 +36,7 @@ import { sendContractEmail } from "./emails/sendContractEmail";
 import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
 import { upsertLeadScore } from "./services/leadScoring";
 import { evaluateAndSendAutoReplies, renderTemplate, sendAutoReplyEmail } from "./services/autoReply";
+import { renderTemplate as renderTemplateEngine, extractVariables, buildQuoteContext, buildContractContext } from "./services/templateEngine";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -4732,6 +4733,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching contract signatures:', error);
       res.status(500).json({ error: 'Failed to fetch contract signatures' });
+    }
+  });
+
+  // Universal Template API Routes
+  app.get('/api/templates', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant required' });
+      }
+
+      const { type } = req.query;
+      let query = db.select().from(templates).where(eq(templates.tenantId, tenantId));
+      
+      if (type && (type === 'quote' || type === 'contract' || type === 'email')) {
+        query = db.select().from(templates).where(
+          and(
+            eq(templates.tenantId, tenantId),
+            eq(templates.type, type as string)
+          )
+        );
+      }
+
+      const templateList = await query;
+      res.json(templateList);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+  });
+
+  app.post('/api/templates', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant required' });
+      }
+
+      const { id, type, name, content } = req.body;
+
+      // Validate type
+      if (!['quote', 'contract', 'email'].includes(type)) {
+        return res.status(400).json({ error: 'Type must be quote, contract, or email' });
+      }
+
+      // Extract variables from template
+      const variables = extractVariables(content);
+
+      if (id) {
+        // Update existing template
+        const [updated] = await db.update(templates)
+          .set({
+            name,
+            content,
+            variables,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(templates.id, id),
+            eq(templates.tenantId, tenantId)
+          ))
+          .returning();
+
+        if (!updated) {
+          return res.status(404).json({ error: 'Template not found' });
+        }
+        
+        res.json(updated);
+      } else {
+        // Create new template
+        const [created] = await db.insert(templates)
+          .values({
+            id: randomUUID(),
+            tenantId,
+            type,
+            name,
+            content,
+            variables,
+          })
+          .returning();
+
+        res.json(created);
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      res.status(500).json({ error: 'Failed to save template' });
+    }
+  });
+
+  app.delete('/api/templates/:id', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant required' });
+      }
+
+      const [deleted] = await db.delete(templates)
+        .where(and(
+          eq(templates.id, req.params.id),
+          eq(templates.tenantId, tenantId)
+        ))
+        .returning();
+
+      if (!deleted) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      res.status(500).json({ error: 'Failed to delete template' });
+    }
+  });
+
+  app.post('/api/templates/render', ensureAuthUnified, requireTenant, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant required' });
+      }
+
+      const { type, templateId, data } = req.body;
+
+      // Fetch template
+      const [template] = await db.select()
+        .from(templates)
+        .where(and(
+          eq(templates.id, templateId),
+          eq(templates.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+
+      let context;
+      let variablesFound;
+
+      if (type === 'quote') {
+        // Build quote context
+        const quote = data.quote || {};
+        const customer = data.customer || {};
+        const items = data.items || [];
+        
+        context = buildQuoteContext(quote, customer, items);
+        variablesFound = template.variables;
+      } else if (type === 'contract') {
+        // Build contract context
+        const contract = data.contract || {};
+        const quote = data.quote || {};
+        const customer = data.customer || {};
+        const items = data.items || [];
+        
+        context = buildContractContext(contract, quote, customer, items);
+        variablesFound = template.variables;
+      } else {
+        // Generic context for email templates
+        context = data;
+        variablesFound = template.variables;
+      }
+
+      // Render template
+      const html = renderTemplateEngine(template.content, context);
+
+      res.json({
+        html,
+        variablesFound,
+      });
+    } catch (error) {
+      console.error('Error rendering template:', error);
+      res.status(500).json({ error: 'Failed to render template' });
     }
   });
 
