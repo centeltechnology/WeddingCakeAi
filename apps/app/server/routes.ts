@@ -5,7 +5,7 @@ import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads } from "@shared/schema";
+import { leads, customers, quotes, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenantProfiles } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -8734,6 +8734,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error in AI generate-contract stub:', error);
       res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
+  // Tenant Profile endpoints
+  app.get('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      if (!userEmail) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get baker and tenant info by email
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      // Load profile by tenant_id
+      const [profile] = await db
+        .select()
+        .from(tenantProfiles)
+        .where(eq(tenantProfiles.tenantId, baker.tenantId))
+        .limit(1);
+
+      res.json(profile || null);
+    } catch (error) {
+      console.error('Error loading tenant profile:', error);
+      res.status(500).json({ error: 'Failed to load profile' });
+    }
+  });
+
+  app.post('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      if (!userEmail) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get baker and tenant info by email
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const { displayName, phone, website, address, about, specialties, logoUrl, coverUrl } = req.body;
+
+      // Check if profile exists
+      const [existing] = await db
+        .select()
+        .from(tenantProfiles)
+        .where(eq(tenantProfiles.tenantId, baker.tenantId))
+        .limit(1);
+
+      let profile;
+      if (existing) {
+        // Update existing profile
+        [profile] = await db
+          .update(tenantProfiles)
+          .set({
+            displayName,
+            phone,
+            website,
+            address,
+            about,
+            specialties: specialties || [],
+            logoUrl,
+            coverUrl,
+            updatedAt: new Date(),
+          })
+          .where(eq(tenantProfiles.tenantId, baker.tenantId))
+          .returning();
+      } else {
+        // Insert new profile
+        [profile] = await db
+          .insert(tenantProfiles)
+          .values({
+            tenantId: baker.tenantId,
+            displayName,
+            phone,
+            website,
+            address,
+            about,
+            specialties: specialties || [],
+            logoUrl,
+            coverUrl,
+          })
+          .returning();
+      }
+
+      res.json(profile);
+    } catch (error) {
+      console.error('Error saving tenant profile:', error);
+      res.status(500).json({ error: 'Failed to save profile' });
     }
   });
 
