@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X } from 'lucide-react';
-import { MAIN_NAV, featureOn } from '@/config/nav';
 import { logout } from '@/lib/auth';
 import QuickActions from '@/components/QuickActions';
+import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/Button';
 
 export default function AppHeader() {
@@ -27,13 +27,6 @@ export default function AppHeader() {
     };
   }, [mobileMenuOpen]);
 
-  const visibleItems = MAIN_NAV.filter(item => featureOn(item.feature));
-
-  const isActive = (href: string, exact?: boolean) => {
-    if (exact) return location === href;
-    return location === href || location.startsWith(href + '/');
-  };
-
   const handleLogout = async () => {
     await logout();
   };
@@ -42,7 +35,7 @@ export default function AppHeader() {
     <>
       {/* Brand Dark Header */}
       <header className="sticky top-0 z-50 bg-[var(--brand)] text-white border-b border-black/10">
-        <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between gap-2">
+        <div className="h-14 px-4 flex items-center justify-between gap-2">
           {/* Left: Brand + Hamburger (mobile) */}
           <div className="flex items-center gap-2">
             <button
@@ -59,25 +52,6 @@ export default function AppHeader() {
               BakerIQ
             </Link>
           </div>
-
-          {/* Middle: Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {visibleItems.map(item => {
-              const active = isActive(item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm ${
-                    active ? 'bg-white/15 font-medium' : ''
-                  }`}
-                  data-active={active}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
 
           {/* Right: Quick Actions + Logout */}
           <div className="flex items-center gap-2">
@@ -105,24 +79,9 @@ export default function AppHeader() {
           
           {/* Drawer */}
           <div className="fixed top-14 left-0 right-0 bottom-0 bg-white dark:bg-gray-900 z-40 md:hidden overflow-y-auto">
-            <nav className="p-4 space-y-1">
-              {visibleItems.map(item => {
-                const active = isActive(item.href, item.exact);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-4 py-3 rounded-lg transition-colors ${
-                      active 
-                        ? 'bg-[var(--brand)] text-white font-medium' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+            <div className="p-4">
+              <Sidebar />
+            </div>
             
             {/* Mobile Quick Actions */}
             <div className="p-4 border-t dark:border-gray-800">

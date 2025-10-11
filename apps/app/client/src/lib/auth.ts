@@ -26,14 +26,11 @@ export const tokenManager = {
   }
 };
 
-// Logout path configuration
-export const LOGOUT_PATH = '/api/auth/logout';
-
 // Unified logout function (works for both cookie and token auth)
 export async function logout() {
   // Try server logout (for cookie sessions)
   try {
-    await fetch(LOGOUT_PATH, { method: 'POST', credentials: 'include' });
+    await fetch('/logout', { method: 'POST', credentials: 'include' });
   } catch (e) {
     console.error('Logout request failed:', e);
   }

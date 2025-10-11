@@ -3201,10 +3201,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Proper logout endpoint - clears session cookie
+  app.post('/logout', (req: any, res: any) => {
+    try {
+      res.clearCookie('sid');
+    } catch (e) {
+      console.error('Error clearing cookie:', e);
+    }
+    return res.status(200).json({ ok: true });
+  });
+  
   // Logout endpoint - handle both GET and POST
   const logoutHandler = async (req: any, res: any) => {
-    // For token-based auth, logout is handled client-side by removing the token
-    // Redirect to client-side login page 
+    try {
+      res.clearCookie('sid');
+    } catch (e) {
+      console.error('Error clearing cookie:', e);
+    }
     res.redirect('/baker-login');
   };
 
