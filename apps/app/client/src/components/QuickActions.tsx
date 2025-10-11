@@ -1,5 +1,6 @@
-import { ExternalLink, CreditCard, Calculator, Eye } from 'lucide-react';
+import { ExternalLink, CreditCard, Calculator, Eye, CalculatorCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { useCreditsModal } from '@/components/ai/CreditsModalContext';
 import { buildMarketplaceUrl, buildLeadGenUrl } from '@/lib/publicLinks';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ type QuickActionsProps = {
 
 export default function QuickActions({ variant = 'full', className = '' }: QuickActionsProps) {
   const creditsModal = useCreditsModal();
+  const [, setLocation] = useLocation();
   
   const { data: tenant } = useQuery<TenantInfo>({
     queryKey: ['/api/me/tenant'],
@@ -47,6 +49,10 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
     }
   };
 
+  const handleBakerCalculator = () => {
+    setLocation('/baker/calculator');
+  };
+
   const previewListingTooltip = hasSlug
     ? "Preview Listing"
     : "Set up your public profile in Settings first";
@@ -58,6 +64,14 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
   if (variant === 'compact') {
     return (
       <div className={`flex items-center gap-1 ${className}`}>
+        <Tooltip label="Baker Calculator">
+          <button
+            onClick={handleBakerCalculator}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <CalculatorCheck className="h-4 w-4" />
+          </button>
+        </Tooltip>
         <Tooltip label="Top-Up Credits">
           <button
             onClick={handleTopUp}
@@ -89,7 +103,15 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
   }
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3 ${className}`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${className}`}>
+      <Button
+        variant="outline"
+        onClick={handleBakerCalculator}
+        className="w-full justify-start gap-2"
+      >
+        <CalculatorCheck className="h-4 w-4" />
+        Baker Calculator
+      </Button>
       <Button
         variant="outline"
         onClick={handleTopUp}

@@ -13,6 +13,7 @@ export const NAV: NavNode[] = [
   { 
     label: 'Customers', 
     children: [
+      { label: 'Baker Calculator', href: '/baker/calculator' },
       { label: 'Leads', href: '/leads' },
       { label: 'Quotes', href: '/quotes' },
       { label: 'Contracts', href: '/contracts' },
