@@ -1,0 +1,144 @@
+Context: You are the Replit AI agent assigned to the BakerIQ rebuild.
+Goal: Log in and thoroughly test the entire dashboard in a read-only pass. Do not modify code or data beyond creating safe demo records when strictly necessary to render screens.
+
+Login
+
+URL: https://aa3f47d9-90c5-4639-a088-5f7d213f1f3a-00-s0so12it9vlx.picard.replit.dev/login
+
+Email: demo@bakeriq.app
+
+Password: DemoPass123!
+
+Scope
+
+Global UI/UX
+
+Header + left sidebar: active states, mobile drawer (if present), Quick Actions (Credits, Preview Listing, Preview Calculator).
+
+Logout flow: must route to /login (not refresh dashboard).
+
+Responsive check at 1440px, 1024px, 768px, 375px.
+
+Dashboard
+
+KPI cards, “AI-Powered Features” tiles, charts/widgets.
+
+Quick Actions section (Top-Up, Preview Listing, Preview Calculator) visible/working.
+
+Customers group
+
+Leads: list loads; open details; seed/sample action (if present) succeeds; scoring visible; no 403s for demo tenant.
+
+Quotes: list loads; detail opens; approve → (observe only) contract creation trigger; no V1 redirects.
+
+Contracts: list & detail; timeline renders (no data.map crash); sign action present (observation only).
+
+Invoices: list & detail; mark paid (observation only); Stripe button visible if enabled.
+
+AI Lab
+
+“Suggest Items”, “Summarize Quote”, “Generate Contract” return meaningful payloads (not just “stubbed”).
+
+Settings
+
+Tabs visible: Business Profile, Social, Payments, Templates, Media Library, Booking, Auto-Reply, Calculator Settings.
+
+Business Profile: changes persist and remain visible in inputs after save.
+
+Templates: reachable via Settings tab and deep links; create template save does not error (no “Venue not found”).
+
+Media Library: multi-upload (≥5) works; assets list renders; logo/cover set returns updated profile.
+
+Booking Settings: US timezone dropdown; save works; public /book shows/non-blank.
+
+Auto-Reply: settings/rules/templates can be created/saved/toggled (no invisible save).
+
+Calculator: no 403 when enabled; if disabled, UI hides actions and preview falls back to /calculator.
+
+Public previews
+
+Preview Listing → /p/<slug> renders info & gallery; CTA to booking/calculator works.
+
+Preview Calculator → /b/<slug>/book if booking enabled, else /calculator.
+
+Events & APIs (read-only)
+
+Contract and invoice timelines return arrays (empty OK, no exceptions).
+
+Quotes approval/contract signing/invoice paid endpoints respond without 500s when invoked by UI (do not force data changes).
+
+Templates save error
+
+Attempt to create a Quote template and save; capture error text if it fails (e.g., “Venue not found”).
+
+What to Capture
+
+Screenshots (PNG):
+
+Dashboard (desktop + mobile), Leads (list + detail), Quotes/Contracts/Invoices (list + one detail each), AI Lab, Settings main + Business Profile + Media + Templates + Booking, Preview Listing, Preview Calculator.
+
+Network/Console:
+
+For any failure, capture the failing request (method, URL, status, response JSON) and the console error stack or message.
+
+Flags/state:
+
+Note visible feature flags (AI/Booking/Calculator enabled/disabled UI states).
+
+Routing:
+
+Note any V1 redirects or dead routes (404/403).
+
+DO create safe demo data only if needed to render UI
+
+If a list is empty and a Seed Demo button exists, click it once, then re-test.
+
+Do not hand-craft POSTs directly; only use provided UI buttons.
+
+Deliverables
+
+Return a structured QA report with:
+
+PASS/FAIL table (per area):
+
+Global Nav/Logout
+
+Dashboard
+
+Leads
+
+Quotes
+
+Contracts
+
+Invoices
+
+AI Lab
+
+Settings: Business Profile / Templates / Media / Booking / Auto-Reply / Calculator
+
+Public Previews
+
+Events/APIs (read-only)
+
+Top 10 Blocking Issues
+
+One-liners with route/component and failing API (method + path + status) or stack message.
+
+Fix Map (file-level pointers)
+
+For each blocker, list likely file(s) to touch (e.g., client/src/components/ContractTimeline.tsx guard array; server/routes.ts quote approval venue check; MediaLibrary.tsx assets array shape).
+
+Screenshots index
+
+Filenames → short description.
+
+Quick Recommendations (no code)
+
+Exact small fixes to restore core loop (approve→contract→invoice; media upload; settings persistence; AI Lab payloads).
+
+Flag toggles to avoid 403s or “disabled” popups in demo.
+
+Format: Markdown with sections + bullet points. Include failing request snippets inline.
+
+Success Criteria: Report must be actionable (developers can fix directly from it) and complete (touches every area listed above).
