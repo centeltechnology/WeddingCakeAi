@@ -88,7 +88,7 @@ const EXAMPLE_CONTRACT_TEMPLATE = [
   '</div>'
 ].join('\n');
 
-export default function Templates() {
+export default function Templates({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,7 +105,7 @@ export default function Templates() {
 
   const { data: templates, isLoading } = useQuery<Template[]>({
     queryKey: ['/api/templates'],
-    queryFn: async () => apiRequest('GET', '/api/templates', undefined) as Promise<Template[]>,
+    queryFn: async () => apiRequest('GET', '/api/templates', undefined) as any,
   });
 
   const saveMutation = useMutation({
@@ -225,7 +225,7 @@ export default function Templates() {
     };
 
     try {
-      const result = await apiRequest('POST', '/api/templates/render', exampleData);
+      const result: any = await apiRequest('POST', '/api/templates/render', exampleData);
       setPreviewHtml(result.html);
       setPreviewOpen(true);
     } catch (error: any) {
@@ -247,42 +247,34 @@ export default function Templates() {
   const quoteTemplates = templates?.filter(t => t.type === 'quote') || [];
   const contractTemplates = templates?.filter(t => t.type === 'contract') || [];
 
-  return (
-    <AppLayout>
-      <div className="max-w-7xl mx-auto">
-        <PageHeader
-          title="Settings"
-          subtitle="Manage your templates for quotes and contracts"
-        />
+  const content = (
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold">Templates</h2>
+          <Button onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
 
-        <SettingsTabs />
-
-        <div className="mt-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Templates</h2>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Template
-            </Button>
-          </div>
-
-          {isLoading ? (
-            <Card>
-              <CardContent className="p-8 text-center text-gray-500">
-                Loading templates...
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quote Templates</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {quoteTemplates.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No quote templates yet</p>
-                  ) : (
-                    <div className="space-y-2">
+        {isLoading ? (
+        <Card>
+          <CardContent className="p-8 text-center text-gray-500">
+            Loading templates...
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quote Templates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {quoteTemplates.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No quote templates yet</p>
+              ) : (
+                <div className="space-y-2">
                       {quoteTemplates.map((template) => (
                         <div
                           key={template.id}
@@ -382,8 +374,6 @@ export default function Templates() {
             </>
           )}
         </div>
-      </div>
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -464,6 +454,27 @@ export default function Templates() {
           />
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <PageHeader
+          title="Settings"
+          subtitle="Manage your templates for quotes and contracts"
+        />
+
+        <SettingsTabs />
+
+        <div className="mt-6">
+          {content}
+        </div>
+      </div>
     </AppLayout>
   );
 }

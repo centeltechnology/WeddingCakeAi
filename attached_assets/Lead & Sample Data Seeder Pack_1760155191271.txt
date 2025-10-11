@@ -1,0 +1,209 @@
+Lead & Sample Data Seeder Pack (Unblock Q→C→I Loop)
+
+Repo: apps/app
+Goal: Fix “Seed Demo Leads” and add a safe, tenant-scoped seeder that populates Leads (and, if empty, a Customer + Quote) so we can test Approve → Sign → Mark Paid immediately. Make all changes idempotent.
+
+0) Server: derive tenant/baker in one place
+
+Create apps/app/server/lib/context.ts:
+
+export function getCtx(req:any){
+  const tenantId = req?.tenant?.id;
+  const userId = req?.user?.id ?? null;
+  const bakerId = req?.user?.bakerId ?? null;
+  if (!tenantId) throw new Error('No tenant in request');
+  return { tenantId, userId, bakerId };
+}
+
+
+Use this in every route in this prompt.
+
+1) Server: Seed Demo Leads endpoint (idempotent)
+
+Add to apps/app/server/routes.ts (auth-guarded):
+
+app.post('/api/leads/sample', ensureAuthUnified, async (req, res) => {
+  const { tenantId } = getCtx(req);
+  // Check if we already seeded (idempotent)
+  const existing = await db.select({count: sql<number>`count(*)`.mapWith(Number)}).from(leads)
+    .where(eq(leads.tenantId, tenantId));
+  if ((existing?.[0]?.count ?? 0) >= 3) return res.json({ ok:true, seeded:false, count: existing[0].count });
+
+  const now = new Date();
+  const demo = [
+    { name:'Sarah Johnson', email:'sarah@example.com', source:'instagram', budget:250, status:'new' },
+    { name:'Mike Carter',   email:'mike@example.com',  source:'referral',  budget:450, status:'new' },
+    { name:'Ana Rivera',    email:'ana@example.com',   source:'website',   budget:150, status:'new' },
+  ];
+  for (const row of demo){
+    const id = crypto.randomUUID();
+    await db.insert(leads).values({ id, tenantId, ...row, createdAt: now });
+    // optional: simple score
+    await db.insert(leadScores).values({ id: crypto.randomUUID(), tenantId, leadId: id, score: Math.floor(Math.random()*30)+50 });
+  }
+  const out = await db.select().from(leads).where(eq(leads.tenantId, tenantId)).limit(5);
+  return res.json({ ok:true, seeded:true, leads: out });
+});
+
+
+If your tables differ slightly, adapt field names but keep it tenant-scoped and idempotent.
+
+2) Server: Sample Quote seeder (only if no quotes)
+
+Add to routes.ts:
+
+app.post('/api/quotes/sample', ensureAuthUnified, async (req, res) => {
+  const { tenantId } = getCtx(req);
+  const hasQuote = await db.select({count: sql<number>`count(*)`.mapWith(Number)}).from(quotes)
+    .where(eq(quotes.tenantId, tenantId));
+  if ((hasQuote?.[0]?.count ?? 0) > 0) return res.json({ ok:true, created:false });
+
+  // Ensure one customer exists
+  let [cust] = await db.select().from(customers).where(eq(customers.tenantId, tenantId)).limit(1);
+  if (!cust){
+    const custId = crypto.randomUUID();
+    await db.insert(customers).values({ id:custId, tenantId, name:'Sample Customer', email:'customer@example.com' });
+    [cust] = await db.select().from(customers).where(eq(customers.id, custId));
+  }
+
+  const quoteId = crypto.randomUUID();
+  await db.insert(quotes).values({
+    id: quoteId, tenantId, customerId: cust.id, title: '8” Cake + 12 Cupcakes', status:'draft', total: 91,
+    createdAt: new Date()
+  });
+  // Optional: items table if present
+  try {
+    await db.insert(quoteItems).values([
+      { id: crypto.randomUUID(), tenantId, quoteId, name:'8” Two-Layer Cake', qty:1, price:55 },
+      { id: crypto.randomUUID(), tenantId, quoteId, name:'Cupcakes (Dozen)', qty:1, price:36 },
+    ]);
+  } catch {}
+  return res.json({ ok:true, created:true, quoteId });
+});
+
+3) Server: Approve Quote must not require venue
+
+Ensure POST /api/quotes/:id/approve:
+
+Uses getCtx(req); never reads tenantId from client.
+
+In DEMO_MODE, skip/ignore venue validation. If a venue is required in prod, seed a default for demo tenant.
+
+On success:
+
+Create contracts row (tenant-scoped) with total/summary from quote.
+
+Insert quote_events.approved.
+
+Return { ok:true, contractId }.
+
+4) Server: Contracts Sign → creates invoice + events
+
+Ensure POST /api/contracts/:id/sign:
+
+Marks contract signedAt.
+
+Creates an invoices row (pending) for (e.g.) total or deposit.
+
+Inserts contract_events.signed and invoice_events.created.
+
+Return { ok:true, invoiceId }.
+
+5) Server: Mark invoice paid
+
+Ensure POST /api/invoices/:id/paid:
+
+Update status to paid, set paidAt.
+
+Insert invoice_events.paid.
+
+Return { ok:true }.
+
+6) Client: wire Seed Demo Leads button & add Seed Sample Quote (demo mode)
+
+On /leads page:
+
+Ensure the “Seed Demo Leads” button calls POST /api/leads/sample, shows loading, then refetches the leads list. Show toast “Seeded 3 demo leads” or “Already have sample leads”.
+
+Add a small, demo-only button on /quotes list (visible if VITE_DEMO_MODE === 'true'): “Create Sample Quote” → POST /api/quotes/sample, then refetch quotes.
+
+UI states
+
+While seeding: disable button, show spinner/text (e.g., “Seeding…”).
+
+On error: toast error with response status/text.
+
+7) Client: ensure Quotes list uses v2 endpoints & shows customer
+
+/quotes page:
+
+Fetch GET /api/quotes (v2), not any V1 route.
+
+Columns: Quote #/Title, Customer name/email, Status, Total, Actions (Open, Approve).
+
+Approve button:
+
+Call POST /api/quotes/:id/approve, on success toast “Approved → Contract created”, then navigate to /contracts.
+
+8) Client: fix “map” crashes + empty states (defensive)
+
+ContractTimeline.tsx:
+
+const events = Array.isArray(data) ? data : [];
+
+
+InvoiceTimeline.tsx, MediaLibrary.tsx:
+
+const assets = Array.isArray(data?.assets) ? data.assets : Array.isArray(data) ? data : [];
+
+
+Empty lists show a friendly <EmptyState title="No items yet" action={<Button onClick=...>Seed</Button>} />.
+
+9) Post-change micro smoke (Q→C→I only)
+
+Add to apps/app/scripts/smoke-qci.ts:
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+async function call(p:string, m='GET', b?:any){ const r = await fetch(base+p,{method:m, headers:{'Content-Type':'application/json'}, body:b?JSON.stringify(b):undefined}); return {p,ok:r.ok,status:r.status,txt:await r.text()} }
+(async()=>{
+  const out = [];
+  out.push(await call('/api/leads/sample','POST'));
+  out.push(await call('/api/quotes/sample','POST'));
+  out.push(await call('/api/quotes'));
+  // grab first quote id
+  const q = JSON.parse((await call('/api/quotes')).txt)[0];
+  if (q?.id){ out.push(await call(`/api/quotes/${q.id}/approve`,'POST')); }
+  // list contracts
+  out.push(await call('/api/contracts'));
+  // sign first contract
+  const c = JSON.parse((await call('/api/contracts')).txt)[0];
+  if (c?.id){ out.push(await call(`/api/contracts/${c.id}/sign`,'POST')); }
+  // mark first invoice paid
+  const inv = JSON.parse((await call('/api/invoices')).txt)[0];
+  if (inv?.id){ out.push(await call(`/api/invoices/${inv.id}/paid`,'POST')); }
+  console.table(out.map(x=>({path:x.p,status:x.status,ok:x.ok})));
+  const fails = out.filter(x=>!x.ok); if (fails.length){ console.error('FAIL', fails.map(f=>f.path)); process.exit(1); }
+  console.log('QCI PASS ✅');
+})();
+
+
+Run:
+
+pnpm tsx apps/app/scripts/smoke-qci.ts
+
+Acceptance (what should work after this)
+
+Seed Demo Leads creates 3 leads (idempotent). No 403/permissions errors.
+
+Create Sample Quote appears in Quotes (demo mode) and creates one quote if none exists.
+
+Quotes list loads with customer info; Approve creates a Contract (no “venue” errors).
+
+Contracts open; Sign creates an Invoice and appends events (no .map crash).
+
+Invoices list loads; Mark Paid flips status and logs event.
+
+The mini smoke-qci prints QCI PASS ✅.
+
+Once that’s in, you’ll be able to run the full Quotes → Contracts → Invoices loop from the UI. If any step still fails, send me the endpoint + status + response and I’ll give you a pinpoint patch.
