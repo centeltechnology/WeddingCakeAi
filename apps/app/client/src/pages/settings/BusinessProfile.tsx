@@ -10,11 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Save, Building2, Image as ImageIcon, X, Plus, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Save, Building2, Image as ImageIcon, X, Plus, Facebook, Instagram, Youtube, Eye, EyeOff, Link2, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SettingsTabs } from '@/components/SettingsTabs';
 import SaveBar from '@/components/SaveBar';
 import PreviewButtons from '@/components/PreviewButtons';
+import { Switch } from '@/components/ui/switch';
 
 interface SocialLinks {
   facebook?: string;
@@ -25,8 +26,8 @@ interface SocialLinks {
 }
 
 interface TenantProfile {
-  id: string;
-  tenantId: string;
+  id?: string;
+  tenantId?: string;
   displayName: string | null;
   phone: string | null;
   website: string | null;
@@ -36,8 +37,10 @@ interface TenantProfile {
   logoUrl: string | null;
   coverUrl: string | null;
   social: SocialLinks | null;
-  createdAt: string;
-  updatedAt: string;
+  isPublished?: boolean;
+  slug?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function BusinessProfile({ embedded = false }: { embedded?: boolean }) {
@@ -54,13 +57,15 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
   const [newSpecialty, setNewSpecialty] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
+  const [isPublished, setIsPublished] = useState(false);
+  const [slug, setSlug] = useState('');
 
   // Load profile
   const { data: profile, isLoading } = useQuery<TenantProfile | null>({
     queryKey: ['/api/me/profile'],
     queryFn: async () => {
       const data = await apiRequest('GET', '/api/me/profile', undefined);
-      return data as TenantProfile | null;
+      return data as unknown as TenantProfile | null;
     },
   });
 
@@ -75,6 +80,8 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       setSpecialties(profile.specialties || []);
       setLogoUrl(profile.logoUrl || '');
       setCoverUrl(profile.coverUrl || '');
+      setIsPublished(profile.isPublished || false);
+      setSlug(profile.slug || '');
     }
   }, [profile]);
 
@@ -91,9 +98,10 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       });
     },
     onError: (error: any) => {
+      const errorMessage = error.message || error.error || 'Unable to save profile';
       toast({
         title: 'Save Failed',
-        description: error.message || 'Unable to save profile',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
@@ -102,7 +110,7 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
   // Compute dirty state - treat missing profile as empty baseline
   const isDirty = useMemo(() => {
     // Allow saving when user enters data, even if no profile exists yet
-    const hasData = !!(displayName || phone || website || address || about || specialties.length || logoUrl || coverUrl);
+    const hasData = !!(displayName || phone || website || address || about || specialties.length || logoUrl || coverUrl || slug);
     if (!profile) return hasData;
     
     return (
@@ -113,9 +121,11 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       about !== (profile.about || '') ||
       JSON.stringify(specialties) !== JSON.stringify(profile.specialties || []) ||
       logoUrl !== (profile.logoUrl || '') ||
-      coverUrl !== (profile.coverUrl || '')
+      coverUrl !== (profile.coverUrl || '') ||
+      isPublished !== (profile.isPublished || false) ||
+      slug !== (profile.slug || '')
     );
-  }, [profile, displayName, phone, website, address, about, specialties, logoUrl, coverUrl]);
+  }, [profile, displayName, phone, website, address, about, specialties, logoUrl, coverUrl, isPublished, slug]);
 
   const handleSave = () => {
     saveMutation.mutate({
@@ -127,6 +137,8 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       specialties,
       logoUrl,
       coverUrl,
+      isPublished,
+      slug,
     });
   };
 
@@ -174,6 +186,70 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
 
   const content = (
     <div className="space-y-6">
+          <Card className={isPublished ? "border-primary/50 bg-primary/5" : "border-muted"}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {isPublished ? <Eye className="w-5 h-5 text-primary" /> : <EyeOff className="w-5 h-5 text-muted-foreground" />}
+                Public Profile Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Label htmlFor="isPublished" className="text-base font-semibold cursor-pointer">
+                      {isPublished ? 'Profile Published' : 'Profile Unpublished'}
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isPublished 
+                      ? 'Your profile is publicly visible and can be found by customers'
+                      : 'Your profile is hidden from public view until you publish it'}
+                  </p>
+                </div>
+                <Switch
+                  id="isPublished"
+                  checked={isPublished}
+                  onCheckedChange={setIsPublished}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slug">Profile URL Slug</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="slug"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                    placeholder="your-bakery-name"
+                    className="font-mono"
+                  />
+                  {slug && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.open(`/p/${slug}`, '_blank')}
+                      title="Preview public profile"
+                      className="px-3"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Link2 className="w-4 h-4" />
+                  {slug ? (
+                    <span>
+                      Public URL: <code className="px-1 py-0.5 bg-muted rounded">/p/{slug}</code>
+                    </span>
+                  ) : (
+                    <span>Enter a slug to create your public profile URL</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

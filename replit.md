@@ -27,7 +27,7 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Solutions
 - **ORM**: Drizzle ORM for PostgreSQL.
 - **Database**: PostgreSQL with Neon serverless integration.
-- **Schema**: Comprehensive models for users, profiles, estimates, and bakers.
+- **Schema**: Comprehensive models for users, profiles, estimates, and bakers. Profile schema includes `isPublished` boolean field (default false) for controlling public profile visibility.
 - **Migrations**: Drizzle Kit.
 
 ### Authentication and Authorization
@@ -55,6 +55,11 @@ Preferred communication style: Simple, everyday language.
 - **Customer Portal**: Secure, tokenized public access for customers to view and approve quotes, sign contracts, and view invoices.
 - **Media Library**: Tenant-scoped image upload and management with local disk storage (dev) and S3 adapter (production).
 - **Public Marketplace Listing**: SEO-optimized public bakery profile pages (`/p/:slug`) with lead-gen CTAs and dynamic SEO meta tags.
+- **Profile Publishing Control**: Business Profile settings (`/settings/profile`) include publish toggle with `isPublished` field to control public profile visibility. Features include:
+  - Toggle switch to publish/unpublish profile
+  - Slug editing with automatic URL-safe formatting
+  - Preview button to view public profile (`/p/:slug`) in new tab
+  - Visual indicators for published vs unpublished state
 - **Observability**: Health checks (`/healthz`), structured logging, and metrics tracking.
 
 ### Development Architecture

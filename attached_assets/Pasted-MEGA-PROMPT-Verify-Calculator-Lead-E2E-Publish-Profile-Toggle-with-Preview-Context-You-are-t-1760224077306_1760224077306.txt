@@ -1,0 +1,227 @@
+MEGA PROMPT — Verify Calculator→Lead E2E + Publish Profile Toggle (with Preview)
+
+Context: You are the ChatGPT agent for the BakerIQ rebuild. Work in apps/app.
+Goals:
+
+Interactively verify that submitting the public calculator creates a Lead (source=calculator) visible to the baker. Attach screenshots and failing requests if any.
+
+Implement a Publish Profile control in Settings → Business Profile:
+
+Field to edit slug (kebab-case, unique),
+
+Publish toggle (isPublished),
+
+Preview Listing button → /p/<slug>,
+
+Header icons disabled with helpful tooltip when slug/publish missing.
+
+Demo Admin
+
+Login URL: https://aa3f47d9-90c5-4639-a088-5f7d213f1f3a-00-s0so12it9vlx.picard.replit.dev/login
+
+Email: demo@bakeriq.app
+
+Password: DemoPass123!
+
+Public calculator URL to test: /calculator?tenant=sweet-treats-bakery
+
+PHASE A — Interactive Verification (Calculator → Lead)
+
+A1. Public submission (no auth)
+
+Open /calculator?tenant=sweet-treats-bakery.
+
+Fill minimal realistic values (name, email, phone + a couple of selections).
+
+Click Submit.
+
+Record the network request details for the submission:
+
+Method/URL (expected: POST /api/public/calculator/submit?tenant=sweet-treats-bakery)
+
+Status (expect 200)
+
+JSON payload structure returned (expect { ok: true, ... })
+
+If failure: capture full response JSON and console error.
+
+Take a screenshot of the success state.
+
+A2. Admin: verify lead created
+
+Log in with the demo admin creds.
+
+Navigate to Customers → Leads.
+
+Confirm a new lead exists with:
+
+Source: calculator
+
+Name/Email/Phone: the values you submitted
+
+Created timestamp: ~now
+
+Open the lead detail; capture a screenshot of the detail panel.
+
+If you don’t see it, try refreshing, or sorting by Newest. If still missing, note it and include any failing network requests (method, path, status, body/JSON).
+
+Deliverable (attach)
+
+Screenshot: public calculator before submit
+
+Screenshot: success state
+
+Screenshot: Leads list showing the new lead
+
+Screenshot: Lead detail
+
+Network request summary (method, URL, status, response excerpts)
+
+PHASE B — Implement Publish Profile Toggle (+ Preview)
+
+Implement this only if not already present, otherwise harden it.
+
+B1. Server: public profile endpoints (idempotent)
+
+Add (or confirm) in apps/app/server/routes.ts:
+
+// Get current user's tenant profile (slug + publish state) – auth required
+app.get('/api/me/profile-public', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const row = await profilesRepo.getByTenantId(tenantId); // implement using your db layer
+  // Shape
+  return res.json({
+    slug: row?.slug ?? null,
+    isPublished: Boolean(row?.isPublished),
+    name: row?.name ?? null,
+  });
+});
+
+// Update slug & publish state – auth required
+app.post('/api/me/profile/publish', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { slug, isPublished } = req.body ?? {};
+  // 1) normalize slug (kebab-case, a–z0–9–, trimmed, 3–64 chars)
+  function toSlug(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 64);
+  }
+  const newSlug = slug ? toSlug(slug) : null;
+  if (newSlug && newSlug.length < 3) return res.status(400).json({ error: 'slug_too_short' });
+
+  // 2) uniqueness check (exclude this tenantId)
+  if (newSlug) {
+    const exists = await profilesRepo.existsBySlugExceptTenant(newSlug, tenantId);
+    if (exists) return res.status(409).json({ error: 'slug_taken' });
+  }
+
+  // 3) persist fields (merge, not clobber)
+  const updated = await profilesRepo.updatePublishSettings(tenantId, {
+    slug: newSlug ?? undefined, // if null, don't overwrite existing
+    isPublished: typeof isPublished === 'boolean' ? isPublished : undefined,
+  });
+
+  return res.json({
+    ok: true,
+    slug: updated.slug,
+    isPublished: Boolean(updated.isPublished),
+  });
+});
+
+
+Reuse your existing tenantProfiles table. If the repo helpers don’t exist, inline Drizzle queries; keep it tenant-scoped.
+
+B2. Client: Settings → Business Profile (Publish controls)
+
+In client/src/pages/settings/BusinessProfile.tsx (or the main Settings hub tab for Business Profile), add a Publish section card:
+
+UI elements:
+
+Slug input (with live kebab-case normalization + uniqueness validation on blur).
+
+Publish toggle (on/off) with a brief explanation:
+
+On = your listing and booking links are public.
+
+Off = links disabled; header icons show tooltip.
+
+Preview Listing button → /p/<slug> (disabled if no slug or not published; shows tooltip to publish first).
+
+Save button (sticky SaveBar or inline), calls POST /api/me/profile/publish. On success, refresh the local state and show a toast.
+
+Behavior:
+
+On mount, fetch GET /api/me/profile-public to hydrate slug & isPublished.
+
+While saving, disable controls and show spinner.
+
+Handle errors:
+
+409 slug_taken → show inline error “That web address is taken.”
+
+400 slug_too_short → “Slug must be at least 3 characters.”
+
+B3. Header icons: disable when not published
+
+In client/src/components/AppHeader.tsx, after fetching GET /api/me/tenant (slug) and GET /api/me/profile-public (isPublished):
+
+Calculator (public) icon → /calculator?tenant=<slug> enabled only if slug && isPublished
+
+else disabled with tooltip: “Publish your profile in Settings to enable.”
+
+Booking icon → /b/<slug>/book enabled only if slug && isPublished
+
+else disabled with same tooltip.
+
+Listing icon (if present) → /p/<slug> enabled iff slug && isPublished.
+
+Internal Baker Calculator icon remains enabled (auth-only, no slug needed).
+
+PHASE C — Acceptance & Report
+
+What must pass
+
+Public calculator Submit creates a Lead (source=calculator) viewable in admin.
+
+Settings → Business Profile shows Slug input, Publish toggle, and Preview Listing button.
+
+Publishing with a unique slug succeeds and persists; reloading page keeps values.
+
+Preview Listing opens /p/<slug> successfully.
+
+Header icons are enabled only when slug is present and profile is published; otherwise disabled with tooltip.
+
+Deliverables
+
+A short QA report (Markdown) with:
+
+PASS/FAIL for:
+
+Calculator submission → Lead
+
+Settings Publish controls
+
+Header icon enable/disable
+
+Preview Listing
+
+Screenshots filenames + one-line description each.
+
+Any failing network requests (method, URL, status, body excerpt).
+
+If blocked, include the exact error text you saw.
+
+Notes & Guardrails
+
+Keep everything tenant-scoped server-side (never trust a client-supplied tenantId).
+
+Don’t break existing routes; this adds /api/me/profile-public and /api/me/profile/publish only.
+
+All changes idempotent; reruns shouldn’t duplicate or corrupt data.
+
+If a pre-existing slug exists, keep it unless the user edits it.
+
+Use existing toast and button components to maintain consistent styling.

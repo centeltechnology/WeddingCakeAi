@@ -74,6 +74,7 @@ export const tenantProfiles = pgTable("tenant_profiles", {
     zelle?: string;
     stripeLink?: string;
   }>(),
+  isPublished: boolean("is_published").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

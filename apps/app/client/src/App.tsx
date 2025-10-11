@@ -216,7 +216,7 @@ function Router() {
       </Route>
       {/* Public Calculator - redirects to /baker/calculator if authenticated */}
       <Route path="/calculator" component={PublicCalculatorV1Redirect} />
-      {/* Direct baker ID calculator route */}
+      {/* Direct baker ID calculator route - keep after /calculator to avoid matching issues */}
       <Route path="/calculator/:bakerId">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}
       </Route>

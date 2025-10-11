@@ -10338,7 +10338,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(tenantProfiles.tenantId, baker.tenantId))
         .limit(1);
 
-      res.json(profile || null);
+      // Include baker slug in response
+      const responseData = profile ? { ...profile, slug: baker.slug } : { slug: baker.slug };
+      
+      res.json(responseData);
     } catch (error) {
       console.error('Error loading tenant profile:', error);
       res.status(500).json({ error: 'Failed to load profile' });
@@ -10358,7 +10361,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Tenant not found' });
       }
 
-      const { displayName, phone, website, address, about, specialties, logoUrl, coverUrl, social, payments } = req.body;
+      const { displayName, phone, website, address, about, specialties, logoUrl, coverUrl, social, payments, isPublished, slug } = req.body;
+
+      // Track normalized slug for response
+      let finalSlug = baker.slug;
+      
+      // Update baker slug if provided and different
+      if (slug !== undefined && slug !== baker.slug) {
+        // Normalize slug: lowercase, replace non-alphanumeric with hyphens, trim hyphens
+        const normalizedSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-');
+        
+        // Validate slug format and length
+        if (!normalizedSlug || normalizedSlug.length < 3 || normalizedSlug.length > 100) {
+          return res.status(400).json({ error: 'Slug must be between 3 and 100 characters and contain only letters, numbers, and hyphens' });
+        }
+        
+        // Check for slug uniqueness (excluding current baker)
+        const [existing] = await db
+          .select()
+          .from(bakers)
+          .where(eq(bakers.slug, normalizedSlug))
+          .limit(1);
+        
+        if (existing && existing.id !== baker.id) {
+          return res.status(400).json({ error: 'This slug is already taken. Please choose a different one.' });
+        }
+        
+        await db
+          .update(bakers)
+          .set({ slug: normalizedSlug })
+          .where(eq(bakers.id, baker.id));
+        
+        finalSlug = normalizedSlug;
+      }
 
       // Check if profile exists
       const [existing] = await db
@@ -10380,6 +10415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (specialties !== undefined) updateData.specialties = specialties;
         if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
         if (coverUrl !== undefined) updateData.coverUrl = coverUrl;
+        if (isPublished !== undefined) updateData.isPublished = isPublished;
         
         // Merge JSON fields with existing data to prevent field loss
         if (social !== undefined) {
@@ -10411,11 +10447,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             coverUrl,
             social: social || null,
             payments: payments || null,
+            isPublished: isPublished || false,
           })
           .returning();
       }
 
-      res.json(profile);
+      // Include normalized slug in response
+      const responseData = { ...profile, slug: finalSlug };
+      res.json(responseData);
     } catch (error) {
       console.error('Error saving tenant profile:', error);
       res.status(500).json({ error: 'Failed to save profile' });
