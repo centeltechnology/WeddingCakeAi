@@ -5294,9 +5294,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Filter by tenant for multi-tenancy
-      const rows = await db.select()
+      // Filter by tenant for multi-tenancy with customer info
+      const rows = await db.select({
+        id: invoices.id,
+        tenantId: invoices.tenantId,
+        bakerId: invoices.bakerId,
+        customerId: invoices.customerId,
+        contractId: invoices.contractId,
+        quoteId: invoices.quoteId,
+        invoiceNumber: invoices.invoiceNumber,
+        title: invoices.title,
+        description: invoices.description,
+        total: invoices.total,
+        paidAmount: invoices.paidAmount,
+        remainingBalance: invoices.remainingBalance,
+        status: invoices.status,
+        dueDate: invoices.dueDate,
+        paidAt: invoices.paidAt,
+        createdAt: invoices.createdAt,
+        updatedAt: invoices.updatedAt,
+        customerName: customers.name,
+        customerEmail: customers.email,
+      })
         .from(invoices)
+        .leftJoin(customers, eq(invoices.customerId, customers.id))
         .where(eq(invoices.tenantId, user.tenantId || ''))
         .orderBy(sql`${invoices.createdAt} DESC`);
       
@@ -5369,6 +5390,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: invoice.tenantId || '',
         invoiceId: invoice.id,
         type: 'paid',
+        meta: { paidBy: user.id, amount: invoice.total, method: 'manual' }
+      });
+
+      // Increment metrics counter
+      incrementMetric('invoices_paid');
+
+      res.json({ ok: true, invoice: updatedInvoice });
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      res.status(500).json({ error: 'Failed to mark invoice as paid' });
+    }
+  });
+
+  // POST /api/invoices/:id/mark-paid - Mark invoice as paid with payment_received event
+  app.post('/api/invoices/:id/mark-paid', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get invoice to check ownership
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // Check tenant access
+      if (invoice.tenantId !== user.tenantId) {
+        return res.status(403).json({ error: 'Access forbidden' });
+      }
+
+      // Update invoice status to paid
+      const [updatedInvoice] = await db.update(invoices)
+        .set({
+          status: 'paid',
+          paidAt: new Date(),
+          paidAmount: invoice.total,
+          remainingBalance: '0',
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, id))
+        .returning();
+
+      // Track payment_received event
+      await db.insert(invoiceEvents).values({
+        tenantId: invoice.tenantId || '',
+        invoiceId: invoice.id,
+        type: 'payment_received',
         meta: { paidBy: user.id, amount: invoice.total, method: 'manual' }
       });
 

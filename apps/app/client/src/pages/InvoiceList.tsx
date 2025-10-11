@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ interface Invoice {
   invoiceNumber: string;
   title: string;
   customerName?: string;
+  customerEmail?: string;
   total: string;
   paidAmount?: string;
   status: string;
@@ -22,35 +23,19 @@ interface Invoice {
 
 export default function InvoiceList() {
   const { toast } = useToast();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
-
-  const fetchInvoices = async () => {
-    try {
-      setLoading(true);
+  const { data: invoices = [], isLoading: loading } = useQuery({
+    queryKey: ['invoices'],
+    queryFn: async () => {
       const response = await fetch('/api/invoices', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch invoices');
-      const data = await response.json();
-      setInvoices(data);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load invoices'
-      });
-    } finally {
-      setLoading(false);
+      return response.json();
     }
-  };
+  });
 
-  const handleCreateInvoice = async () => {
-    try {
-      setCreating(true);
+  const createMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,49 +45,49 @@ export default function InvoiceList() {
           total: 500
         })
       });
-
       if (!response.ok) throw new Error('Failed to create invoice');
-
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast({
         title: 'Success',
         description: 'Invoice created successfully'
       });
-
-      await fetchInvoices();
-    } catch (error) {
+    },
+    onError: () => {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to create invoice'
       });
-    } finally {
-      setCreating(false);
     }
-  };
+  });
 
-  const handleMarkPaid = async (invoiceId: string) => {
-    try {
-      const response = await fetch(`/api/invoices/${invoiceId}/paid`, {
+  const markPaidMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const response = await fetch(`/api/invoices/${invoiceId}/mark-paid`, {
         method: 'POST',
         credentials: 'include'
       });
-
       if (!response.ok) throw new Error('Failed to mark invoice as paid');
-
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast({
         title: 'Success',
         description: 'Invoice marked as paid'
       });
-
-      await fetchInvoices();
-    } catch (error) {
+    },
+    onError: () => {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to mark invoice as paid'
       });
     }
-  };
+  });
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive', icon: any }> = {
@@ -140,9 +125,9 @@ export default function InvoiceList() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <PageHeader title="Invoices" subtitle="Manage customer invoices and payments" />
-          <Button onClick={handleCreateInvoice} disabled={creating}>
+          <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
             <Plus className="h-4 w-4 mr-2" />
-            {creating ? 'Creating...' : 'Create Invoice'}
+            {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
           </Button>
         </div>
 
@@ -152,14 +137,14 @@ export default function InvoiceList() {
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No invoices yet</h3>
               <p className="text-muted-foreground mb-4">Create your first invoice to get started</p>
-              <Button onClick={handleCreateInvoice} disabled={creating}>
-                {creating ? 'Creating...' : 'Create Invoice'}
+              <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-          {invoices.map((invoice) => {
+          {invoices.map((invoice: Invoice) => {
             const isPaid = invoice.status === 'paid';
 
             return (
@@ -178,10 +163,11 @@ export default function InvoiceList() {
                       {!isPaid && (
                         <Button 
                           size="sm" 
-                          onClick={() => handleMarkPaid(invoice.id)}
+                          onClick={() => markPaidMutation.mutate(invoice.id)}
+                          disabled={markPaidMutation.isPending}
                           className="h-7 text-xs"
                         >
-                          Mark Paid
+                          {markPaidMutation.isPending ? 'Marking...' : 'Mark Paid'}
                         </Button>
                       )}
                     </div>
@@ -202,7 +188,7 @@ export default function InvoiceList() {
                       </div>
                     )}
                     <Link href={`/invoices/${invoice.id}`}>
-                      <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                      <Button variant="ghost" size="sm" className="h-auto p-0 text-xs">
                         View Details
                       </Button>
                     </Link>
