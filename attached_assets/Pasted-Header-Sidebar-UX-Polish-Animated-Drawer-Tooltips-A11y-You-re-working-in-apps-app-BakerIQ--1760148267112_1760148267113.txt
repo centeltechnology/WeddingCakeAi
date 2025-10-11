@@ -1,0 +1,180 @@
+Header & Sidebar UX Polish (Animated Drawer + Tooltips + A11y)
+
+You’re working in apps/app (BakerIQ). Upgrade the header/sidebar for great mobile + keyboard UX. Keep it idempotent.
+
+0) Constraints
+
+No new dependencies required. If framer-motion is already available, use it; otherwise, use CSS transitions.
+
+Use Tailwind + tiny utilities only.
+
+A) Mobile drawer (animated, accessible)
+
+Files: client/src/components/AppHeader.tsx and/or Sidebar.tsx
+
+State & handlers
+
+Add const [open, setOpen] = useState(false);
+
+Toggle via hamburger button in header (visible on md:hidden).
+
+ARIA + focus trap
+
+Drawer container: role="dialog" aria-modal="true"
+
+When opening:
+
+Save document.activeElement, focus the first focusable in drawer.
+
+Trap TAB within the drawer (Shift+Tab wraps).
+
+Close on ESC and on clicking the backdrop.
+
+On close, return focus to the hamburger.
+
+Animation
+
+If framer-motion exists:
+
+<motion.aside initial={{x:'-100%'}} animate={{x: open? 0 : '-100%'}} transition={{type:'tween', duration:0.22}} />
+
+
+Else use Tailwind:
+
+Drawer panel: translate-x-0 vs -translate-x-full with transition-transform duration-200.
+
+Structure
+
+{/* Backdrop */}
+{open && <div className="fixed inset-0 z-40 bg-black/40" onClick={()=>setOpen(false)} />}
+
+{/* Drawer */}
+<aside
+  role="dialog" aria-modal="true" aria-label="Main menu"
+  className={`fixed z-50 inset-y-0 left-0 w-72 bg-white border-r shadow-xl transform transition-transform duration-200 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+  onKeyDown={(e)=>{ if(e.key==='Escape') setOpen(false); /* trap handled below */ }}
+>
+  {/* Focus trap sentinels */}
+  <button className="sr-only" aria-hidden ref={firstTrapRef} />
+  {/* Nav content (reuse existing <Sidebar /> items) */}
+  <Sidebar onNavigate={()=>setOpen(false)} mobile />
+  <button className="sr-only" aria-hidden ref={lastTrapRef} />
+</aside>
+
+
+Focus trapping util
+Create client/src/lib/focusTrap.ts:
+
+export function trapFocus(container: HTMLElement){
+  const focusables = container.querySelectorAll<HTMLElement>('a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])');
+  const first = focusables[0], last = focusables[focusables.length-1];
+  function onKey(e: KeyboardEvent){
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); (last||first)?.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); (first||last)?.focus(); }
+  }
+  container.addEventListener('keydown', onKey);
+  return ()=> container.removeEventListener('keydown', onKey);
+}
+
+
+In the drawer’s useEffect, call trapFocus(panelEl) when opened; restore focus on close.
+
+B) Tooltips for header icons (Credits, Preview Listing, Preview Calculator, Logout)
+
+File: client/src/components/Tooltip.tsx (new)
+
+import * as React from 'react';
+export function Tooltip({label, children}:{label:string; children:React.ReactElement}){
+  const [show,setShow]=React.useState(false);
+  let timer:any;
+  const showSoon=()=>{ timer=setTimeout(()=>setShow(true), 300); };
+  const hide=()=>{ clearTimeout(timer); setShow(false); };
+  return (
+    <span className="relative inline-block" onMouseEnter={showSoon} onMouseLeave={hide} onFocus={showSoon} onBlur={hide}>
+      {React.cloneElement(children, {'aria-label':label})}
+      {show && (
+        <span role="tooltip" className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black text-white text-xs px-2 py-1 shadow">
+          {label}
+        </span>
+      )}
+    </span>
+  );
+}
+
+
+Wrap header icons:
+
+<Tooltip label="Top-Up Credits"><button ... /></Tooltip>
+<Tooltip label="Preview Listing"><a ... /></Tooltip>
+<Tooltip label="Preview Calculator"><a ... /></Tooltip>
+<Tooltip label="Logout"><button onClick={logout} ... /></Tooltip>
+
+
+Keep icons keyboard focusable (buttons/links). Tooltip shows on hover and focus.
+
+C) Sidebar keyboard/ARIA semantics
+
+<nav aria-label="Primary"> for the main list.
+
+Parent item “Customers”:
+
+Use button with aria-expanded and aria-controls="nav-customers".
+
+Submenu container: <ul id="nav-customers" role="group">.
+
+Current route gets aria-current="page" on its <a>.
+
+Add Home keyboard shortcut (g then d) to go Dashboard (optional).
+
+D) Visual refinements (quick wins)
+
+Sidebar: use brand tint background on active and hover:
+
+Active: bg-[var(--accent)] text-[var(--brand)] font-medium rounded-lg
+
+Hover: hover:bg-[var(--accent)]
+
+Divider between header and content on mobile: subtle border.
+
+Ensure content column uses min-h-[calc(100vh-56px)] so the drawer doesn’t push content oddly.
+
+E) Logout: ensure it’s not a form submit
+
+In header, only use:
+
+import { logout } from '@/lib/auth';
+<button onClick={logout} className="...">Logout</button>
+
+
+Remove any <form action="/logout">.
+
+F) Acceptance (verify manually)
+
+Mobile drawer:
+
+Opens from hamburger; animates; TAB stays inside; ESC and backdrop close; focus returns to hamburger.
+
+Tooltips: appear on hover and keyboard focus for all header icons; readable on dark header.
+
+Sidebar nav: “Customers” toggles with aria-expanded; sub-items are focusable; current page has aria-current="page".
+
+Logout: now works (returns to /login).
+
+No regressions: desktop layout unchanged except better spacing; mobile drawer replaces old mobile nav.
+
+G) Quick QA script (optional)
+
+Add a very small Playwright check (apps/app/tests/header.spec.ts) later to ensure:
+
+Drawer opens on click and ESC closes.
+
+aria-current="page" is set for active nav item.
+
+Build & run
+
+pnpm -w -r build
+pnpm -w -r dev
+
+
+If any piece still feels clunky (e.g., drawer animation or tooltip position), tell me which component and I’ll give you a tiny patch for that exact element.
