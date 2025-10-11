@@ -3,6 +3,15 @@
 ## Overview
 BakerIQ is a professional SaaS platform for bakeries, designed to modernize business management with a cohesive, high-contrast UI featuring a brand dark header and slate-based design system. It provides features like CRM, quotes, contracts, payments, and email automation, all tailored for bakers. The platform aims to be the leading solution for bakery business management, enhancing efficiency and customer engagement.
 
+## Recent Changes (Mega-Fix Pack - Oct 2025)
+- **Navigation Overhaul**: Implemented left sidebar with config-driven nav tree (`config/nav.ts` with NavNode type), nested Customers menu (Leads/Quotes/Contracts/Invoices), responsive mobile drawer, sticky sidebar on desktop
+- **Logout Fix**: Added proper POST /logout endpoint that clears sid cookie, updated client logout() to call correct endpoint and redirect to /login
+- **Sample Data Loader**: Added GET /api/leads/sample endpoint for idempotent demo lead seeding (creates 3 sample leads if tenant has none)
+- **AI Lab Enhancement**: Replaced stub endpoints with real demo responses - suggest-items returns cake/cupcake suggestions, summarize-quote provides quote summary, generate-contract returns contract clauses
+- **Booking UX**: Replaced timezone text input with US timezone dropdown (7 zones: ET, CT, MT, AZ, PT, AK, HI)
+- **Observability & Testing**: Health check (/healthz), structured logging, metrics tracking, smoke test script (scripts/smoke.ts), Playwright E2E/API test suites
+- **CSV Importer**: Customer/lead and catalog item CSV import with validation, preview, and bulk insert (Settings → Import Data)
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
