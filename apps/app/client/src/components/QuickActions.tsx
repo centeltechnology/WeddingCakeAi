@@ -31,7 +31,7 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
 
   const hasSlug = Boolean(tenant?.slug);
   const marketplaceUrl = hasSlug ? buildMarketplaceUrl(tenant?.slug) : '';
-  const leadGenUrl = hasSlug ? buildLeadGenUrl(tenant?.slug) : '';
+  const leadGenUrl = hasSlug ? buildLeadGenUrl(tenant?.slug, { preferBooking: false }) : '';
 
   const handleTopUp = () => {
     creditsModal.open({ reason: 'Top up credits' });
