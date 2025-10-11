@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { PipelineChart } from "../components/PipelineChart";
 import { RevenueStat } from "../components/RevenueStat";
 import { TaskList } from "../components/TaskList";
-import AiToolsCard from "@/components/ai/AiToolsCard";
+import AiQuickTiles from "@/components/dashboard/AiQuickTiles";
 import AppLayout from "@/components/AppLayout";
 import { TopLeads } from "@/components/dashboard/TopLeads";
 import QuickActions from "@/components/QuickActions";
@@ -115,7 +115,7 @@ export default function BakerDashboard() {
         </Card>
 
         {/* AI Tools */}
-        <AiToolsCard />
+        <AiQuickTiles />
 
         {/* Stats Cards - Responsive Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
