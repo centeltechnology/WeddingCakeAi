@@ -9803,6 +9803,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(contracts.id, contract.id))
           .returning();
 
+        // Track signing event
+        await tx.insert(contractEvents).values({
+          tenantId: contract.tenantId || '',
+          contractId: contract.id,
+          type: 'signed',
+          meta: { signerName, signerEmail, signerType: signerType || 'customer' }
+        });
+
         return { signature, contract: updatedContract };
       });
 
