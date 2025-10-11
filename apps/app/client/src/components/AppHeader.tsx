@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X } from 'lucide-react';
 import { logout } from '@/lib/auth';
+import { trapFocus } from '@/lib/focusTrap';
 import QuickActions from '@/components/QuickActions';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/Button';
+import { Tooltip } from '@/components/Tooltip';
 
 export default function AppHeader() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -27,8 +32,40 @@ export default function AppHeader() {
     };
   }, [mobileMenuOpen]);
 
+  // Focus trap and focus management
+  useEffect(() => {
+    if (mobileMenuOpen && drawerRef.current) {
+      // Save current focus
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      
+      // Focus first focusable element in drawer
+      const focusables = drawerRef.current.querySelectorAll<HTMLElement>(
+        'a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])'
+      );
+      focusables[0]?.focus();
+      
+      // Setup focus trap
+      const cleanup = trapFocus(drawerRef.current);
+      return cleanup;
+    } else if (!mobileMenuOpen && previousFocusRef.current) {
+      // Restore focus to hamburger when closing
+      hamburgerRef.current?.focus();
+      previousFocusRef.current = null;
+    }
+  }, [mobileMenuOpen]);
+
   const handleLogout = async () => {
     await logout();
+  };
+
+  const closeDrawer = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const handleDrawerKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeDrawer();
+    }
   };
 
   return (
@@ -39,9 +76,12 @@ export default function AppHeader() {
           {/* Left: Brand + Hamburger (mobile) */}
           <div className="flex items-center gap-2">
             <button
+              ref={hamburgerRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav-drawer"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -56,31 +96,46 @@ export default function AppHeader() {
           {/* Right: Quick Actions + Logout */}
           <div className="flex items-center gap-2">
             <QuickActions variant="compact" className="hidden sm:flex" />
-            <Button
-              variant="outline-light"
-              size="sm"
-              onClick={handleLogout}
-              className="text-sm"
-            >
-              Logout
-            </Button>
+            <Tooltip label="Logout">
+              <Button
+                variant="outline-light"
+                size="sm"
+                onClick={handleLogout}
+                className="text-sm"
+              >
+                Logout
+              </Button>
+            </Tooltip>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer - Animated & Accessible */}
       {mobileMenuOpen && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/40 z-40 md:hidden animate-in fade-in duration-200"
+            onClick={closeDrawer}
+            aria-hidden="true"
           />
           
-          {/* Drawer */}
-          <div className="fixed top-14 left-0 right-0 bottom-0 bg-white dark:bg-gray-900 z-40 md:hidden overflow-y-auto">
+          {/* Drawer Panel */}
+          <aside
+            ref={drawerRef}
+            id="mobile-nav-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Main menu"
+            className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-gray-900 border-r dark:border-gray-800 shadow-xl z-50 md:hidden overflow-y-auto transform transition-transform duration-200 ease-in-out translate-x-0"
+            onKeyDown={handleDrawerKeyDown}
+          >
+            <div className="p-4 border-b dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+            </div>
+            
             <div className="p-4">
-              <Sidebar />
+              <Sidebar onNavigate={closeDrawer} />
             </div>
             
             {/* Mobile Quick Actions */}
@@ -88,7 +143,7 @@ export default function AppHeader() {
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Quick Actions</h3>
               <QuickActions variant="full" />
             </div>
-          </div>
+          </aside>
         </>
       )}
     </>

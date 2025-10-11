@@ -4,7 +4,11 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { NAV, featureOn, type NavNode } from '@/config/nav';
 import { cn } from '@/lib/utils';
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps = {}) {
   const [location] = useLocation();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     Customers: true,
@@ -24,10 +28,14 @@ export function Sidebar() {
 
     if (node.children) {
       const isExpanded = expandedGroups[node.label] ?? false;
+      const groupId = `nav-${node.label.toLowerCase().replace(/\s+/g, '-')}`;
+      
       return (
         <div key={node.label} className="mb-1">
           <button
             onClick={() => toggleGroup(node.label)}
+            aria-expanded={isExpanded}
+            aria-controls={groupId}
             className={cn(
               'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg',
               'text-slate-700 dark:text-slate-300',
@@ -37,15 +45,19 @@ export function Sidebar() {
           >
             <span>{node.label}</span>
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
             ) : (
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
             )}
           </button>
           {isExpanded && (
-            <div className="ml-2 mt-1 space-y-1">
-              {node.children.map((child) => renderNavNode(child, depth + 1))}
-            </div>
+            <ul id={groupId} role="group" className="ml-2 mt-1 space-y-1">
+              {node.children.map((child) => (
+                <li key={child.href || child.label}>
+                  {renderNavNode(child, depth + 1)}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       );
@@ -59,6 +71,8 @@ export function Sidebar() {
       <a
         key={node.href}
         href={node.href}
+        onClick={onNavigate}
+        aria-current={active ? 'page' : undefined}
         className={cn(
           'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
           depth > 0 && 'ml-3',
@@ -67,14 +81,14 @@ export function Sidebar() {
             : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
         )}
       >
-        {node.icon}
+        {node.icon && <span aria-hidden="true">{node.icon}</span>}
         <span>{node.label}</span>
       </a>
     );
   };
 
   return (
-    <nav className="space-y-1">
+    <nav aria-label="Primary navigation" className="space-y-1">
       {NAV.map((node) => renderNavNode(node))}
     </nav>
   );
