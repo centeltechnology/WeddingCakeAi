@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCreditsModal } from '@/components/ai/CreditsModalContext';
 import { buildMarketplaceUrl, buildLeadGenUrl } from '@/lib/publicLinks';
 import { Button } from '@/components/ui/Button';
+import { Tooltip } from '@/components/Tooltip';
 
 type TenantInfo = {
   id: string;
@@ -44,27 +45,30 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
   if (variant === 'compact') {
     return (
       <div className={`flex items-center gap-1 ${className}`}>
-        <button
-          onClick={handleTopUp}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          title="Top-Up Credits"
-        >
-          <CreditCard className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handlePreviewListing}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          title="Preview Listing"
-        >
-          <Eye className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handlePreviewCalculator}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          title="Preview Calculator"
-        >
-          <Calculator className="h-4 w-4" />
-        </button>
+        <Tooltip label="Top-Up Credits">
+          <button
+            onClick={handleTopUp}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <CreditCard className="h-4 w-4" />
+          </button>
+        </Tooltip>
+        <Tooltip label="Preview Listing">
+          <button
+            onClick={handlePreviewListing}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </Tooltip>
+        <Tooltip label="Preview Calculator">
+          <button
+            onClick={handlePreviewCalculator}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <Calculator className="h-4 w-4" />
+          </button>
+        </Tooltip>
       </div>
     );
   }
