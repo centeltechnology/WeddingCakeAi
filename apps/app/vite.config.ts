@@ -29,6 +29,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    hmr: {
+      overlay: false, // Disable Vite error overlay, use ErrorBoundary instead
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],

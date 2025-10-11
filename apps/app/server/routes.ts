@@ -247,6 +247,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       now: new Date().toISOString()
     });
   });
+
+  // Doctor diagnostic endpoint
+  app.get('/api/doctor', async (req, res) => {
+    try {
+      // Feature flags status
+      const flags = {
+        calculator: process.env.VITE_CALCULATOR_ENABLED === 'true',
+        leadScoring: process.env.VITE_LEAD_SCORING_ENABLED === 'true',
+        booking: process.env.VITE_BOOKING_ENABLED === 'true',
+        autoReply: process.env.VITE_AUTO_REPLY_ENABLED === 'true',
+      };
+
+      // Metrics counts
+      const metrics = getMetrics();
+
+      // Latest events (last 5 of each type)
+      const latestQuoteEvents = await db
+        .select()
+        .from(quoteEvents)
+        .orderBy(sql`${quoteEvents.createdAt} DESC`)
+        .limit(5);
+
+      const latestContractEvents = await db
+        .select()
+        .from(contractEvents)
+        .orderBy(sql`${contractEvents.createdAt} DESC`)
+        .limit(5);
+
+      const latestInvoiceEvents = await db
+        .select()
+        .from(invoiceEvents)
+        .orderBy(sql`${invoiceEvents.createdAt} DESC`)
+        .limit(5);
+
+      // Database counts
+      const [quoteCount] = await db.select({ count: sql<number>`count(*)` }).from(quotes);
+      const [contractCount] = await db.select({ count: sql<number>`count(*)` }).from(contracts);
+      const [invoiceCount] = await db.select({ count: sql<number>`count(*)` }).from(invoices);
+      const [leadCount] = await db.select({ count: sql<number>`count(*)` }).from(leads);
+
+      res.json({
+        status: 'healthy',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        flags,
+        metrics,
+        counts: {
+          quotes: quoteCount.count,
+          contracts: contractCount.count,
+          invoices: invoiceCount.count,
+          leads: leadCount.count,
+        },
+        latestEvents: {
+          quotes: latestQuoteEvents,
+          contracts: latestContractEvents,
+          invoices: latestInvoiceEvents,
+        },
+      });
+    } catch (error) {
+      console.error('Doctor endpoint error:', error);
+      res.status(500).json({ error: 'Failed to generate diagnostic report' });
+    }
+  });
   
   // Serve PWA manifest
   app.get('/manifest.json', (req, res) => {
