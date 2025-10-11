@@ -997,6 +997,7 @@ export const quotes = pgTable("quotes", {
   deliveryAddress: text("delivery_address"),
   setupTime: text("setup_time"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
+  discount: decimal("discount", { precision: 10, scale: 2 }).default('0.00'),
   taxRate: decimal("tax_rate", { precision: 5, scale: 4 }).default('0.0875'),
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }),
   total: decimal("total", { precision: 10, scale: 2 }),
@@ -1021,6 +1022,7 @@ export const quotes = pgTable("quotes", {
 
 export const quoteItems = pgTable("quote_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   quoteId: varchar("quote_id").notNull().references(() => quotes.id),
   name: text("name").notNull(),
   description: text("description"),
@@ -1033,6 +1035,7 @@ export const quoteItems = pgTable("quote_items", {
 
 export const quoteEvents = pgTable("quote_events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   quoteId: varchar("quote_id").notNull().references(() => quotes.id),
   event: text("event").notNull(), // 'created'|'updated'|'sent'|'viewed'|'approved'|'declined'|'expired'
   actorUserId: varchar("actor_user_id"),
