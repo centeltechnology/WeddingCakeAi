@@ -103,11 +103,19 @@ export default function BookingSettings({ embedded = false }: { embedded?: boole
           <CardContent className="space-y-4">
             <div>
               <Label>Timezone</Label>
-              <Input
+              <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                placeholder="America/New_York"
-              />
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="America/New_York">Eastern Time (America/New_York)</option>
+                <option value="America/Chicago">Central Time (America/Chicago)</option>
+                <option value="America/Denver">Mountain Time (America/Denver)</option>
+                <option value="America/Phoenix">Arizona Time (America/Phoenix)</option>
+                <option value="America/Los_Angeles">Pacific Time (America/Los_Angeles)</option>
+                <option value="America/Anchorage">Alaska Time (America/Anchorage)</option>
+                <option value="Pacific/Honolulu">Hawaii Time (Pacific/Honolulu)</option>
+              </select>
             </div>
             <div>
               <Label>Slot Duration (minutes)</Label>
