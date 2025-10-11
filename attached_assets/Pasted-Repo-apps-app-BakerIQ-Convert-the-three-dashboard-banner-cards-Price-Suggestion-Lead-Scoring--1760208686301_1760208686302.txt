@@ -1,0 +1,200 @@
+Repo: apps/app (BakerIQ). Convert the three dashboard banner cards — Price Suggestion, Lead Scoring, Auto-Reply — from static UI to interactive quick actions with loading states, tooltips, feature-flag awareness, and deterministic context. Idempotent.
+
+0) Flags (ensure)
+
+Client .env
+
+VITE_AI_ENABLED=true
+VITE_DEMO_MODE=true
+
+1) Shared context hook
+
+Create client/src/hooks/useAiContext.ts:
+
+import { useQuery } from '@tanstack/react-query';
+
+export function useRecentQuote() {
+  return useQuery({
+    queryKey: ['recent-quote'],
+    queryFn: async () => {
+      const r = await fetch('/api/quotes?limit=1&sort=-updatedAt');
+      if (!r.ok) return null;
+      const j = await r.json();
+      return Array.isArray(j) && j[0] ? j[0] : null;
+    },
+    staleTime: 30_000
+  });
+}
+
+export function useAiFlags(){
+  return { aiOn: import.meta.env.VITE_AI_ENABLED === 'true', demo: import.meta.env.VITE_DEMO_MODE === 'true' };
+}
+
+2) Server (hardening): accept explicit quoteId on AI endpoints
+
+Confirm/adjust:
+
+POST /api/ai/suggest-items { quoteId, brief? }
+
+POST /api/ai/summarize-quote { quoteId }
+
+POST /api/ai/generate-contract { quoteId, templateId? }
+All tenant-scoped server-side; 400 with {error:'quote_required'} if missing.
+
+3) Dashboard cards: wire actions
+
+Update the dashboard page (e.g., client/src/pages/BakerDashboard.tsx or Dashboard.tsx). Replace the static banner with a reusable component:
+
+client/src/components/dashboard/AiQuickTiles.tsx
+
+import { useState } from 'react';
+import { useRecentQuote, useAiFlags } from '@/hooks/useAiContext';
+import { Button } from '@/components/ui/Button';
+import { toast } from '@/components/ui/toast'; // use your toast
+import { useNavigate } from 'react-router-dom';
+
+export default function AiQuickTiles(){
+  const nav = useNavigate();
+  const { data: recent } = useRecentQuote();
+  const { aiOn } = useAiFlags();
+  const [loading, setLoading] = useState<null | 'suggest'|'summarize'|'contract'|'rescore'|'sendtest'>(null);
+
+  const disabled = !aiOn;
+
+  async function run(path:string, body:any){
+    const r = await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j = await r.json().catch(()=> ({}));
+    if(!r.ok) throw new Error(j?.error || `Request failed: ${r.status}`);
+    return j;
+  }
+
+  const qid = recent?.id;
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {/* Price Suggestion */}
+      <div className="rounded-2xl border bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="font-semibold">Price Suggestion</div>
+          <span className="text-xs rounded-full px-2 py-0.5 bg-black/5">{aiOn ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        <p className="text-sm mt-1 text-black/70">Get item suggestions and draft prices for a quote.</p>
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={disabled || !qid || loading==='suggest'}
+            loading={loading==='suggest'}
+            onClick={async()=>{
+              if(!qid){ toast.error('Pick a quote first'); nav('/ai-lab'); return; }
+              setLoading('suggest');
+              try{
+                const j = await run('/api/ai/suggest-items',{ quoteId: qid });
+                toast.ok(`Suggested ${j?.items?.length ?? 0} items`);
+                nav(`/quotes/${qid}?tab=ai&suggested=1`);
+              }catch(e:any){ toast.error(e.message); } finally{ setLoading(null); }
+            }}
+          >Suggest for Last Quote</Button>
+          <Button variant="outline" size="sm" onClick={()=> nav('/ai-lab')}>Open AI Lab</Button>
+        </div>
+        {!qid && <div className="mt-2 text-xs text-black/50">No recent quote found — create or select one in Quotes.</div>}
+      </div>
+
+      {/* Lead Scoring */}
+      <div className="rounded-2xl border bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="font-semibold">Lead Scoring</div>
+          <span className="text-xs rounded-full px-2 py-0.5 bg-black/5">Active</span>
+        </div>
+        <p className="text-sm mt-1 text-black/70">Rank leads by likelihood to convert.</p>
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant="primary" size="sm"
+            disabled={loading==='rescore'}
+            loading={loading==='rescore'}
+            onClick={async()=>{
+              setLoading('rescore');
+              try{
+                // optional endpoint: POST /api/leads/rescore (idempotent)
+                await run('/api/leads/rescore', {});
+                toast.ok('Leads rescored');
+              }catch{ nav('/leads'); } finally{ setLoading(null); }
+            }}
+          >Rescore Now</Button>
+          <Button variant="outline" size="sm" onClick={()=> nav('/leads?sort=score_desc')}>View Leads</Button>
+        </div>
+      </div>
+
+      {/* Auto-Reply */}
+      <div className="rounded-2xl border bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="font-semibold">Auto-Reply</div>
+          <span className="text-xs rounded-full px-2 py-0.5 bg-black/5">Configured?</span>
+        </div>
+        <p className="text-sm mt-1 text-black/70">Auto-respond to new leads with a friendly message.</p>
+        <div className="mt-3 flex gap-2">
+          <Button variant="primary" size="sm"
+            disabled={loading==='sendtest'}
+            loading={loading==='sendtest'}
+            onClick={async()=>{
+              setLoading('sendtest');
+              try{
+                // optional: POST /api/auto-reply/test { to?: string }
+                await run('/api/auto-reply/test', {});
+                toast.ok('Test reply sent (check logs)');
+              }catch(e:any){ toast.error(e.message || 'Failed sending test'); } finally{ setLoading(null); }
+            }}
+          >Send Test</Button>
+          <Button variant="outline" size="sm" onClick={()=> nav('/settings?tab=auto-reply')}>Configure</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+Import and render <AiQuickTiles /> near the top of the dashboard content where those three boxes are today (replace the old static markup).
+
+4) AI Lab: guard against “no context”
+
+On /ai-lab, disable action buttons until the user selects a Quote (or Lead, if you implemented the Lead→Quote bridge). Show a small inline hint: “Select a quote to continue.”
+
+5) Optional endpoints (safe stubs)
+
+If these don’t exist yet, add simple, tenant-scoped stubs so buttons do something:
+
+POST /api/leads/rescore → returns { ok:true, rescored: N } (recompute scores server-side or just respond ok in demo).
+
+POST /api/auto-reply/test → returns { ok:true } (log to server; no real email in demo).
+
+6) UX details to avoid confusion
+
+Loading: buttons show spinners and are disabled while running.
+
+Tooltips (or small helper text) when the action is disabled:
+
+AI disabled → “Enable AI in Settings to use this feature.”
+
+No recent quote found → “Create a quote first.”
+
+Navigation after success:
+
+Price Suggestion → navigate to the quote detail with a tab/query param (?tab=ai&suggested=1) so users see results immediately.
+
+Lead Scoring → either toast “rescored” or take them to /leads?sort=score_desc.
+
+Auto-Reply → keep them on dashboard; toast result.
+
+7) Acceptance (what you should see)
+
+The three tiles now have working buttons:
+
+Suggest for Last Quote runs and routes to that quote when a recent quote exists; otherwise, the button is disabled with guidance.
+
+Rescore Now completes (or routes to Leads) without errors.
+
+Send Test responds with a success toast in demo.
+
+Buttons clearly indicate loading/disabled states; no “mystery” clicks.
+
+If VITE_AI_ENABLED=false, all AI actions are visibly disabled with a clear explanation.
