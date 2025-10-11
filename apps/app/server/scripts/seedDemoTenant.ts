@@ -46,8 +46,17 @@ async function main() {
   let baker;
   const existingBaker = await db.select().from(bakers).where(eq(bakers.email, email)).limit(1);
   
-  // Generate or use desired slug
-  const slug = await generateUniqueSlug(name, checkSlugExists);
+  // Use exact slug from spec - check if it's taken by another baker
+  let slug = desiredSlug;
+  const slugConflict = await db.select().from(bakers)
+    .where(eq(bakers.slug, desiredSlug))
+    .limit(1);
+  
+  // If slug is taken by a different baker, generate unique one
+  if (slugConflict.length > 0 && slugConflict[0].email !== email) {
+    slug = await generateUniqueSlug(name, checkSlugExists);
+    console.log(`⚠️  Slug "${desiredSlug}" taken by another baker, using "${slug}" instead`);
+  }
   
   if (existingBaker.length === 0) {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -69,16 +78,17 @@ async function main() {
     console.log('✓ Created baker:', baker.id, 'with slug:', baker.slug);
   } else {
     baker = existingBaker[0];
-    // Update to ensure verified and set slug if missing
-    await db.update(bakers)
+    // Update to ensure verified and set slug to desired
+    [baker] = await db.update(bakers)
       .set({ 
         emailVerified: true, 
         verificationToken: null,
         verificationTokenExpiry: null,
         subscriptionPlan: 'professional',
-        slug: slug, // Ensure slug is set
+        slug: slug, // Use exact desired slug
       })
-      .where(eq(bakers.id, baker.id));
+      .where(eq(bakers.id, baker.id))
+      .returning();
     console.log('✓ Baker already exists:', baker.id, 'updated slug to:', slug);
   }
 

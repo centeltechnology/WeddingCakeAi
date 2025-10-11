@@ -207,14 +207,7 @@ function Router() {
         </SuperAdminAuthWrapper>
       )} />
       <Route path="/super-admin/reset-password" component={SuperAdminResetPassword} />
-      {/* Tenant-based calculator route (e.g. /baker/sweet-dreams-bakery/calculator) */}
-      <Route path="/baker/:slug/calculator">
-        {(params) => (
-          <BakerSlugWrapper slug={params.slug}>
-            <CakeCalculator />
-          </BakerSlugWrapper>
-        )}
-      </Route>
+      {/* Legacy /baker/:slug/calculator route is handled by server 301 redirect to /calculator?tenant=:slug */}
       {/* Authenticated Baker Calculator */}
       <Route path="/baker/calculator">
         <AuthGuard>

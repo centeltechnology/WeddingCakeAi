@@ -19,7 +19,7 @@ const BASE_URL = 'http://localhost:5000';
 
 const DEMO_EMAIL = 'demo@bakeriq.app';
 const DEMO_PASSWORD = 'DemoPass123!';
-const DEMO_SLUG = 'sweet-treats-bakery-1'; // Updated to match generated slug
+const DEMO_SLUG = 'sweet-treats-bakery'; // Exact slug from spec
 
 type TestResult = {
   name: string;
