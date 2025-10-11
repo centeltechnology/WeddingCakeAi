@@ -9,6 +9,7 @@ BakerIQ is a professional SaaS platform for bakeries, designed to modernize busi
 - **Sample Data Loader**: Added GET /api/leads/sample endpoint for idempotent demo lead seeding (creates 3 sample leads if tenant has none)
 - **AI Lab Enhancement**: Replaced stub endpoints with real demo responses - suggest-items returns cake/cupcake suggestions, summarize-quote provides quote summary, generate-contract returns contract clauses
 - **Booking UX**: Replaced timezone text input with US timezone dropdown (7 zones: ET, CT, MT, AZ, PT, AK, HI)
+- **Header & Sidebar UX Polish**: Animated mobile drawer with focus trap and ARIA semantics (role="dialog", aria-modal, ESC to close, backdrop click), tooltips on header icons (300ms delay, keyboard accessible), enhanced ARIA navigation (aria-expanded, aria-current, aria-controls), proper focus management (saves/restores focus, first element focus on open)
 - **Observability & Testing**: Health check (/healthz), structured logging, metrics tracking, smoke test script (scripts/smoke.ts), Playwright E2E/API test suites
 - **CSV Importer**: Customer/lead and catalog item CSV import with validation, preview, and bulk insert (Settings → Import Data)
 
