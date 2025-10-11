@@ -17,12 +17,12 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 35217
-externalPort = 3003
-
-[[ports]]
 localPort = 36849
 externalPort = 5000
+
+[[ports]]
+localPort = 37559
+externalPort = 3001
 
 [[ports]]
 localPort = 37703
@@ -96,7 +96,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "LEAD_SCORING_ENABLED=true VITE_LEAD_SCORING_ENABLED=true BOOKING_ENABLED=true VITE_BOOKING_ENABLED=true npm run dev"
+args = "DEMO_MODE=true LEAD_SCORING_ENABLED=true VITE_LEAD_SCORING_ENABLED=true BOOKING_ENABLED=true VITE_BOOKING_ENABLED=true EMAIL_TRANSPORT=log npm run dev"
 waitForPort = 5000
 
 [agent]

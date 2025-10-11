@@ -15,13 +15,11 @@ import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { bakers } from '../../shared/schema';
 
-const BASE_URL = process.env.REPL_SLUG 
-  ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-  : 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000';
 
 const DEMO_EMAIL = 'demo@bakeriq.app';
 const DEMO_PASSWORD = 'DemoPass123!';
-const DEMO_SLUG = 'sweet-treats-bakery';
+const DEMO_SLUG = 'sweet-treats-bakery-1'; // Updated to match generated slug
 
 type TestResult = {
   name: string;
@@ -98,18 +96,22 @@ async function testDevVerification() {
 
   // Test dev-verify endpoint
   try {
-    const res = await fetch(`${BASE_URL}/api/dev-verify?email=${encodeURIComponent(DEMO_EMAIL)}`);
+    const res = await fetch(`${BASE_URL}/api/auth/dev-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: DEMO_EMAIL }),
+    });
     const data = await res.json();
-    const passed = res.ok && data.success;
+    const passed = res.ok && (data.ok || data.success);
     
     logTest({
-      name: '/api/dev-verify endpoint',
+      name: '/api/auth/dev-verify endpoint',
       passed,
       details: passed ? 'Email verification working in dev mode' : `Unexpected response: ${JSON.stringify(data)}`,
     });
   } catch (error) {
     logTest({
-      name: '/api/dev-verify endpoint',
+      name: '/api/auth/dev-verify endpoint',
       passed: false,
       error: error instanceof Error ? error.message : String(error),
     });

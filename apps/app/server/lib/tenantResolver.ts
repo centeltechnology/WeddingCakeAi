@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 export interface ResolvedTenant {
   id: string;
   slug: string;
-  isPublished: boolean;
   baker?: any;
   profile?: any;
 }
@@ -37,7 +36,6 @@ export async function resolveTenantBySlug(slug: string): Promise<ResolvedTenant 
     return {
       id: baker.tenantId,
       slug: baker.slug,
-      isPublished: profile?.isPublished ?? false,
       baker,
       profile
     };

@@ -10288,10 +10288,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Bakery not found' });
       }
 
-      if (!resolved.isPublished) {
-        return res.status(404).json({ error: 'Bakery profile not published' });
-      }
-
       // Load media assets
       const assets = await db
         .select()

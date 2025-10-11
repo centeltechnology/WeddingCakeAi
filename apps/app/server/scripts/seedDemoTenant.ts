@@ -46,9 +46,11 @@ async function main() {
   let baker;
   const existingBaker = await db.select().from(bakers).where(eq(bakers.email, email)).limit(1);
   
+  // Generate or use desired slug
+  const slug = await generateUniqueSlug(name, checkSlugExists);
+  
   if (existingBaker.length === 0) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const slug = await generateUniqueSlug(name, checkSlugExists);
 
     [baker] = await db.insert(bakers).values({
       name,
@@ -67,16 +69,17 @@ async function main() {
     console.log('✓ Created baker:', baker.id, 'with slug:', baker.slug);
   } else {
     baker = existingBaker[0];
-    // Update to ensure verified
+    // Update to ensure verified and set slug if missing
     await db.update(bakers)
       .set({ 
         emailVerified: true, 
         verificationToken: null,
         verificationTokenExpiry: null,
-        subscriptionPlan: 'professional'
+        subscriptionPlan: 'professional',
+        slug: slug, // Ensure slug is set
       })
       .where(eq(bakers.id, baker.id));
-    console.log('✓ Baker already exists:', baker.id, 'with slug:', baker.slug);
+    console.log('✓ Baker already exists:', baker.id, 'updated slug to:', slug);
   }
 
   // 3. Upsert Public Profile (for marketplace /p/:slug)
@@ -91,14 +94,10 @@ async function main() {
       about: 'Custom cakes & desserts for every occasion. Specializing in wedding cakes, birthday cakes, and custom designs.',
       specialties: ['Wedding Cakes', 'Birthday Cakes', 'Custom Designs'],
       logoUrl: null, // Can be added later via media library
-      isPublished: true, // Make it publicly visible
     });
-    console.log('✓ Created published tenant profile');
+    console.log('✓ Created tenant profile');
   } else {
-    await db.update(tenantProfiles)
-      .set({ isPublished: true })
-      .where(eq(tenantProfiles.tenantId, tenant.id));
-    console.log('✓ Tenant profile already exists and is published');
+    console.log('✓ Tenant profile already exists');
   }
 
   // 4. Ensure Booking Settings
