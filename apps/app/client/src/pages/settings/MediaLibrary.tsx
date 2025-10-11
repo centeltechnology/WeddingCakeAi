@@ -31,11 +31,11 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
     queryKey: ['/api/media'],
     queryFn: async () => {
       const data = await apiRequest('GET', '/api/media', undefined);
-      return data;
+      return data as any;
     },
   });
   
-  const assets = Array.isArray(data?.assets) ? data.assets : Array.isArray(data) ? data : [];
+  const assets = Array.isArray(data?.assets) ? data.assets as MediaAsset[] : Array.isArray(data) ? data as MediaAsset[] : [] as MediaAsset[];
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -283,7 +283,7 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="danger"
                     onClick={() => deleteMutation.mutate(asset.id)}
                     disabled={deleteMutation.isPending}
                   >
