@@ -10285,40 +10285,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/public/profile/:slug', async (req, res) => {
     try {
       const slug = req.params.slug;
+      const { resolveTenantBySlug } = await import("./lib/tenantResolver");
 
-      // Find tenant by subdomain (slug)
-      const [tenant] = await db
-        .select()
-        .from(tenants)
-        .where(eq(tenants.subdomain, slug))
-        .limit(1);
+      // Resolve tenant by baker slug
+      const resolved = await resolveTenantBySlug(slug);
 
-      if (!tenant) {
+      if (!resolved) {
         return res.status(404).json({ error: 'Bakery not found' });
       }
 
-      // Load tenant profile
-      const [profile] = await db
-        .select()
-        .from(tenantProfiles)
-        .where(eq(tenantProfiles.tenantId, tenant.id))
-        .limit(1);
+      if (!resolved.isPublished) {
+        return res.status(404).json({ error: 'Bakery profile not published' });
+      }
 
       // Load media assets
       const assets = await db
         .select()
         .from(mediaAssets)
-        .where(eq(mediaAssets.tenantId, tenant.id))
+        .where(eq(mediaAssets.tenantId, resolved.id))
         .orderBy(sql`${mediaAssets.createdAt} DESC`)
         .limit(20);
 
       res.json({
         tenant: {
-          id: tenant.id,
-          name: tenant.name,
-          subdomain: tenant.subdomain,
+          id: resolved.id,
+          name: resolved.baker?.name || 'Bakery',
+          subdomain: resolved.slug,
         },
-        profile: profile || null,
+        profile: resolved.profile || null,
         assets: assets || [],
       });
     } catch (error) {
@@ -10773,17 +10767,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'disabled' });
       }
 
-      // Resolve tenant by query param or request context
+      // Resolve tenant by query param
       const slug = (req.query.tenant as string) || null;
-      let tenant = req.tenant; // From middleware if available
 
-      if (!tenant && slug) {
-        tenant = await storage.getTenantBySlug(slug);
+      if (!slug) {
+        return res.status(400).json({ error: 'tenant_slug_required' });
       }
 
-      if (!tenant) {
+      const { resolveTenantBySlug } = await import("./lib/tenantResolver");
+      const resolved = await resolveTenantBySlug(slug);
+
+      if (!resolved) {
         return res.status(404).json({ error: 'tenant_not_found' });
       }
+
+      const tenant = { id: resolved.id };
 
       const [settings] = await db
         .select()
