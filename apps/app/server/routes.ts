@@ -40,6 +40,7 @@ import { renderTemplate as renderTemplateEngine, extractVariables, buildQuoteCon
 import { loggerMiddleware } from "./loggerMiddleware";
 import { incrementMetric, getMetrics } from "./metrics";
 import importRouter from "./routes/import";
+import sampleDataRouter from "./routes/sample-data";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -344,6 +345,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CSV Import routes (authenticated users only)
   app.use('/api/import', ensureAuthUnified, importRouter);
 
+  // Sample Data routes (registered separately below with inline auth)
+  app.use(sampleDataRouter);
   
   // Tenant management routes (admin only)
   app.post("/api/admin/tenants", async (req, res) => {
