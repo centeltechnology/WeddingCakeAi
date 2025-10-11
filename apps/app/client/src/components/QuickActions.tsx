@@ -1,4 +1,4 @@
-import { ExternalLink, CreditCard, Calculator, Eye, CalculatorCheck } from 'lucide-react';
+import { ExternalLink, CreditCard, Calculator, Eye, SquareStack } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useCreditsModal } from '@/components/ai/CreditsModalContext';
@@ -69,7 +69,7 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
             onClick={handleBakerCalculator}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           >
-            <CalculatorCheck className="h-4 w-4" />
+            <SquareStack className="h-4 w-4" />
           </button>
         </Tooltip>
         <Tooltip label="Top-Up Credits">
@@ -109,7 +109,7 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
         onClick={handleBakerCalculator}
         className="w-full justify-start gap-2"
       >
-        <CalculatorCheck className="h-4 w-4" />
+        <SquareStack className="h-4 w-4" />
         Baker Calculator
       </Button>
       <Button

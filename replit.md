@@ -36,6 +36,7 @@ Preferred communication style: Simple, everyday language.
 - **Session Persistence**: `RootGate` component and `/api/session` endpoint with `Cache-Control: no-store`.
 
 ### Key Features
+- **Baker Calculator**: Internal admin-only estimate builder at `/baker/calculator` with editable line items table (item, qty, unit price, notes), customer picker/creation, computed totals (subtotal, discount, tax, deposit), and save-as-quote functionality. Includes atomic customer upsert and quote creation with proper transaction handling. Accessible via sidebar navigation (under Customers) and header quick actions (SquareStack icon).
 - **Dynamic Pricing Calculator**: Real-time cake cost calculations with customizable options, server-backed defaults, and theme customization.
 - **CRM**: Bulk email, CSV export, one-click quote approval, lead capture, and management including a Lead Inbox for communication.
 - **Quote & Contract Management**: Creation, editing, templating, secure token-based approval links, server-side rendering with variable replacement, and full workflow UI.
