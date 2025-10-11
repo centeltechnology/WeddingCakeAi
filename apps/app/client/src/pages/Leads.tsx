@@ -115,27 +115,22 @@ export default function Leads() {
 
   const seedLeadsMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          customer_name: 'Demo Lead',
-          customer_email: `demo-${Date.now()}@example.com`,
-          budget: '3000',
-          source: 'website',
-          status: 'new'
-        })
+      const res = await fetch('/api/leads/sample', {
+        method: 'GET',
+        credentials: 'include'
       });
-      if (!res.ok) throw new Error('Failed');
+      if (!res.ok) throw new Error('Failed to seed sample leads');
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/leads/scored'] });
-      toast({ title: 'Demo lead created' });
+      toast({ 
+        title: 'Sample leads seeded', 
+        description: data.created > 0 ? `Created ${data.created} new sample leads` : 'Sample leads already exist'
+      });
     },
     onError: () => {
-      toast({ title: 'Failed to create demo lead', variant: 'destructive' });
+      toast({ title: 'Failed to seed sample leads', variant: 'destructive' });
     }
   });
 

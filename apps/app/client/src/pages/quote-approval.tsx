@@ -312,27 +312,29 @@ export default function QuoteApprovalPage() {
             </div>
 
             {/* Line Items */}
-            <div className="border-t border-b py-4 mb-4">
-              <h3 className="font-semibold text-lg mb-4">Items</h3>
-              <div className="space-y-3">
-                {quote.items.map((item) => (
-                  <div key={item.id} className="flex justify-between" data-testid={`quote-item-${item.id}`}>
-                    <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
-                      {item.description && (
-                        <p className="text-sm text-gray-600">{item.description}</p>
-                      )}
-                      <p className="text-sm text-gray-500">
-                        Quantity: {item.quantity} × ${parseFloat(item.unitPrice).toFixed(2)}
-                      </p>
+            {quote.items && quote.items.length > 0 && (
+              <div className="border-t border-b py-4 mb-4">
+                <h3 className="font-semibold text-lg mb-4">Items</h3>
+                <div className="space-y-3">
+                  {quote.items.map((item) => (
+                    <div key={item.id} className="flex justify-between" data-testid={`quote-item-${item.id}`}>
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        {item.description && (
+                          <p className="text-sm text-gray-600">{item.description}</p>
+                        )}
+                        <p className="text-sm text-gray-500">
+                          Quantity: {item.quantity} × ${parseFloat(item.unitPrice).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${parseFloat(item.totalPrice).toFixed(2)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${parseFloat(item.totalPrice).toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Totals */}
             <div className="space-y-2">
