@@ -110,8 +110,13 @@ export default function AiQuickTiles() {
                   title: 'Leads Rescored',
                   description: 'All leads have been rescored successfully'
                 });
-              } catch {
-                setLocation('/leads');
+                setLocation('/leads?sort=score_desc');
+              } catch (e: any) {
+                toast({
+                  title: 'Rescore Failed',
+                  description: e.message || 'Failed to rescore leads',
+                  variant: 'destructive'
+                });
               } finally {
                 setLoading(null);
               }
