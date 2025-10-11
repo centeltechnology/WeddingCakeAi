@@ -46,6 +46,7 @@ async function testAuthRedirects() {
     { path: '/baker-login', expected: '/login' },
     { path: '/signin', expected: '/login' },
     { path: '/auth/login', expected: '/login' },
+    { path: `/baker/${DEMO_SLUG}/calculator`, expected: `/calculator?tenant=${DEMO_SLUG}` },
   ];
 
   for (const test of redirectTests) {
