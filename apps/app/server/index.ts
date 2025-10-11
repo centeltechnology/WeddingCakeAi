@@ -422,7 +422,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Health (FIRST)
-const health = (endpoint: string) => (_req: any, res: any) => res.json({ ok: true, app: 'app', endpoint });
+const health = (endpoint: string) => (_req: any, res: any) => res.json({ 
+  ok: true, 
+  version: '1.0.0',
+  now: new Date().toISOString()
+});
 app.get('/health',     health('/health'));
 app.get('/api/health', health('/api/health'));
 app.get('/healthz',    health('/healthz')); // alias for non-custom domains
@@ -434,35 +438,7 @@ app.get("/calc/cake", (_req, res) => {
   res.sendFile(path.join(PUB, "calc-cake.html"));
 });
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
+// Legacy logging removed - using structured JSON logger from loggerMiddleware instead
 
 // ========================================
 // INTERNAL PROVISIONING ENDPOINT
