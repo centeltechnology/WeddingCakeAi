@@ -1,0 +1,212 @@
+AI Lab Context & Lead→Quote Bridge
+
+Repo: apps/app (BakerIQ).
+Goal: Make AI actions deterministic (never arbitrary) by requiring explicit context. Add:
+
+A context panel in AI Lab with Select Quote, Select Lead, and an optional Brief.
+
+Buttons disabled until a quote is selected (from dropdown).
+
+Ability to pick a lead who used the calculator (or any lead), and create a draft quote from that lead in one click.
+
+Backend endpoints accept {quoteId, leadId?, brief?}; if only leadId is provided (no quote yet), create a draft quote and use it.
+
+A) Server: AI endpoints accept context (quote or lead)
+
+In apps/app/server/routes.ts (or wherever AI routes live), update three endpoints:
+
+// helpers
+async function ensureQuoteForLead(db, tenantId: string, leadId: string) {
+  // find or create a draft quote associated with this lead's customer
+  const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
+  if (!lead) throw new Error('lead_not_found');
+
+  // find or create customer
+  let [customer] = await db.select().from(customers).where(and(eq(customers.email, lead.email), eq(customers.tenantId, tenantId)));
+  if (!customer) {
+    const id = crypto.randomUUID();
+    await db.insert(customers).values({ id, tenantId, name: lead.name ?? lead.email, email: lead.email });
+    [customer] = await db.select().from(customers).where(eq(customers.id, id));
+  }
+
+  // find existing draft quote linked to this customer (optional) or create new
+  const [existingQuote] = await db.select().from(quotes).where(and(eq(quotes.tenantId, tenantId), eq(quotes.customerId, customer.id), eq(quotes.status, 'draft'))).limit(1);
+  if (existingQuote) return existingQuote.id;
+
+  const quoteId = crypto.randomUUID();
+  await db.insert(quotes).values({ id: quoteId, tenantId, customerId: customer.id, title: `Draft for ${lead.name ?? lead.email}`, status: 'draft', total: 0, createdAt: new Date() });
+  return quoteId;
+}
+
+app.post('/api/ai/suggest-items', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { quoteId, leadId, brief } = req.body ?? {};
+
+  let qid = quoteId;
+  if (!qid && leadId) qid = await ensureQuoteForLead(db, tenantId, leadId);
+  if (!qid) return res.status(400).json({ error: 'quote_required' });
+
+  // fetch quote + customer + (optional) catalog; brief may guide suggestions
+  // return deterministic demo items for now
+  return res.json({
+    ok: true,
+    quoteId: qid,
+    items: [
+      { name:'8" Two-Layer Cake', qty:1, unit:'ea', price:55, rationale:'Standard birthday size' },
+      { name:'Cupcakes (Dozen)', qty:1, unit:'dz', price:36, rationale:'Popular add-on' },
+      { name:'Delivery', qty:1, unit:'flat', price:15, rationale:'Based on local radius' },
+    ],
+    brief: brief ?? null,
+  });
+});
+
+app.post('/api/ai/summarize-quote', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { quoteId, leadId } = req.body ?? {};
+  let qid = quoteId;
+  if (!qid && leadId) qid = await ensureQuoteForLead(db, tenantId, leadId);
+  if (!qid) return res.status(400).json({ error:'quote_required' });
+
+  // fetch data and produce summary
+  return res.json({ ok:true, quoteId: qid, summary: 'Draft includes an 8” cake and a dozen cupcakes. Est. total ~$106 incl. delivery, before tax.' });
+});
+
+app.post('/api/ai/generate-contract', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { quoteId, leadId, templateId } = req.body ?? {};
+  let qid = quoteId;
+  if (!qid && leadId) qid = await ensureQuoteForLead(db, tenantId, leadId);
+  if (!qid) return res.status(400).json({ error:'quote_required' });
+
+  // templateId optional; if not provided, choose default tenant template
+  return res.json({
+    ok:true,
+    quoteId: qid,
+    clauses:[
+      '50% non-refundable deposit due on approval.',
+      'Balance due 3 days before pickup.',
+      'Allergy notice: products may contain nuts and dairy.'
+    ]
+  });
+});
+
+
+All routes derive tenantId from auth; no client-supplied tenant/baker IDs.
+
+B) Client: AI Lab Context Panel (Select Quote + Select Lead + Brief)
+
+In apps/app/client/src/pages/ai/AILab.tsx (or your AI Lab page):
+
+Controls at the top:
+
+Select Quote (required): a searchable dropdown fed by GET /api/quotes?status=draft|sent|approved.
+
+Select Lead (optional): searchable dropdown from GET /api/leads?hasCalculator=true (fallback to all leads if you don’t filter yet).
+
+Brief (optional textarea): small free-text to guide suggestions (party size, flavors, theme).
+
+Enable/disable rules:
+
+All three AI action buttons are disabled until a Quote is selected or a Lead is selected (because server will create a draft quote for a lead).
+
+When both are chosen, pass both (server will prefer explicit quoteId).
+
+Wire the buttons:
+
+const [quoteId, setQuoteId] = useState<string|undefined>();
+const [leadId, setLeadId] = useState<string|undefined>();
+const [brief, setBrief] = useState('');
+const canRun = Boolean(quoteId || leadId);
+
+async function run(path:string, body:any){
+  const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j?.error || 'request_failed');
+  return j;
+}
+
+// Suggest Items
+<Button disabled={!canRun} onClick={async()=>{
+  setLoading('suggest');
+  try{
+    const j = await run('/api/ai/suggest-items', { quoteId, leadId, brief });
+    setSuggestResult(j.items); setResolvedQuoteId(j.quoteId);
+    toast.ok('Suggested items ready');
+  } catch(e:any){ toast.err(e.message); } finally{ setLoading(null); }
+}}>Suggest Items</Button>
+
+// Summarize Quote
+<Button disabled={!canRun} onClick={async()=>{
+  setLoading('summarize');
+  try{
+    const j = await run('/api/ai/summarize-quote', { quoteId, leadId });
+    setSummary(j.summary); setResolvedQuoteId(j.quoteId);
+    toast.ok('Summary ready');
+  } catch(e:any){ toast.err(e.message); } finally{ setLoading(null); }
+}}>Summarize Quote</Button>
+
+// Generate Contract Draft
+<Button disabled={!canRun} onClick={async()=>{
+  setLoading('contract');
+  try{
+    const j = await run('/api/ai/generate-contract', { quoteId, leadId, templateId: selectedTemplateId });
+    setClauses(j.clauses); setResolvedQuoteId(j.quoteId);
+    toast.ok('Contract draft ready');
+  } catch(e:any){ toast.err(e.message); } finally{ setLoading(null); }
+}}>Generate Contract Draft</Button>
+
+
+Results area:
+
+Suggested items: simple table with Add Selected to the quote (POST /api/quotes/:id/items or your existing add-item endpoint).
+
+Summary: copy to clipboard, “Insert as internal note” optional.
+
+Contract clauses: preview and “Attach to contract” (if you create a contract stub) or save as template.
+
+C) Leads & Calculator: surface calculator leads and Create Quote action
+
+On Leads list/detail:
+
+Add a badge for leads that came from the calculator (source='calculator' or hasCalculator=true if you track sessions).
+
+Add a button “Create Quote from Lead”:
+
+Calls POST /api/ai/suggest-items with { leadId } (no quoteId).
+
+Server will create a draft quote (if needed) and return quoteId + suggested items.
+
+Offer to Insert items into that draft quote immediately and Open quote.
+
+If there’s already a draft quote for that lead’s customer, skip creation and use it.
+
+D) Quotes pages: pass explicit quoteId to AI buttons
+
+On /quotes/:id, the three AI buttons should directly call endpoints with { quoteId } (no dropdown there).
+
+Show results inline (or in a side drawer) with “Insert to quote”.
+
+E) Guardrails & UX
+
+If no quotes and no leads selected → show a friendly inline hint:
+“Pick a quote or select a lead to continue.”
+
+Disable buttons until canRun is true.
+
+Handle API errors by showing a readable toast (e.g., quote_required, lead_not_found).
+
+Log quote_events.ai_suggested / quote_events.ai_summarized / contract_events.ai_generated with minimal metadata (quoteId, leadId, counts) so timelines make sense.
+
+F) Acceptance (must pass)
+
+AI Lab shows Select Quote, Select Lead, and Brief.
+
+Buttons are disabled until at least a quote or a lead is chosen.
+
+Clicking Suggest Items returns items and a resolved quoteId. If only a lead was picked, a draft quote is created automatically and used.
+
+Summarize Quote and Generate Contract Draft also accept either quote or lead and return useful outputs.
+
+From a Lead detail, clicking Create Quote from Lead creates/opens a draft quote and surfaces suggested items.
+
+No arbitrary behavior; every AI action clearly shows which quote it’s operating on.

@@ -9853,48 +9853,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Lab demo endpoints with real responses
+  // Helper: Ensure quote exists for a lead (create draft if needed)
+  async function ensureQuoteForLead(tenantId: string, leadId: string): Promise<string> {
+    // Find lead
+    const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
+    if (!lead) throw new Error('lead_not_found');
+
+    // Find or create customer from lead
+    let [customer] = await db.select().from(customers).where(and(
+      eq(customers.email, lead.customerEmail),
+      eq(customers.tenantId, tenantId)
+    ));
+    
+    if (!customer) {
+      const customerId = randomUUID();
+      await db.insert(customers).values({
+        id: customerId,
+        tenantId,
+        name: lead.customerName || lead.customerEmail,
+        email: lead.customerEmail,
+        phone: lead.customerPhone || null,
+      });
+      [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
+    }
+
+    // Find existing draft quote for this customer or create new
+    const [existingQuote] = await db.select().from(quotes)
+      .where(and(
+        eq(quotes.tenantId, tenantId),
+        eq(quotes.customerId, customer.id),
+        eq(quotes.status, 'draft')
+      ))
+      .limit(1);
+    
+    if (existingQuote) return existingQuote.id;
+
+    // Create new draft quote
+    const quoteId = randomUUID();
+    const [baker] = await db.select().from(bakers).where(eq(bakers.tenantId, tenantId)).limit(1);
+    
+    await db.insert(quotes).values({
+      id: quoteId,
+      tenantId,
+      bakerId: baker?.id || null,
+      customerId: customer.id,
+      quoteNumber: `Q-${Date.now()}`,
+      title: `Draft for ${lead.customerName || lead.customerEmail}`,
+      status: 'draft',
+      total: '0',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    
+    return quoteId;
+  }
+
+  // AI Lab endpoints with context support
   app.post('/api/ai/suggest-items', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { quoteId, leadId, brief } = req.body ?? {};
+
+      // Resolve quoteId from leadId if needed
+      let resolvedQuoteId = quoteId;
+      if (!resolvedQuoteId && leadId) {
+        resolvedQuoteId = await ensureQuoteForLead(tenantId, leadId);
+      }
+      
+      if (!resolvedQuoteId) {
+        return res.status(400).json({ error: 'quote_required' });
+      }
+
+      // Return deterministic demo items with context
       res.json({ 
-        ok: true, 
+        ok: true,
+        quoteId: resolvedQuoteId,
         items: [
-          { name: '6" Smash Cake', qty: 1, unit: 'ea', price: 25 },
-          { name: '8" Two-Layer Cake', qty: 1, unit: 'ea', price: 55 },
-          { name: 'Cupcakes (Dozen)', qty: 1, unit: 'dz', price: 36 },
-        ]
+          { name: '8" Two-Layer Cake', qty: 1, unit: 'ea', price: 55, rationale: 'Standard birthday size' },
+          { name: 'Cupcakes (Dozen)', qty: 1, unit: 'dz', price: 36, rationale: 'Popular add-on' },
+          { name: 'Delivery', qty: 1, unit: 'flat', price: 15, rationale: 'Based on local radius' },
+        ],
+        brief: brief || null,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in AI suggest-items:', error);
-      res.status(500).json({ error: 'Failed to process AI request' });
+      const errorMsg = error.message === 'lead_not_found' ? 'Lead not found' : 'Failed to process AI request';
+      res.status(error.message === 'lead_not_found' ? 404 : 500).json({ error: errorMsg });
     }
   });
 
   app.post('/api/ai/summarize-quote', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { quoteId, leadId } = req.body ?? {};
+
+      // Resolve quoteId from leadId if needed
+      let resolvedQuoteId = quoteId;
+      if (!resolvedQuoteId && leadId) {
+        resolvedQuoteId = await ensureQuoteForLead(tenantId, leadId);
+      }
+      
+      if (!resolvedQuoteId) {
+        return res.status(400).json({ error: 'quote_required' });
+      }
+
       res.json({ 
-        ok: true, 
-        summary: 'This quote includes an 8" cake and a dozen cupcakes. Estimated total $91 before tax. Lead time 5 days.'
+        ok: true,
+        quoteId: resolvedQuoteId,
+        summary: 'Draft includes an 8" cake and a dozen cupcakes. Est. total ~$106 incl. delivery, before tax.'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in AI summarize-quote:', error);
-      res.status(500).json({ error: 'Failed to process AI request' });
+      const errorMsg = error.message === 'lead_not_found' ? 'Lead not found' : 'Failed to process AI request';
+      res.status(error.message === 'lead_not_found' ? 404 : 500).json({ error: errorMsg });
     }
   });
 
   app.post('/api/ai/generate-contract', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { quoteId, leadId, templateId } = req.body ?? {};
+
+      // Resolve quoteId from leadId if needed
+      let resolvedQuoteId = quoteId;
+      if (!resolvedQuoteId && leadId) {
+        resolvedQuoteId = await ensureQuoteForLead(tenantId, leadId);
+      }
+      
+      if (!resolvedQuoteId) {
+        return res.status(400).json({ error: 'quote_required' });
+      }
+
       res.json({ 
-        ok: true, 
+        ok: true,
+        quoteId: resolvedQuoteId,
         clauses: [
           '50% non-refundable deposit due on approval.',
           'Balance due 3 days before pickup.',
           'Allergy notice: products may contain nuts and dairy.'
-        ]
+        ],
+        templateId: templateId || null,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in AI generate-contract:', error);
-      res.status(500).json({ error: 'Failed to process AI request' });
+      const errorMsg = error.message === 'lead_not_found' ? 'Lead not found' : 'Failed to process AI request';
+      res.status(error.message === 'lead_not_found' ? 404 : 500).json({ error: errorMsg });
     }
   });
 

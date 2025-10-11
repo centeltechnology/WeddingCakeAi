@@ -20,8 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { RefreshCw, TrendingUp, Mail, Phone, Calendar, DollarSign, Info, MessageSquare } from 'lucide-react';
-import { Link } from 'wouter';
+import { RefreshCw, TrendingUp, Mail, Phone, Calendar, DollarSign, Info, MessageSquare, FileText } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 
 type Lead = {
   id: string;
@@ -46,7 +46,9 @@ type Lead = {
 export default function Leads() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [recalculating, setRecalculating] = useState<string | null>(null);
+  const [creatingQuote, setCreatingQuote] = useState<string | null>(null);
 
   const { data: leads = [], isLoading } = useQuery<Lead[]>({
     queryKey: ['/api/leads/scored'],
@@ -133,6 +135,41 @@ export default function Leads() {
       toast({ title: 'Failed to seed sample leads', variant: 'destructive' });
     }
   });
+
+  const createQuoteFromLead = async (leadId: string) => {
+    setCreatingQuote(leadId);
+    try {
+      // Call AI suggest-items with only leadId - this will create a draft quote
+      const res = await fetch('/api/ai/suggest-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ leadId })
+      });
+      
+      if (!res.ok) throw new Error('Failed to create quote from lead');
+      
+      const data = await res.json();
+      
+      if (data.ok && data.quoteId) {
+        toast({
+          title: 'Quote created!',
+          description: `Draft quote created with ${data.items?.length || 0} suggested items`,
+        });
+        
+        // Navigate to the quote
+        navigate(`/quotes/${data.quoteId}`);
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to create quote',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingQuote(null);
+    }
+  };
 
   return (
     <AppLayout>
@@ -254,6 +291,24 @@ export default function Leads() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => createQuoteFromLead(lead.id)}
+                                  disabled={creatingQuote === lead.id}
+                                >
+                                  <FileText className={`h-4 w-4 ${creatingQuote === lead.id ? 'mr-1' : ''}`} />
+                                  {creatingQuote === lead.id && <span className="ml-1">Creating...</span>}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Create quote from lead</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Link href={`/leads/${lead.id}`}>
                             <Button variant="outline" size="sm">
                               <MessageSquare className="h-4 w-4 mr-1" />
