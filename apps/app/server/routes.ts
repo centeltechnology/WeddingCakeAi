@@ -37,6 +37,8 @@ import { sendInvoiceEmail } from "./emails/sendInvoiceEmail";
 import { upsertLeadScore } from "./services/leadScoring";
 import { evaluateAndSendAutoReplies, renderTemplate, sendAutoReplyEmail } from "./services/autoReply";
 import { renderTemplate as renderTemplateEngine, extractVariables, buildQuoteContext, buildContractContext } from "./services/templateEngine";
+import { loggerMiddleware } from "./loggerMiddleware";
+import { incrementMetric, getMetrics } from "./metrics";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -239,7 +241,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoint
   app.get('/healthz', (req, res) => {
-    res.json({ ok: true, app: "app" });
+    res.json({ 
+      ok: true, 
+      version: '1.0.0',
+      now: new Date().toISOString()
+    });
   });
   
   // Serve PWA manifest
@@ -267,6 +273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
   app.use(injectTenantBranding);
+  
+  // Apply logger middleware for structured JSON logs
+  app.use(loggerMiddleware);
 
   
   // Tenant management routes (admin only)
@@ -4240,6 +4249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meta: { approvedAt: new Date().toISOString() }
       });
       
+      // Increment metrics counter
+      incrementMetric('quotes_approved');
+      
       // AUTO-CREATE CONTRACT from approved quote
       try {
         const contract = await createContractFromQuote({
@@ -4893,6 +4905,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return { contract: updatedContract, signature };
       });
 
+      // Increment metrics counter
+      incrementMetric('contracts_signed');
+
       // Create deposit invoice after transaction completes
       const invoice = await createDepositInvoice({
         id: result.contract.id,
@@ -5217,6 +5232,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meta: { paidBy: user.id, amount: invoice.total, method: 'manual' }
       });
 
+      // Increment metrics counter
+      incrementMetric('invoices_paid');
+
       res.json({ ok: true, invoice: updatedInvoice });
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
@@ -5358,6 +5376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             amount: invoice.total 
           }
         });
+
+        // Increment metrics counter
+        incrementMetric('invoices_paid');
 
         console.log(`Invoice ${invoiceId} marked as paid via Stripe`);
       }
@@ -10513,6 +10534,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meta: { source: 'customer_portal' }
       });
 
+      // Increment metrics counter
+      incrementMetric('quotes_approved');
+
       res.json({ ok: true, message: 'Quote approved successfully' });
     } catch (error) {
       console.error('Error approving quote:', error);
@@ -10602,6 +10626,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actorUserId: null,
         meta: { source: 'customer_portal', hasSignature: !!signature }
       });
+
+      // Increment metrics counter
+      incrementMetric('contracts_signed');
 
       // Create deposit invoice if configured
       let invoiceId = null;
