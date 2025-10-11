@@ -1774,3 +1774,34 @@ export const insertCatalogItemSchema = createInsertSchema(catalogItems);
 
 export type CatalogItem = typeof catalogItems.$inferSelect;
 export type InsertCatalogItem = z.infer<typeof insertCatalogItemSchema>;
+
+// --- Calculator Settings (Tenant-scoped) ---
+export const calculatorSettings = pgTable("calculator_settings", {
+  tenantId: varchar("tenant_id").primaryKey().references(() => tenants.id),
+  defaults: jsonb("defaults").$type<{
+    servings?: number;
+    cakeSizeInches?: number;
+    frosting?: string;
+    filling?: string;
+    flavor?: string;
+    delivery?: { miles?: number };
+    modifiers?: { rush?: boolean; dietary?: string[] };
+    pricing?: { matrix?: Record<string, any> };
+    tax?: { rate?: number };
+    payment?: { depositPct?: number };
+  }>(),
+  theme: jsonb("theme").$type<{
+    primary?: string;
+    secondary?: string;
+    bg?: string;
+    text?: string;
+    radius?: string;
+    font?: string;
+  }>(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCalculatorSettingsSchema = createInsertSchema(calculatorSettings);
+
+export type CalculatorSettings = typeof calculatorSettings.$inferSelect;
+export type InsertCalculatorSettings = z.infer<typeof insertCalculatorSettingsSchema>;

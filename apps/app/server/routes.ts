@@ -7,7 +7,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
 import { and, eq, sql } from "drizzle-orm";
-import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, templates, quoteItems, leadMessages, leadNotes } from "@shared/schema";
+import { leads, customers, quotes, quoteEvents, contracts, contractSignatures, contractEvents, invoiceEvents, invoices, bakers, contractTemplates, advertisers, advertiserUsers, advertiserCredits, advertiserCreditsLedger, adCampaigns, calculatorLeads, tenants, tenantProfiles, mediaAssets, bookingSettings, bookings, leadScores, autoReplySettings, autoReplyTemplates, autoReplyRules, autoReplyLogs, templates, quoteItems, leadMessages, leadNotes, calculatorSettings } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { z } from "zod";
@@ -10728,6 +10728,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating booking:', error);
       res.status(500).json({ error: 'Failed to create booking' });
+    }
+  });
+
+  // ===== CALCULATOR SETTINGS ENDPOINTS =====
+  
+  // GET calculator settings
+  app.get('/api/calculator/settings', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const tenantId = baker.tenantId;
+      const row = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+      
+      const fallback = {
+        defaults: {
+          servings: 12,
+          cakeSizeInches: 8,
+          frosting: 'buttercream',
+          filling: 'vanilla',
+          flavor: 'vanilla',
+          delivery: { miles: 0 },
+          modifiers: { rush: false, dietary: [] },
+          pricing: { matrix: {} },
+          tax: { rate: 0.0825 },
+          payment: { depositPct: 0.5 }
+        },
+        theme: {
+          primary: '#0F172A',
+          secondary: '#475569',
+          bg: '#F8FAFC',
+          text: '#0B1221',
+          radius: 'md',
+          font: 'system'
+        }
+      };
+      
+      const out = row?.[0]
+        ? {
+            defaults: row[0].defaults ?? fallback.defaults,
+            theme: row[0].theme ?? fallback.theme
+          }
+        : fallback;
+      
+      return res.json(out);
+    } catch (error) {
+      console.error('Error fetching calculator settings:', error);
+      res.status(500).json({ error: 'Failed to fetch calculator settings' });
+    }
+  });
+
+  // POST calculator settings
+  app.post('/api/calculator/settings', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const userEmail = (req.session as any).email;
+      const baker = await storage.getBakerByEmail(userEmail);
+      if (!baker?.tenantId) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const tenantId = baker.tenantId;
+      const { defaults, theme } = req.body ?? {};
+      
+      // Basic validation/sanitization
+      if (defaults) {
+        if (defaults.servings && (defaults.servings < 0 || defaults.servings > 1000)) {
+          return res.status(400).json({ error: 'Invalid servings value' });
+        }
+        if (defaults.tax?.rate && (defaults.tax.rate < 0 || defaults.tax.rate > 1)) {
+          return res.status(400).json({ error: 'Invalid tax rate (must be 0-1)' });
+        }
+        if (defaults.payment?.depositPct && (defaults.payment.depositPct < 0 || defaults.payment.depositPct > 1)) {
+          return res.status(400).json({ error: 'Invalid deposit percentage (must be 0-1)' });
+        }
+      }
+
+      const row = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+      const current = row?.[0] ?? { defaults: null, theme: null };
+      
+      const merged = {
+        defaults: defaults ? { ...(current.defaults ?? {}), ...defaults } : (current.defaults ?? null),
+        theme: theme ? { ...(current.theme ?? {}), ...theme } : (current.theme ?? null),
+      };
+
+      if (row?.[0]) {
+        await db.update(calculatorSettings)
+          .set({ ...merged, updatedAt: new Date() })
+          .where(eq(calculatorSettings.tenantId, tenantId));
+      } else {
+        await db.insert(calculatorSettings).values({ tenantId, ...merged });
+      }
+
+      const after = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+      return res.json({ ok: true, settings: after?.[0] ?? merged });
+    } catch (error) {
+      console.error('Error updating calculator settings:', error);
+      res.status(500).json({ error: 'Failed to update calculator settings' });
     }
   });
 

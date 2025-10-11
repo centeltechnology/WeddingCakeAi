@@ -1,0 +1,31 @@
+{
+  "baseServingSize": 75,
+  "baseCakeSize": 10,
+  "frostingType": "buttercream",
+  "fillingType": "cream-cheese",
+  "flavor": "chocolate",
+  "deliveryMiles": 0,
+  "rushOrder": false,
+  "dietary": [],
+  "pricingMatrix": {
+    "basePrice": 3.50,
+    "tierMultiplier": 1.5,
+    "decorationPrices": {
+      "fondant": 2.00,
+      "flowers": 1.50,
+      "goldAccents": 2.50,
+      "customTopper": 3.00,
+      "pipingBorders": 1.00,
+      "edibleGlitter": 1.25,
+      "handPainted": 4.00,
+      "sugarFlowers": 3.50
+    },
+    "deliveryPricing": {
+      "local": 25,
+      "extended": 50,
+      "perMile": 2
+    }
+  },
+  "taxRate": 0.0825,
+  "depositPct": 0.5
+}

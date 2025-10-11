@@ -11,6 +11,7 @@ import PaymentOptions from './settings/PaymentOptions';
 import MediaLibrary from './settings/MediaLibrary';
 import Templates from './settings/Templates';
 import BookingSettings from './settings/BookingSettings';
+import CalculatorSettings from './settings/CalculatorSettings';
 import AutoReplySettings from './settings/AutoReplySettings';
 import AutoReplyTemplates from './settings/AutoReplyTemplates';
 import AutoReplyRules from './settings/AutoReplyRules';
@@ -38,6 +39,7 @@ export default function SettingsHub() {
     { id: 'media', label: 'Media Library', icon: Image, component: MediaLibrary, enabled: true },
     { id: 'templates', label: 'Templates', icon: FileText, component: Templates, enabled: true },
     { id: 'import', label: 'Import Data', icon: FileDown, component: ImportData, enabled: true },
+    { id: 'calculator', label: 'Calculator', icon: Calculator, component: CalculatorSettings, enabled: true },
     { id: 'booking', label: 'Booking', icon: Calendar, component: BookingSettings, enabled: bookingEnabled },
     { id: 'auto-reply-settings', label: 'Auto-Reply Settings', icon: Bell, component: AutoReplySettings, enabled: autoReplyEnabled },
     { id: 'auto-reply-templates', label: 'Email Templates', icon: Mail, component: AutoReplyTemplates, enabled: autoReplyEnabled },

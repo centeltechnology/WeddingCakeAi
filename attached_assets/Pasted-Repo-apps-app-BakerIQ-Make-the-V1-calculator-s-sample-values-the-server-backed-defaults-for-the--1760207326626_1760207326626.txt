@@ -1,0 +1,239 @@
+Repo: apps/app (BakerIQ). Make the V1 calculator’s sample values the server-backed defaults for the new calculator, and restore a full Calculator tab in Settings (Defaults + Theme + Live Preview). Idempotent. Tenant-scoped. Do not break existing routes.
+
+0) Env & Flags (ensure, don’t assume)
+
+Client .env:
+
+VITE_DEMO_MODE=true
+VITE_CALCULATOR_ENABLED=true
+
+
+Server env/secrets:
+
+DEMO_MODE=true
+
+
+UI can still hide calculator entry points if disabled, but Settings → Calculator should be visible to admins so they can configure it.
+
+1) DB: calculator_settings (tenant-scoped)
+
+Create a migration under apps/app/server/db/migrations/*_calculator_settings.sql (or Drizzle migration):
+
+Table: calculator_settings
+
+tenant_id (PK or unique), defaults JSONB, theme JSONB, updated_at TIMESTAMP DEFAULT now()
+
+Unique constraint on tenant_id.
+
+Seed safe fallbacks (server will also provide runtime fallbacks).
+
+Drizzle model (TypeScript), apps/app/server/db/schema/calculatorSettings.ts:
+
+export const calculatorSettings = pgTable('calculator_settings', {
+  tenantId: text('tenant_id').primaryKey(),
+  defaults: jsonb('defaults'),
+  theme: jsonb('theme'),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+2) V1 → V2 mapping + migration script
+
+Add apps/app/server/seeds/v1_calculator_defaults.json (create with your V1 sample values).
+
+Mapping (V1 → V2 envelope):
+
+baseServingSize → defaults.servings
+
+baseCakeSize → defaults.cakeSizeInches
+
+frostingType → defaults.frosting
+
+fillingType → defaults.filling
+
+flavor → defaults.flavor
+
+deliveryMiles → defaults.delivery.miles
+
+rushOrder → defaults.modifiers.rush
+
+dietary → defaults.modifiers.dietary[]
+
+pricingMatrix → defaults.pricing.matrix
+
+taxRate → defaults.tax.rate
+
+depositPct → defaults.payment.depositPct
+
+Create script apps/app/server/scripts/migrateV1CalculatorDefaults.ts:
+
+Reads JSON seed.
+
+Transforms into V2 shape above.
+
+Upserts into calculator_settings for the current tenant (detect tenant via existing seed/doctor context; otherwise read DEMO tenant from env or database).
+
+Idempotent: compute hash of transformed defaults; skip update if unchanged.
+
+Run command (document in README):
+
+pnpm tsx apps/app/server/scripts/migrateV1CalculatorDefaults.ts
+
+3) Server endpoints (GET/POST)
+
+Add to apps/app/server/routes.ts (use your existing ensureAuthUnified and req.tenant.id):
+
+app.get('/api/calculator/settings', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const row = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+  const fallback = {
+    defaults: {
+      servings: 12, cakeSizeInches: 8, frosting: 'buttercream', filling: 'vanilla', flavor: 'vanilla',
+      delivery: { miles: 0 }, modifiers: { rush: false, dietary: [] },
+      pricing: { matrix: {} }, tax: { rate: 0.0825 }, payment: { depositPct: 0.5 }
+    },
+    theme: { primary: '#0F172A', secondary: '#475569', bg: '#F8FAFC', text: '#0B1221', radius: 'md', font: 'system' }
+  };
+  const out = row?.[0] ? { defaults: row[0].defaults ?? fallback.defaults, theme: row[0].theme ?? fallback.theme } : fallback;
+  return res.json(out);
+});
+
+app.post('/api/calculator/settings', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { defaults, theme } = req.body ?? {};
+  // basic validation/sanitization (non-negative numbers, arrays, allowed keys)
+  const row = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+  const current = row?.[0] ?? { defaults: null, theme: null };
+  const merged = {
+    defaults: defaults ? { ...(current.defaults ?? {}), ...defaults } : (current.defaults ?? null),
+    theme: theme ? { ...(current.theme ?? {}), ...theme } : (current.theme ?? null),
+  };
+  if (row?.[0]) {
+    await db.update(calculatorSettings).set({ ...merged, updatedAt: new Date() }).where(eq(calculatorSettings.tenantId, tenantId));
+  } else {
+    await db.insert(calculatorSettings).values({ tenantId, ...merged });
+  }
+  const after = await db.select().from(calculatorSettings).where(eq(calculatorSettings.tenantId, tenantId)).limit(1);
+  return res.json({ ok: true, settings: after?.[0] ?? merged });
+});
+
+
+Derive tenantId server-side only. Never trust a client-supplied tenant.
+
+4) Client — Settings: Calculator tab (Defaults + Theme + Live Preview)
+
+Add a Settings tab named Calculator alongside Business Profile, Social, Payments, Templates, Media, Booking, Auto-Reply.
+
+Route supports deep link: /settings?tab=calculator and back/forward URL state.
+
+Create apps/app/client/src/pages/settings/CalculatorSettings.tsx:
+
+Fetch GET /api/calculator/settings on mount.
+
+Two sections:
+
+Defaults
+
+Inputs bound to:
+
+defaults.servings (number)
+
+defaults.cakeSizeInches (select: 6/8/10/12)
+
+defaults.frosting, defaults.filling, defaults.flavor (selects or inputs)
+
+defaults.delivery.miles (number)
+
+defaults.modifiers.rush (checkbox)
+
+defaults.modifiers.dietary (multi-select/tags)
+
+defaults.pricing.matrix (JSON editor or simple rows, if present)
+
+defaults.tax.rate (number 0–1)
+
+defaults.payment.depositPct (number 0–1)
+
+Theme
+
+Color pickers: theme.primary, theme.secondary, theme.bg, theme.text
+
+Optional: theme.radius (‘sm’ | ‘md’ | ‘lg’), theme.font (‘system’, ‘serif’, etc.)
+
+Live Preview pane (CalculatorThemePreview) rendering a mini calculator mock using the selected colors.
+
+Sticky SaveBar at bottom: disabled when not dirty; on save → POST /api/calculator/settings with the changed keys only, then toast “Saved”.
+
+Wire into Settings hub:
+
+Update your Settings tabs component/router to include a tab entry: Calculator → <CalculatorSettings />.
+
+5) Client — Calculator app hydration
+
+Wherever the new calculator UI lives (public or admin):
+
+On mount, call GET /api/calculator/settings.
+
+Initialize local state with defaults (fall back to sensible baked-in values if request fails).
+
+Apply theme to the widget (inline CSS variables or Tailwind style props).
+
+6) Visibility & fallbacks
+
+If VITE_CALCULATOR_ENABLED !== 'true', keep Settings → Calculator visible for admins; only hide end-user entry points.
+
+Ensure Preview Calculator button falls back to /calculator when booking is disabled (already in place from prior work).
+
+7) Tests / Smoke
+
+Create apps/app/scripts/smoke-calculator.ts:
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+
+async function call(path:string, method='GET', body?:any){
+  const r = await fetch(base+path, { method, headers:{'Content-Type':'application/json'}, body: body?JSON.stringify(body):undefined });
+  const text = await r.text();
+  let json: any = null; try { json = JSON.parse(text); } catch {}
+  return { path, status: r.status, ok: r.ok, json, text };
+}
+
+(async()=>{
+  const out:any[]=[];
+  out.push(await call('/api/calculator/settings','GET'));
+  out.push(await call('/api/calculator/settings','POST', { defaults:{ servings:16, tax:{rate:0.09} } }));
+  out.push(await call('/api/calculator/settings','GET'));
+  console.table(out.map(x=>({ path:x.path, status:x.status, ok:x.ok })));
+  const fails = out.filter(x=>!x.ok);
+  if (fails.length){ console.error('FAIL', fails.map(f=>f.path)); process.exit(1); }
+  console.log('CALCULATOR SETTINGS PASS ✅');
+})();
+
+
+Add npm script:
+
+"scripts": {
+  "smoke:calculator": "tsx apps/app/scripts/smoke-calculator.ts"
+}
+
+8) Acceptance (must pass)
+
+Settings → Calculator tab exists and is deep-linkable (/settings?tab=calculator).
+
+Defaults form loads with V1-mapped values (after migration) and persists via POST; reloading shows saved values.
+
+Theme editor updates colors; Live Preview reflects changes; saving persists theme; reloading shows saved theme.
+
+Calculator UI hydrates from GET /api/calculator/settings and uses defaults (no hardcoded client values).
+
+Smoke script pnpm run smoke:calculator prints CALCULATOR SETTINGS PASS ✅.
+
+No 500/403 anywhere; server returns safe fallbacks if settings row is missing.
+
+9) Run order
+pnpm -w -r build
+pnpm -w -r dev
+pnpm tsx apps/app/server/scripts/migrateV1CalculatorDefaults.ts
+pnpm run smoke:calculator
+
+
+If any endpoint name or schema differs locally, adapt field names but keep the envelope shape ({ defaults, theme }), tenant-scoping, and merge-not-clobber semantics.
