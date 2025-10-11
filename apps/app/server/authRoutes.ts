@@ -595,7 +595,7 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify password
-      const isValidPassword = await databaseStorage.verifyPassword(password, baker.password);
+      const isValidPassword = await databaseStorage.verifyPassword(password, baker.passwordHash);
       if (!isValidPassword) {
         return res.status(401).json({ 
           success: false, 

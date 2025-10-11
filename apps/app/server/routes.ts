@@ -3232,7 +3232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify password using bcrypt
-      const isValidPassword = await bcrypt.compare(password, baker.password);
+      const isValidPassword = await bcrypt.compare(password, baker.passwordHash);
       
       if (!isValidPassword) {
         return res.status(401).json({ 
@@ -3245,7 +3245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = createBakerToken(baker.id, baker.email);
       
       // Don't return the password in the response
-      const { password: _, ...bakerResponse } = baker;
+      const { passwordHash: _, ...bakerResponse } = baker;
       
       res.json({
         success: true,
