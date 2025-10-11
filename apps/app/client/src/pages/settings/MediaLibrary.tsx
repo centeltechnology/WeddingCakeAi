@@ -25,6 +25,7 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   const { data, isLoading } = useQuery({
     queryKey: ['/api/media'],
@@ -52,23 +53,6 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
       }
 
       return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/media'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/me/profile'] });
-      toast({
-        title: 'Upload Successful',
-        description: 'Your image has been uploaded.',
-      });
-      setUploading(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Upload Failed',
-        description: error.message || 'Unable to upload image',
-        variant: 'destructive',
-      });
-      setUploading(false);
     },
   });
 
@@ -135,20 +119,63 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
   });
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
+    // Validate all files are images
+    const invalidFiles = files.filter(f => !f.type.startsWith('image/'));
+    if (invalidFiles.length > 0) {
       toast({
-        title: 'Invalid File',
-        description: 'Please select an image file',
+        title: 'Invalid Files',
+        description: 'Please select only image files',
         variant: 'destructive',
       });
       return;
     }
 
     setUploading(true);
-    uploadMutation.mutate(file);
+    setUploadProgress({ current: 0, total: files.length });
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    // Upload files sequentially
+    for (let i = 0; i < files.length; i++) {
+      try {
+        setUploadProgress({ current: i + 1, total: files.length });
+        await uploadMutation.mutateAsync(files[i]);
+        successCount++;
+      } catch (error) {
+        failCount++;
+      }
+    }
+
+    // Invalidate queries once at the end
+    queryClient.invalidateQueries({ queryKey: ['/api/media'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/me/profile'] });
+
+    setUploading(false);
+    setUploadProgress({ current: 0, total: 0 });
+
+    // Show summary toast
+    if (successCount > 0 && failCount === 0) {
+      toast({
+        title: 'Upload Successful',
+        description: `${successCount} image${successCount > 1 ? 's' : ''} uploaded successfully.`,
+      });
+    } else if (successCount > 0 && failCount > 0) {
+      toast({
+        title: 'Partial Upload',
+        description: `${successCount} succeeded, ${failCount} failed.`,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Upload Failed',
+        description: 'Unable to upload images',
+        variant: 'destructive',
+      });
+    }
     
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -187,12 +214,13 @@ export default function MediaLibrary({ embedded = false }: { embedded?: boolean 
         </CardTitle>
         <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
           <Upload className="w-4 h-4 mr-2" />
-          {uploading ? 'Uploading...' : 'Upload Image'}
+          {uploading ? (uploadProgress.total > 0 ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...` : 'Uploading...') : 'Upload Images'}
         </Button>
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           onChange={handleFileSelect}
         />
