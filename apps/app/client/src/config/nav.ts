@@ -21,6 +21,7 @@ export const NAV: NavNode[] = [
   },
   { label: 'Bookings', href: '/bookings', feature: 'booking' },
   { label: 'AI Lab', href: '/ai-lab', feature: 'ai' },
+  { label: 'Templates', href: '/settings?tab=templates' },
   { label: 'Settings', href: '/settings' },
 ];
 

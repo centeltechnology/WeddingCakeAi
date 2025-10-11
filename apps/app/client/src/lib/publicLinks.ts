@@ -8,7 +8,7 @@ export function buildLeadGenUrl(slug?: string | null, opts?: { preferBooking?: b
   const calcOn = import.meta.env.VITE_PUBLIC_CALCULATOR_ENABLED === 'true';
   
   if (preferBooking && bookingOn && slug) return `/b/${slug}/book`;
-  if (preferBooking && bookingOn && !slug) return `/book`;
   if (calcOn) return `/calculator`;
+  if (preferBooking && bookingOn && !slug) return `/book`;
   return '/';
 }
