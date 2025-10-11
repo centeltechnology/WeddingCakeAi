@@ -259,6 +259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect(301, '/login?mode=signup');
   });
 
+  // Legacy calculator redirect (301 permanent redirect to new tenant-based URL)
+  app.get('/baker/:slug/calculator', (req, res) => {
+    const slug = req.params.slug;
+    res.redirect(301, `/calculator?tenant=${encodeURIComponent(slug)}`);
+  });
+
   // Doctor diagnostic endpoint
   app.get('/api/doctor', async (req, res) => {
     try {

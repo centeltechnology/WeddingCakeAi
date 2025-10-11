@@ -1,0 +1,249 @@
+Repo: apps/app (BakerIQ).
+Goal: Standardize tenant identification, fix legacy routes, publish the demo tenant, and wire header icons correctly.
+
+0) Flags (ensure)
+
+Server env:
+
+DEMO_MODE=true
+EMAIL_TRANSPORT=log
+
+
+Client .env:
+
+VITE_DEMO_MODE=true
+VITE_PUBLIC_MARKETPLACE_ENABLED=true
+VITE_BOOKING_ENABLED=true
+VITE_CALCULATOR_ENABLED=true
+
+A) Canonical URL Scheme (public vs internal)
+
+Public (no auth):
+
+Listing: /p/:slug
+
+Booking: /b/:slug/book
+
+Calculator: /calculator?tenant=:slug
+
+Internal (auth):
+
+Internal Baker Calculator (estimator): /baker/calculator
+
+Login: /login (canonical)
+
+Redirect legacy V1:
+
+/baker/:slug/calculator → 301 → /calculator?tenant=:slug
+
+/baker-login, /baker/login, /signin → 301 → /login
+
+/signup, /register, /baker/signup → 301 → /login?mode=signup
+
+Implement
+
+In apps/app/server/routes.ts (or routes.auth.ts if split):
+
+// Legacy auth redirects
+app.get(['/baker-login','/baker/login','/signin'], (req,res)=> res.redirect(301, '/login'));
+app.get(['/signup','/register','/baker/signup'], (req,res)=> res.redirect(301, '/login?mode=signup'));
+
+// Legacy calculator redirect
+app.get('/baker/:slug/calculator', (req,res)=>{
+  const slug = req.params.slug;
+  res.redirect(301, `/calculator?tenant=${encodeURIComponent(slug)}`);
+});
+
+B) Single Slug→Tenant Resolver (source of truth)
+
+Create apps/app/server/lib/tenantResolver.ts:
+
+import { db } from '../db';
+import { tenants, tenantProfiles } from '../db/schema'; // adjust imports
+import { eq } from 'drizzle-orm';
+
+export async function resolveTenantBySlug(slug: string){
+  if (!slug) return null;
+  // Prefer the profile table if that’s where slug lives
+  const [row] = await db.select({
+    id: tenants.id,
+    slug: tenantProfiles.slug,
+    isPublished: tenantProfiles.isPublished,
+  })
+  .from(tenants)
+  .leftJoin(tenantProfiles, eq(tenantProfiles.tenantId, tenants.id))
+  .where(eq(tenantProfiles.slug, slug))
+  .limit(1);
+  return row ?? null;
+}
+
+
+Use it in public routes (no auth required):
+
+// Listing /p/:slug
+app.get('/p/:slug', async (req,res)=>{
+  const found = await resolveTenantBySlug(req.params.slug);
+  if (!found || !found.isPublished) return res.status(404).sendFile('public/404.html', { root: process.cwd() }); // or render SPA
+  // Serve SPA; front-end fetches profile by slug
+  res.sendFile('index.html', { root: 'apps/app/client/dist' });
+});
+
+// Booking /b/:slug/book
+app.get('/b/:slug/book', async (req,res)=>{
+  const found = await resolveTenantBySlug(req.params.slug);
+  if (!found) return res.status(404).sendFile('public/404.html', { root: process.cwd() });
+  res.sendFile('index.html', { root: 'apps/app/client/dist' });
+});
+
+// Public calculator /calculator?tenant=:slug (never auth)
+app.get('/calculator', async (req,res)=>{
+  // Always serve SPA; client will read ?tenant= and submit with that context.
+  res.sendFile('index.html', { root: 'apps/app/client/dist' });
+});
+
+
+Public submit endpoints must also resolve tenant by slug:
+
+import { resolveTenantBySlug } from './lib/tenantResolver';
+
+app.post('/api/public/calculator/submit', async (req, res) => {
+  const slug = (req.query.tenant as string) || (req.body?.tenant as string);
+  const found = await resolveTenantBySlug(slug);
+  if (!found) return res.status(400).json({ error: 'tenant_not_found' });
+  const tenantId = found.id;
+  // … create customer/lead (source='calculator'), optional draft quote, notify …
+  return res.json({ ok: true });
+});
+
+// If booking submission exists, apply the same slug resolution.
+
+C) Header Icons → Correct Links
+
+In apps/app/client/src/components/AppHeader.tsx:
+
+Fetch once on mount: GET /api/me/tenant → { slug }.
+
+Build links via a small util client/src/lib/publicLinks.ts:
+
+export const buildPublicCalculatorUrl = (slug?: string|null) =>
+  slug ? `/calculator?tenant=${encodeURIComponent(slug)}` : '/calculator';
+export const buildBookingUrl = (slug?: string|null) =>
+  slug ? `/b/${encodeURIComponent(slug)}/book` : '/book';
+export const buildListingUrl = (slug?: string|null) =>
+  slug ? `/p/${encodeURIComponent(slug)}` : '/p';
+
+
+Use:
+
+Calculator icon: href={buildPublicCalculatorUrl(slug)} (never booking).
+
+Booking icon: href={buildBookingUrl(slug)}.
+
+(Optional) Internal Baker Calculator icon for bakers: href="/baker/calculator".
+
+If slug is missing, disable the public links and show tooltip: “Publish your profile in Settings to enable.”
+
+D) Demo Tenant Publish (seed + verify)
+
+Create apps/app/server/scripts/seedDemoTenant.ts (idempotent):
+
+import { db } from '../db';
+import { users, tenants, tenantProfiles } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
+
+async function run(){
+  const email = 'demo@bakeriq.app';
+  const password = 'DemoPass123!';
+  const slug = 'sweet-treats-bakery';
+
+  // upsert user
+  let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!user){
+    const id = crypto.randomUUID();
+    await db.insert(users).values({ id, email, passwordHash: await hash(password), verified: true });
+    [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  } else if (!user.verified) {
+    await db.update(users).set({ verified: true }).where(eq(users.id, user.id));
+  }
+
+  // upsert tenant (link to user)
+  let [tenant] = await db.select().from(tenants).where(eq(tenants.ownerUserId, user.id)).limit(1);
+  if (!tenant){
+    const id = crypto.randomUUID();
+    await db.insert(tenants).values({ id, ownerUserId: user.id, name: 'Sweet Treats Bakery' });
+    [tenant] = await db.select().from(tenants).where(eq(tenants.ownerUserId, user.id)).limit(1);
+  }
+
+  // upsert profile w/ slug + publish
+  let [profile] = await db.select().from(tenantProfiles).where(eq(tenantProfiles.tenantId, tenant.id)).limit(1);
+  const desired = { slug, isPublished: true, city: 'Bullard, TX', about: 'Custom cakes & desserts made fresh.', logoUrl: '/static/demo-logo.png' };
+  if (!profile){
+    await db.insert(tenantProfiles).values({ tenantId: tenant.id, ...desired });
+  } else {
+    await db.update(tenantProfiles).set({ ...desired }).where(eq(tenantProfiles.tenantId, tenant.id));
+  }
+
+  console.log('DEMO READY:', { email, password, slug });
+}
+run().catch(e=>{ console.error(e); process.exit(1); });
+
+// TODO: implement hash() using your existing password utility
+
+
+Run:
+
+pnpm tsx apps/app/server/scripts/seedDemoTenant.ts
+
+E) Public Calculator Context (client)
+
+Ensure the public calculator page reads ?tenant and submits with it:
+
+On load: const slug = new URLSearchParams(location.search).get('tenant');
+
+On submit: POST /api/public/calculator/submit?tenant=${slug} (do not require auth).
+
+If slug missing, show a small notice in demo: “Previewing default calculator. Publish your profile to get a personalized link.”
+
+F) Smoke Tests (fast)
+
+Create apps/app/scripts/smoke-routing.ts:
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+
+async function head(path){ const r = await fetch(base+path, { method:'GET', redirect:'manual' }); return { path, status:r.status, loc: r.headers.get('location') }; }
+
+(async()=>{
+  const rows = [];
+  rows.push(await head('/login')); // 200 SPA
+  rows.push(await head('/baker-login')); // 301 -> /login
+  rows.push(await head('/signup')); // 301 -> /login?mode=signup
+  rows.push(await head('/baker/sweet-treats-bakery/calculator')); // 301 -> /calculator?tenant=sweet-treats-bakery
+  rows.push(await head('/p/sweet-treats-bakery')); // 200
+  rows.push(await head('/b/sweet-treats-bakery/book')); // 200
+  rows.push(await head('/calculator?tenant=sweet-treats-bakery')); // 200
+  console.table(rows.map(r=>({path:r.path,status:r.status,location:r.loc||''})));
+  const bad = rows.find(r=> ![200,301].includes(r.status));
+  if (bad) process.exit(1);
+  console.log('ROUTING PASS ✅');
+})();
+
+
+Add npm script:
+
+"scripts": {
+  "smoke:routing": "tsx apps/app/scripts/smoke-routing.ts"
+}
+
+G) Acceptance (must pass)
+
+Visiting /baker/sweet-treats-bakery/calculator redirects to /calculator?tenant=sweet-treats-bakery.
+
+Header calculator icon goes to /calculator?tenant=<slug>; booking icon goes to /b/<slug>/book.
+
+/p/<slug>, /b/<slug>/book, /calculator?tenant=<slug> render without auth or tenant_not_found.
+
+Demo tenant exists and is published with slug sweet-treats-bakery.
+
+pnpm run smoke:routing prints ROUTING PASS ✅.
