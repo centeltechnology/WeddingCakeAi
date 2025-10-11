@@ -1,14 +1,15 @@
-import { useState, type ComponentType, type ElementType } from 'react';
+import { useState, useEffect, type ComponentType, type ElementType } from 'react';
 import { useLocation } from 'wouter';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
-import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap, History, FileDown } from 'lucide-react';
+import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap, History, FileDown, FileText } from 'lucide-react';
 import BusinessProfile from './settings/BusinessProfile';
 import SocialLinks from './settings/SocialLinks';
 import PaymentOptions from './settings/PaymentOptions';
 import MediaLibrary from './settings/MediaLibrary';
+import Templates from './settings/Templates';
 import BookingSettings from './settings/BookingSettings';
 import AutoReplySettings from './settings/AutoReplySettings';
 import AutoReplyTemplates from './settings/AutoReplyTemplates';
@@ -25,7 +26,7 @@ type Tab = {
 };
 
 export default function SettingsHub() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const calculatorEnabled = import.meta.env.VITE_CALCULATOR_ENABLED === 'true';
   const bookingEnabled = import.meta.env.VITE_BOOKING_ENABLED === 'true';
   const autoReplyEnabled = import.meta.env.VITE_AUTO_REPLY_ENABLED === 'true';
@@ -35,6 +36,7 @@ export default function SettingsHub() {
     { id: 'social', label: 'Social Links', icon: Share2, component: SocialLinks, enabled: true },
     { id: 'payment', label: 'Payment Options', icon: CreditCard, component: PaymentOptions, enabled: true },
     { id: 'media', label: 'Media Library', icon: Image, component: MediaLibrary, enabled: true },
+    { id: 'templates', label: 'Templates', icon: FileText, component: Templates, enabled: true },
     { id: 'import', label: 'Import Data', icon: FileDown, component: ImportData, enabled: true },
     { id: 'booking', label: 'Booking', icon: Calendar, component: BookingSettings, enabled: bookingEnabled },
     { id: 'auto-reply-settings', label: 'Auto-Reply Settings', icon: Bell, component: AutoReplySettings, enabled: autoReplyEnabled },
@@ -43,7 +45,41 @@ export default function SettingsHub() {
     { id: 'auto-reply-logs', label: 'Activity Logs', icon: History, component: AutoReplyLogs, enabled: autoReplyEnabled },
   ].filter((tab) => tab.enabled);
 
-  const [activeTab, setActiveTab] = useState(tabs[0].id);
+  // Extract tab from URL query params or use default
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTab = urlParams.get('tab');
+  const [activeTab, setActiveTab] = useState(urlTab && tabs.find(t => t.id === urlTab) ? urlTab : tabs[0].id);
+
+  // Sync activeTab with URL when location changes (browser back/forward, direct links)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabFromUrl = params.get('tab');
+    
+    if (tabFromUrl) {
+      // Valid tab in URL - sync to it
+      if (tabs.find(t => t.id === tabFromUrl) && tabFromUrl !== activeTab) {
+        setActiveTab(tabFromUrl);
+      } else if (!tabs.find(t => t.id === tabFromUrl)) {
+        // Invalid tab - replace URL with default (don't push to history)
+        const defaultTab = tabs[0].id;
+        setActiveTab(defaultTab);
+        window.history.replaceState({}, '', `/settings?tab=${defaultTab}`);
+      }
+    } else {
+      // No tab in URL - use default and replace URL (don't push to history)
+      const defaultTab = tabs[0].id;
+      if (activeTab !== defaultTab) {
+        setActiveTab(defaultTab);
+      }
+      window.history.replaceState({}, '', `/settings?tab=${defaultTab}`);
+    }
+  }, [location, tabs]);
+
+  // Update URL when tab changes using wouter's setLocation
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setLocation(`/settings?tab=${tabId}`);
+  };
 
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component || BusinessProfile;
 
@@ -63,7 +99,7 @@ export default function SettingsHub() {
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => handleTabChange(tab.id)}
                       className={cn(
                         'flex items-center gap-3 w-full px-3 py-2 rounded-xl text-left transition-colors',
                         'focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white',
