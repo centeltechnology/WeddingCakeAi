@@ -10264,16 +10264,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Tenant not found' });
       }
 
-      // Get tenant info with subdomain (used as slug)
-      const [tenant] = await db
-        .select({ id: tenants.id, slug: tenants.subdomain })
-        .from(tenants)
-        .where(eq(tenants.id, baker.tenantId))
-        .limit(1);
-
+      // Return baker slug for public URLs (not tenant subdomain)
       res.json({ 
-        id: tenant?.id || baker.tenantId, 
-        slug: tenant?.slug || null 
+        id: baker.tenantId, 
+        slug: baker.slug || null 
       });
     } catch (error) {
       console.error('Error loading tenant info:', error);
