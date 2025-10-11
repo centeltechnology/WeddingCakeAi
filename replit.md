@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 ### Authentication and Authorization
 - **Session Management**: Express sessions with PostgreSQL store and environment-aware cookies.
 - **User System**: Basic registration, authentication, and token-based password reset.
-- **Canonical Auth Routes**: `/login` is the primary auth route with 301 redirects from legacy paths (`/baker-login`, `/signin`, `/auth/login`).
+- **Canonical Auth Routes**: `/login` is the primary auth route with 301 redirects from legacy paths (`/baker-login`, `/signin`, `/auth/login`). Legacy calculator route `/baker/:slug/calculator` redirects to `/calculator?tenant=:slug`.
 - **Dev Mode Email Verification**: When `DEMO_MODE=true` and `EMAIL_TRANSPORT=log`, email verification tokens are logged to console and `/api/auth/dev-verify` endpoint provides instant email verification for development.
 - **Feature Gating**: Three-tier plan system (Starter, Professional, Enterprise) with middleware.
 - **Session Persistence**: `RootGate` component and `/api/session` endpoint with `Cache-Control: no-store`.
@@ -63,7 +63,7 @@ Preferred communication style: Simple, everyday language.
 - **Code Quality**: Shared TypeScript configuration, smoke tests, and Playwright E2E/API tests.
 - **Demo Environment**: 
   - Demo tenant seed script (`server/scripts/seedDemoTenant.ts`) creates `demo@bakeriq.app` user with `sweet-treats-bakery` slug
-  - Smoke test suite (`server/scripts/smokeTest.ts`) verifies auth flow, email verification, and public routing (8 test cases)
+  - Smoke test suite (`server/scripts/smokeTest.ts`) verifies auth flow, email verification, public routing, and legacy redirects (9 test cases)
   - Run with: `tsx apps/app/server/scripts/seedDemoTenant.ts` and `tsx apps/app/server/scripts/smokeTest.ts`
 
 ## External Dependencies
