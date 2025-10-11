@@ -2437,6 +2437,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Baker Calculator: Upsert customer (create or update by email/phone)
+  app.post('/api/customers/upsert', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'invalid_tenant' });
+      }
+
+      const { name, email, phone } = req.body ?? {};
+      if (!name && !email && !phone) {
+        return res.status(400).json({ error: 'invalid_customer' });
+      }
+
+      // Prefer email match, else phone
+      let customer = null;
+      if (email) {
+        const [found] = await db.select().from(customers).where(
+          and(eq(customers.tenantId, tenantId), eq(customers.email, email))
+        ).limit(1);
+        customer = found;
+      }
+      if (!customer && phone) {
+        const [found] = await db.select().from(customers).where(
+          and(eq(customers.tenantId, tenantId), eq(customers.phone, phone))
+        ).limit(1);
+        customer = found;
+      }
+
+      if (customer) {
+        // Update existing customer
+        await db.update(customers)
+          .set({ 
+            name: name ?? customer.name, 
+            phone: phone ?? customer.phone 
+          })
+          .where(eq(customers.id, customer.id));
+        
+        const [updated] = await db.select().from(customers).where(eq(customers.id, customer.id));
+        return res.json({ ok: true, customer: updated });
+      } else {
+        // Create new customer
+        const id = randomUUID();
+        await db.insert(customers).values({ 
+          id, 
+          tenantId, 
+          name: name ?? email ?? phone ?? 'Unknown', 
+          email: email ?? '', 
+          phone: phone ?? null 
+        });
+        const [newCustomer] = await db.select().from(customers).where(eq(customers.id, id));
+        return res.json({ ok: true, customer: newCustomer });
+      }
+    } catch (error) {
+      console.error('Error upserting customer:', error);
+      return res.status(500).json({ error: 'Failed to upsert customer' });
+    }
+  });
+
+  // Baker Calculator: Save estimate as quote
+  app.post('/api/estimates/save-as-quote', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const bakerId = req.user?.bakerId || req.user?.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: 'invalid_tenant' });
+      }
+
+      const { customer, title, items, taxRate, discount, depositPct, notes } = req.body ?? {};
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'no_items' });
+      }
+
+      // Upsert or use customerId
+      let customerId = customer?.id ?? null;
+      if (!customerId && customer) {
+        // Inline upsert logic
+        const { name, email, phone } = customer;
+        let existingCustomer = null;
+        
+        if (email) {
+          const [found] = await db.select().from(customers).where(
+            and(eq(customers.tenantId, tenantId), eq(customers.email, email))
+          ).limit(1);
+          existingCustomer = found;
+        }
+        if (!existingCustomer && phone) {
+          const [found] = await db.select().from(customers).where(
+            and(eq(customers.tenantId, tenantId), eq(customers.phone, phone))
+          ).limit(1);
+          existingCustomer = found;
+        }
+
+        if (existingCustomer) {
+          // Update existing
+          await db.update(customers)
+            .set({ 
+              name: name ?? existingCustomer.name, 
+              phone: phone ?? existingCustomer.phone 
+            })
+            .where(eq(customers.id, existingCustomer.id));
+          customerId = existingCustomer.id;
+        } else {
+          // Create new
+          customerId = randomUUID();
+          await db.insert(customers).values({ 
+            id: customerId, 
+            tenantId, 
+            name: name ?? email ?? phone ?? 'Unknown', 
+            email: email ?? '', 
+            phone: phone ?? null 
+          });
+        }
+      }
+
+      // Compute totals
+      const subtotal = items.reduce((s: number, it: any) => 
+        s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0
+      );
+      const discountAmt = Math.max(0, Number(discount) || 0);
+      const taxed = Math.max(0, (Number(taxRate) || 0)) * Math.max(0, subtotal - discountAmt);
+      const total = Math.max(0, subtotal - discountAmt + taxed);
+      const depositPctN = Math.max(0, Math.min(1, Number(depositPct) || 0));
+
+      // Generate quote number
+      const quoteCount = await db.select({ count: sql<number>`count(*)` })
+        .from(quotes)
+        .where(eq(quotes.tenantId, tenantId));
+      const quoteNumber = `Q-${new Date().getFullYear()}-${String((quoteCount[0]?.count || 0) + 1).padStart(4, '0')}`;
+
+      const quoteId = randomUUID();
+      await db.insert(quotes).values({
+        id: quoteId,
+        tenantId,
+        bakerId,
+        customerId,
+        quoteNumber,
+        title: title || 'Estimate',
+        status: 'draft',
+        subtotal: subtotal.toString(),
+        discount: discountAmt.toString(),
+        taxRate: (Number(taxRate) || 0).toString(),
+        taxAmount: taxed.toString(),
+        total: total.toString(),
+        depositPercentage: (depositPctN * 100).toString(),
+        internalNotes: notes ?? null,
+        createdAt: new Date()
+      });
+
+      // Insert items
+      for (const it of items) {
+        const itemTotal = (Number(it.qty) || 1) * (Number(it.price) || 0);
+        await db.insert(quoteItems).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId,
+          name: String(it.name || 'Item'),
+          quantity: (Number(it.qty) || 1).toString(),
+          unitPrice: (Number(it.price) || 0).toString(),
+          totalPrice: itemTotal.toString(),
+          description: it.notes ?? null,
+        });
+      }
+
+      // Log event
+      try {
+        await db.insert(quoteEvents).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId,
+          event: 'created',
+          meta: { source: 'baker_calculator' },
+          createdAt: new Date()
+        });
+      } catch (e) {
+        console.error('Failed to log quote event:', e);
+      }
+
+      return res.status(201).json({ 
+        ok: true, 
+        quoteId, 
+        totals: { 
+          subtotal, 
+          discount: discountAmt, 
+          tax: taxed, 
+          total, 
+          depositPct: depositPctN 
+        } 
+      });
+    } catch (error) {
+      console.error('Error saving estimate as quote:', error);
+      return res.status(500).json({ error: 'Failed to save estimate' });
+    }
+  });
+
   // Convert lead to customer
   app.post('/api/leads/:id/convert-to-customer', ensureAuthUnified, authorizeLeadOwnership, async (req, res) => {
     try {
