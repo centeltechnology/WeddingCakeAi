@@ -950,6 +950,42 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
+  // Dev-only endpoint to verify email without token (DEMO_MODE only)
+  app.post('/api/auth/dev-verify', async (req, res) => {
+    try {
+      if (process.env.DEMO_MODE !== 'true') {
+        return res.status(403).json({ error: 'Forbidden - dev-verify only available in DEMO_MODE' });
+      }
+
+      const { email } = req.body ?? {};
+      if (!email) {
+        return res.status(400).json({ error: 'email_required' });
+      }
+
+      // Find baker by email
+      const baker = await databaseStorage.getBakerByEmail(email);
+      if (!baker) {
+        return res.status(404).json({ error: 'Baker not found' });
+      }
+
+      // Mark as verified
+      await databaseStorage.updateBaker(baker.id, {
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      });
+
+      res.json({ 
+        ok: true, 
+        verified: true,
+        message: `Email ${email} marked as verified (DEMO_MODE)` 
+      });
+    } catch (error) {
+      console.error('Dev verify error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Resend verification email endpoint
   app.post('/api/bakers/resend-verification', async (req, res) => {
     try {

@@ -250,6 +250,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Legacy auth redirects (301 permanent redirects to canonical /login)
+  app.get(['/baker-login', '/baker/login', '/signin', '/auth/login'], (req, res) => {
+    res.redirect(301, '/login');
+  });
+  
+  app.get(['/signup', '/register', '/baker/signup'], (req, res) => {
+    res.redirect(301, '/login?mode=signup');
+  });
+
   // Doctor diagnostic endpoint
   app.get('/api/doctor', async (req, res) => {
     try {

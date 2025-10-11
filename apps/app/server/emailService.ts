@@ -25,6 +25,22 @@ export interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  // Check for EMAIL_TRANSPORT=log mode (dev/demo)
+  if (process.env.EMAIL_TRANSPORT === 'log') {
+    console.log('\n=== EMAIL (LOG MODE) ===');
+    console.log('To:', params.toName ? `${params.toName} <${params.to}>` : params.to);
+    console.log('From:', `${params.fromName || 'BakerIQ'} <${params.from || 'noreply@bakeriq.app'}>`);
+    console.log('Subject:', params.subject);
+    console.log('\n--- TEXT CONTENT ---');
+    console.log(params.textPart || params.text || '(no text content)');
+    if (params.htmlPart) {
+      console.log('\n--- HTML CONTENT ---');
+      console.log(params.htmlPart);
+    }
+    console.log('======================\n');
+    return true;
+  }
+
   if (!sesClient) {
     console.warn('AWS SES not configured. Skipping email send.');
     return false;
