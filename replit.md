@@ -41,6 +41,11 @@ Preferred communication style: Simple, everyday language.
 - **Quote & Contract Management**: Creation, editing, templating, secure token-based approval links, server-side rendering with variable replacement, and full workflow UI.
 - **Invoice Management**: Tracking, payment status, and Stripe integration.
 - **AI Lab**: Deterministic AI testing interface for suggesting items, summarizing quotes, and generating contracts, requiring explicit quote or lead context.
+- **Interactive AI Dashboard**: Quick-action tiles for AI features with loading states, success navigation, and error handling:
+  - Price Suggestion: Runs AI suggest-items on most recent quote, navigates to quote detail
+  - Lead Scoring: Triggers lead rescore, navigates to leads page sorted by score
+  - Auto-Reply Test: Sends test email, provides configuration link
+  - Context-aware hooks (`useAiContext`) for recent quote detection and feature flags
 - **Booking System**: Consultation booking with configurable settings, availability management, and public booking forms.
 - **Auto-Reply System**: Automated email response system with template management, variable substitution, and rule-based triggers.
 - **Customer Portal**: Secure, tokenized public access for customers to view and approve quotes, sign contracts, and view invoices.
