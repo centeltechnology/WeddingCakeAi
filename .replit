@@ -17,10 +17,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33961
-externalPort = 3001
-
-[[ports]]
 localPort = 35217
 externalPort = 3003
 
@@ -95,13 +91,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "LEAD_SCORING_ENABLED=true VITE_LEAD_SCORING_ENABLED=true npm run dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "LEAD_SCORING_ENABLED=true VITE_LEAD_SCORING_ENABLED=true BOOKING_ENABLED=true VITE_BOOKING_ENABLED=true npm run dev"
+waitForPort = 5000
 
 [agent]
 integrations = [
