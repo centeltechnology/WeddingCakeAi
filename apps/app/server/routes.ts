@@ -10068,13 +10068,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Baker Calculator endpoint
+  // Baker Calculator endpoint (works in demo mode even when feature is disabled)
   app.post('/api/calculator/estimate', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      if (process.env.CALCULATOR_ENABLED !== 'true') {
-        return res.status(403).json({ error: 'Calculator feature is disabled' });
-      }
-
       const { servings = 12, complexity = 'standard', rush = false, deliveryMiles = 0, items = [] } = req.body ?? {};
       
       // Simple heuristic pricing (can be replaced by AI/price engine later)
