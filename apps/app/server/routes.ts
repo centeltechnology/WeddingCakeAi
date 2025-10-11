@@ -10304,7 +10304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenant: {
           id: resolved.id,
           name: resolved.baker?.name || 'Bakery',
-          subdomain: resolved.slug,
+          slug: resolved.slug,
         },
         profile: resolved.profile || null,
         assets: assets || [],
