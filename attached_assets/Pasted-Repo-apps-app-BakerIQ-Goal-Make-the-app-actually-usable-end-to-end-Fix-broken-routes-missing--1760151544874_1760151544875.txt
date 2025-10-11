@@ -1,0 +1,205 @@
+Repo: apps/app (BakerIQ).
+Goal: Make the app actually usable end-to-end. Fix broken routes, missing data joins, crashy components, disabled paths, and stubbed features. Keep it tenant-scoped and idempotent.
+
+0) Flags
+
+Client .env ensure:
+VITE_AI_ENABLED=true VITE_BOOKING_ENABLED=true VITE_PUBLIC_MARKETPLACE_ENABLED=true VITE_PUBLIC_CALCULATOR_ENABLED=true VITE_DEMO_MODE=true
+
+Server env/secrets ensure:
+DEMO_MODE=true BOOKING_ENABLED=true AI_ENABLED=true
+
+A) Logout really logs out
+
+Server: add POST /logout that clears session cookie(s) and returns {ok:true}.
+
+Client: client/src/lib/auth.ts -> logout() calls /logout with credentials, clears local/session storage tokens, then window.location.href='/login'.
+
+Replace any <form action="/logout"> with a button calling logout().
+
+Acceptance: Clicking Logout lands on /login (not just a refresh).
+
+B) Navigation: left sidebar + nesting
+
+Single source in client/src/config/nav.ts with:
+
+Customers group containing Leads, Quotes, Contracts, Invoices.
+
+Sidebar renders this tree; top header keeps only Credits + Preview buttons + Logout.
+
+Remove any duplicate/marketing header on auth pages.
+
+Acceptance: Clean left nav; top bar uncluttered.
+
+C) Quotes — load + approve (no V1 redirects)
+
+Server:
+
+GET /api/quotes returns array with joined customer_name/email.
+
+GET /api/quotes/:id returns the quote (404 if not found; never 500).
+
+POST /api/quotes/:id/approve:
+
+Derive tenantId/bakerId server-side (never from client).
+
+Do not require venue in DEMO_MODE; create a contract with minimal fields.
+
+Insert quote_events.approved.
+
+Client:
+
+/quotes list uses React Query; no links to any V1 route.
+
+Approve → toast + contract appears under /contracts.
+
+Acceptance: List shows; Approve works and creates a contract.
+
+D) Contracts — open + timeline + sign → invoice
+
+Server:
+
+GET /api/contracts returns array.
+
+GET /api/contracts/:id/events always returns an array ([] OK).
+
+POST /api/contracts/:id/sign marks signed, inserts contract_events.signed, creates an invoice.
+
+Client:
+
+ContractTimeline.tsx guards with const evts = Array.isArray(data)?data:[]; (no .map crash).
+
+Acceptance: Contract detail opens, timeline renders, Sign makes an invoice.
+
+E) Invoices — open + mark paid
+
+Server:
+
+GET /api/invoices / GET /api/invoices/:id.
+
+POST /api/invoices/:id/paid sets status, inserts invoice_events.paid.
+
+Client: List/detail show; Mark Paid updates status and timeline.
+
+Acceptance: Mark Paid works; events appear.
+
+F) Leads — no 403; seed works
+
+Server:
+
+Use req.tenant.id everywhere; never require bakerId from client.
+
+Add GET /api/leads/sample to seed a few demo leads (idempotent).
+
+GET /api/leads/:id returns 404 on missing, not 403 for same-tenant.
+
+Client: /leads shows rows; Seed Demo Leads populates when empty; detail opens without “insufficient permissions”.
+
+Acceptance: Leads list + detail work; no mystery 403.
+
+G) AI Lab — real demo payloads (not “stubbed.”)
+
+Server:
+
+POST /api/ai/suggest-items → return array of 3–5 suggested line items.
+
+POST /api/ai/summarize-quote → return short summary string.
+
+POST /api/ai/generate-contract → return array of clauses.
+
+Client: Render results in cards/tables; no generic “submitted (stubbed)” toasts.
+
+Acceptance: Each button shows usable results.
+
+H) Settings — values persist in inputs after save
+
+Business Profile: inputs are controlled with data from useProfile(); after POST /api/me/profile, invalidate query or merge returned values so inputs reflect saved state after reload.
+
+Templates: add a Templates tab under Settings; deep-link buttons from Quotes/Contracts (/settings/templates?type=quote|contract). Saving must not run venue validation; in DEMO_MODE ignore venue requirement entirely.
+
+Booking Settings: timezone is a US dropdown (NY/Chicago/Denver/Phoenix/LA/Anchorage/Honolulu). Labels: Service Name, Duration (minutes), Price ($). Save persists and reloads.
+
+Acceptance: Profile edits persist in fields; Template create/save works (no “Venue not found”); Booking saves with dropdown.
+
+I) Media Library — upload ≥5; consistent shapes
+
+Server:
+
+POST /api/uploads (multipart) returns { assets: [{id,url,width,height,mime}] } for all files.
+
+GET /api/media returns { assets: [] } always.
+
+Client: In MediaLibrary.tsx, guard with
+const assets = Array.isArray(data?.assets)?data.assets:Array.isArray(data)?data:[];
+Enable multi-select (≥5), show progress; Set Logo/Set Cover updates profile immediately.
+
+Acceptance: Multi-upload works; no assets.map is not a function.
+
+J) Preview buttons — never dead-end
+
+Server: GET /api/me/tenant returns {id, slug}.
+
+Client:
+
+Preview Listing → /p/<slug> (fallback /p/demo).
+
+Preview Calculator → /b/<slug>/book if booking enabled else /calculator.
+
+No “Unavailable Booking disabled” popup.
+
+Acceptance: Both preview buttons open a working page.
+
+K) Calculator 403 → hide or enable
+
+If feature disabled, hide calculator actions and make Preview fallback to /calculator.
+
+If enabled for demo, ensure public /calculator route never 403s.
+
+Acceptance: No stray 403; either hidden or working.
+
+L) Smoke test (quick)
+
+Create apps/app/scripts/smoke.ts that hits:
+
+/api/app/stats
+/api/quotes
+/api/contracts
+/api/invoices
+/api/leads
+/api/ai/suggest-items  (POST {})
+/api/ai/summarize-quote (POST {})
+/api/ai/generate-contract (POST {})
+/api/me/profile
+/api/me/tenant
+/api/media
+/api/booking/public-settings
+
+
+Print a PASS/FAIL table. Exit non-zero if any fail.
+
+Build & Verify
+pnpm -w -r build
+pnpm -w -r dev
+pnpm tsx apps/app/scripts/smoke.ts
+
+Final Acceptance (must pass)
+
+Logout redirects to /login.
+
+Quotes list loads; Approve creates a contract.
+
+Contract detail opens; timeline loads; Sign creates an invoice.
+
+Invoices: Mark Paid updates status and timeline.
+
+Leads list + detail work; seeding populates when empty.
+
+AI Lab shows meaningful results.
+
+Settings: Business Profile persists in inputs; Templates save; Booking timezone dropdown saves.
+
+Media Library uploads 5+ files without .map crash; Set Logo/Set Cover updates profile.
+
+Preview Listing/Calculator always open a working page (fallbacks applied).
+
+Smoke test prints PASS.
