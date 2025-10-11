@@ -1,0 +1,255 @@
+Context: You’re working in apps/app for BakerIQ. Apply an idempotent refactor and bug-fix pass to navigation, auth/logout, data loading, AI endpoints, booking timezone UX, settings binding, templates discoverability, media upload, and calculator/booking previews.
+
+0) Flags (ensure)
+
+Client .env:
+
+VITE_AI_ENABLED=true
+VITE_BOOKING_ENABLED=true
+VITE_PUBLIC_MARKETPLACE_ENABLED=true
+VITE_PUBLIC_CALCULATOR_ENABLED=true
+VITE_DEMO_MODE=true
+
+
+Server (Replit secrets or .env):
+
+BOOKING_ENABLED=true
+AI_ENABLED=true
+DEMO_MODE=true
+
+A) NAVIGATION — Left Sidebar + Top Quick Area
+
+Config-driven nav tree
+client/src/config/nav.ts
+
+export type NavNode = { label:string; href?:string; icon?:React.ReactNode; feature?:'ai'|'booking'|'calculator'; children?:NavNode[] };
+export const NAV: NavNode[] = [
+  { label:'Dashboard', href:'/baker/dashboard' },
+  { label:'Customers', href:'/customers', children:[
+      { label:'Leads', href:'/leads' },
+      { label:'Quotes', href:'/quotes' },
+      { label:'Contracts', href:'/contracts' },
+      { label:'Invoices', href:'/invoices' },
+  ]},
+  { label:'AI Lab', href:'/ai-lab', feature:'ai' },
+  { label:'Settings', href:'/settings' },
+];
+export const featureOn = (f?:NavNode['feature']) =>
+  !f || (f==='ai' ? import.meta.env.VITE_AI_ENABLED==='true'
+  : f==='booking' ? import.meta.env.VITE_BOOKING_ENABLED==='true'
+  : f==='calculator' ? import.meta.env.VITE_CALCULATOR_ENABLED==='true' : true);
+
+
+Sidebar component
+Create client/src/components/Sidebar.tsx that renders NAV with collapsible group for “Customers”. Active route uses bold + pill.
+
+AppLayout overhaul
+
+Header stays at the top (brand, Credits, Preview Listing & Preview Calculator icons, Logout).
+
+Left sidebar (sticky) on md+; drawer on mobile.
+
+Content area uses grid md:grid-cols-[240px_1fr] to place sidebar + page.
+
+Quick Actions in header row
+Keep Credits + Preview icons on the right (use Button variant="outline-light" in dark header).
+
+Acceptance: One clean top header; left sidebar with nested “Customers” → {Leads, Quotes, Contracts, Invoices}. No cluttered top nav.
+
+B) LOGOUT (really logs out)
+
+Server route: in server/routes.ts
+
+app.post('/logout', (req,res)=>{ try{ res.clearCookie('sid'); }catch{} return res.status(200).json({ok:true}); });
+
+
+Client util client/src/lib/auth.ts
+
+export async function logout(){ try{ await fetch('/logout',{method:'POST',credentials:'include'});}catch{} try{localStorage.removeItem('token');sessionStorage.removeItem('token');}catch{} window.location.href='/login'; }
+
+
+Header button calls logout() (no form/GET).
+
+Acceptance: Clicking Logout sends you to /login (no page refresh loop).
+
+C) QUOTES + LEADS + PERMS (fix 404/403 & loading)
+
+Always resolve tenant & baker server-side
+Create helper server/lib/resolveContext.ts:
+
+export async function resolveContext(req){ return { tenantId:req.tenant.id, bakerId:req.user?.bakerId ?? null }; }
+
+
+Replace any endpoint that expects bakerId from the client with resolveContext(req).
+
+Quotes list/detail API
+
+Ensure GET /api/quotes returns array with customer_name/email.
+
+Ensure GET /api/quotes/:id returns full quote or 404 (not 500).
+
+Approve: POST /api/quotes/:id/approve must not require “venue”; if no venue, proceed and create contract with minimal fields.
+
+Leads sample loader
+
+GET /api/leads/sample → seeds a few tenant-scoped leads if empty (idempotent).
+
+Leads detail GET /api/leads/:id returns 403 only if tenant mismatch; else 404; else object.
+
+Client pages
+
+/quotes uses React Query (useQuery) with friendly empty state.
+
+/leads shows error toast if fetch fails and suggests running “Seed Demo Leads” (button calling /api/leads/sample then refetch).
+
+Acceptance: Quotes list loads (no “Failed to load quotes”); Leads sample works; viewing a lead no longer throws the “insufficient permissions” error for demo tenant.
+
+D) AI LAB — make real demo responses (not stub text)
+
+Server endpoints: in routes.ts
+
+app.post('/api/ai/suggest-items', authGuard, async (req,res)=>res.json({ ok:true, items:[
+  { name:'6\" Smash Cake', qty:1, unit:'ea', price:25 },
+  { name:'8\" Two-Layer Cake', qty:1, unit:'ea', price:55 },
+  { name:'Cupcakes (Dozen)', qty:1, unit:'dz', price:36 },
+]}));
+app.post('/api/ai/summarize-quote', authGuard, async (req,res)=>res.json({ ok:true, summary:
+  'This quote includes an 8” cake and a dozen cupcakes. Estimated total $91 before tax. Lead time 5 days.' }));
+app.post('/api/ai/generate-contract', authGuard, async (req,res)=>res.json({ ok:true, clauses:[
+  '50% non-refundable deposit due on approval.',
+  'Balance due 3 days before pickup.',
+  'Allergy notice: products may contain nuts and dairy.'
+]}));
+
+
+Client /ai-lab buttons display results in a tidy card (list/table), not “stubbed.”
+
+Acceptance: Clicking each button shows a meaningful payload (items/summary/clauses).
+
+E) PREVIEW CALCULATOR/BOOKING — disable message & fallback
+
+If BOOKING_ENABLED !== true, don’t show the error modal. Instead:
+
+Header Preview Calculator opens /calculator (public V1) when booking disabled.
+
+buildLeadGenUrl(slug, preferBooking=true) must fall back to /calculator if booking is disabled.
+
+Acceptance: Preview Calculator icon always opens something useful, never the “Unavailable” popup.
+
+F) BOOKING SETTINGS — US timezone dropdown
+
+Replace free text timezone with <select> of US zones:
+America/New_York, America/Chicago, America/Denver, America/Phoenix, America/Los_Angeles, America/Anchorage, Pacific/Honolulu.
+
+Persist via POST /api/booking/settings.
+
+Label inputs: Service Name, Duration (minutes), Price ($).
+
+Acceptance: Dropdown present; saving persists; values reload correctly.
+
+G) SETTINGS BINDING — values visible after save
+
+On Business Profile, ensure inputs are controlled with useProfile() data, and after successful save, we update local form state to the returned values or invalidate ['profile'] and repopulate.
+
+Fix the pattern where POST updates the DB but inputs still show initial empty state.
+
+Acceptance: You can save Business Name/Phone/Website/etc. and the inputs keep the saved values on reload.
+
+H) CALCULATOR FEATURE 403
+
+If calculator endpoints are behind a flag, ensure client uses flags; don’t call when disabled.
+
+If we want it enabled for demo: set the server flag (see section 0) and expose read-only demo calculator route /calculator that never 403s.
+
+Acceptance: Calculator area doesn’t 403 in demo; or, when disabled, the UI hides calculator actions.
+
+I) TEMPLATES DISCOVERABILITY
+
+Add a Templates tab inside /settings alongside Business Profile / Social / Payments / Media / Booking / Auto-Reply.
+
+Add “Create Template” buttons on Quote and Contract pages that deep-link to /settings/templates?type=quote or ?type=contract.
+
+Acceptance: You can reach templates via Settings tab and from entity pages.
+
+J) MEDIA UPLOAD — supports ≥5 images + consistent shape
+
+Server
+
+POST /api/uploads (multipart) → returns { assets: [{id,url,width,height,mime}] } for all uploaded files.
+
+GET /api/media → { assets: [] } (array shape guaranteed).
+
+Client
+
+In Media Library, allow multi-select (≥5) with progress UI; after upload, merge the returned assets and re-render (use Array.isArray guards).
+
+Acceptance: Upload 5 images in one go; list shows them; no .map errors.
+
+K) QUOTE TEMPLATE “Venue not found” during save
+
+Remove/ignore venue validation for saving template records and for quote approval when running in DEMO_MODE. If venue is truly required in prod, fallback to a seeded default for demo tenant.
+
+Acceptance: Saving a template and approving a quote no longer fails with “Venue not found.”
+
+L) SMOKE TEST SCRIPT (one command)
+
+Create apps/app/scripts/smoke.ts:
+
+import fetch from 'node-fetch';
+async function check(path:string, method='GET', body?:any){
+  const r = await fetch('http://localhost:5000'+path, { method, headers:{'Content-Type':'application/json'}, body: body? JSON.stringify(body):undefined });
+  return { path, ok:r.ok, status:r.status, text: await r.text() };
+}
+(async()=>{
+  const tests = [
+    ['/api/app/stats'],
+    ['/api/quotes'],
+    ['/api/contracts'],
+    ['/api/invoices'],
+    ['/api/leads'],
+    ['/api/ai/suggest-items','POST',{}],
+    ['/api/ai/summarize-quote','POST',{}],
+    ['/api/ai/generate-contract','POST',{}],
+    ['/api/booking/public-settings'],
+    ['/api/me/profile'],
+    ['/api/me/tenant'],
+    ['/api/media'],
+  ];
+  const out = [];
+  for (const [p,m,b] of tests) out.push(await check(p as string, m as any, b));
+  console.table(out.map(x=>({ path:x.path, ok:x.ok, status:x.status })));
+  const fails = out.filter(x=>!x.ok);
+  if (fails.length) { console.error('FAILS:', fails.map(f=>f.path)); process.exit(1); }
+  console.log('SMOKE PASS ✅');
+})();
+
+
+Run:
+
+pnpm tsx apps/app/scripts/smoke.ts
+
+✅ Acceptance (quick checklist)
+
+Left sidebar nav present; Leads/Quotes/Contracts/Invoices nested under Customers.
+
+Logout redirects to /login (no dashboard refresh loop).
+
+Quotes list loads; approving a quote does not crash.
+
+Sample Leads load; opening a lead detail works (no 403 for demo).
+
+Preview Calculator icon always opens either /b/:slug/book or /calculator.
+
+AI Lab buttons return meaningful data (items/summary/clauses), not “stubbed” toasts.
+
+Booking Settings timezone is a dropdown of US zones and persists.
+
+Business Profile inputs show the saved values after saving.
+
+Calculator feature no longer 403s in demo (or UI hides it when disabled).
+
+Settings includes a Templates tab; entity pages link to it.
+
+Media Library uploads multiple images at once; list renders with no .map crash.
+
+Smoke script prints SMOKE PASS ✅.
