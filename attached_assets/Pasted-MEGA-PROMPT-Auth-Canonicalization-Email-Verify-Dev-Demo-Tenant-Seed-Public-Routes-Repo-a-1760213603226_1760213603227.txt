@@ -1,0 +1,176 @@
+MEGA PROMPT — Auth Canonicalization + Email Verify (Dev) + Demo Tenant Seed + Public Routes
+
+Repo: apps/app (BakerIQ).
+Objectives:
+
+Make /login the canonical login for the new app.
+
+Redirect legacy V1 auth paths to /login.
+
+Make verification work reliably in dev/demo (auto-verify in DEMO_MODE; log/email token in dev).
+
+Create a real demo tenant + admin user (demo@bakeriq.app / DemoPass123!) with slug sweet-treats-bakery and a published profile.
+
+Fix public slug routing and header links.
+
+0) Env flags (do not skip)
+
+Server (Replit secrets or .env):
+
+DEMO_MODE=true
+EMAIL_TRANSPORT=log        # ('log' to console/log file; 'smtp' later)
+
+
+Client .env:
+
+VITE_DEMO_MODE=true
+VITE_CALCULATOR_ENABLED=true
+VITE_BOOKING_ENABLED=true
+VITE_PUBLIC_MARKETPLACE_ENABLED=true
+
+A) Auth Canonicalization (routes + redirects)
+
+Server: server/routes.auth.ts (or routes.ts if unified):
+
+Canonical login API stays the same. Ensure web page login route is /login (served by the SPA).
+
+Legacy redirects (301):
+
+app.get(['/baker-login','/baker/login','/signin','/auth/login'], (req,res)=> res.redirect(301, '/login'));
+app.get(['/signup','/register','/baker/signup'], (req,res)=> res.redirect(301, '/login?mode=signup'));
+
+
+Verification in DEMO_MODE:
+
+If DEMO_MODE=true, allow a safe endpoint to mark an email as verified without requiring mail delivery.
+
+app.post('/api/auth/dev-verify', async (req,res)=>{
+  if (process.env.DEMO_MODE !== 'true') return res.status(403).json({error:'forbidden'});
+  const { email } = req.body ?? {};
+  if (!email) return res.status(400).json({error:'email_required'});
+  // lookup user by email and set verified=true
+  await usersRepo.markVerifiedByEmail(email);
+  return res.json({ ok:true, verified:true });
+});
+
+
+Verification email behavior (dev):
+
+If EMAIL_TRANSPORT=log, generate a token, store it, and log the verify URL (e.g., /api/auth/verify?token=...) to the server console or a file ./.emails/dev.log so you can click it in dev.
+
+Keep the standard GET /api/auth/verify?token=... endpoint.
+
+Result: /login is the single entry. /signup etc. won’t trap you in V1 auth anymore.
+
+B) Demo Tenant Seed (user + tenant + slug + profile)
+
+Create script server/scripts/seedDemoTenant.ts:
+
+Upsert user: email demo@bakeriq.app, password DemoPass123!, verified=true.
+
+Upsert tenant linked to that user.
+
+Set slug = sweet-treats-bakery (rename if conflicting).
+
+Publish profile with minimal fields (name/logo/about/city). If media table exists, seed placeholder logo.
+
+Ensure booking_settings row exists (timezone America/Chicago).
+
+Ensure calculator_settings row exists (defaults + theme). If you previously migrated V1 defaults, merge not clobber.
+
+Pseudocode:
+
+const user = await upsertUser({ email:'demo@bakeriq.app', password:'DemoPass123!', verified:true });
+const tenant = await upsertTenantForUser(user.id);
+await setTenantSlug(tenant.id, 'sweet-treats-bakery');      // unique
+await upsertPublicProfile(tenant.id, {
+  name:'Sweet Treats Bakery',
+  city:'Bullard, TX',
+  about:'Custom cakes & desserts.',
+  isPublished:true,
+  logoUrl: placeholderLogo
+});
+await ensureBookingSettings(tenant.id, { timezone:'America/Chicago' });
+await ensureCalculatorSettings(tenant.id, { defaults: v1Defaults, theme: v1Theme });
+console.log('DEMO TENANT READY', { email:'demo@bakeriq.app', slug:'sweet-treats-bakery' });
+
+
+Run:
+
+pnpm tsx apps/app/server/scripts/seedDemoTenant.ts
+
+C) Public Slug Resolver (single source of truth)
+
+Create server/lib/tenantResolver.ts:
+
+export async function resolveTenantBySlug(slug:string){
+  // query tenant/profile by slug; return { id, slug, isPublished } or null
+}
+
+
+Use it in these public routes (no auth):
+
+Listing /p/:slug
+If tenant not found or not published, render friendly 404 page (no stack).
+
+Booking /b/:slug/book
+Resolve tenant; render booking page; if missing → friendly 404 with “Ask the baker to publish their profile.”
+
+Calculator /calculator
+Accept ?tenant=<slug> → use resolver for submissions/estimates. Never redirect to login.
+
+Forms/submit endpoints:
+
+POST /api/public/calculator/submit?tenant=<slug>
+
+Booking submit endpoint (similar) should also resolve tenantId via slug.
+
+D) Header Icons (correct links)
+
+Client: components/AppHeader.tsx
+
+On mount, fetch GET /api/me/tenant → { slug }.
+
+Icons:
+
+Public Calculator: /calculator?tenant=<slug> (disable with tooltip if no slug).
+
+Booking: /b/<slug>/book (disable if no slug).
+
+(Optional) Internal Baker Calculator (for bakers): /baker/calculator.
+
+Calculator icon must never go to booking.
+
+E) Smoke Tests (fast feedback)
+
+Create apps/app/scripts/smoke-auth-public.ts:
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+
+async function check(p, m='GET'){ const r = await fetch(base+p, { method:m }); return {p, ok:r.ok, s:r.status}; }
+(async()=>{
+  const tests = [
+    await check('/login'),                     // SPA served
+    await check('/baker-login'),               // 301 -> /login
+    await check('/signup'),                    // 301 -> /login?mode=signup
+    await check('/p/sweet-treats-bakery'),     // 200 published listing
+    await check('/b/sweet-treats-bakery/book'),// 200 booking page
+    await check('/calculator?tenant=sweet-treats-bakery'), // 200 public calculator
+  ];
+  console.table(tests);
+  const fail = tests.find(t=>!t.ok && t.s!==301);
+  if (fail) process.exit(1);
+  console.log('AUTH+PUBLIC ROUTES PASS ✅');
+})();
+
+
+Run:
+
+pnpm tsx apps/app/scripts/smoke-auth-public.ts
+
+F) Quick “what now” if email truly must send
+
+Keep EMAIL_TRANSPORT=log for dev (tokens in console/file).
+
+When ready, switch to SMTP or SES and plug credentials; use the same verify endpoint.
