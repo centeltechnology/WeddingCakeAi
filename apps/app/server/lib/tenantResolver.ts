@@ -26,7 +26,7 @@ export async function resolveTenantBySlug(slug: string): Promise<ResolvedTenant 
       return null;
     }
 
-    // Get tenant profile to check if published
+    // Get tenant profile
     const [profile] = await db
       .select()
       .from(tenantProfiles)
