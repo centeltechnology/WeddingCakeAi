@@ -32,6 +32,7 @@ import SocialLinks from "@/pages/settings/SocialLinks";
 import PaymentOptions from "@/pages/settings/PaymentOptions";
 import MediaLibrary from "@/pages/settings/MediaLibrary";
 import Templates from "@/pages/settings/Templates";
+import ImportData from "@/pages/settings/ImportData";
 import SubdomainSetup from "@/pages/help/subdomain-setup";
 import QuoteTemplates from "@/pages/help/quote-templates";
 import CustomCakeOrdering from "@/pages/help/custom-cake-ordering";
@@ -293,6 +294,7 @@ function Router() {
       <Route path="/settings/media" component={MediaLibrary} />
       <Route path="/settings/templates" component={Templates} />
       <Route path="/settings/booking" component={BookingSettings} />
+      <Route path="/settings/import" component={ImportData} />
       <Route path="/account-settings" component={Settings} />
       <Route path="/bookings">
         <AuthGuard>

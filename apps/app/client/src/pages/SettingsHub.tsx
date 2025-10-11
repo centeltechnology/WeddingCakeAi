@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
-import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap, History } from 'lucide-react';
+import { Calculator, User, Share2, CreditCard, Image, Calendar, Bell, Mail, Zap, History, FileDown } from 'lucide-react';
 import BusinessProfile from './settings/BusinessProfile';
 import SocialLinks from './settings/SocialLinks';
 import PaymentOptions from './settings/PaymentOptions';
@@ -14,6 +14,7 @@ import AutoReplySettings from './settings/AutoReplySettings';
 import AutoReplyTemplates from './settings/AutoReplyTemplates';
 import AutoReplyRules from './settings/AutoReplyRules';
 import AutoReplyLogs from './settings/AutoReplyLogs';
+import ImportData from './settings/ImportData';
 
 type Tab = {
   id: string;
@@ -34,6 +35,7 @@ export default function SettingsHub() {
     { id: 'social', label: 'Social Links', icon: Share2, component: SocialLinks, enabled: true },
     { id: 'payment', label: 'Payment Options', icon: CreditCard, component: PaymentOptions, enabled: true },
     { id: 'media', label: 'Media Library', icon: Image, component: MediaLibrary, enabled: true },
+    { id: 'import', label: 'Import Data', icon: FileDown, component: ImportData, enabled: true },
     { id: 'booking', label: 'Booking', icon: Calendar, component: BookingSettings, enabled: bookingEnabled },
     { id: 'auto-reply-settings', label: 'Auto-Reply Settings', icon: Bell, component: AutoReplySettings, enabled: autoReplyEnabled },
     { id: 'auto-reply-templates', label: 'Email Templates', icon: Mail, component: AutoReplyTemplates, enabled: autoReplyEnabled },

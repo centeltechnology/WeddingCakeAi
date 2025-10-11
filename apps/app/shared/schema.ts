@@ -1750,3 +1750,27 @@ export type LeadMessage = typeof leadMessages.$inferSelect;
 export type InsertLeadMessage = z.infer<typeof insertLeadMessageSchema>;
 export type LeadNote = typeof leadNotes.$inferSelect;
 export type InsertLeadNote = z.infer<typeof insertLeadNoteSchema>;
+
+// --- Catalog Items (Product/Service Catalog) ---
+export const catalogItems = pgTable("catalog_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // 'cake', 'cupcake', 'cookie', 'pastry', 'other'
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull(),
+  servings: integer("servings"),
+  description: text("description"),
+  flavors: text("flavors").array().default([]),
+  allergens: text("allergens").array().default([]),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdx: index("catalog_items_tenant_idx").on(table.tenantId),
+  categoryIdx: index("catalog_items_category_idx").on(table.category),
+}));
+
+export const insertCatalogItemSchema = createInsertSchema(catalogItems);
+
+export type CatalogItem = typeof catalogItems.$inferSelect;
+export type InsertCatalogItem = z.infer<typeof insertCatalogItemSchema>;

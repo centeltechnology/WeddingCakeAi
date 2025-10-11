@@ -39,6 +39,7 @@ import { evaluateAndSendAutoReplies, renderTemplate, sendAutoReplyEmail } from "
 import { renderTemplate as renderTemplateEngine, extractVariables, buildQuoteContext, buildContractContext } from "./services/templateEngine";
 import { loggerMiddleware } from "./loggerMiddleware";
 import { incrementMetric, getMetrics } from "./metrics";
+import importRouter from "./routes/import";
 
 // Stripe is optional for manual payment system
 let stripe: Stripe | null = null;
@@ -339,6 +340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Apply logger middleware for structured JSON logs
   app.use(loggerMiddleware);
+  
+  // CSV Import routes (authenticated users only)
+  app.use('/api/import', ensureAuthUnified, importRouter);
 
   
   // Tenant management routes (admin only)
