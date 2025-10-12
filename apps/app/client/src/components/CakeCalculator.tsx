@@ -158,6 +158,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
     name: "",
     email: "",
     phone: "",
+    budget: "",
     eventDate: "",
     eventType: "wedding",
     guestCount: 100,
@@ -378,6 +379,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
       name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
+      budget: customerInfo.budget || null,
       selections: {
         tiers: tiers.map(tier => ({
           size: tier.size,
@@ -914,6 +916,25 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                       className="bg-white border-gray-200"
                       data-testid="input-customer-phone"
                     />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Budget Range (Optional)</Label>
+                    <Select
+                      value={customerInfo.budget}
+                      onValueChange={(budget) => setCustomerInfo({...customerInfo, budget})}
+                    >
+                      <SelectTrigger className="bg-white border-gray-200" data-testid="select-customer-budget">
+                        <SelectValue placeholder="Select your budget range..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="under-500">Under $500</SelectItem>
+                        <SelectItem value="500-1000">$500 - $1,000</SelectItem>
+                        <SelectItem value="1000-2000">$1,000 - $2,000</SelectItem>
+                        <SelectItem value="2000-3000">$2,000 - $3,000</SelectItem>
+                        <SelectItem value="over-3000">Over $3,000</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
