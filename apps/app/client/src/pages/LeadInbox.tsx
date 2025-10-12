@@ -471,10 +471,11 @@ export default function LeadInbox() {
                       const data = await response.json();
                       if (data.quoteId) {
                         toast({
-                          title: "Quote Created",
-                          description: "Draft quote created from lead",
+                          title: "Success! Quote Created",
+                          description: `Created draft quote for ${lead.customerName}. Opening quote editor...`,
                         });
-                        navigate(`/quotes/${data.quoteId}`);
+                        // Small delay so user sees the success message before navigation
+                        setTimeout(() => navigate(`/quotes/${data.quoteId}`), 800);
                       }
                     } catch (error) {
                       toast({

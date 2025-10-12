@@ -59,6 +59,13 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
   const [coverUrl, setCoverUrl] = useState('');
   const [isPublished, setIsPublished] = useState(false);
   const [slug, setSlug] = useState('');
+  const [social, setSocial] = useState<SocialLinks>({
+    facebook: '',
+    instagram: '',
+    tiktok: '',
+    youtube: '',
+    pinterest: ''
+  });
 
   // Load profile
   const { data: profile, isLoading } = useQuery<TenantProfile | null>({
@@ -82,6 +89,13 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       setCoverUrl(profile.coverUrl || '');
       setIsPublished(profile.isPublished || false);
       setSlug(profile.slug || '');
+      setSocial({
+        facebook: profile.social?.facebook || '',
+        instagram: profile.social?.instagram || '',
+        tiktok: profile.social?.tiktok || '',
+        youtube: profile.social?.youtube || '',
+        pinterest: profile.social?.pinterest || ''
+      });
     }
   }, [profile]);
 
@@ -139,6 +153,7 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       coverUrl,
       isPublished,
       slug,
+      social,
     });
   };
 
@@ -367,6 +382,84 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
                     ))}
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="w-5 h-5" />
+                Social Media Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="facebook" className="flex items-center gap-2">
+                    <Facebook className="w-4 h-4" />
+                    Facebook
+                  </Label>
+                  <Input
+                    id="facebook"
+                    type="url"
+                    placeholder="https://facebook.com/yourpage"
+                    value={social.facebook}
+                    onChange={(e) => setSocial({...social, facebook: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="instagram" className="flex items-center gap-2">
+                    <Instagram className="w-4 h-4" />
+                    Instagram
+                  </Label>
+                  <Input
+                    id="instagram"
+                    type="url"
+                    placeholder="https://instagram.com/yourpage"
+                    value={social.instagram}
+                    onChange={(e) => setSocial({...social, instagram: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="tiktok">TikTok</Label>
+                  <Input
+                    id="tiktok"
+                    type="url"
+                    placeholder="https://tiktok.com/@yourpage"
+                    value={social.tiktok}
+                    onChange={(e) => setSocial({...social, tiktok: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="youtube" className="flex items-center gap-2">
+                    <Youtube className="w-4 h-4" />
+                    YouTube
+                  </Label>
+                  <Input
+                    id="youtube"
+                    type="url"
+                    placeholder="https://youtube.com/@yourpage"
+                    value={social.youtube}
+                    onChange={(e) => setSocial({...social, youtube: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pinterest">Pinterest</Label>
+                <Input
+                  id="pinterest"
+                  type="url"
+                  placeholder="https://pinterest.com/yourpage"
+                  value={social.pinterest}
+                  onChange={(e) => setSocial({...social, pinterest: e.target.value})}
+                />
               </div>
             </CardContent>
           </Card>
