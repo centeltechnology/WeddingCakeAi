@@ -2976,10 +2976,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = tenant.id;
 
       // 2) Validate payload (minimal)
-      const { name, email, phone, selections, notes } = req.body ?? {};
+      const { name, email, phone, budget, selections, notes } = req.body ?? {};
       const safeName = (name || '').toString().trim();
       const safeEmail = (email || '').toString().trim().toLowerCase();
       const safePhone = (phone || '').toString().trim();
+      const safeBudget = (budget || '').toString().trim();
       if (!safeEmail && !safePhone && !safeName) {
         return res.status(400).json({ error: 'contact_required' });
       }
@@ -3024,6 +3025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerName: safeName || customerRow.name,
         customerEmail: safeEmail || customerRow.email,
         customerPhone: safePhone || customerRow.phone,
+        budget: safeBudget || null,
         source: 'calculator',
         status: 'new',
         calculatorPayload: selections ?? null,

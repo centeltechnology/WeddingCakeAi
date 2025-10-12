@@ -81,6 +81,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [customerBudget, setCustomerBudget] = useState('');
   const [networkOptIn, setNetworkOptIn] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
 
@@ -99,6 +100,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       setCustomerName('');
       setCustomerEmail('');
       setCustomerPhone('');
+      setCustomerBudget('');
       setNetworkOptIn(false);
     },
     onError: (error: any) => {
@@ -143,6 +145,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
       customerName,
       customerEmail,
       customerPhone,
+      budget: customerBudget,
       eventDate: config.eventDate,
       cakeConfiguration: config,
       estimatedPrice: pricing.total.toString(),
@@ -681,6 +684,7 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 data-testid="input-customer-name"
+                required
                 className="mt-1"
               />
             </div>
@@ -712,6 +716,25 @@ export default function Calculator({ themeId = 'classic-elegance' }: CalculatorP
                 className="mt-1"
               />
             </div>
+            
+            <div>
+              <Label htmlFor="customer-budget" className="text-sm font-medium">
+                Budget Range (Optional)
+              </Label>
+              <Select value={customerBudget} onValueChange={setCustomerBudget}>
+                <SelectTrigger id="customer-budget" className="mt-1" data-testid="select-customer-budget">
+                  <SelectValue placeholder="Select your budget range..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="under-500">Under $500</SelectItem>
+                  <SelectItem value="500-1000">$500 - $1,000</SelectItem>
+                  <SelectItem value="1000-2000">$1,000 - $2,000</SelectItem>
+                  <SelectItem value="2000-3000">$2,000 - $3,000</SelectItem>
+                  <SelectItem value="over-3000">Over $3,000</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <Checkbox
                 id="network-opt-in"
