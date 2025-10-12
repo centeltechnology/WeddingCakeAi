@@ -331,6 +331,7 @@ export const leads = pgTable("leads", {
   tenantId: varchar("tenant_id").references(() => tenants.id), // Added for multi-tenancy
   bakerId: varchar("baker_id").references(() => bakers.id),
   profileId: varchar("profile_id").references(() => profiles.id),
+  customerId: varchar("customer_id").references(() => customers.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),

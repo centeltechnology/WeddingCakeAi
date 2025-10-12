@@ -2963,6 +2963,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/public/calculator/submit - Public calculator submission endpoint
+  app.post('/api/public/calculator/submit', async (req, res) => {
+    try {
+      // 1) Resolve tenant from slug
+      const slug = (req.query.tenant as string) || (req.body?.tenant as string) || '';
+      const { resolveTenantBySlug } = await import('./lib/tenantResolver');
+      const tenant = await resolveTenantBySlug(slug);
+      if (!tenant?.id) {
+        return res.status(400).json({ error: 'tenant_not_found' });
+      }
+      const tenantId = tenant.id;
+
+      // 2) Validate payload (minimal)
+      const { name, email, phone, selections, notes } = req.body ?? {};
+      const safeName = (name || '').toString().trim();
+      const safeEmail = (email || '').toString().trim().toLowerCase();
+      const safePhone = (phone || '').toString().trim();
+      if (!safeEmail && !safePhone && !safeName) {
+        return res.status(400).json({ error: 'contact_required' });
+      }
+
+      // 3) Upsert customer (prefer email, then phone)
+      let customerRow: any = null;
+      if (safeEmail) {
+        [customerRow] = await db.select().from(customers)
+          .where(and(eq(customers.tenantId, tenantId), eq(customers.email, safeEmail)))
+          .limit(1);
+      }
+      if (!customerRow && safePhone) {
+        [customerRow] = await db.select().from(customers)
+          .where(and(eq(customers.tenantId, tenantId), eq(customers.phone, safePhone)))
+          .limit(1);
+      }
+      if (customerRow) {
+        await db.update(customers)
+          .set({ 
+            name: safeName || customerRow.name || null, 
+            phone: safePhone || customerRow.phone || null 
+          })
+          .where(eq(customers.id, customerRow.id));
+      } else {
+        const cid = randomUUID();
+        await db.insert(customers).values({
+          id: cid, 
+          tenantId, 
+          name: safeName || safeEmail || safePhone || 'Calculator Lead',
+          email: safeEmail || null, 
+          phone: safePhone || null
+        });
+        [customerRow] = await db.select().from(customers).where(eq(customers.id, cid));
+      }
+
+      // 4) Create lead (source='calculator'), attach selections payload
+      const leadId = randomUUID();
+      await db.insert(leads).values({
+        id: leadId,
+        tenantId,
+        customerId: customerRow.id,
+        customerName: safeName || customerRow.name,
+        customerEmail: safeEmail || customerRow.email,
+        customerPhone: safePhone || customerRow.phone,
+        source: 'calculator',
+        status: 'new',
+        calculatorPayload: selections ?? null,
+        notes: notes ?? null,
+        createdAt: new Date()
+      });
+
+      // 5) OPTIONAL: create a draft quote now (if you want)
+      let createdQuoteId: string | null = null;
+      const createDraftQuoteNow = true; // set false if you don't want auto-quote
+      if (createDraftQuoteNow) {
+        createdQuoteId = randomUUID();
+        const quoteNumber = `Q-${Date.now()}`;
+        await db.insert(quotes).values({
+          id: createdQuoteId,
+          tenantId,
+          customerId: customerRow.id,
+          leadId: leadId,
+          quoteNumber,
+          title: `Estimate for ${customerRow.name ?? safeEmail ?? safePhone}`,
+          status: 'draft',
+          subtotal: '0',
+          discount: '0',
+          taxAmount: '0',
+          total: '0',
+          depositPercentage: '0',
+          customerNotes: notes ?? null,
+          createdAt: new Date()
+        });
+      }
+
+      // 6) Calculate initial lead score
+      if (process.env.LEAD_SCORING_ENABLED === 'true') {
+        await upsertLeadScore(tenantId, leadId);
+      }
+
+      // 7) Notification stub (dev/demo)
+      console.log('[notify] calculator submission', { tenantId, leadId, createdQuoteId });
+
+      return res.status(200).json({ ok: true, leadId, quoteId: createdQuoteId });
+    } catch (e: any) {
+      console.error('public calculator submit error', e);
+      return res.status(500).json({ error: 'server_error' });
+    }
+  });
+
   // GET /api/leads/:id/thread - Get messages and notes for a lead
   app.get('/api/leads/:id/thread', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
     try {
