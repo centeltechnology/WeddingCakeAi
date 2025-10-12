@@ -16,6 +16,7 @@ Preferred communication style: Simple, everyday language.
 - **Forms**: React Hook Form with Zod validation.
 - **Navigation**: Config-driven (`config/nav.ts`), responsive mobile drawer with ARIA semantics and focus management, sticky sidebar, active route highlighting, and feature flag filtering. Separated `PublicLayout` for marketing and `AppLayout` for authenticated admin pages.
 - **UI/UX Decisions**: High-contrast UI with brand dark header and slate-based design. Animated mobile drawer, tooltips on header icons, enhanced ARIA navigation.
+- **Header Quick Actions**: QuickActions component provides header icon shortcuts that check `isPublished` state and baker slug to enable/disable public preview links. Uses semantic `<a>` tags with proper href attributes for calculator (`/calculator?tenant=:slug`), booking (`/b/:slug/book`), and listing (`/p/:slug`) preview icons. URL builders in `lib/publicLinks.ts` provide explicit, encoded tenant-aware public URLs.
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js.
