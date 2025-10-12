@@ -87,6 +87,29 @@ export function computeLeadScore(input: ScoreInput): ScoreResult {
   return { score, explanations: parts };
 }
 
+function parseBudgetToNumber(budgetStr: string | null | undefined): number | null {
+  if (!budgetStr) return null;
+  
+  // Map budget range strings to numeric values (use midpoint of range)
+  const budgetMap: Record<string, number> = {
+    'under-500': 400,
+    '500-1000': 750,
+    '1000-2000': 1500,
+    '2000-3000': 2500,
+    'over-3000': 4000
+  };
+  
+  // Try to match budget string from dropdown
+  const normalized = budgetStr.toLowerCase().trim();
+  if (budgetMap[normalized]) {
+    return budgetMap[normalized];
+  }
+  
+  // Fallback: try to parse as number (for legacy numeric budgets)
+  const parsed = parseInt(budgetStr, 10);
+  return isNaN(parsed) ? null : parsed;
+}
+
 export async function upsertLeadScore(tenantId: string, leadId: string) {
   const [lead] = await db
     .select()
@@ -95,7 +118,7 @@ export async function upsertLeadScore(tenantId: string, leadId: string) {
   
   if (!lead) return null;
 
-  const budgetNum = lead.budget ? parseInt(lead.budget, 10) : null;
+  const budgetNum = parseBudgetToNumber(lead.budget);
   
   const model = computeLeadScore({
     createdAt: lead.createdAt!,
