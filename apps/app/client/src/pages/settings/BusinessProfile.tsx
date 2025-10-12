@@ -124,9 +124,17 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
   // Compute dirty state - treat missing profile as empty baseline
   const isDirty = useMemo(() => {
     // Allow saving when user enters data, even if no profile exists yet
-    const hasData = !!(displayName || phone || website || address || about || specialties.length || logoUrl || coverUrl || slug);
+    const hasSocialData = !!(social.facebook || social.instagram || social.tiktok || social.youtube || social.pinterest);
+    const hasData = !!(displayName || phone || website || address || about || specialties.length || logoUrl || coverUrl || slug || hasSocialData);
     if (!profile) return hasData;
     
+    const profileSocial = {
+      facebook: profile.social?.facebook || '',
+      instagram: profile.social?.instagram || '',
+      tiktok: profile.social?.tiktok || '',
+      youtube: profile.social?.youtube || '',
+      pinterest: profile.social?.pinterest || ''
+    };
     return (
       displayName !== (profile.displayName || '') ||
       phone !== (profile.phone || '') ||
@@ -137,9 +145,10 @@ export default function BusinessProfile({ embedded = false }: { embedded?: boole
       logoUrl !== (profile.logoUrl || '') ||
       coverUrl !== (profile.coverUrl || '') ||
       isPublished !== (profile.isPublished || false) ||
-      slug !== (profile.slug || '')
+      slug !== (profile.slug || '') ||
+      JSON.stringify(social) !== JSON.stringify(profileSocial)
     );
-  }, [profile, displayName, phone, website, address, about, specialties, logoUrl, coverUrl, isPublished, slug]);
+  }, [profile, displayName, phone, website, address, about, specialties, logoUrl, coverUrl, isPublished, slug, social]);
 
   const handleSave = () => {
     saveMutation.mutate({
