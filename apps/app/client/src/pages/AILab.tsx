@@ -265,7 +265,7 @@ export default function AILab() {
             </CardHeader>
             <CardContent>
               {resultType === 'suggest-items' && result.items && (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <h3 className="font-semibold text-sm text-green-900">Suggested Items:</h3>
                   <div className="bg-white rounded-md p-4">
                     <table className="w-full text-sm">
@@ -297,6 +297,34 @@ export default function AILab() {
                   </div>
                   {result.brief && (
                     <p className="text-xs text-gray-600 mt-2">Brief: {result.brief}</p>
+                  )}
+                  {result.quoteId && (
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/quotes/${result.quoteId}/items:bulk`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ items: result.items }),
+                          });
+                          if (!response.ok) throw new Error('Failed to add items');
+                          toast({
+                            title: "Success",
+                            description: `Added ${result.items?.length} items to quote`,
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: error instanceof Error ? error.message : 'Failed to add items',
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      variant="secondary"
+                    >
+                      Add Selected to Quote
+                    </Button>
                   )}
                 </div>
               )}

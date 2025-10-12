@@ -4420,6 +4420,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk insert quote items (for AI suggestions)
+  app.post('/api/quotes/:id/items:bulk', ensureAuthUnified, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const quoteId = req.params.id;
+      const { items } = req.body ?? {};
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'no_items' });
+      }
+
+      // Verify quote belongs to tenant
+      const [quote] = await db.select().from(quotes)
+        .where(and(eq(quotes.id, quoteId), eq(quotes.tenantId, tenantId)))
+        .limit(1);
+      
+      if (!quote) {
+        return res.status(404).json({ error: 'quote_not_found' });
+      }
+
+      // Insert all items in a transaction
+      await db.transaction(async (tx) => {
+        for (const item of items) {
+          await tx.insert(quoteItems).values({
+            id: randomUUID(),
+            tenantId,
+            quoteId,
+            name: String(item.name ?? 'Item'),
+            quantity: String(Number(item.qty) || 1),
+            unitPrice: String(Number(item.price) || 0),
+            totalPrice: String((Number(item.qty) || 1) * (Number(item.price) || 0)),
+            description: item.notes ?? null,
+          });
+        }
+
+        // Log event
+        await tx.insert(quoteEvents).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId,
+          event: 'items_added',
+          meta: { count: items.length, source: 'ai_suggest' },
+          createdAt: new Date()
+        });
+      });
+
+      res.json({ ok: true, added: items.length });
+    } catch (error: any) {
+      console.error('Error bulk inserting quote items:', error);
+      res.status(500).json({ error: 'Failed to insert items' });
+    }
+  });
+
   // Send quote to customer via email
   app.post('/api/quotes/:id/send', ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
@@ -10281,14 +10338,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Return deterministic demo items with context
+      const items = [
+        { name: '8" Two-Layer Cake', qty: 1, unit: 'ea', price: 55, rationale: 'Standard birthday size' },
+        { name: 'Cupcakes (Dozen)', qty: 1, unit: 'dz', price: 36, rationale: 'Popular add-on' },
+        { name: 'Delivery', qty: 1, unit: 'flat', price: 15, rationale: 'Based on local radius' },
+      ];
+
+      // Log AI event
+      try {
+        await db.insert(quoteEvents).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId: resolvedQuoteId,
+          event: 'ai_suggested',
+          meta: { count: items.length, brief: brief || null },
+          createdAt: new Date()
+        });
+      } catch (e) {
+        console.error('Failed to log quote event:', e);
+      }
+
       res.json({ 
         ok: true,
         quoteId: resolvedQuoteId,
-        items: [
-          { name: '8" Two-Layer Cake', qty: 1, unit: 'ea', price: 55, rationale: 'Standard birthday size' },
-          { name: 'Cupcakes (Dozen)', qty: 1, unit: 'dz', price: 36, rationale: 'Popular add-on' },
-          { name: 'Delivery', qty: 1, unit: 'flat', price: 15, rationale: 'Based on local radius' },
-        ],
+        items,
         brief: brief || null,
       });
     } catch (error: any) {
@@ -10317,10 +10390,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'quote_required' });
       }
 
+      const summary = 'Draft includes an 8" cake and a dozen cupcakes. Est. total ~$106 incl. delivery, before tax.';
+
+      // Log AI event
+      try {
+        await db.insert(quoteEvents).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId: resolvedQuoteId,
+          event: 'ai_summarized',
+          meta: {},
+          createdAt: new Date()
+        });
+      } catch (e) {
+        console.error('Failed to log quote event:', e);
+      }
+
       res.json({ 
         ok: true,
         quoteId: resolvedQuoteId,
-        summary: 'Draft includes an 8" cake and a dozen cupcakes. Est. total ~$106 incl. delivery, before tax.'
+        summary
       });
     } catch (error: any) {
       console.error('Error in AI summarize-quote:', error);
@@ -10348,14 +10437,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'quote_required' });
       }
 
+      const clauses = [
+        '50% non-refundable deposit due on approval.',
+        'Balance due 3 days before pickup.',
+        'Allergy notice: products may contain nuts and dairy.'
+      ];
+
+      // Log AI event (contract_events if available, otherwise quote_events)
+      try {
+        await db.insert(quoteEvents).values({
+          id: randomUUID(),
+          tenantId,
+          quoteId: resolvedQuoteId,
+          event: 'ai_generated_contract',
+          meta: { templateId: templateId || null },
+          createdAt: new Date()
+        });
+      } catch (e) {
+        console.error('Failed to log quote event:', e);
+      }
+
       res.json({ 
         ok: true,
         quoteId: resolvedQuoteId,
-        clauses: [
-          '50% non-refundable deposit due on approval.',
-          'Balance due 3 days before pickup.',
-          'Allergy notice: products may contain nuts and dairy.'
-        ],
+        clauses,
         templateId: templateId || null,
       });
     } catch (error: any) {

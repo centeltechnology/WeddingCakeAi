@@ -51,7 +51,13 @@ Preferred communication style: Simple, everyday language.
 - **CRM**: Bulk email, CSV export, one-click quote approval, lead capture, and management including a Lead Inbox for communication.
 - **Quote & Contract Management**: Creation, editing, templating, secure token-based approval links, server-side rendering with variable replacement, and full workflow UI.
 - **Invoice Management**: Tracking, payment status, and Stripe integration.
-- **AI Lab**: Deterministic AI testing interface for suggesting items, summarizing quotes, and generating contracts, requiring explicit quote or lead context.
+- **AI Lab**: Deterministic AI testing interface for suggesting items, summarizing quotes, and generating contracts, requiring explicit quote or lead context. Features include:
+  - Context selection UI with quote/lead dropdowns and optional brief input
+  - Event logging for all AI actions (suggest-items, summarize-quote, generate-contract) via `quote_events` table
+  - "Add Selected to Quote" button for bulk inserting AI-suggested items via `POST /api/quotes/:id/items:bulk` endpoint
+  - Transactional bulk insert ensures all items added atomically or none
+  - Lead-to-quote conversion via "Create Quote from Lead" button in Lead Inbox (`/leads/:id`)
+  - Automatic draft quote creation using `ensureQuoteForLead` helper function
 - **Interactive AI Dashboard**: Quick-action tiles for AI features with loading states, success navigation, and error handling:
   - Price Suggestion: Runs AI suggest-items on most recent quote, navigates to quote detail
   - Lead Scoring: Triggers lead rescore, navigates to leads page sorted by score

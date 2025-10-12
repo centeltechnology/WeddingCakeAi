@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRoute, Link } from 'wouter';
+import { useRoute, Link, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Mail, User, Phone, DollarSign, Calendar, MessageSquare, StickyNote, Send, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Mail, User, Phone, DollarSign, Calendar, MessageSquare, StickyNote, Send, TrendingUp, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Message = {
@@ -48,6 +48,7 @@ type ThreadData = {
 
 export default function LeadInbox() {
   const [, params] = useRoute('/leads/:id');
+  const [, navigate] = useLocation();
   const leadId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -56,6 +57,7 @@ export default function LeadInbox() {
   const [emailBody, setEmailBody] = useState('');
   const [noteBody, setNoteBody] = useState('');
   const [activeTab, setActiveTab] = useState<'email' | 'note'>('email');
+  const [creatingQuote, setCreatingQuote] = useState(false);
 
   // Fetch lead details
   const { data: lead, isLoading: leadLoading, isError: leadError, refetch: refetchLead } = useQuery<Lead>({
@@ -453,6 +455,44 @@ export default function LeadInbox() {
                   <p className="text-sm mt-1 p-2 bg-muted rounded">{lead.message}</p>
                 </div>
               )}
+
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={async () => {
+                    setCreatingQuote(true);
+                    try {
+                      const response = await fetch('/api/ai/suggest-items', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ leadId }),
+                      });
+                      if (!response.ok) throw new Error('Failed to create quote');
+                      const data = await response.json();
+                      if (data.quoteId) {
+                        toast({
+                          title: "Quote Created",
+                          description: "Draft quote created from lead",
+                        });
+                        navigate(`/quotes/${data.quoteId}`);
+                      }
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: error instanceof Error ? error.message : 'Failed to create quote',
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setCreatingQuote(false);
+                    }
+                  }}
+                  disabled={creatingQuote}
+                  className="w-full"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {creatingQuote ? 'Creating...' : 'Create Quote from Lead'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
