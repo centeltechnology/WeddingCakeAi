@@ -41,7 +41,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Features
 - **Baker Calculator**: Internal admin-only estimate builder at `/baker/calculator` with editable line items table (item, qty, unit price, notes), customer picker/creation, computed totals (subtotal, discount, tax, deposit), and save-as-quote functionality. Includes atomic customer upsert and quote creation with proper transaction handling. Accessible via sidebar navigation (under Customers) and header quick actions (SquareStack icon).
-- **Dynamic Pricing Calculator**: Real-time cake cost calculations with customizable options, server-backed defaults, and theme customization.
+- **Dynamic Pricing Calculator**: Real-time cake cost calculations with customizable options, server-backed defaults, and theme customization. Public calculator at `/calculator?tenant=:slug` captures leads via POST `/api/public/calculator/submit` endpoint that:
+  - Resolves tenant by slug from query parameter
+  - Upserts customer based on email/phone with deduplication
+  - Creates lead with source='calculator' linked to customer (via `customerId` field)
+  - Optionally creates draft quote linked to both customer and lead
+  - Returns `{ leadId, quoteId }` for client success handling
+  - Smoke test: `tsx apps/app/scripts/smoke-public-calc.ts`
 - **CRM**: Bulk email, CSV export, one-click quote approval, lead capture, and management including a Lead Inbox for communication.
 - **Quote & Contract Management**: Creation, editing, templating, secure token-based approval links, server-side rendering with variable replacement, and full workflow UI.
 - **Invoice Management**: Tracking, payment status, and Stripe integration.
