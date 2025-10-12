@@ -4235,10 +4235,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: quotes.tenantId,
         bakerId: quotes.bakerId,
         customerId: quotes.customerId,
+        leadId: quotes.leadId,
         quoteNumber: quotes.quoteNumber,
         title: quotes.title,
         description: quotes.description,
-        totalAmount: quotes.totalAmount,
+        totalAmount: quotes.total, // Aliased for backward compatibility
         status: quotes.status,
         eventDate: quotes.eventDate,
         validUntil: quotes.validUntil,

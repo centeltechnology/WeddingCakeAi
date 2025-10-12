@@ -1,0 +1,228 @@
+Repo: apps/app (BakerIQ)
+Goal: Admin-only page at /baker/calculator to build estimates (line items, tax/discount/deposit), pick/add a customer, and save as a draft Quote (quotes + quote_items), with a quote_events.created entry. Tenant-scoped. Idempotent.
+
+0) Assumptions
+
+Auth middleware: ensureAuthUnified adds req.tenant.id.
+
+Tables exist (adapt names if needed): customers, quotes, quote_items, quote_events.
+
+A) Server — endpoints (tenant-scoped)
+
+Add to apps/app/server/routes.ts (or similar):
+
+import crypto from 'crypto';
+import { db } from './db';
+import { customers, quotes, quoteItems, quoteEvents } from './db/schema'; // adjust
+import { eq, and, desc } from 'drizzle-orm';
+import { ensureAuthUnified } from './auth'; // adjust
+
+// List recent customers (picker)
+app.get('/api/customers', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const rows = await db.select().from(customers)
+    .where(eq(customers.tenantId, tenantId))
+    .orderBy(desc(customers.updatedAt ?? customers.createdAt))
+    .limit(100);
+  res.json(rows);
+});
+
+// Upsert customer by email (fallback phone), returns row
+app.post('/api/customers/upsert', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { name, email, phone } = req.body ?? {};
+  if (!name && !email && !phone) return res.status(400).json({ error: 'invalid_customer' });
+
+  let row: any = null;
+  if (email) [row] = await db.select().from(customers).where(and(eq(customers.tenantId, tenantId), eq(customers.email, email))).limit(1);
+  if (!row && phone) [row] = await db.select().from(customers).where(and(eq(customers.tenantId, tenantId), eq(customers.phone, phone))).limit(1);
+
+  if (row) {
+    await db.update(customers).set({
+      name: name ?? row.name, phone: phone ?? row.phone,
+    }).where(eq(customers.id, row.id));
+  } else {
+    const id = crypto.randomUUID();
+    await db.insert(customers).values({
+      id, tenantId, name: name ?? email ?? phone ?? 'Customer',
+      email: email ?? null, phone: phone ?? null,
+    });
+  }
+
+  const [out] = await db.select().from(customers)
+    .where(email ? and(eq(customers.tenantId, tenantId), eq(customers.email, email))
+                 : and(eq(customers.tenantId, tenantId), eq(customers.phone, phone)))
+    .limit(1);
+  res.json({ ok: true, customer: out });
+});
+
+// Save an estimate as a draft quote (+ items)
+app.post('/api/estimates/save-as-quote', ensureAuthUnified, async (req, res) => {
+  const tenantId = req.tenant.id;
+  const { customer, title, items, taxRate, discount, depositPct, notes } = req.body ?? {};
+  if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'no_items' });
+
+  // Upsert/resolve customerId
+  let customerId = customer?.id as string | undefined;
+  if (!customerId) {
+    const r = await fetch(`http://localhost:${process.env.PORT ?? 5000}/api/customers/upsert`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', cookie: req.headers.cookie ?? '' },
+      body: JSON.stringify({ name: customer?.name, email: customer?.email, phone: customer?.phone })
+    });
+    const j = await r.json();
+    if (!r.ok || !j?.customer?.id) return res.status(400).json({ error: 'customer_upsert_failed' });
+    customerId = j.customer.id;
+  }
+
+  // Totals
+  const subtotal = items.reduce((s: number, it: any) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
+  const discountAmt = Math.max(0, Number(discount) || 0);
+  const taxRateN = Math.max(0, Number(taxRate) || 0);
+  const taxed = taxRateN * Math.max(0, subtotal - discountAmt);
+  const total = Math.max(0, subtotal - discountAmt + taxed);
+  const depositPctN = Math.max(0, Math.min(1, Number(depositPct) || 0));
+
+  const quoteId = crypto.randomUUID();
+  await db.insert(quotes).values({
+    id: quoteId, tenantId, customerId,
+    title: title || 'Estimate', status: 'draft',
+    subtotal, discount: discountAmt, tax: taxed, total, depositPct: depositPctN,
+    notes: notes ?? null, createdAt: new Date()
+  });
+
+  for (const it of items) {
+    await db.insert(quoteItems).values({
+      id: crypto.randomUUID(), tenantId, quoteId,
+      name: String(it.name ?? 'Item'), qty: Number(it.qty) || 1,
+      unit: (it.unit ?? 'ea').toString(), price: Number(it.price) || 0,
+      notes: it.notes ?? null,
+    });
+  }
+
+  try {
+    await db.insert(quoteEvents).values({
+      id: crypto.randomUUID(), tenantId, quoteId, type: 'created',
+      meta: { source: 'baker_calculator' }, createdAt: new Date()
+    });
+  } catch {}
+
+  res.status(201).json({ ok: true, quoteId, totals: { subtotal, discount: discountAmt, tax: taxed, total, depositPct: depositPctN } });
+});
+
+
+If calling your own API from inside the POST feels awkward, extract the upsert logic into a local function and reuse it directly.
+
+B) Client — page /baker/calculator (admin-only)
+
+Create: apps/app/client/src/pages/baker/BakerCalculator.tsx
+
+Left panel: Line Items
+
+Table with rows: Item, Qty, Unit, Unit Price, Line Total, Notes, Delete
+
+“Add Item” button, Enter-to-add behavior
+
+Optional presets: load from calculator_settings.defaults if available (e.g., 8″ cake)
+
+Right panel: Summary
+
+Customer: searchable select from /api/customers; or Add New inline (name/email/phone) → POST /api/customers/upsert
+
+Title (default “Estimate”)
+
+Discount ($), Tax Rate (%), Deposit % (%)
+
+Live Subtotal / Discount / Tax / Total / Deposit Due
+
+Save as Quote (primary) → POST /api/estimates/save-as-quote, then navigate(/quotes/${quoteId})
+
+Guardrails: disable save with no items; numeric inputs sanitize; never negative totals
+
+Skeleton (concise):
+
+export default function BakerCalculator(){
+  // state: items[], customer (existing or new), title, discount, taxRate, depositPct, notes
+  // compute totals with useMemo
+  // fetch customers for picker (GET /api/customers)
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        {/* Line items table + Add Item */}
+      </div>
+      <div className="lg:col-span-1">
+        {/* Customer picker or inline add */}
+        {/* Title / Discount / Tax / Deposit */}
+        {/* Totals */}
+        {/* Save as Quote */}
+      </div>
+    </div>
+  );
+}
+
+C) Routing & Nav
+
+Route: add to your router config → path: /baker/calculator, element: <BakerCalculator />, wrapped with auth guard.
+
+Sidebar/Nav: add “Baker Calculator” under admin tools or Customers group.
+
+Header (optional): add a distinct internal icon linking to /baker/calculator (keep public calculator icon pointing to /calculator?tenant=…).
+
+D) (Optional) AI assist on the page
+
+Add small button “AI Suggest Items” (if VITE_AI_ENABLED==='true'):
+
+If not saved yet: keep results local and insert into table (no DB write)
+
+If saved: call with { quoteId } and merge into items
+
+E) Smoke Test (dev)
+
+Create: apps/app/scripts/smoke-baker-calc.ts
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+
+async function post(path:string, body:any, cookie?:string){
+  const r = await fetch(base+path, { method:'POST', headers:{ 'Content-Type':'application/json', ...(cookie?{cookie}:{} ) }, body: JSON.stringify(body) });
+  const text = await r.text(); let json:any=null; try{ json=JSON.parse(text);}catch{}
+  return { ok: r.ok, status: r.status, json, text, path };
+}
+
+// NOTE: If your server requires an auth cookie, run this with a cookie set—or adapt to your login helper.
+(async()=>{
+  const c1 = await post('/api/customers/upsert', { name:'Calc Test', email:`calc-${Date.now()}@example.com` });
+  const q1 = await post('/api/estimates/save-as-quote', {
+    customer: { email: c1.json?.customer?.email },
+    title: 'Test Estimate',
+    items: [{ name:'8" Cake', qty:1, unit:'ea', price:55 }],
+    taxRate: 0.0825, discount: 0, depositPct: 0.5, notes: 'from smoke'
+  });
+  console.table([
+    { path: c1.path, status: c1.status, ok: c1.ok },
+    { path: q1.path, status: q1.status, ok: q1.ok },
+  ]);
+  if (!c1.ok || !q1.ok || !q1.json?.quoteId) process.exit(1);
+  console.log('BAKER CALCULATOR PASS ✅', { quoteId: q1.json.quoteId });
+})();
+
+
+package.json:
+
+"scripts": {
+  "smoke:baker-calc": "tsx apps/app/scripts/smoke-baker-calc.ts"
+}
+
+F) Acceptance (must pass)
+
+/baker/calculator renders (auth-only).
+
+You can add/remove line items; totals update live.
+
+You can pick an existing customer or enter a new one and Save as Quote.
+
+Server creates a draft quote with items and logs quote_events.created (source='baker_calculator').
+
+You’re navigated to /quotes/:id for the new quote.
+
+pnpm run smoke:baker-calc prints BAKER CALCULATOR PASS ✅.
