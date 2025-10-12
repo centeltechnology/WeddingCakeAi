@@ -320,7 +320,7 @@ function Router() {
       <Route path="/quotes/:id">
         {(params) => (
           <AuthGuard>
-            <QuoteBuilder bakerId="" />
+            <QuoteBuilder bakerId="" quoteId={params.id} />
           </AuthGuard>
         )}
       </Route>

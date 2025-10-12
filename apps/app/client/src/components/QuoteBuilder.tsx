@@ -39,11 +39,12 @@ import QuoteAiAssist from './ai/QuoteAiAssist';
 
 interface QuoteBuilderProps {
   bakerId: string;
+  quoteId?: string;
   prefilledCustomer?: Customer | null;
   onCustomerUsed?: () => void;
 }
 
-export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: QuoteBuilderProps) {
+export function QuoteBuilder({ bakerId, quoteId, prefilledCustomer, onCustomerUsed }: QuoteBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -113,6 +114,28 @@ export function QuoteBuilder({ bakerId, prefilledCustomer, onCustomerUsed }: Quo
       return response.json();
     }
   });
+
+  // Auto-load quote if quoteId is provided (for direct quote editing)
+  useEffect(() => {
+    if (quoteId && quotes.length > 0) {
+      // Only update if we're viewing a different quote or no quote is selected
+      if (!selectedQuote || selectedQuote.id !== quoteId) {
+        const quoteToEdit = quotes.find(q => q.id === quoteId);
+        if (quoteToEdit) {
+          setSelectedQuote(quoteToEdit);
+          setActiveTab('quotes');
+        } else {
+          // Quote not found - show error and redirect
+          toast({
+            title: 'Quote Not Found',
+            description: 'The requested quote could not be found.',
+            variant: 'destructive'
+          });
+          navigate('/quotes');
+        }
+      }
+    }
+  }, [quoteId, quotes, selectedQuote, toast, navigate]);
 
   // Convert lead to customer mutation
   const convertLeadMutation = useMutation({
