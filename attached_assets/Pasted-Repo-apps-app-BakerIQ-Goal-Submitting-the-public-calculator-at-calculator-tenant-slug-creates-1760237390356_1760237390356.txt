@@ -1,0 +1,218 @@
+Repo: apps/app (BakerIQ)
+Goal: Submitting the public calculator at /calculator?tenant=<slug> creates a Lead (source='calculator') and (optionally) a draft Quote, then shows a success state. Lead is visible in admin (Customers → Leads).
+
+0) Assumptions
+
+Tenant slug is the source of truth for public requests (via ?tenant=).
+
+We already have resolveTenantBySlug(slug) on the server.
+
+Tables exist: customers, leads, quotes, quote_items (names can be adapted).
+
+A) Server — Public submit endpoint (no auth)
+
+Add to apps/app/server/routes.ts (or a public routes module):
+
+import { resolveTenantBySlug } from './lib/tenantResolver';
+import crypto from 'crypto';
+import { db } from './db';
+import { customers, leads, quotes, quoteItems } from './db/schema'; // adjust imports
+import { eq, and } from 'drizzle-orm';
+
+app.post('/api/public/calculator/submit', async (req, res) => {
+  try {
+    // 1) Resolve tenant from slug
+    const slug = (req.query.tenant as string) || (req.body?.tenant as string) || '';
+    const tenant = await resolveTenantBySlug(slug);
+    if (!tenant?.id) return res.status(400).json({ error: 'tenant_not_found' });
+    const tenantId = tenant.id;
+
+    // 2) Validate payload (minimal)
+    const { name, email, phone, selections, notes } = req.body ?? {};
+    const safeName = (name || '').toString().trim();
+    const safeEmail = (email || '').toString().trim().toLowerCase();
+    const safePhone = (phone || '').toString().trim();
+    if (!safeEmail && !safePhone && !safeName) {
+      return res.status(400).json({ error: 'contact_required' });
+    }
+
+    // 3) Upsert customer (prefer email, then phone)
+    let customerRow: any = null;
+    if (safeEmail) {
+      [customerRow] = await db.select().from(customers)
+        .where(and(eq(customers.tenantId, tenantId), eq(customers.email, safeEmail)))
+        .limit(1);
+    }
+    if (!customerRow && safePhone) {
+      [customerRow] = await db.select().from(customers)
+        .where(and(eq(customers.tenantId, tenantId), eq(customers.phone, safePhone)))
+        .limit(1);
+    }
+    if (customerRow) {
+      await db.update(customers)
+        .set({ name: safeName || customerRow.name || null, phone: safePhone || customerRow.phone || null })
+        .where(eq(customers.id, customerRow.id));
+    } else {
+      const cid = crypto.randomUUID();
+      await db.insert(customers).values({
+        id: cid, tenantId, name: safeName || safeEmail || safePhone || 'Calculator Lead',
+        email: safeEmail || null, phone: safePhone || null
+      });
+      [customerRow] = await db.select().from(customers).where(eq(customers.id, cid));
+    }
+
+    // 4) Create lead (source='calculator'), attach selections payload
+    const leadId = crypto.randomUUID();
+    await db.insert(leads).values({
+      id: leadId,
+      tenantId,
+      customerId: customerRow.id,
+      name: safeName || customerRow.name,
+      email: safeEmail || customerRow.email,
+      phone: safePhone || customerRow.phone,
+      source: 'calculator',
+      status: 'new',
+      payload: selections ?? null,
+      notes: notes ?? null,
+      createdAt: new Date()
+    });
+
+    // 5) OPTIONAL: create a draft quote now (if you want)
+    let createdQuoteId: string | null = null;
+    const createDraftQuoteNow = true; // set false if you don’t want auto-quote
+    if (createDraftQuoteNow) {
+      createdQuoteId = crypto.randomUUID();
+      await db.insert(quotes).values({
+        id: createdQuoteId,
+        tenantId,
+        customerId: customerRow.id,
+        title: `Estimate for ${customerRow.name ?? safeEmail ?? safePhone}`,
+        status: 'draft',
+        subtotal: 0,
+        discount: 0,
+        tax: 0,
+        total: 0,
+        depositPct: 0,
+        notes: notes ?? null,
+        createdAt: new Date()
+      });
+      // If you want to seed one line item from selections, you can add quoteItems here.
+    }
+
+    // 6) Notification stub (dev/demo)
+    // If email service configured, send a heads-up to baker; else just log.
+    console.log('[notify] calculator submission', { tenantId, leadId, createdQuoteId });
+
+    return res.status(200).json({ ok: true, leadId, quoteId: createdQuoteId });
+  } catch (e: any) {
+    console.error('public calculator submit error', e);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
+
+Notes
+
+Never trust client tenantId; always resolve from slug.
+
+If your schema differs, adapt field names but keep tenant scoping.
+
+B) Client — Public calculator submit wiring
+
+Where: the public calculator page/component (the one rendered at /calculator).
+
+Read the slug from the URL:
+
+const params = new URLSearchParams(window.location.search);
+const tenantSlug = params.get('tenant') || '';
+
+
+On Submit, call the new endpoint:
+
+async function submitCalculator(form: any) {
+  // form should include name, email, phone, selections, notes
+  const r = await fetch(`/api/public/calculator/submit?tenant=${encodeURIComponent(tenantSlug)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(form),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = j?.error || `Request failed (${r.status})`;
+    // show friendly message in UI
+    setSubmitError(msg);
+    return;
+  }
+  // success UI
+  setSubmitSuccess(true);
+  setCreatedLeadId(j.leadId);
+  setCreatedQuoteId(j.quoteId ?? null);
+}
+
+
+Success state UI
+Show a clean confirmation: “Request sent! We’ll contact you soon.”
+(Optionally display a reference number or the bakery’s name.)
+
+C) Admin — Leads list visibility
+
+Ensure the Leads list queries include recent entries and display source.
+
+On Lead detail, show payload highlights (e.g., size, servings) if present.
+
+Add an “Open Draft Quote” button if quoteId was created.
+
+(If these UI bits already exist, just verify that the new lead appears.)
+
+D) Smoke Test (dev)
+
+Create: apps/app/scripts/smoke-public-calc.ts
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+const slug = 'sweet-treats-bakery';
+
+async function post(path: string, body: any) {
+  const r = await fetch(base + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await r.text();
+  let json: any = null; try { json = JSON.parse(text); } catch {}
+  return { ok: r.ok, status: r.status, json, text, path };
+}
+
+(async () => {
+  const payload = {
+    name: 'QA Public',
+    email: `qa-public-${Date.now()}@example.com`,
+    phone: '555-0100',
+    selections: { servings: 12, size: 8, flavor: 'vanilla' },
+    notes: 'smoke test',
+  };
+  const res = await post(`/api/public/calculator/submit?tenant=${encodeURIComponent(slug)}`, payload);
+  console.table([{ path: res.path, status: res.status, ok: res.ok }]);
+  if (!res.ok) { console.error(res.text); process.exit(1); }
+  if (!res.json?.ok || !res.json?.leadId) { console.error('missing leadId'); process.exit(1); }
+  console.log('PUBLIC CALC → LEAD PASS ✅', { leadId: res.json.leadId, quoteId: res.json.quoteId || null });
+})();
+
+
+Add script:
+
+"scripts": {
+  "smoke:public-calc": "tsx apps/app/scripts/smoke-public-calc.ts"
+}
+
+E) Acceptance (must pass)
+
+/calculator?tenant=sweet-treats-bakery loads without auth.
+
+Submitting minimal info → 200 OK with { ok:true, leadId, quoteId? }.
+
+Leads list shows a new Lead with source = 'calculator' and submitted contact info.
+
+(If enabled) a draft Quote exists for that customer.
+
+pnpm run smoke:public-calc prints PUBLIC CALC → LEAD PASS ✅.
