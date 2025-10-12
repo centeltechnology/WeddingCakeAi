@@ -1,15 +1,10 @@
-import { ExternalLink, CreditCard, Calculator, Eye, SquareStack } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { ExternalLink, CreditCard, Calculator, Eye, SquareStack, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useCreditsModal } from '@/components/ai/CreditsModalContext';
-import { buildMarketplaceUrl, buildLeadGenUrl } from '@/lib/publicLinks';
+import { buildPublicCalculatorUrl, buildBookingUrl, buildListingUrl } from '@/lib/publicLinks';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/Tooltip';
-
-type TenantInfo = {
-  id: string;
-  slug: string | null;
-};
 
 type QuickActionsProps = {
   variant?: 'full' | 'compact';
@@ -19,47 +14,47 @@ type QuickActionsProps = {
 export default function QuickActions({ variant = 'full', className = '' }: QuickActionsProps) {
   const creditsModal = useCreditsModal();
   const [, setLocation] = useLocation();
-  
-  const { data: tenant } = useQuery<TenantInfo>({
-    queryKey: ['/api/me/tenant'],
-    queryFn: async () => {
-      const res = await fetch('/api/me/tenant', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch tenant');
-      return res.json();
-    },
-  });
+  const [slug, setSlug] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState<boolean>(false);
 
-  const hasSlug = Boolean(tenant?.slug);
-  const marketplaceUrl = hasSlug ? buildMarketplaceUrl(tenant?.slug) : '';
-  const leadGenUrl = hasSlug ? buildLeadGenUrl(tenant?.slug, { preferBooking: false }) : '';
+  useEffect(() => {
+    (async () => {
+      try {
+        const t = await (await fetch('/api/me/tenant')).json();
+        setSlug(t?.slug ?? null);
+      } catch {}
+      try {
+        const p = await (await fetch('/api/me/profile')).json();
+        setIsPublished(!!p?.isPublished);
+      } catch {}
+    })();
+  }, []);
+
+  const calcHref = buildPublicCalculatorUrl(slug);
+  const bookingHref = buildBookingUrl(slug);
+  const listingHref = buildListingUrl(slug);
+  
+  const publicReady = Boolean(slug && isPublished);
 
   const handleTopUp = () => {
     creditsModal.open({ reason: 'Top up credits' });
-  };
-
-  const handlePreviewListing = () => {
-    if (marketplaceUrl) {
-      window.open(marketplaceUrl, '_blank');
-    }
-  };
-
-  const handlePreviewCalculator = () => {
-    if (leadGenUrl) {
-      window.open(leadGenUrl, '_blank');
-    }
   };
 
   const handleBakerCalculator = () => {
     setLocation('/baker/calculator');
   };
 
-  const previewListingTooltip = hasSlug
-    ? "Preview Listing"
-    : "Set up your public profile in Settings first";
+  const calcTooltip = publicReady
+    ? 'Open calculator'
+    : 'Publish your profile in Settings to enable';
 
-  const previewCalculatorTooltip = hasSlug
-    ? "Preview Calculator"
-    : "Set up your public profile in Settings first";
+  const bookingTooltip = publicReady
+    ? 'Open booking'
+    : 'Publish your profile in Settings to enable';
+
+  const listingTooltip = publicReady
+    ? 'Open listing'
+    : 'Publish your profile in Settings to enable';
 
   if (variant === 'compact') {
     return (
@@ -80,23 +75,41 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
             <CreditCard className="h-4 w-4" />
           </button>
         </Tooltip>
-        <Tooltip label={previewListingTooltip}>
-          <button
-            onClick={handlePreviewListing}
-            disabled={!hasSlug}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        <Tooltip label={listingTooltip}>
+          <a
+            data-testid="nav-listing"
+            href={publicReady ? listingHref : undefined}
+            aria-disabled={!publicReady}
+            title={listingTooltip}
+            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
           >
             <Eye className="h-4 w-4" />
-          </button>
+          </a>
         </Tooltip>
-        <Tooltip label={previewCalculatorTooltip}>
-          <button
-            onClick={handlePreviewCalculator}
-            disabled={!hasSlug}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        <Tooltip label={calcTooltip}>
+          <a
+            data-testid="nav-calc"
+            href={publicReady ? calcHref : undefined}
+            aria-disabled={!publicReady}
+            title={calcTooltip}
+            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
           >
             <Calculator className="h-4 w-4" />
-          </button>
+          </a>
+        </Tooltip>
+        <Tooltip label={bookingTooltip}>
+          <a
+            data-testid="nav-book"
+            href={publicReady ? bookingHref : undefined}
+            aria-disabled={!publicReady}
+            title={bookingTooltip}
+            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
+          >
+            <Calendar className="h-4 w-4" />
+          </a>
         </Tooltip>
       </div>
     );
@@ -120,28 +133,38 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
         <CreditCard className="h-4 w-4" />
         Top-Up Credits
       </Button>
-      <Tooltip label={previewListingTooltip}>
+      <Tooltip label={listingTooltip}>
         <Button
           variant="outline"
-          onClick={handlePreviewListing}
-          disabled={!hasSlug}
+          asChild
+          disabled={!publicReady}
           className="w-full justify-start gap-2"
         >
-          <Eye className="h-4 w-4" />
-          <span className="truncate">Preview Listing</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+          <a
+            href={publicReady ? listingHref : undefined}
+            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+          >
+            <Eye className="h-4 w-4" />
+            <span className="truncate">Preview Listing</span>
+            <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+          </a>
         </Button>
       </Tooltip>
-      <Tooltip label={previewCalculatorTooltip}>
+      <Tooltip label={calcTooltip}>
         <Button
           variant="outline"
-          onClick={handlePreviewCalculator}
-          disabled={!hasSlug}
+          asChild
+          disabled={!publicReady}
           className="w-full justify-start gap-2"
         >
-          <Calculator className="h-4 w-4" />
-          <span className="truncate">Preview Calculator</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+          <a
+            href={publicReady ? calcHref : undefined}
+            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+          >
+            <Calculator className="h-4 w-4" />
+            <span className="truncate">Preview Calculator</span>
+            <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+          </a>
         </Button>
       </Tooltip>
     </div>

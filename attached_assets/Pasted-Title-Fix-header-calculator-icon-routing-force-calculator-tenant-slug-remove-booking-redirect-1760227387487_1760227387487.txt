@@ -1,0 +1,142 @@
+Title: Fix header calculator icon routing (force /calculator?tenant=<slug>), remove booking redirect, add smoke check
+
+Do:
+
+1) Create/confirm URL builders
+
+apps/app/client/src/lib/publicLinks.ts
+
+export const buildPublicCalculatorUrl = (slug?: string|null) =>
+  slug ? `/calculator?tenant=${encodeURIComponent(slug)}` : '/calculator';
+
+export const buildBookingUrl = (slug?: string|null) =>
+  slug ? `/b/${encodeURIComponent(slug)}/book` : '/book';
+
+export const buildListingUrl = (slug?: string|null) =>
+  slug ? `/p/${encodeURIComponent(slug)}` : '/p';
+
+2) Wire header icons explicitly
+
+apps/app/client/src/components/AppHeader.tsx (or wherever the top nav is rendered)
+
+Fetch tenant once:
+
+const [slug, setSlug] = useState<string|null>(null);
+const [isPublished, setIsPublished] = useState<boolean>(false);
+
+useEffect(() => {
+  (async () => {
+    try {
+      const t = await (await fetch('/api/me/tenant')).json(); // { slug }
+      setSlug(t?.slug ?? null);
+    } catch {}
+    try {
+      const p = await (await fetch('/api/me/profile-public')).json(); // { isPublished }
+      setIsPublished(!!p?.isPublished);
+    } catch {}
+  })();
+}, []);
+
+
+Replace the calculator icon anchor/button with this (and remove any onClick that navigates elsewhere):
+
+import { buildPublicCalculatorUrl, buildBookingUrl, buildListingUrl } from '@/lib/publicLinks';
+
+const calcHref = buildPublicCalculatorUrl(slug);
+const bookingHref = buildBookingUrl(slug);
+const listingHref = buildListingUrl(slug);
+
+const publicReady = Boolean(slug && isPublished);
+
+// Calculator icon (PUBLIC) — must NEVER go to booking
+<a
+  data-testid="nav-calc"
+  href={publicReady ? calcHref : undefined}
+  aria-disabled={!publicReady}
+  title={publicReady ? 'Open calculator' : 'Publish your profile in Settings to enable'}
+  onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+  className={publicReady ? 'nav-icon' : 'nav-icon opacity-50 cursor-not-allowed'}
+>
+  {/* calculator svg */}
+</a>
+
+// Booking icon (separate)
+<a
+  data-testid="nav-book"
+  href={publicReady ? bookingHref : undefined}
+  aria-disabled={!publicReady}
+  title={publicReady ? 'Open booking' : 'Publish your profile in Settings to enable'}
+  onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+  className={publicReady ? 'nav-icon' : 'nav-icon opacity-50 cursor-not-allowed'}
+>
+  {/* calendar svg */}
+</a>
+
+// (Optional) Listing preview icon
+<a
+  data-testid="nav-listing"
+  href={publicReady ? listingHref : undefined}
+  aria-disabled={!publicReady}
+  title={publicReady ? 'Open listing' : 'Publish your profile in Settings to enable'}
+  onClick={(e) => { if (!publicReady) e.preventDefault(); }}
+  className={publicReady ? 'nav-icon' : 'nav-icon opacity-50 cursor-not-allowed'}
+>
+  {/* storefront svg */}
+</a>
+
+
+Important: Do not attach any onClick={() => navigate(bookingHref)} to the calculator icon. If you find one, delete it.
+
+3) Kill any hidden redirects to booking
+
+Search the codebase and remove/disable any logic that rewrites the calculator route:
+
+Run (or have the agent search):
+
+ripgrep -n "(calc|calculator).*(book|booking)" apps/app/client apps/app/server
+ripgrep -n "redirect.*calculator" apps/app
+ripgrep -n "baker.*calculator" apps/app
+
+
+Fixes to make if found:
+
+Client: delete any if (bookingEnabled) navigate(buildBookingUrl(slug)) in header or route guards.
+
+Server: ensure there is no res.redirect('/b/<slug>/book') in the /calculator handler. /calculator must serve the SPA and let the client read ?tenant=.
+
+4) Add a tiny smoke check (dev) to prevent regressions
+
+apps/app/scripts/smoke-header-calc.ts
+
+import fetch from 'node-fetch';
+const base = 'http://localhost:5000';
+
+async function check(path:string){
+  const r = await fetch(base+path, { method:'GET', redirect:'manual' });
+  return { path, status: r.status, loc: r.headers.get('location') || '' };
+}
+
+(async()=>{
+  const rows = [];
+  rows.push(await check('/baker/sweet-treats-bakery/calculator')); // should 301 -> /calculator?tenant=...
+  rows.push(await check('/calculator?tenant=sweet-treats-bakery')); // should be 200 (no redirect)
+  console.table(rows);
+  const bad = rows.find(r => !(r.path.includes('/baker/') ? r.status===301 : r.status===200));
+  if (bad) process.exit(1);
+  console.log('HEADER CALC LINK PASS ✅');
+})();
+
+
+package.json
+
+"scripts": {
+  "smoke:header-calc": "tsx apps/app/scripts/smoke-header-calc.ts"
+}
+
+5) Visual cue so it’s obviously fixed
+
+Give the calculator icon a data-testid and a tooltip so you can hover and confirm the final URL quickly:
+
+data-testid="nav-calc"
+
+title="Open calculator"

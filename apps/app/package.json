@@ -13,6 +13,7 @@
     "seed:users": "tsx server/seedUsers.ts",
     "lint:buttons": "tsx scripts/lint-no-raw-button.ts",
     "smoke:calculator": "tsx scripts/smoke-calculator.ts",
+    "smoke:header-calc": "tsx scripts/smoke-header-calc.ts",
     "test:e2e": "playwright test tests/e2e",
     "test:api": "playwright test tests/api",
     "test": "playwright test",
