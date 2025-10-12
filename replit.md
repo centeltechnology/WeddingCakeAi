@@ -40,7 +40,7 @@ Preferred communication style: Simple, everyday language.
 - **Session Persistence**: `RootGate` component and `/api/session` endpoint with `Cache-Control: no-store`.
 
 ### Key Features
-- **Baker Calculator**: Internal admin-only estimate builder at `/baker/calculator` with editable line items table (item, qty, unit price, notes), customer picker/creation, computed totals (subtotal, discount, tax, deposit), and save-as-quote functionality. Includes atomic customer upsert and quote creation with proper transaction handling. Accessible via sidebar navigation (under Customers) and header quick actions (SquareStack icon).
+- **Baker Calculator**: Internal admin-only estimate builder at `/baker/calculator` with editable line items table (item, qty, unit price, notes), customer picker/creation, computed totals (subtotal, discount, tax, deposit), and save-as-quote functionality. Includes atomic customer upsert and quote creation with proper transaction handling. Accessible via sidebar navigation (under Customers) and header quick actions (SquareStack icon). Smoke test: `npm run smoke:baker-calc` validates customer upsert, quote creation with items, totals calculation, and quote events.
 - **Dynamic Pricing Calculator**: Real-time cake cost calculations with customizable options, server-backed defaults, and theme customization. Public calculator at `/calculator?tenant=:slug` captures leads via POST `/api/public/calculator/submit` endpoint that:
   - Resolves tenant by slug from query parameter
   - Upserts customer based on email/phone with deduplication
