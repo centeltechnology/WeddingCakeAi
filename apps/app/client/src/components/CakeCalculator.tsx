@@ -291,7 +291,12 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
   const submitQuoteRequest = useMutation({
     mutationFn: async (payload: any) => {
-      const response = await fetch("/api/bakers/public/calculator/quote-draft", {
+      // Use new public calculator submit endpoint with tenant slug
+      const endpoint = tenantSlug 
+        ? `/api/public/calculator/submit?tenant=${encodeURIComponent(tenantSlug)}`
+        : `/api/bakers/public/calculator/quote-draft`;
+      
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -307,12 +312,40 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
       return response.json();
     },
     onSuccess: (data) => {
-      setQuoteResponse(data);
-      toast({
-        title: "Quote Request Sent!",
-        description: `Your estimated price range: $${data.range.low} - $${data.range.high}`,
-      });
-      setStep(4);
+      // Handle new endpoint response format (leadId with optional quoteId) or legacy format
+      if (data.leadId) {
+        // New format response
+        setQuoteResponse({
+          leadId: data.leadId,
+          servings: totalServings,
+          deliveryFee: pricing.delivery,
+          total: pricing.total,
+          range: { low: Math.floor(pricing.total * 0.9), high: Math.ceil(pricing.total * 1.1) },
+          breakdown: { base: pricing.baseCake, complexityMultiplier: 1, addOns: pricing.decorations }
+        });
+        toast({
+          title: "Quote Request Sent!",
+          description: data.quoteId 
+            ? `Your request has been received. We'll contact you soon!`
+            : `Thank you! We've received your inquiry and will be in touch.`,
+        });
+        setStep(4);
+      } else if (data.range) {
+        // Legacy response format
+        setQuoteResponse(data);
+        toast({
+          title: "Quote Request Sent!",
+          description: `Your estimated price range: $${data.range.low} - $${data.range.high}`,
+        });
+        setStep(4);
+      } else {
+        // Fallback for unexpected format
+        toast({
+          title: "Request Received",
+          description: "We'll get back to you soon!",
+        });
+        setStep(4);
+      }
     },
     onError: () => {
       toast({
@@ -339,7 +372,29 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                       hasFondant ? 'premium' : 
                       selectedDecorations.length > 2 ? 'standard' : 'basic';
 
-    const payload = {
+    // Format payload based on endpoint type
+    const payload = tenantSlug ? {
+      // New endpoint format
+      name: customerInfo.name,
+      email: customerInfo.email,
+      phone: customerInfo.phone,
+      selections: {
+        tiers: tiers.map(tier => ({
+          size: tier.size,
+          shape: tier.shape,
+          flavor: tier.flavor,
+          servings: tier.servings
+        })),
+        decorations: selectedDecorations,
+        eventDate: customerInfo.eventDate,
+        eventType: customerInfo.eventType,
+        guestCount: customerInfo.guestCount,
+        venue: customerInfo.venue,
+        pricing: pricing
+      },
+      notes: specialRequests
+    } : {
+      // Legacy endpoint format
       cityOrZip: customerInfo.venue || '',
       eventDate: customerInfo.eventDate,
       guestCount: customerInfo.guestCount,
