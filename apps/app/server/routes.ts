@@ -11179,18 +11179,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public: POST create booking
   app.post('/api/booking/create', async (req, res) => {
     try {
-      if (process.env.BOOKING_ENABLED !== 'true') {
+      // Check if booking feature is enabled
+      if (process.env.BOOKING_ENABLED !== 'true' && process.env.VITE_BOOKING_ENABLED !== 'true') {
         return res.status(403).json({ error: 'Booking feature is disabled' });
       }
 
-      const { customerName, customerEmail, serviceId, startISO, endISO, notes } = req.body;
+      const { customerName, customerEmail, serviceId, startISO, endISO, notes, tenantSlug } = req.body;
 
       if (!customerName || !customerEmail || !serviceId || !startISO) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Get tenantId from subdomain or authenticated session (server-side only)
-      const tenantId = getTenantId(req);
+      // Resolve tenant from slug or authenticated session
+      let tenantId: string | null = null;
+      
+      if (tenantSlug) {
+        const { resolveTenantBySlug } = await import("./lib/tenantResolver");
+        const resolved = await resolveTenantBySlug(tenantSlug);
+        tenantId = resolved?.id || null;
+      } else if (req.user?.tenantId) {
+        tenantId = req.user.tenantId;
+      }
       
       if (!tenantId) {
         return res.status(400).json({ error: 'Tenant context required. Please book through tenant-specific URL.' });

@@ -49,7 +49,7 @@ export default function BookingPublic() {
       const res = await fetch('/api/booking/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantSlug }),
       });
       if (!res.ok) throw new Error('Failed to create booking');
       return res.json();
