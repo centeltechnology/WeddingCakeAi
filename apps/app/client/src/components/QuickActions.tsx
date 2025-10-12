@@ -76,40 +76,55 @@ export default function QuickActions({ variant = 'full', className = '' }: Quick
           </button>
         </Tooltip>
         <Tooltip label={listingTooltip}>
-          <a
-            data-testid="nav-listing"
-            href={publicReady ? listingHref : undefined}
-            aria-disabled={!publicReady}
-            title={listingTooltip}
-            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
-            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
-          >
-            <Eye className="h-4 w-4" />
-          </a>
+          {publicReady ? (
+            <a
+              data-testid="nav-listing"
+              href={listingHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <Eye className="h-4 w-4" />
+            </a>
+          ) : (
+            <span className="p-2 rounded-lg opacity-50 cursor-not-allowed">
+              <Eye className="h-4 w-4" />
+            </span>
+          )}
         </Tooltip>
         <Tooltip label={calcTooltip}>
-          <a
-            data-testid="nav-calc"
-            href={publicReady ? calcHref : undefined}
-            aria-disabled={!publicReady}
-            title={calcTooltip}
-            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
-            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
-          >
-            <Calculator className="h-4 w-4" />
-          </a>
+          {publicReady ? (
+            <a
+              data-testid="nav-calc"
+              href={calcHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <Calculator className="h-4 w-4" />
+            </a>
+          ) : (
+            <span className="p-2 rounded-lg opacity-50 cursor-not-allowed">
+              <Calculator className="h-4 w-4" />
+            </span>
+          )}
         </Tooltip>
         <Tooltip label={bookingTooltip}>
-          <a
-            data-testid="nav-book"
-            href={publicReady ? bookingHref : undefined}
-            aria-disabled={!publicReady}
-            title={bookingTooltip}
-            onClick={(e) => { if (!publicReady) e.preventDefault(); }}
-            className={publicReady ? 'p-2 rounded-lg hover:bg-white/10 transition-colors' : 'p-2 rounded-lg opacity-50 cursor-not-allowed'}
-          >
-            <Calendar className="h-4 w-4" />
-          </a>
+          {publicReady ? (
+            <a
+              data-testid="nav-book"
+              href={bookingHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <Calendar className="h-4 w-4" />
+            </a>
+          ) : (
+            <span className="p-2 rounded-lg opacity-50 cursor-not-allowed">
+              <Calendar className="h-4 w-4" />
+            </span>
+          )}
         </Tooltip>
       </div>
     );
