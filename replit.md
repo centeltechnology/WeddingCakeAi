@@ -1,10 +1,21 @@
 # BakerIQ
 
 ## Overview
-BakerIQ is a professional SaaS platform designed for bakeries to modernize business management. It offers a cohesive, high-contrast UI with a brand dark header and slate-based design system. Key capabilities include CRM, quotes, contracts, payments, and email automation, all tailored to enhance efficiency and customer engagement for bakers. The platform aims to be the leading solution in the bakery business management sector.
+BakerIQ is a professional SaaS platform designed for bakeries to modernize business management. It offers a cohesive, high-contrast UI with improved dark mode contrast (updated Nov 2025) and slate-based design system. Key capabilities include CRM, quotes, contracts, payments, and email automation, all tailored to enhance efficiency and customer engagement for bakers. The platform aims to be the leading solution in the bakery business management sector.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+
+## Recent Updates (November 2025)
+- **Homepage Routing**: Changed root path (/) to show SaaS landing page instead of redirecting to login
+- **Dark Mode Improvements**: Fixed text contrast issues on colored boxes - updated to professional dark blue theme with proper WCAG-compliant contrast ratios
+- **Security Infrastructure**: Added comprehensive security modules (in progress):
+  - Structured logging system with log levels
+  - Refresh token system with database storage and rotation
+  - Rate limiting for auth and API endpoints  
+  - Global error handling middleware
+  - Health check endpoints (/healthz, /health/detailed)
+  - Stripe webhook security with signature verification and idempotency
 
 ## System Architecture
 
