@@ -21,6 +21,11 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { z } from "zod";
 import cron from "node-cron";
 import { getSendyService } from "./sendy";
+import { registerSecurityRoutes } from "./securityRoutes.js";
+import { globalErrorHandler, notFoundHandler } from "./lib/errorHandler.js";
+import { cleanupExpiredTokens } from "./lib/refreshTokens.js";
+import { logger } from "./lib/logger.js";
+import { apiRateLimiter, authRateLimiter } from "./lib/rateLimiting.js";
 
 const app = express();
 
@@ -1733,13 +1738,15 @@ app.get('/me', async (req, res) => {
   // Mount billing routes
   registerBillingRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  // Security routes (refresh tokens, webhooks, health checks)
+  registerSecurityRoutes(app);
+  logger.info('All routes registered');
 
-    res.status(status).json({ message });
-    throw err;
-  });
+  // 404 handler - must come before error handler
+  app.use(notFoundHandler);
+
+  // Global error handler - must be last middleware
+  app.use(globalErrorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -2032,6 +2039,18 @@ app.get('/me', async (req, res) => {
     }
   });
   console.log('Password reset token cleanup job scheduled (daily at 2 AM)');
+
+  // Clean up expired refresh tokens daily at 3 AM
+  cron.schedule('0 3 * * *', async () => {
+    try {
+      logger.info('Running refresh token cleanup...');
+      const count = await cleanupExpiredTokens();
+      logger.info(`Cleaned up ${count} expired refresh tokens`);
+    } catch (error) {
+      logger.error('Refresh token cleanup failed', error);
+    }
+  });
+  logger.info('Refresh token cleanup job scheduled (daily at 3 AM)');
 
   // Campaign sender cron job - runs every 5 minutes
   cron.schedule('*/5 * * * *', async () => {
