@@ -2482,7 +2482,8 @@ export class MemStorage implements IStorage {
   async resetUserPassword(userId: string, temporaryPassword: string): Promise<boolean> {
     const user = this.users.get(userId);
     if (!user) return false;
-    user.password = temporaryPassword;
+    const hashedPassword = bcrypt.hashSync(temporaryPassword, 10);
+    user.password = hashedPassword;
     this.users.set(userId, user);
     return true;
   }
