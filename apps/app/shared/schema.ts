@@ -133,6 +133,26 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text("token_hash").notNull(), // Hashed refresh token
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"), // Set when token is used (invalidated after use)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  stripeEventId: text("stripe_event_id").notNull().unique(), // Stripe event ID for idempotency
+  eventType: text("event_type").notNull(), // e.g., 'invoice.payment_succeeded'
+  processed: boolean("processed").default(false).notNull(),
+  processedAt: timestamp("processed_at"),
+  payload: jsonb("payload").$type<any>(), // Full Stripe event payload
+  error: text("error"), // Error message if processing failed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
