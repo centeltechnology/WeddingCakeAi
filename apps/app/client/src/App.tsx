@@ -114,29 +114,10 @@ import PortalInvoice from "@/pages/public/PortalInvoice";
 import MarketplaceListing from "@/pages/MarketplaceListing";
 import { HelmetProvider } from 'react-helmet-async';
 
-function RootGate() {
-  const [, navigate] = useLocation();
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/session", { credentials: "include", cache: "no-store" });
-        const data = await res.json();
-        const target = data?.authenticated ? "/baker/dashboard" : "/login";
-        navigate(target, { replace: true });
-      } catch {
-        navigate("/login", { replace: true });
-      }
-    })();
-  }, [navigate]);
-  return null;
-}
-
 function Router() {
   return (
     <Switch>
-      <Route path="/">
-        <RootGate />
-      </Route>
+      <Route path="/" component={Home} />
       <Route path="/login" component={LoginPage} />
       <Route path="/reset" component={ResetRequest} />
       <Route path="/reset/:token" component={ResetConfirm} />
@@ -145,7 +126,6 @@ function Router() {
           <Dashboard />
         </AuthGuard>
       </Route>
-      <Route path="/home" component={Home} />
       <Route path="/features" component={Features} />
       <Route path="/about" component={About} />
       <Route path="/pricing" component={Pricing} />
