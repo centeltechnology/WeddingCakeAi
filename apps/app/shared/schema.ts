@@ -1586,31 +1586,34 @@ export type InsertSendySettings = z.infer<typeof insertSendySettingsSchema>;
 // Baker Pricing Configuration Schema (for validation)
 export const bakerPricingSchema = z.object({
   cakeSizes: z.array(z.object({
-    id: z.string(),
     size: z.string(),
     servings: z.number(),
     basePrice: z.number(),
     costToMake: z.number(),
-    profitMargin: z.number()
+    profitMargin: z.number(),
+    isActive: z.boolean().optional()
   })).optional(),
   shapes: z.array(z.object({
     id: z.string(),
     name: z.string(),
     baseUpcharge: z.number(),
     costToMake: z.number(),
-    profitMargin: z.number()
+    profitMargin: z.number(),
+    isActive: z.boolean().optional()
   })).optional(),
   flavors: z.array(z.object({
     id: z.string(),
     name: z.string(),
     upcharge: z.number(),
-    isPremium: z.boolean()
+    isPremium: z.boolean(),
+    isActive: z.boolean().optional()
   })).optional(),
   decorations: z.array(z.object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
     price: z.number(),
+    costToMake: z.number(),
     category: z.string(),
     isActive: z.boolean()
   })).optional(),
