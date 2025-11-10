@@ -3,7 +3,15 @@ import jwt from "jsonwebtoken";
 import { storage } from "./storage";
 import { subscriptionManager } from "./subscriptionConfig";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_dev_secret_key_change_in_production';
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  
+  if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
+    throw new Error('JWT_SECRET must be set to a strong secret (32+ characters) in production environment');
+  }
+  
+  return secret || 'fallback_dev_secret_DO_NOT_USE_IN_PRODUCTION';
+})();
 
 interface JWTPayload {
   userId: string;

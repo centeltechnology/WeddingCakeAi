@@ -6504,14 +6504,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Create JWT token
-      const jwtSecret = process.env.JWT_SECRET || 'fallback_dev_secret_key_change_in_production';
       const token = jwt.sign(
         { 
           userId: user.id, 
           username: user.username, 
           role: user.role 
         },
-        jwtSecret,
+        JWT_SECRET,
         { expiresIn: '7d' }
       );
 
@@ -6576,7 +6575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             username: 'bwadmin', 
             role: 'super_admin' 
           },
-          process.env.JWT_SECRET || 'fallback_secret_key_for_development',
+          JWT_SECRET,
           { expiresIn: '24h' }
         );
         return res.json({
@@ -6630,7 +6629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           role: user.role 
         },
-        process.env.JWT_SECRET || 'fallback_secret_key_for_development',
+        JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -6668,7 +6667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key_for_development') as any;
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
       
       if (decoded.role !== 'super_admin') {
         return res.status(403).json({ success: false, message: 'Super admin access required' });
@@ -8158,7 +8157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: 'baker',
           impersonatedBy: req.user.username // Track who initiated impersonation
         },
-        process.env.JWT_SECRET || 'fallback_secret_key_for_development',
+        JWT_SECRET,
         { expiresIn: '2h' } // Impersonation sessions expire after 2 hours
       );
       
