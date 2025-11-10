@@ -1742,12 +1742,6 @@ app.get('/me', async (req, res) => {
   registerSecurityRoutes(app);
   logger.info('All routes registered');
 
-  // 404 handler - must come before error handler
-  app.use(notFoundHandler);
-
-  // Global error handler - must be last middleware
-  app.use(globalErrorHandler);
-
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -1756,6 +1750,12 @@ app.get('/me', async (req, res) => {
   } else {
     serveStatic(app);
   }
+
+  // 404 handler - must come AFTER Vite/static setup
+  app.use(notFoundHandler);
+
+  // Global error handler - must be last middleware
+  app.use(globalErrorHandler);
 
   // ====== CAMPAIGN SENDER LOGIC ======
   

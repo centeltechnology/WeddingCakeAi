@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { databaseStorage } from "./databaseStorage";
 import { sendEmail, emailTemplates } from "./emailService";
 import { type InsertBaker } from "@shared/schema";
+import { createRefreshToken, revokeUserTokens } from "./lib/refreshTokens.js";
 
 // Initialize Stripe for subscription management
 let stripe: Stripe | null = null;
@@ -157,7 +158,13 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify password
-      const isValidPassword = await databaseStorage.verifyPassword(password, user.password);
+      if (!user.passwordHash) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+      }
+      const isValidPassword = await databaseStorage.verifyPassword(password, user.passwordHash);
       if (!isValidPassword) {
         return res.status(401).json({ 
           success: false, 
@@ -595,6 +602,12 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify password
+      if (!baker.passwordHash) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+      }
       const isValidPassword = await databaseStorage.verifyPassword(password, baker.passwordHash);
       if (!isValidPassword) {
         return res.status(401).json({ 
@@ -628,6 +641,18 @@ export function setupAuthRoutes(app: Express) {
 
       // Create JWT token (for backward compatibility)
       const token = createToken(baker.id, baker.email, 'baker');
+
+      // Create refresh token for secure token rotation
+      const refreshToken = await createRefreshToken(baker.id);
+      
+      // Set refresh token as HttpOnly cookie
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/'
+      });
 
       res.json({
         success: true,
@@ -1094,7 +1119,13 @@ export function setupAuthRoutes(app: Express) {
       }
 
       // Verify current password
-      const isValidPassword = await databaseStorage.verifyPassword(currentPassword, user.password);
+      if (!user.passwordHash) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+      const isValidPassword = await databaseStorage.verifyPassword(currentPassword, user.passwordHash);
       if (!isValidPassword) {
         return res.status(401).json({
           success: false,

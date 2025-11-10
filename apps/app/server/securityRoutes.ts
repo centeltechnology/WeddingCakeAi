@@ -38,12 +38,13 @@ export function registerSecurityRoutes(app: Express) {
   /**
    * Refresh token endpoint
    * POST /api/auth/refresh
-   * Body: { refreshToken: string }
-   * Returns: { accessToken: string, refreshToken: string }
+   * Accepts refresh token from cookie or body
+   * Returns: { user: object } with new refresh token cookie
    */
   app.post('/api/auth/refresh', authRateLimiter, async (req: Request, res: Response) => {
     try {
-      const { refreshToken } = req.body;
+      // Accept refresh token from cookie (preferred) or body (fallback)
+      const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
 
       if (!refreshToken) {
         return res.status(400).json({
@@ -62,6 +63,15 @@ export function registerSecurityRoutes(app: Express) {
         });
       }
 
+      // Get user data to return
+      const user = await databaseStorage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
       // Generate new access token
       const accessToken = jwt.sign({ userId }, JWT_SECRET, {
         expiresIn: '7d',
@@ -69,10 +79,25 @@ export function registerSecurityRoutes(app: Express) {
 
       // Generate new refresh token (rotation)
       const newRefreshToken = await createRefreshToken(userId);
+      
+      // Set new refresh token as HttpOnly cookie
+      res.cookie('refresh_token', newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/'
+      });
 
       logger.info('Token refreshed successfully', { userId });
 
       res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role
+        },
         accessToken,
         refreshToken: newRefreshToken,
       });
@@ -88,29 +113,50 @@ export function registerSecurityRoutes(app: Express) {
   /**
    * Logout endpoint (revokes all refresh tokens)
    * POST /api/auth/logout
-   * Headers: Authorization: Bearer <accessToken>
+   * Accepts token from Authorization header or refresh token from cookie
    */
   app.post('/api/auth/logout', async (req: Request, res: Response) => {
     try {
+      let userId: string | null = null;
+
+      // Try to get userId from access token
       const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+          userId = decoded.userId;
+        } catch (error) {
+          // Token might be expired, try refresh token
+        }
+      }
+
+      // If no userId from access token, try refresh token from cookie
+      if (!userId && req.cookies?.refresh_token) {
+        userId = await verifyRefreshToken(req.cookies.refresh_token);
+      }
+
+      if (!userId) {
+        // Clear cookie anyway for cleanup
+        res.clearCookie('refresh_token', { path: '/' });
         return res.status(401).json({
           error: 'Unauthorized',
-          message: 'Access token required',
+          message: 'No valid token provided',
         });
       }
 
-      const token = authHeader.substring(7);
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-
       // Revoke all refresh tokens for this user
-      await revokeUserTokens(decoded.userId);
+      await revokeUserTokens(userId);
 
-      logger.info('User logged out', { userId: decoded.userId });
+      // Clear refresh token cookie
+      res.clearCookie('refresh_token', { path: '/' });
+
+      logger.info('User logged out', { userId });
 
       res.json({ message: 'Logged out successfully' });
     } catch (error) {
       logger.error('Logout endpoint error', error);
+      res.clearCookie('refresh_token', { path: '/' });
       res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to logout',
