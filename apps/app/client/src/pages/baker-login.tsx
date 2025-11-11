@@ -69,16 +69,17 @@ export default function BakerLogin() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Store session token
-        localStorage.setItem("baker_token", result.token);
+        // Store session token using token manager
+        const { tokenManager } = await import('@/lib/auth');
+        tokenManager.setToken(result.token);
         
         toast({
           title: "Login successful",
           description: `Welcome back, ${result.baker.name}!`,
         });
 
-        // Redirect to baker dashboard using the baker's slug
-        setLocation(`/baker/${result.baker.slug}/dashboard`);
+        // Redirect to V1 dashboard (components/BakerDashboard.tsx) using baker ID
+        setLocation(`/dashboard/${result.baker.id}`);
       } else if (result.requiresVerification) {
         // Handle email verification required
         setShowVerificationBanner(true);
