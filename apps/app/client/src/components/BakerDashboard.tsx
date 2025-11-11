@@ -110,6 +110,28 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   // Use slug if available, otherwise fall back to bakerId
   const bakerIdentifier = bakerSlug || bakerId || '';
 
+  // Early return if no identifier is provided
+  if (!bakerIdentifier) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50">
+        <Card className="p-8 backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
+          <div className="text-center">
+            <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Baker Identifier Missing</h2>
+            <p className="text-gray-600">Unable to load the dashboard. Please ensure you're accessing this page correctly.</p>
+            <Button
+              onClick={() => window.location.href = '/baker-login'}
+              className="mt-4"
+              variant="outline"
+            >
+              Return to Login
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const { data: baker } = useQuery<Baker>({
     queryKey: ['/api/bakers', bakerIdentifier],
     queryFn: async () => {
@@ -144,6 +166,9 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
 
   const updateLeadMutation = useMutation({
     mutationFn: async ({ leadId, updates }: { leadId: string; updates: Partial<Lead> }) => {
+      if (!bakerIdentifier) {
+        throw new Error('Baker identifier is missing');
+      }
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
       const response = await makeAuthenticatedRequest(`/api/leads/${leadId}`, {
         method: 'PUT',
@@ -153,10 +178,17 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'leads'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerIdentifier, 'leads'] });
       toast({
         title: "Lead Updated",
         description: "Lead status has been updated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
     }
   });
@@ -192,8 +224,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   // Subdomain save mutation
   const saveSubdomainMutation = useMutation({
     mutationFn: async (subdomain: string) => {
+      if (!bakerIdentifier) {
+        throw new Error('Baker identifier is missing');
+      }
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
-      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/domain`, {
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerIdentifier}/domain`, {
         method: 'PUT',
         body: JSON.stringify({ subdomain })
       });
@@ -208,7 +243,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
         title: "Subdomain Updated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId, 'domain'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerIdentifier, 'domain'] });
       setSubdomainInput("");
     },
     onError: (error: Error) => {
@@ -223,8 +258,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   // About section update mutation
   const updateAboutMutation = useMutation({
     mutationFn: async (description: string) => {
+      if (!bakerIdentifier) {
+        throw new Error('Baker identifier is missing');
+      }
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
-      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerIdentifier}`, {
         method: 'PUT',
         body: JSON.stringify({ description })
       });
@@ -232,7 +270,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerIdentifier] });
       toast({
         title: "About Section Updated",
         description: "Your about section has been updated successfully!",
@@ -250,8 +288,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   // Specialties update mutation
   const updateSpecialtiesMutation = useMutation({
     mutationFn: async (newSpecialties: string[]) => {
+      if (!bakerIdentifier) {
+        throw new Error('Baker identifier is missing');
+      }
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
-      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerIdentifier}`, {
         method: 'PUT',
         body: JSON.stringify({ specialties: newSpecialties })
       });
@@ -259,7 +300,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerIdentifier] });
       toast({
         title: "Specialties Updated",
         description: "Your specialties have been updated successfully!",
@@ -277,8 +318,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   // Cake types update mutation
   const updateCakeTypesMutation = useMutation({
     mutationFn: async (newCakeTypes: string[]) => {
+      if (!bakerIdentifier) {
+        throw new Error('Baker identifier is missing');
+      }
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
-      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}`, {
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerIdentifier}`, {
         method: 'PUT',
         body: JSON.stringify({ cakeTypes: newCakeTypes })
       });
@@ -286,7 +330,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bakers', bakerIdentifier] });
       toast({
         title: "Cake Types Updated",
         description: "Your cake types have been updated successfully!",
@@ -549,7 +593,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
               <Button
                 onClick={() => {
                   // Always use internal route for now since external subdomains aren't set up
-                  const previewUrl = `/baker/${baker?.slug || bakerId}/profile`;
+                  const previewUrl = `/baker/${baker?.slug || bakerIdentifier}/profile`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
@@ -1377,11 +1421,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                   </Select>
                   <div className="flex-1" />
                   <BulkEmailLeads 
-                    bakerId={bakerId} 
+                    bakerId={bakerIdentifier} 
                     userPlan={baker?.subscriptionPlan || "starter"}
                   />
                   <LeadsExportButton 
-                    bakerId={bakerId}
+                    bakerId={bakerIdentifier}
                     userPlan={baker?.subscriptionPlan || "starter"}
                   />
                 </div>
@@ -1413,11 +1457,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                   </Select>
                   <div className="flex space-x-2">
                     <BulkEmailLeads 
-                      bakerId={bakerId} 
+                      bakerId={bakerIdentifier} 
                       userPlan={baker?.subscriptionPlan || "starter"}
                     />
                     <LeadsExportButton 
-                      bakerId={bakerId}
+                      bakerId={bakerIdentifier}
                       userPlan={baker?.subscriptionPlan || "starter"}
                     />
                   </div>
@@ -1825,7 +1869,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
 
         <TabsContent value="quotes">
           <QuoteBuilder 
-            bakerId={bakerId} 
+            bakerId={bakerIdentifier} 
             prefilledCustomer={leadForQuote ? {
               id: leadForQuote.id!,
               name: leadForQuote.customerName,
@@ -1842,7 +1886,7 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
               referralSource: null,
               budget: null,
               status: 'active',
-              bakerId: bakerId,
+              bakerId: bakerIdentifier,
               createdAt: leadForQuote.createdAt || new Date().toISOString(),
             } as any : null}
             onCustomerUsed={() => setLeadForQuote(null)}
@@ -1850,38 +1894,38 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
         </TabsContent>
 
         <TabsContent value="templates">
-          <QuoteTemplateManager bakerId={bakerId} />
+          <QuoteTemplateManager bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="contracts">
-          <ContractManager bakerId={bakerId} />
+          <ContractManager bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="bookings">
           <div className="space-y-6">
-            <ConsultationsManager bakerId={bakerId} />
-            <CalendarSystem bakerId={bakerId} isOwner={true} />
+            <ConsultationsManager bakerId={bakerIdentifier} />
+            <CalendarSystem bakerId={bakerIdentifier} isOwner={true} />
           </div>
         </TabsContent>
 
         <TabsContent value="payments">
-          <PaymentManager bakerId={bakerId} />
+          <PaymentManager bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="pricing">
-          <PricingManager bakerId={bakerId} />
+          <PricingManager bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="branding">
-          <BrandingSystem tenantId={bakerId} />
+          <BrandingSystem tenantId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="portfolio">
-          <PortfolioUploader bakerId={bakerId} />
+          <PortfolioUploader bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="account">
-          <AccountSettings bakerId={bakerId} />
+          <AccountSettings bakerId={bakerIdentifier} />
         </TabsContent>
 
         <TabsContent value="domain">
