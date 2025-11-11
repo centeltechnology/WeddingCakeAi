@@ -14,5 +14,6 @@ export async function makeAuthenticatedRequest(url: string, options: RequestInit
   return fetch(url, {
     ...options,
     headers,
+    credentials: 'include', // Include cookies for session-based auth
   });
 }
