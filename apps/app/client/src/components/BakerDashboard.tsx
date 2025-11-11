@@ -510,20 +510,20 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Navigation Header */}
-      <header className="bg-white border-b border-rose-100 shadow-sm">
+      <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Baker Name */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <Cake className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">BakerIQ</h1>
-                  <p className="text-sm text-gray-500">
+                  <h1 className="text-xl font-bold text-slate-900">BakerIQ</h1>
+                  <p className="text-sm text-slate-500">
                     {baker?.name || 'Baker Dashboard'}
                   </p>
                 </div>
@@ -532,96 +532,62 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+              <Badge className={`text-xs font-medium px-3 py-1.5 ${
                 subscriptionPlan === 'free' 
-                  ? 'bg-white/80 text-gray-800' 
+                  ? 'bg-slate-100 text-slate-700 border border-slate-200' 
                   : subscriptionPlan === 'pro' 
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
-                    : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                    ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                    : 'bg-orange-100 text-orange-700 border border-orange-200'
               }`}>
                 {subscriptionPlan.toUpperCase()} Plan
               </Badge>
               
               {/* Notification Indicators */}
-              <div className="flex items-center space-x-2">
-                {/* New Leads Notification */}
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-blue-600 relative"
-                    data-testid="notification-leads"
-                    onClick={() => setActiveTab("leads")}
-                  >
-                    <Bell className="w-5 h-5" />
-                    {leadStats.new > 0 && (
-                      <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-blue-500 text-white text-xs flex items-center justify-center">
-                        {leadStats.new}
-                      </Badge>
-                    )}
-                  </Button>
-                </div>
-                
-                {/* New Bookings Notification */}
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-green-600 relative"
-                    data-testid="notification-bookings"
-                    onClick={() => setActiveTab("bookings")}
-                  >
-                    <CalendarCheck className="w-5 h-5" />
-                    {/* TODO: Add booking count when bookings data is available */}
-                  </Button>
-                </div>
-                
-                {/* New Contracts Notification */}
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-purple-600 relative"
-                    data-testid="notification-contracts"
-                    onClick={() => setActiveTab("contracts")}
-                  >
-                    <FileText className="w-5 h-5" />
-                    {/* TODO: Add contract count when contracts data is available */}
-                  </Button>
-                </div>
-              </div>
+              {leadStats.new > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-600 hover:text-primary relative"
+                  data-testid="notification-leads"
+                  onClick={() => setActiveTab("leads")}
+                >
+                  <Bell className="w-5 h-5 mr-2" />
+                  <span className="text-sm font-medium">{leadStats.new} New Leads</span>
+                </Button>
+              )}
+              
               <Button
                 onClick={() => {
-                  // Always use internal route for now since external subdomains aren't set up
                   const previewUrl = `/baker/${baker?.slug || bakerIdentifier}/profile`;
                   window.open(previewUrl, '_blank');
                 }}
                 size="sm"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                variant="outline"
+                className="text-slate-600 hover:text-slate-900 border-slate-200"
                 data-testid="button-preview"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                View Profile
+                Preview
               </Button>
+              
               <Button
                 onClick={() => window.open('/help', '_blank')}
                 variant="ghost"
                 size="sm"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-slate-500 hover:text-slate-700"
                 data-testid="button-help"
               >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Help
+                <HelpCircle className="w-4 h-4" />
               </Button>
+              
               <Button
                 onClick={handleLogout}
                 variant="ghost"
                 size="sm"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-slate-500 hover:text-slate-700"
                 data-testid="button-logout"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
 
@@ -644,334 +610,274 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
 
           {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
+            <div className="md:hidden border-t border-slate-200 py-4">
               <div className="flex flex-col space-y-3">
-                <div className="flex items-center justify-between">
-                  <Badge className={`backdrop-blur-sm border-0 text-sm font-semibold px-4 py-2 shadow-lg ${
+                <div className="flex items-center justify-between px-4">
+                  <Badge className={`text-xs font-medium px-3 py-1.5 ${
                     subscriptionPlan === 'free' 
-                      ? 'bg-white/80 text-gray-800' 
+                      ? 'bg-slate-100 text-slate-700 border border-slate-200' 
                       : subscriptionPlan === 'pro' 
-                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
-                        : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                        ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                        : 'bg-orange-100 text-orange-700 border border-orange-200'
                   }`}>
-                    {subscriptionPlan.toUpperCase()} Plan
+                    {subscriptionPlan.toUpperCase()}
                   </Badge>
-                  <Button
-                    onClick={() => window.open('/help', '_blank')}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-gray-900"
-                    data-testid="button-help-mobile"
-                  >
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    Help
-                  </Button>
-                  <Button
-                    onClick={handleLogout}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-gray-900"
-                    data-testid="button-logout-mobile"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </Button>
                 </div>
+                
+                {leadStats.new > 0 && (
+                  <Button
+                    variant="ghost"
+                    className="justify-start px-4 text-slate-600"
+                    onClick={() => {
+                      setActiveTab("leads");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Bell className="w-4 h-4 mr-3" />
+                    {leadStats.new} New Leads
+                  </Button>
+                )}
+                
+                <Button
+                  variant="ghost"
+                  className="justify-start px-4 text-slate-600"
+                  onClick={() => {
+                    const previewUrl = `/baker/${baker?.slug || bakerIdentifier}/profile`;
+                    window.open(previewUrl, '_blank');
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-3" />
+                  View Profile
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="justify-start px-4 text-slate-600"
+                  onClick={() => window.open('/help', '_blank')}
+                >
+                  <HelpCircle className="w-4 h-4 mr-3" />
+                  Help Center
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="justify-start px-4 text-slate-600"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  Sign Out
+                </Button>
               </div>
             </div>
           )}
         </div>
       </header>
 
-      {/* Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-200/20 to-rose-200/20 rounded-full blur-3xl"></div>
-      </div>
-      
-      <div className="max-w-7xl mx-auto p-6 space-y-8 relative z-10">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Baker Dashboard</h1>
-            <p className="text-xl text-gray-600">Welcome back, {baker.name}!</p>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        {/* Welcome Section with Quick Stats */}
+        <div className="bg-white rounded-lg border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Welcome back, {baker.name}!</h1>
+              <p className="text-sm text-slate-600 mt-1">Here's your business at a glance</p>
+            </div>
+            {leadStats.new > 0 && (
+              <Button
+                onClick={() => setActiveTab("leads")}
+                className="bg-primary hover:bg-primary/90 text-white"
+                data-testid="button-respond-leads"
+              >
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Respond to {leadStats.new} New Leads
+              </Button>
+            )}
+          </div>
+
+          {/* Stats Cards - Cleaner Design */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <BarChart3 className="w-5 h-5 text-slate-400" />
+                <span className="text-xs text-slate-500">Total</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{leadStats.total}</p>
+              <p className="text-xs text-slate-500">leads</p>
+            </div>
+
+            <div className={`rounded-lg p-4 ${leadStats.new > 0 ? 'bg-blue-50 border border-blue-200' : 'bg-slate-50'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <Eye className="w-5 h-5 text-blue-500" />
+                <span className="text-xs text-blue-600 font-medium">New</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-700">{leadStats.new}</p>
+              <p className="text-xs text-blue-600">to respond</p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="w-5 h-5 text-slate-400" />
+                <span className="text-xs text-slate-500">Quoted</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{leadStats.quoted}</p>
+              <p className="text-xs text-slate-500">pending</p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="text-xs text-green-600">Booked</span>
+              </div>
+              <p className="text-2xl font-bold text-green-700">{leadStats.booked}</p>
+              <p className="text-xs text-green-600">confirmed</p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-5 h-5 text-slate-400" />
+                <span className="text-xs text-slate-500">Rate</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">
+                {leadStats.total > 0 ? Math.round((leadStats.booked / leadStats.total) * 100) : 0}%
+              </p>
+              <p className="text-xs text-slate-500">conversion</p>
+            </div>
           </div>
         </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600">Total Leads</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{leadStats.total}</p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-blue-600/30 rounded-full blur-lg"></div>
-                <BarChart3 className="w-8 h-8 text-blue-600 relative" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-amber-600">New</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">{leadStats.new}</p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/30 to-amber-600/30 rounded-full blur-lg"></div>
-                <Eye className="w-8 h-8 text-amber-600 relative" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600">Quoted</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">{leadStats.quoted}</p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/30 to-purple-600/30 rounded-full blur-lg"></div>
-                <DollarSign className="w-8 h-8 text-purple-600 relative" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-emerald-600">Booked</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">{leadStats.booked}</p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/30 to-emerald-600/30 rounded-full blur-lg"></div>
-                <CheckCircle className="w-8 h-8 text-emerald-600 relative" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-rose-600">Conversion</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-rose-800 bg-clip-text text-transparent">
-                  {leadStats.total > 0 ? Math.round((leadStats.booked / leadStats.total) * 100) : 0}%
-                </p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-rose-400/30 to-rose-600/30 rounded-full blur-lg"></div>
-                <BarChart3 className="w-8 h-8 text-rose-600 relative" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Navigation Tabs - Organized by Category */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        {/* Mobile Tab Navigation */}
-        <div className="lg:hidden mb-6">
-          <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
-            <TabsTrigger value="overview" className="flex-col h-20 gap-2 text-xs" data-testid="tab-overview-mobile">
-              <Home className="w-5 h-5" />
-              <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="leads" className="flex-col h-20 gap-2 text-xs">
-              <Users className="w-5 h-5" />
-              <span>Leads</span>
-            </TabsTrigger>
-            <TabsTrigger value="about" className="flex-col h-20 gap-2 text-xs">
-              <User className="w-5 h-5" />
-              <span>About</span>
-            </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-col h-20 gap-2 text-xs">
-              <FileText className="w-5 h-5" />
-              <span>Quotes</span>
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex-col h-20 gap-2 text-xs">
-              <Cake className="w-5 h-5" />
-              <span>Templates</span>
-            </TabsTrigger>
-            <TabsTrigger value="contracts" className="flex-col h-20 gap-2 text-xs">
-              <FileCheck className="w-5 h-5" />
-              <span>Contracts</span>
-            </TabsTrigger>
-            <TabsTrigger value="bookings" className="flex-col h-20 gap-2 text-xs">
-              <Calendar className="w-5 h-5" />
-              <span>Bookings</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex-col h-20 gap-2 text-xs">
-              <CreditCard className="w-5 h-5" />
-              <span>Payments</span>
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex-col h-20 gap-2 text-xs">
-              <BarChart3 className="w-5 h-5" />
-              <span>Pricing</span>
-            </TabsTrigger>
-            <TabsTrigger value="portfolio" className="flex-col h-20 gap-2 text-xs">
-              <Upload className="w-5 h-5" />
-              <span>Portfolio</span>
-            </TabsTrigger>
-            <TabsTrigger value="branding" className="flex-col h-20 gap-2 text-xs">
-              <Tag className="w-5 h-5" />
-              <span>Branding</span>
-            </TabsTrigger>
-            <TabsTrigger value="account" className="flex-col h-20 gap-2 text-xs">
-              <Settings className="w-5 h-5" />
-              <span>Settings</span>
-            </TabsTrigger>
-            <TabsTrigger value="domain" className="flex-col h-20 gap-2 text-xs">
-              <Globe className="w-5 h-5" />
-              <span>Domain</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Mobile Tab Navigation - Horizontal Scroll */}
+        <div className="lg:hidden">
+          <div className="border-b border-slate-200 overflow-x-auto">
+            <TabsList className="flex h-auto bg-transparent p-0 w-max">
+              <TabsTrigger value="overview" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none" data-testid="tab-overview-mobile">
+                <Home className="w-4 h-4 mr-2 inline" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Users className="w-4 h-4 mr-2 inline" />
+                Leads {leadStats.new > 0 && <Badge className="ml-2 bg-blue-500 text-white text-xs px-1.5 py-0.5">{leadStats.new}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="quotes" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <FileText className="w-4 h-4 mr-2 inline" />
+                Quotes
+              </TabsTrigger>
+              <TabsTrigger value="contracts" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <FileCheck className="w-4 h-4 mr-2 inline" />
+                Contracts
+              </TabsTrigger>
+              <TabsTrigger value="bookings" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Calendar className="w-4 h-4 mr-2 inline" />
+                Bookings
+              </TabsTrigger>
+              <TabsTrigger value="portfolio" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Upload className="w-4 h-4 mr-2 inline" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="about" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <User className="w-4 h-4 mr-2 inline" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="account" className="px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Settings className="w-4 h-4 mr-2 inline" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
-        {/* Desktop Card-based Navigation */}
-        <div className="hidden lg:grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          {/* Overview - Featured */}
-          <Card className="backdrop-blur-sm bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardContent className="p-4">
-              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="overview" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50" data-testid="tab-overview">
-                  <Home className="w-4 h-4 mr-2" />
-                  Overview
-                </TabsTrigger>
-              </TabsList>
-            </CardContent>
-          </Card>
-          
-          {/* Business Operations */}
-          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
-                <Briefcase className="w-4 h-4 mr-2" />
-                Business
-              </h3>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="leads" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Users className="w-4 h-4 mr-2" />
-                  Leads
-                </TabsTrigger>
-                <TabsTrigger value="quotes" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Quotes
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Cake className="w-4 h-4 mr-2" />
-                  Templates
-                </TabsTrigger>
-                <TabsTrigger value="contracts" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Contracts
-                </TabsTrigger>
-                <TabsTrigger value="bookings" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Bookings
-                </TabsTrigger>
-              </TabsList>
-            </CardContent>
-          </Card>
-
-          {/* Revenue Management */}
-          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
-                <DollarSign className="w-4 h-4 mr-2" />
-                Revenue
-              </h3>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="payments" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Payments
-                </TabsTrigger>
-                <TabsTrigger value="pricing" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Pricing
-                </TabsTrigger>
-              </TabsList>
-            </CardContent>
-          </Card>
-
-          {/* Marketing & Portfolio */}
-          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
-                <Monitor className="w-4 h-4 mr-2" />
-                Marketing
-              </h3>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="about" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <User className="w-4 h-4 mr-2" />
-                  About
-                </TabsTrigger>
-                <TabsTrigger value="portfolio" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Portfolio
-                </TabsTrigger>
-                <TabsTrigger value="branding" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Tag className="w-4 h-4 mr-2" />
-                  Branding
-                </TabsTrigger>
-              </TabsList>
-            </CardContent>
-          </Card>
-
-          {/* Account & Settings */}
-          <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="pb-2">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center">
-                <UserCog className="w-4 h-4 mr-2" />
-                Account
-              </h3>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <TabsList className="flex-col h-auto bg-transparent p-0 gap-1">
-                <TabsTrigger value="account" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </TabsTrigger>
-                <TabsTrigger value="domain" className="w-full justify-start rounded-lg text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white hover:bg-rose-50">
-                  <Globe className="w-4 h-4 mr-2" />
-                  Domain
-                </TabsTrigger>
-              </TabsList>
-            </CardContent>
-          </Card>
+        {/* Desktop Navigation - Simple List */}
+        <div className="hidden lg:block">
+          <div className="bg-white rounded-lg border border-slate-200">
+            <TabsList className="flex h-auto bg-transparent p-1 w-full">
+              <TabsTrigger value="overview" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md" data-testid="tab-overview">
+                <Home className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md relative">
+                <Users className="w-4 h-4 mr-2" />
+                Leads
+                {leadStats.new > 0 && (
+                  <Badge className="ml-2 bg-blue-500 text-white text-xs px-1.5 py-0.5">{leadStats.new}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="quotes" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <FileText className="w-4 h-4 mr-2" />
+                Quotes
+              </TabsTrigger>
+              <TabsTrigger value="contracts" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <FileCheck className="w-4 h-4 mr-2" />
+                Contracts
+              </TabsTrigger>
+              <TabsTrigger value="bookings" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <Calendar className="w-4 h-4 mr-2" />
+                Bookings
+              </TabsTrigger>
+              <TabsTrigger value="portfolio" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <Upload className="w-4 h-4 mr-2" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="about" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex-1 py-2.5 text-sm data-[state=active]:bg-slate-100 rounded-md">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-6">
+            {/* Quick Actions for New Users */}
+            {leadStats.total === 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to BakerIQ!</h3>
+                <p className="text-blue-700 mb-4">Get started by setting up your bakery profile:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => setActiveTab('about')}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Complete Profile
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => setActiveTab('portfolio')}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Add Portfolio
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => setActiveTab('pricing')}
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Set Pricing
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Today's Activity */}
-            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-rose-500" />
+            <Card className="bg-white border-slate-200">
+              <CardHeader className="pb-3">
+                <h3 className="text-sm font-medium text-slate-700 flex items-center">
+                  <TrendingUp className="w-4 h-4 mr-2 text-slate-400" />
                   Today's Activity
                 </h3>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">New Leads</span>
-                  <Badge variant="secondary" className="bg-blue-500 text-white">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">New Leads</span>
+                  <Badge variant="secondary" className="bg-slate-200 text-slate-700">
                     {leads?.filter(lead => {
                       const today = new Date();
                       const leadDate = new Date(lead.createdAt || '');
@@ -979,15 +885,15 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                     }).length || 0}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">Active Leads</span>
-                  <Badge variant="secondary" className="bg-purple-500 text-white">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">Active Leads</span>
+                  <Badge variant="secondary" className="bg-slate-200 text-slate-700">
                     {leadStats.new}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">Conversion Rate</span>
-                  <Badge variant="secondary" className="bg-emerald-500 text-white">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">Conversion Rate</span>
+                  <Badge variant="secondary" className="bg-slate-200 text-slate-700">
                     {leadStats.total > 0 ? Math.round((leadStats.booked / leadStats.total) * 100) : 0}%
                   </Badge>
                 </div>
@@ -995,17 +901,17 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
             </Card>
 
             {/* Quick Actions */}
-            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Plus className="w-5 h-5 mr-2 text-rose-500" />
+            <Card className="bg-white border-slate-200">
+              <CardHeader className="pb-3">
+                <h3 className="text-sm font-medium text-slate-700 flex items-center">
+                  <Plus className="w-4 h-4 mr-2 text-slate-400" />
                   Quick Actions
                 </h3>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
-                  className="w-full justify-start bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white" 
-                  variant="default"
+                  className="w-full justify-start" 
+                  variant="outline"
                   onClick={() => setActiveTab("leads")}
                   data-testid="button-quick-new-lead"
                 >
@@ -1013,8 +919,8 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                   View Leads
                 </Button>
                 <Button 
-                  className="w-full justify-start bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white" 
-                  variant="default"
+                  className="w-full justify-start" 
+                  variant="outline"
                   onClick={() => setActiveTab("quotes")}
                   data-testid="button-quick-new-quote"
                 >
@@ -1022,8 +928,8 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                   Create Quote
                 </Button>
                 <Button 
-                  className="w-full justify-start bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white" 
-                  variant="default"
+                  className="w-full justify-start" 
+                  variant="outline"
                   onClick={() => setActiveTab("bookings")}
                   data-testid="button-quick-calendar"
                 >
@@ -1031,8 +937,8 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                   View Calendar
                 </Button>
                 <Button 
-                  className="w-full justify-start bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white" 
-                  variant="default"
+                  className="w-full justify-start" 
+                  variant="outline"
                   onClick={() => setActiveTab("pricing")}
                   data-testid="button-quick-pricing"
                 >
@@ -1043,10 +949,10 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
             </Card>
 
             {/* Recent Activity Feed */}
-            <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-xl">
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Clock className="w-5 h-5 mr-2 text-rose-500" />
+            <Card className="bg-white border-slate-200">
+              <CardHeader className="pb-3">
+                <h3 className="text-sm font-medium text-slate-700 flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-slate-400" />
                   Recent Activity
                 </h3>
               </CardHeader>
@@ -1054,13 +960,13 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                 <div className="space-y-3">
                   {leads && leads.length > 0 ? (
                     leads.slice(0, 5).map((lead) => (
-                      <div key={lead.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-white" />
+                      <div key={lead.id} className="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded-lg transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-slate-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{lead.customerName}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm font-medium text-slate-900 truncate">{lead.customerName}</p>
+                          <p className="text-xs text-slate-500">
                             {lead.status === 'new' && 'New lead'}
                             {lead.status === 'quoted' && 'Quote sent'}
                             {lead.status === 'booked' && 'Booked'}
@@ -1079,8 +985,8 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                     ))
                   ) : (
                     <div className="text-center py-6">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No recent activity</p>
+                      <Users className="w-12 h-12 text-slate-200 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">No recent activity</p>
                       <p className="text-xs text-gray-400 mt-1">Start by adding your first lead</p>
                     </div>
                   )}
@@ -1389,10 +1295,13 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
         </TabsContent>
 
         <TabsContent value="leads">
-          <Card className="backdrop-blur-sm bg-white/90 border-white/30 shadow-2xl">
-            <CardHeader className="border-b border-gray-200">
+          <Card className="bg-white border-slate-200">
+            <CardHeader className="border-b border-slate-200">
               <div className="space-y-4">
-                <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Your Leads</h3>
+                <div>
+                  <h3 className="text-lg font-medium text-slate-900">Your Leads</h3>
+                  <p className="text-sm text-slate-500 mt-1">Manage and track potential customers</p>
+                </div>
                 
                 {/* Desktop: Horizontal layout */}
                 <div className="hidden md:flex items-center space-x-4">
