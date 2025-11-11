@@ -9,10 +9,11 @@ Preferred communication style: Simple, everyday language.
 ## Recent Updates (November 2025)
 - **Homepage Routing**: Changed root path (/) to show SaaS landing page instead of redirecting to login
 - **Dark Mode Improvements**: Fixed text contrast issues on colored boxes - updated to professional dark blue theme with proper WCAG-compliant contrast ratios
-- **Security Infrastructure**: Added comprehensive security modules (in progress):
+- **Unified Auth Principal** (Nov 11, 2025): Fixed baker login by implementing unified auth architecture where every baker has a mirrored row in the `users` table. This ensures the refresh_tokens foreign key constraint remains valid for both super admins and bakers, maintaining referential integrity without duplicating authentication infrastructure.
+- **Security Infrastructure**: Added comprehensive security modules:
   - Structured logging system with log levels
-  - Refresh token system with database storage and rotation
-  - Rate limiting for auth and API endpoints  
+  - Refresh token system with database storage and rotation (fully integrated with baker and user authentication)
+  - Rate limiting modules created (awaiting integration on auth endpoints)
   - Global error handling middleware
   - Health check endpoints (/healthz, /health/detailed)
   - Stripe webhook security with signature verification and idempotency

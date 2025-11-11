@@ -4,8 +4,11 @@ import crypto from "crypto";
 import Stripe from "stripe";
 import { databaseStorage } from "./databaseStorage";
 import { sendEmail, emailTemplates } from "./emailService";
-import { type InsertBaker } from "@shared/schema";
+import { type InsertBaker, users } from "@shared/schema";
 import { createRefreshToken, revokeUserTokens } from "./lib/refreshTokens.js";
+import { db } from "./db.js";
+import { sql } from "drizzle-orm";
+import { logger } from "./lib/logger.js";
 
 // Initialize Stripe for subscription management
 let stripe: Stripe | null = null;
@@ -388,19 +391,47 @@ export function setupAuthRoutes(app: Express) {
       const verificationTokenExpiry = databaseStorage.createVerificationTokenExpiry();
       const verificationUrl = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
 
-      // Hash password and create baker
+      // Hash password and create baker + users row atomically
       const hashedPassword = await databaseStorage.hashPassword(password);
-      const baker = await databaseStorage.createBaker({
-        name,
-        email,
-        password: hashedPassword,
-        address,
-        phone,
-        isActive: true,
-        subscriptionPlan,
-        emailVerified: false,
-        verificationToken,
-        verificationTokenExpiry
+      
+      // Wrap baker and users creation in a transaction for atomicity
+      const baker = await db.transaction(async (tx) => {
+        // Create baker first
+        const newBaker = await databaseStorage.createBaker({
+          name,
+          email,
+          password: hashedPassword,
+          address,
+          phone,
+          isActive: true,
+          subscriptionPlan,
+          emailVerified: false,
+          verificationToken,
+          verificationTokenExpiry
+        });
+
+        // Create corresponding users row for unified auth (required for refresh tokens)
+        try {
+          await tx.insert(users).values({
+            id: newBaker.id,
+            username: newBaker.email,
+            email: newBaker.email,
+            passwordHash: hashedPassword,
+            role: 'baker',
+            isActive: true,
+            createdAt: newBaker.createdAt,
+            updatedAt: newBaker.updatedAt
+          });
+        } catch (usersError: any) {
+          // If users insert fails, transaction will rollback baker creation
+          logger.error('Failed to create users row during baker registration', {
+            bakerId: newBaker.id,
+            error: usersError.message
+          });
+          throw usersError;
+        }
+
+        return newBaker;
       });
 
       // Send verification email
@@ -629,6 +660,45 @@ export function setupAuthRoutes(app: Express) {
           success: false,
           message: 'Please verify your email address before logging in. Check your email for the verification link.',
           requiresVerification: true
+        });
+      }
+
+      // Ensure baker has corresponding users row for refresh tokens (unified auth principal)
+      // Check for existing users row to avoid unique constraint violations
+      const existingUser = await db.select().from(users).where(sql`${users.username} = ${baker.email}`).limit(1);
+      
+      if (existingUser.length === 0) {
+        // No existing user - safe to insert
+        await db.insert(users).values({
+          id: baker.id,
+          username: baker.email,
+          email: baker.email,
+          passwordHash: baker.passwordHash,
+          role: 'baker',
+          isActive: baker.isActive,
+          createdAt: baker.createdAt,
+          updatedAt: baker.updatedAt
+        });
+      } else if (existingUser[0].id === baker.id) {
+        // User exists with same ID - update password if changed
+        await db.update(users)
+          .set({
+            passwordHash: baker.passwordHash,
+            email: baker.email,
+            isActive: baker.isActive,
+            updatedAt: sql`now()`
+          })
+          .where(sql`${users.id} = ${baker.id}`);
+      } else {
+        // Data inconsistency: user exists with same username but different ID
+        logger.error('Auth data inconsistency detected', {
+          bakerId: baker.id,
+          bakerEmail: baker.email,
+          existingUserId: existingUser[0].id
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'Authentication error. Please contact support.'
         });
       }
 
