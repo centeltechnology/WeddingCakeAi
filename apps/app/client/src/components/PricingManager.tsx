@@ -13,8 +13,10 @@ import { apiRequest } from '@/lib/queryClient';
 
 // Extract tenant slug from current URL path
 function getTenantSlugFromPath(): string | null {
-  const pathMatch = window.location.pathname.match(/^\/baker\/([^\/]+)/);
-  return pathMatch ? pathMatch[1] : null;
+  // Check both new dashboard path and legacy baker path patterns
+  const dashboardMatch = window.location.pathname.match(/^\/dashboard\/([^\/]+)/);
+  const bakerMatch = window.location.pathname.match(/^\/baker\/([^\/]+)/);
+  return dashboardMatch ? dashboardMatch[1] : (bakerMatch ? bakerMatch[1] : null);
 }
 import {
   DollarSign,
@@ -344,7 +346,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
             onClick={() => {
               const tenantSlug = getTenantSlugFromPath();
               if (tenantSlug) {
-                window.open(`/baker/${tenantSlug}/calculator`, '_blank');
+                window.open(`/calculator?tenant=${tenantSlug}`, '_blank');
               } else {
                 toast({
                   title: "Preview Unavailable",
