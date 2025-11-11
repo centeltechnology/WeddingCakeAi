@@ -146,10 +146,10 @@ function Router() {
           </BakerSlugWrapper>
         )}
       </Route>
-      <Route path="/dashboard/:id">
+      <Route path="/dashboard/:slug">
         {(params) => (
-          <BakerAuthWrapper bakerId={params.id}>
-            <BakerDashboard bakerId={params.id} />
+          <BakerAuthWrapper bakerSlug={params.slug}>
+            <BakerDashboard bakerSlug={params.slug} />
           </BakerAuthWrapper>
         )}
       </Route>

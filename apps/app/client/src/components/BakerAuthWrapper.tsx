@@ -5,10 +5,11 @@ import { makeAuthenticatedRequest } from "@/lib/csrf";
 
 interface BakerAuthWrapperProps {
   children: ReactNode;
-  bakerId: string;
+  bakerId?: string;
+  bakerSlug?: string;
 }
 
-export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
+export function BakerAuthWrapper({ children, bakerId, bakerSlug }: BakerAuthWrapperProps) {
   const [, setLocation] = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = checking
 
@@ -29,8 +30,12 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
         if (response.ok) {
           const baker = await response.json();
           
-          // Check if the authenticated baker matches the expected bakerId
-          if (baker.id === bakerId) {
+          // Check if the authenticated baker matches the expected bakerId or bakerSlug
+          const isMatch = bakerSlug 
+            ? baker.slug === bakerSlug 
+            : baker.id === bakerId;
+            
+          if (isMatch) {
             setIsAuthenticated(true);
           } else {
             // Token is valid but for a different baker
@@ -50,7 +55,7 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
     };
 
     checkAuth();
-  }, [bakerId]);
+  }, [bakerId, bakerSlug]);
 
   // Still checking authentication
   if (isAuthenticated === null) {

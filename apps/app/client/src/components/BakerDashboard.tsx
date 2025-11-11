@@ -74,10 +74,11 @@ import AiQuickTiles from "./dashboard/AiQuickTiles";
 import type { Lead, Baker } from "@shared/schema";
 
 interface BakerDashboardProps {
-  bakerId: string;
+  bakerId?: string;
+  bakerSlug?: string;
 }
 
-export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
+export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,33 +107,39 @@ export default function BakerDashboard({ bakerId }: BakerDashboardProps) {
     });
   };
 
+  // Use slug if available, otherwise fall back to bakerId
+  const bakerIdentifier = bakerSlug || bakerId || '';
+
   const { data: baker } = useQuery<Baker>({
-    queryKey: ['/api/bakers', bakerId],
+    queryKey: ['/api/bakers', bakerIdentifier],
     queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}`);
+      const response = await fetch(`/api/bakers/${bakerIdentifier}`);
       if (!response.ok) throw new Error('Failed to fetch baker');
       return response.json();
-    }
+    },
+    enabled: !!bakerIdentifier
   });
 
   // Fetch baker domain configuration
   const { data: domainConfig } = useQuery({
-    queryKey: ['/api/bakers', bakerId, 'domain'],
+    queryKey: ['/api/bakers', bakerIdentifier, 'domain'],
     queryFn: async () => {
-      const response = await fetch(`/api/bakers/${bakerId}/domain`);
+      const response = await fetch(`/api/bakers/${bakerIdentifier}/domain`);
       if (!response.ok) return { subdomain: null, customDomain: null, isActive: false };
       return response.json();
-    }
+    },
+    enabled: !!bakerIdentifier
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery<Lead[]>({
-    queryKey: ['/api/bakers', bakerId, 'leads'],
+    queryKey: ['/api/bakers', bakerIdentifier, 'leads'],
     queryFn: async () => {
       const { makeAuthenticatedRequest } = await import('@/lib/csrf');
-      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerId}/leads`);
+      const response = await makeAuthenticatedRequest(`/api/bakers/${bakerIdentifier}/leads`);
       if (!response.ok) throw new Error('Failed to fetch leads');
       return response.json();
-    }
+    },
+    enabled: !!bakerIdentifier
   });
 
   const updateLeadMutation = useMutation({

@@ -78,8 +78,8 @@ export default function BakerLogin() {
           description: `Welcome back, ${result.baker.name}!`,
         });
 
-        // Redirect to V1 dashboard (components/BakerDashboard.tsx) using baker ID
-        setLocation(`/dashboard/${result.baker.id}`);
+        // Redirect to V1 dashboard (components/BakerDashboard.tsx) using baker slug for SEO-friendly URL
+        setLocation(`/dashboard/${result.baker.slug}`);
       } else if (result.requiresVerification) {
         // Handle email verification required
         setShowVerificationBanner(true);
