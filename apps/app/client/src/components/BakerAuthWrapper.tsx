@@ -1,5 +1,7 @@
 import React, { useState, useEffect, ReactNode } from "react";
 import { useLocation } from "wouter";
+import { tokenManager } from "@/lib/auth";
+import { makeAuthenticatedRequest } from "@/lib/csrf";
 
 interface BakerAuthWrapperProps {
   children: ReactNode;
@@ -13,20 +15,16 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check for baker token in localStorage
-        const token = localStorage.getItem("baker_token");
+        // Check for baker token using centralized token manager
+        const token = tokenManager.getToken();
         
         if (!token) {
           setIsAuthenticated(false);
           return;
         }
 
-        // Verify token by calling /api/bakers/me with JWT authentication
-        const response = await fetch("/api/bakers/me", {
-          headers: {
-            "x-baker-token": token
-          }
-        });
+        // Verify token by calling /api/bakers/me with proper Authorization header
+        const response = await makeAuthenticatedRequest("/api/bakers/me");
 
         if (response.ok) {
           const baker = await response.json();
@@ -36,17 +34,17 @@ export function BakerAuthWrapper({ children, bakerId }: BakerAuthWrapperProps) {
             setIsAuthenticated(true);
           } else {
             // Token is valid but for a different baker
-            localStorage.removeItem("baker_token");
+            tokenManager.clearToken();
             setIsAuthenticated(false);
           }
         } else {
           // Token is invalid or expired
-          localStorage.removeItem("baker_token");
+          tokenManager.clearToken();
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        localStorage.removeItem("baker_token");
+        tokenManager.clearToken();
         setIsAuthenticated(false);
       }
     };

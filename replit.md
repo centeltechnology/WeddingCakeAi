@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 - **Homepage Routing**: Changed root path (/) to show SaaS landing page instead of redirecting to login
 - **Dark Mode Improvements**: Fixed text contrast issues on colored boxes - updated to professional dark blue theme with proper WCAG-compliant contrast ratios
 - **Unified Auth Principal** (Nov 11, 2025): Fixed baker login by implementing unified auth architecture where every baker has a mirrored row in the `users` table. This ensures the refresh_tokens foreign key constraint remains valid for both super admins and bakers, maintaining referential integrity without duplicating authentication infrastructure.
-- **Login Redirect Fix** (Nov 11, 2025): Fixed baker login redirect issue. Login now properly redirects to `/dashboard/:id` (V1 dashboard at `components/BakerDashboard.tsx`) instead of the broken `/baker/:slug/dashboard` route. Updated to use tokenManager for consistent token handling across auth guards.
+- **Login Redirect Fix** (Nov 11, 2025): Fixed baker login redirect issue. Login now properly redirects to `/dashboard/:id` (V1 dashboard at `components/BakerDashboard.tsx`) instead of the broken `/baker/:slug/dashboard` route. Updated to use tokenManager for consistent token handling across auth guards. Fixed BakerAuthWrapper to use `makeAuthenticatedRequest()` with proper `Authorization: Bearer` header instead of custom `x-baker-token` header, resolving 401 errors that caused redirect loops.
 - **Security Infrastructure**: Added comprehensive security modules:
   - Structured logging system with log levels
   - Refresh token system with database storage and rotation (fully integrated with baker and user authentication)
