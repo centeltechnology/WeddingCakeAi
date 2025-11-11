@@ -466,6 +466,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                         checked={size.isActive !== false}
                         onCheckedChange={(checked) => updateCakeSize(index, { isActive: checked })}
                         data-testid={`switch-size-active-${size.size}`}
+                        className="data-[state=checked]:bg-green-600"
                       />
                     </div>
                   </div>
@@ -532,6 +533,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                         checked={shape.isActive !== false}
                         onCheckedChange={(checked) => updateShape(index, { isActive: checked })}
                         data-testid={`switch-shape-active-${shape.id}`}
+                        className="data-[state=checked]:bg-green-600"
                       />
                     </div>
                   </div>
@@ -585,6 +587,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                         checked={flavor.isActive !== false}
                         onCheckedChange={(checked) => updateFlavor(index, { isActive: checked })}
                         data-testid={`switch-flavor-active-${flavor.id}`}
+                        className="data-[state=checked]:bg-green-600"
                       />
                     </div>
                   </div>
@@ -652,6 +655,7 @@ export function PricingManager({ bakerId, className }: PricingManagerProps) {
                                     checked={decoration.isActive}
                                     onCheckedChange={(checked) => updateDecoration(index, { isActive: checked })}
                                     data-testid={`switch-decoration-active-${decoration.id}`}
+                                    className="data-[state=checked]:bg-green-600"
                                   />
                                   <span className="text-xs text-muted-foreground">
                                     {decoration.isActive ? "Visible" : "Hidden"}
