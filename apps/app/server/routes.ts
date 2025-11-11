@@ -1063,11 +1063,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current authenticated baker
   app.get("/api/bakers/me", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
-      if (!req.user?.userId) {
+      if (!req.user?.id) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const baker = await storage.getBaker(req.user.userId);
+      const baker = await storage.getBaker(req.user.id);
       if (!baker) {
         return res.status(404).json({ message: "Baker not found" });
       }
@@ -1544,7 +1544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/app/tasks", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       
       if (!tenantId || !userId) {
         return res.status(400).json({ error: "Authentication required" });
@@ -1566,7 +1566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/app/tasks", ensureAuthUnified, async (req: AuthenticatedRequest, res) => {
     try {
       const tenantId = getTenantId(req);
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       
       if (!tenantId || !userId) {
         return res.status(400).json({ error: "Authentication required" });
@@ -9353,7 +9353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get advertiser credits (advertiser-authenticated)
   app.get('/api/advertisers/me/credits', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
 
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -9394,7 +9394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create campaign (advertiser only)
   app.post('/api/advertisers/campaigns', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -9440,7 +9440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Preflight campaign - get eligible audience count
   app.get('/api/advertisers/campaigns/:id/preflight', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -9569,7 +9569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit campaign for review
   app.post('/api/advertisers/campaigns/:id/submit', ensureAuthUnified, requireRole('advertiser'), async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
