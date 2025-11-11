@@ -325,39 +325,82 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
           breakdown: { base: pricing.baseCake, complexityMultiplier: 1, addOns: pricing.decorations }
         });
         toast({
-          title: "Quote Request Sent!",
+          title: "✨ Quote Request Sent Successfully!",
           description: data.quoteId 
-            ? `Your request has been received. We'll contact you soon!`
-            : `Thank you! We've received your inquiry and will be in touch.`,
+            ? `Your request has been received. We'll contact you within 24 hours!`
+            : `Thank you! We've received your inquiry and will be in touch within 24 hours.`,
+          className: "bg-green-50 border-green-200",
         });
         setStep(4);
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (data.range) {
         // Legacy response format
         setQuoteResponse(data);
         toast({
-          title: "Quote Request Sent!",
-          description: `Your estimated price range: $${data.range.low} - $${data.range.high}`,
+          title: "🎂 Quote Request Sent!",
+          description: `Estimated: $${data.range.low} - $${data.range.high}. We'll contact you with details soon!`,
+          className: "bg-green-50 border-green-200",
         });
         setStep(4);
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         // Fallback for unexpected format
         toast({
-          title: "Request Received",
-          description: "We'll get back to you soon!",
+          title: "✅ Request Received",
+          description: "Thank you! We'll get back to you within 24 hours.",
+          className: "bg-green-50 border-green-200",
         });
         setStep(4);
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Quote submission error:', error);
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          "There was an issue sending your quote request. Please try again.";
+      
       toast({
-        title: "Error",
-        description: "There was an issue sending your quote request. Please try again.",
+        title: "⚠️ Unable to Send Quote",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Keep user on the same step so they can try again
+      // Don't reset form data
     },
   });
 
   const handleSubmit = async () => {
+    // Validate required fields
+    const missingFields = [];
+    if (!customerInfo.name) missingFields.push("Name");
+    if (!customerInfo.email) missingFields.push("Email");
+    if (!customerInfo.eventDate) missingFields.push("Event Date");
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "📝 Missing Information",
+        description: `Please fill in the required fields: ${missingFields.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      toast({
+        title: "📧 Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const hasDelivery = customerInfo.venue ? true : false;
     const deliveryMiles = hasDelivery ? 10 : 0;
 
@@ -884,7 +927,9 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
               <div className="p-8 space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Your Name *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Your Name <span className="text-red-500 font-semibold">*</span>
+                    </Label>
                     <Input
                       value={customerInfo.name}
                       onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
@@ -895,7 +940,9 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Email Address *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Email Address <span className="text-red-500 font-semibold">*</span>
+                    </Label>
                     <Input
                       type="email"
                       value={customerInfo.email}
@@ -938,7 +985,9 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Event Date *</Label>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Event Date <span className="text-red-500 font-semibold">*</span>
+                    </Label>
                     <Input
                       type="date"
                       value={customerInfo.eventDate}

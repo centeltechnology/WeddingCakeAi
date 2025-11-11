@@ -115,6 +115,10 @@ import MarketplaceListing from "@/pages/MarketplaceListing";
 import { HelmetProvider } from 'react-helmet-async';
 
 function Router() {
+  // Debug the current location
+  const [location] = useLocation();
+  console.log('Current location:', location);
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -175,7 +179,6 @@ function Router() {
       <Route path="/baker-forgot-password" component={BakerForgotPassword} />
       <Route path="/baker/reset-password" component={BakerResetPassword} />
       <Route path="/baker-reset-password" component={BakerResetPassword} />
-      <Route path="/login" component={BakerLogin} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/auth-test" component={AuthTest} />
       <Route path="/super-admin-setup" component={SuperAdminSetup} />
@@ -194,7 +197,7 @@ function Router() {
           <BakerCalculator />
         </AuthGuard>
       </Route>
-      {/* Public Calculator - redirects to /baker/calculator if authenticated */}
+      {/* Public Calculator route */}
       <Route path="/calculator" component={PublicCalculatorV1Redirect} />
       {/* Direct baker ID calculator route - keep after /calculator to avoid matching issues */}
       <Route path="/calculator/:bakerId">
