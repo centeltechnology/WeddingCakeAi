@@ -441,7 +441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/bakers/:bakerId/domain', async (req, res) => {
     try {
       const { bakerId } = req.params;
-      const baker = await storage.getBaker(bakerId);
+      let baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        baker = await storage.getBakerBySlug(bakerId);
+      }
       
       if (!baker) {
         return res.status(404).json({ error: 'Baker not found' });

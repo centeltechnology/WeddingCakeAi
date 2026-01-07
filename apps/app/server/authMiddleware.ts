@@ -197,8 +197,11 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
       });
     }
 
-    // Load baker data to verify it exists
-    const baker = await storage.getBaker(bakerId);
+    // Load baker data to verify it exists - try by ID first, then by slug
+    let baker = await storage.getBaker(bakerId);
+    if (!baker) {
+      baker = await storage.getBakerBySlug(bakerId);
+    }
     if (!baker) {
       return res.status(404).json({ 
         error: 'Baker not found',
@@ -206,8 +209,11 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
       });
     }
 
+    // Update params to use the actual baker ID for downstream use
+    req.params.bakerId = baker.id;
+
     // Check if user is accessing their own baker data
-    if (user.role === 'baker' && user.userId !== bakerId) {
+    if (user.role === 'baker' && user.userId !== baker.id) {
       return res.status(403).json({ 
         error: 'Access forbidden',
         message: 'You can only access your own data'
@@ -221,7 +227,7 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
     }
 
     // For baker role, ensure they're accessing their own data
-    if (user.role === 'baker' && user.userId === bakerId) {
+    if (user.role === 'baker' && user.userId === baker.id) {
       req.baker = baker;
       return next();
     }
