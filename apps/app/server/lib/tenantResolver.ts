@@ -15,23 +15,42 @@ export interface ResolvedTenant {
  */
 export async function resolveTenantBySlug(slug: string): Promise<ResolvedTenant | null> {
   try {
+    if (!slug || typeof slug !== 'string') {
+      console.log('[tenantResolver] Empty or invalid slug provided:', slug);
+      return null;
+    }
+    
+    const trimmedSlug = slug.trim();
+    console.log('[tenantResolver] Looking up baker by slug:', trimmedSlug);
+    
     // Find baker by slug
     const [baker] = await db
       .select()
       .from(bakers)
-      .where(eq(bakers.slug, slug))
+      .where(eq(bakers.slug, trimmedSlug))
       .limit(1);
+
+    console.log('[tenantResolver] Baker found:', baker ? `id=${baker.id}, tenantId=${baker.tenantId}` : 'NOT FOUND');
 
     if (!baker || !baker.tenantId) {
       return null;
     }
 
-    // Get tenant profile
-    const [profile] = await db
-      .select()
-      .from(tenantProfiles)
-      .where(eq(tenantProfiles.tenantId, baker.tenantId))
-      .limit(1);
+    // Get tenant profile (optional - table may not exist)
+    let profile = null;
+    try {
+      const [profileResult] = await db
+        .select()
+        .from(tenantProfiles)
+        .where(eq(tenantProfiles.tenantId, baker.tenantId))
+        .limit(1);
+      profile = profileResult;
+    } catch (profileError: any) {
+      // Table may not exist - this is OK, profile is optional
+      if (profileError?.code !== '42P01') {
+        console.warn('[tenantResolver] Error fetching profile (non-critical):', profileError.message);
+      }
+    }
 
     return {
       id: baker.tenantId,

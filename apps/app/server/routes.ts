@@ -6565,26 +6565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Test if we can bypass storage and check database directly
-      console.log('DEBUG: Testing hardcoded bypass - username:', username);
-      if (username === 'bwadmin' && password === '@@leXander001') {
-        console.log('DEBUG: Hardcoded bypass matched!');
-        const token = jwt.sign(
-          { 
-            userId: 'super-admin-1', 
-            username: 'bwadmin', 
-            role: 'super_admin' 
-          },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-        return res.json({
-          success: true,
-          token: token,
-          message: 'Authentication successful'
-        });
-      }
-      console.log('DEBUG: Hardcoded bypass not matched, continuing...');
+      // Check for super admin credentials in database
 
       // Simple direct database check to bypass storage issues
       const allUsers = await storage.getUsersWithRole('super_admin');
