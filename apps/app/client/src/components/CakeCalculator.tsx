@@ -198,37 +198,6 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
     staleTime: 5 * 60 * 1000,
   });
 
-  // Show loading state for slug-based fetch
-  if (tenantSlug && slugLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading calculator...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state for failed slug fetch
-  if (tenantSlug && (slugError || (!slugLoading && !slugSettings))) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Card className="max-w-md w-full mx-4">
-          <CardContent className="p-6 text-center">
-            <div className="text-red-500 mb-4">
-              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Calculator Not Found</h2>
-            <p className="text-slate-600">This bakery calculator could not be found. Please check the link and try again.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Merge slug-based settings with regular fetched data
   const effectiveBaker = tenantSlug ? slugSettings : baker;
   const effectivePricingConfig = tenantSlug ? slugSettings?.pricing : pricingConfig;
@@ -548,6 +517,37 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   //     </div>
   //   );
   // }
+
+  // Show loading state for slug-based fetch (after all hooks)
+  if (tenantSlug && slugLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading calculator...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state for failed slug fetch (after all hooks)
+  if (tenantSlug && (slugError || (!slugLoading && !slugSettings))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-6 text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Calculator Not Found</h2>
+            <p className="text-slate-600">This bakery calculator could not be found. Please check the link and try again.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-pink-100 ${className || ''}`}>
