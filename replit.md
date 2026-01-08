@@ -17,8 +17,12 @@ Preferred communication style: Simple, everyday language.
 - **Clean Calculator URLs**: Added `/c/:slug` route for easy sharing (e.g., `bakeriq.app/c/sweet-treats-bakery`)
 - **Public Calculator Settings API**: New `GET /api/public/calculator/settings?tenant=:slug` endpoint returns baker pricing config by slug
 - **Slug-Based Calculator**: CakeCalculator now fetches pricing via slug when `tenantSlug` prop provided (for public routes)
-- **Calculator-to-Quote Data Flow Fixed**: 
-  - CakeCalculator has two submission paths: primary (with slug) uses public endpoint, fallback (authenticated without slug) uses internal `/api/leads` endpoint
+- **Calculator Data Corruption Fix (Jan 8, 2026)**: 
+  - Removed broken fallback path that was overwriting existing quotes instead of creating leads
+  - Calculator now REQUIRES a bakery slug for submission - no fallback paths
+  - All submissions go through `/api/public/calculator/submit?tenant=:slug` endpoint
+  - Clear error message shown if slug is not configured
+- **Quote Pre-Fill from Calculator**: 
   - `ensureQuoteForLead` helper pre-fills quote items from calculator data (tiers, decorations, delivery, tax)
   - Handles multiple payload formats: current (selections directly), wrapped (`{ selections }`), and legacy (root-level totals)
   - Uses `toNumber()` helper for safe type coercion from strings or numbers

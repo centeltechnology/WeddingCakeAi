@@ -309,70 +309,32 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
   const submitQuoteRequest = useMutation({
     mutationFn: async (payload: any) => {
-      // Resolve slug from prop or baker data
+      // Resolve slug from prop or baker data - slug is REQUIRED for calculator submission
       const slug = tenantSlug || (effectiveBaker as any)?.slug;
       
-      if (slug) {
-        // Primary path: Use public lead-only endpoint with slug
-        const endpoint = `/api/public/calculator/submit?tenant=${encodeURIComponent(slug)}`;
-        
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to submit quote");
-        }
-
-        return response.json();
+      if (!slug) {
+        // No fallback - slug is required to prevent data corruption
+        throw new Error("Calculator requires a bakery link. Please use the public calculator URL or configure your bakery slug in settings.");
       }
       
-      // Fallback for authenticated baker context without slug
-      // Derive bakerId from prop or effectiveBaker
-      const effectiveBakerId = bakerId || (effectiveBaker as any)?.id;
+      // Use public lead-only endpoint with slug - this is the ONLY supported path
+      const endpoint = `/api/public/calculator/submit?tenant=${encodeURIComponent(slug)}`;
       
-      if (!effectiveBakerId) {
-        throw new Error("Unable to submit - baker context not available. Please try again or contact support.");
-      }
-      
-      // Map calculator payload to insertLeadSchema format
-      // Store payload.selections directly (NOT wrapped) to match public endpoint format
-      // Public endpoint stores: calculatorPayload = selections (the object directly)
-      const leadPayload = {
-        customerName: payload.name || 'Calculator Lead',
-        customerEmail: payload.email || '',
-        customerPhone: payload.phone || null,
-        weddingDate: payload.selections?.eventDate || null,
-        guestCount: payload.selections?.guestCount || null,
-        budget: payload.budget || null,
-        source: 'calculator',
-        status: 'new',
-        calculatorPayload: payload.selections || null,
-        notes: payload.notes || null,
-        bakerId: effectiveBakerId,
-      };
-      
-      const response = await fetch('/api/leads', {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         credentials: "include",
-        body: JSON.stringify(leadPayload)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || "Failed to submit quote");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to submit quote request");
       }
 
-      const lead = await response.json();
-      return { leadId: lead.id };
+      return response.json();
     },
     onSuccess: (data) => {
       // Handle new endpoint response format (leadId with optional quoteId) or legacy format
