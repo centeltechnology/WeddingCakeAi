@@ -1,12 +1,24 @@
 # BakerIQ
 
 ## Overview
-BakerIQ is a professional SaaS platform designed for bakeries to modernize business management. It offers a cohesive, high-contrast UI with improved dark mode contrast (updated Nov 2025) and slate-based design system. Key capabilities include CRM, quotes, contracts, payments, and email automation, all tailored to enhance efficiency and customer engagement for bakers. The platform aims to be the leading solution in the bakery business management sector.
+BakerIQ is a lead capture and quote management platform for bakeries. The MVP focuses on the core workflow: customers use a pricing calculator to get cake estimates, bakers receive leads and create quotes. The platform is currently free (no payment tiers), focusing on proving value before adding complexity.
+
+Key MVP capabilities:
+- **Public Calculator**: Clean URLs at `/c/:slug` (e.g., `/c/sweet-treats-bakery`) for easy sharing on business cards
+- **Lead Capture**: Calculator submissions create leads (not auto-quotes) for baker review
+- **Quote Builder**: Bakers manually create quotes when ready, with calculator data pre-fill
+- **Customer Management**: Basic CRM with lead inbox and customer list
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Updates (November 2025)
+## Recent Updates (January 2026)
+- **MVP Simplification**: Streamlined to core lead capture workflow. Calculator creates leads only (not auto-quotes). Bakers manually create quotes when ready.
+- **Clean Calculator URLs**: Added `/c/:slug` route for easy sharing (e.g., `bakeriq.app/c/sweet-treats-bakery`)
+- **Public Calculator Settings API**: New `GET /api/public/calculator/settings?tenant=:slug` endpoint returns baker pricing config by slug
+- **Slug-Based Calculator**: CakeCalculator now fetches pricing via slug when `tenantSlug` prop provided (for public routes)
+
+## Prior Updates (November 2025)
 - **Homepage Routing**: Changed root path (/) to show SaaS landing page instead of redirecting to login
 - **Dark Mode Improvements**: Fixed text contrast issues on colored boxes - updated to professional dark blue theme with proper WCAG-compliant contrast ratios
 - **Unified Auth Principal** (Nov 11, 2025): Fixed baker login by implementing unified auth architecture where every baker has a mirrored row in the `users` table. This ensures the refresh_tokens foreign key constraint remains valid for both super admins and bakers, maintaining referential integrity without duplicating authentication infrastructure.

@@ -170,7 +170,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   // Fetch baker information for branding - with retry and fallback
   const { data: baker } = useQuery({
     queryKey: [`/api/bakers/${bakerId}`],
-    enabled: !!bakerId,
+    enabled: !!bakerId && !tenantSlug,
     retry: 1,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -179,22 +179,39 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
   // Fetch dynamic pricing configuration - with retry and fallback
   const { data: pricingConfig } = useQuery({
     queryKey: [`/api/bakers/${bakerId}/pricing`],
-    enabled: !!bakerId,
+    enabled: !!bakerId && !tenantSlug,
     retry: 1,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Fetch settings by slug for public calculator (MVP)
+  const { data: slugSettings } = useQuery({
+    queryKey: [`/api/public/calculator/settings`, tenantSlug],
+    queryFn: async () => {
+      const res = await fetch(`/api/public/calculator/settings?tenant=${encodeURIComponent(tenantSlug || '')}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!tenantSlug,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Merge slug-based settings with regular fetched data
+  const effectiveBaker = tenantSlug ? slugSettings : baker;
+  const effectivePricingConfig = tenantSlug ? slugSettings?.pricing : pricingConfig;
+
   // Use dynamic pricing or fallback to defaults (memoized for performance)
   // Note: PricingManager ensures all arrays are populated with defaults on save,
   // so we can safely use WYSIWYG (what baker configured is what customers see)
   const CAKE_SIZES = useMemo(() => {
-    const dynamicSizes = (pricingConfig as any)?.cakeSizes?.filter((s: any) => s.isActive !== false);
+    const dynamicSizes = (effectivePricingConfig as any)?.cakeSizes?.filter((s: any) => s.isActive !== false);
     return (dynamicSizes && dynamicSizes.length > 0) ? dynamicSizes : DEFAULT_CAKE_SIZES;
-  }, [pricingConfig]);
+  }, [effectivePricingConfig]);
   
   const CAKE_FLAVORS = useMemo(() => {
-    const dynamicFlavors = (pricingConfig as any)?.flavors?.filter((f: any) => f.isActive !== false);
+    const dynamicFlavors = (effectivePricingConfig as any)?.flavors?.filter((f: any) => f.isActive !== false);
     if (dynamicFlavors && dynamicFlavors.length > 0) {
       return dynamicFlavors.map((f: any) => ({
         id: f.id,
@@ -204,20 +221,20 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
       }));
     }
     return DEFAULT_CAKE_FLAVORS;
-  }, [pricingConfig]);
+  }, [effectivePricingConfig]);
   
   const DECORATION_OPTIONS = useMemo(() => {
-    const dynamicDecorations = (pricingConfig as any)?.decorations?.filter((d: any) => d.isActive !== false);
+    const dynamicDecorations = (effectivePricingConfig as any)?.decorations?.filter((d: any) => d.isActive !== false);
     return (dynamicDecorations && dynamicDecorations.length > 0) ? dynamicDecorations : DEFAULT_DECORATION_OPTIONS;
-  }, [pricingConfig]);
+  }, [effectivePricingConfig]);
   
   const SHAPE_OPTIONS = useMemo(() => {
-    const dynamicShapes = (pricingConfig as any)?.shapes?.filter((s: any) => s.isActive !== false);
+    const dynamicShapes = (effectivePricingConfig as any)?.shapes?.filter((s: any) => s.isActive !== false);
     return (dynamicShapes && dynamicShapes.length > 0) ? dynamicShapes : CAKE_SHAPES;
-  }, [pricingConfig]);
+  }, [effectivePricingConfig]);
   
-  const TAX_RATE = ((pricingConfig as any)?.taxRate || 8.75) / 100;
-  const DELIVERY_FEE = (pricingConfig as any)?.deliverySettings?.baseDeliveryFee || 50;
+  const TAX_RATE = ((effectivePricingConfig as any)?.taxRate || 8.75) / 100;
+  const DELIVERY_FEE = (effectivePricingConfig as any)?.deliverySettings?.baseDeliveryFee || 50;
 
   // Add initial tier
   useEffect(() => {

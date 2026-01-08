@@ -3037,6 +3037,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/public/calculator/settings - Get calculator settings/pricing by slug
+  // Returns full baker data including branding for public calculator
+  app.get('/api/public/calculator/settings', async (req, res) => {
+    try {
+      const slug = (req.query.tenant as string) || '';
+      if (!slug) {
+        return res.status(400).json({ error: 'tenant_required' });
+      }
+      
+      const { resolveTenantBySlug } = await import('./lib/tenantResolver');
+      const tenant = await resolveTenantBySlug(slug);
+      if (!tenant?.id || !tenant?.baker) {
+        return res.status(404).json({ error: 'tenant_not_found' });
+      }
+      
+      // Return full baker data for calculator including branding
+      const baker = tenant.baker;
+      res.json({
+        id: baker.id,
+        name: baker.name,
+        slug: baker.slug,
+        logo: baker.logo || null,
+        brandColor: baker.brandColor || null,
+        theme: baker.theme || null,
+        welcomeHeadline: baker.welcomeHeadline || null,
+        welcomeSubheadline: baker.welcomeSubheadline || null,
+        cakeSizes: baker.cakeSizes || [],
+        flavors: baker.flavors || [],
+        decorations: baker.decorations || [],
+        shapes: baker.shapes || [],
+        taxRate: baker.taxRate || 8.75,
+        deliverySettings: baker.deliverySettings || { baseDeliveryFee: 50 },
+        pricing: {
+          cakeSizes: baker.cakeSizes || [],
+          flavors: baker.flavors || [],
+          decorations: baker.decorations || [],
+          shapes: baker.shapes || [],
+          taxRate: baker.taxRate || 8.75,
+          deliverySettings: baker.deliverySettings || { baseDeliveryFee: 50 }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching calculator settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
   // POST /api/public/calculator/submit - Public calculator submission endpoint
   app.post('/api/public/calculator/submit', async (req, res) => {
     try {
@@ -3109,7 +3156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 5) OPTIONAL: create a draft quote now (if you want)
       let createdQuoteId: string | null = null;
-      const createDraftQuoteNow = true; // set false if you don't want auto-quote
+      const createDraftQuoteNow = false; // MVP: leads only, manual quote creation
       if (createDraftQuoteNow) {
         createdQuoteId = randomUUID();
         const quoteNumber = `Q-${Date.now()}`;
@@ -10589,13 +10636,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tenant Profile endpoints
   app.get('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const userEmail = (req.session as any).email;
-      if (!userEmail) {
+      // Use unified auth - get baker by ID
+      const bakerId = req.user?.id;
+      if (!bakerId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Get baker and tenant info by email
-      const baker = await storage.getBakerByEmail(userEmail);
+      // Get baker and tenant info by ID
+      const baker = await storage.getBaker(bakerId);
       if (!baker?.tenantId) {
         return res.status(404).json({ error: 'Tenant not found' });
       }
@@ -10619,13 +10667,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/me/profile', ensureAuthUnified, async (req: UnifiedRequest, res) => {
     try {
-      const userEmail = (req.session as any).email;
-      if (!userEmail) {
+      // Use unified auth - get baker by ID
+      const bakerId = req.user?.id;
+      if (!bakerId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Get baker and tenant info by email
-      const baker = await storage.getBakerByEmail(userEmail);
+      // Get baker and tenant info by ID
+      const baker = await storage.getBaker(bakerId);
       if (!baker?.tenantId) {
         return res.status(404).json({ error: 'Tenant not found' });
       }

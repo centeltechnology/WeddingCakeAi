@@ -199,6 +199,10 @@ function Router() {
       </Route>
       {/* Public Calculator route */}
       <Route path="/calculator" component={PublicCalculatorV1Redirect} />
+      {/* Clean calculator URL: /c/:slug - easy to share */}
+      <Route path="/c/:slug">
+        {(params) => <CakeCalculator tenantSlug={params.slug} />}
+      </Route>
       {/* Direct baker ID calculator route - keep after /calculator to avoid matching issues */}
       <Route path="/calculator/:bakerId">
         {(params) => <CakeCalculator bakerId={params.bakerId} />}

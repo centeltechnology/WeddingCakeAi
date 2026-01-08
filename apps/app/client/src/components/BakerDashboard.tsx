@@ -866,6 +866,44 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
               </div>
             )}
 
+            {/* Your Calculator Link - MVP Priority */}
+            {bakerSlug && (
+              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1">Your Calculator Link</h3>
+                      <p className="text-orange-100 text-sm mb-3">Share this with customers to capture leads</p>
+                      <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
+                        <code className="text-sm font-mono">{window.location.origin}/c/{bakerSlug}</code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-white hover:bg-white/20 h-7 px-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/c/${bakerSlug}`);
+                            toast({ title: 'Link copied!', description: 'Calculator link copied to clipboard' });
+                          }}
+                          data-testid="button-copy-calculator-link"
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      className="bg-white text-orange-600 hover:bg-orange-50"
+                      onClick={() => window.open(`/c/${bakerSlug}`, '_blank')}
+                      data-testid="button-preview-calculator"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Preview
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Today's Activity */}
             <Card className="bg-white border-slate-200">
               <CardHeader className="pb-3">
@@ -1002,10 +1040,12 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
             <TaskList />
           </div>
 
-          {/* AI Tools Card */}
-          <div className="mt-6">
-            <AiQuickTiles />
-          </div>
+          {/* AI Tools Card - Hidden for MVP */}
+          {import.meta.env.VITE_AI_ENABLED === 'true' && (
+            <div className="mt-6">
+              <AiQuickTiles />
+            </div>
+          )}
 
           {/* Get Started Tips - Only show if new user */}
           {leads && leads.length === 0 && (

@@ -13,6 +13,7 @@ const JWT_SECRET = (() => {
 
 interface UnifiedUser {
   id: string;
+  userId: string; // Alias for backwards compatibility
   role: string;
   tenantId: string | null;
 }
@@ -29,8 +30,10 @@ export interface UnifiedRequest extends Request {
 export function ensureAuthUnified(req: UnifiedRequest, res: Response, next: NextFunction) {
   // 1. Check session first (primary auth method)
   if ((req.session as any)?.userId) {
+    const userId = (req.session as any).userId;
     req.user = {
-      id: (req.session as any).userId,
+      id: userId,
+      userId: userId, // Backwards compatibility
       role: (req.session as any).role || "baker",
       tenantId: (req.session as any).tenantId || (req.session as any).tenant_id || null,
     };
@@ -43,8 +46,10 @@ export function ensureAuthUnified(req: UnifiedRequest, res: Response, next: Next
     try {
       const token = auth.slice(7);
       const payload: any = jwt.verify(token, JWT_SECRET);
+      const userId = payload.sub || payload.id || payload.userId;
       req.user = {
-        id: payload.sub || payload.id || payload.userId,
+        id: userId,
+        userId: userId, // Backwards compatibility
         role: payload.role || "baker",
         tenantId: payload.tenantId || payload.tenant_id || null,
       };
@@ -59,8 +64,10 @@ export function ensureAuthUnified(req: UnifiedRequest, res: Response, next: Next
   if (bakerToken) {
     try {
       const payload: any = jwt.verify(bakerToken, JWT_SECRET);
+      const userId = payload.sub || payload.id || payload.userId;
       req.user = {
-        id: payload.sub || payload.id || payload.userId,
+        id: userId,
+        userId: userId, // Backwards compatibility
         role: payload.role || "baker",
         tenantId: payload.tenantId || payload.tenant_id || null,
       };
