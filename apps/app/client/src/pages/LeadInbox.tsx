@@ -87,7 +87,17 @@ export default function LeadInbox() {
   const { data: lead, isLoading: leadLoading, isError: leadError, refetch: refetchLead } = useQuery<Lead>({
     queryKey: [`/api/leads/${leadId}`],
     queryFn: async () => {
-      const res = await fetch(`/api/leads/${leadId}`, { credentials: 'include' });
+      const headers: Record<string, string> = {};
+      // Add baker token for authentication
+      const token = localStorage.getItem("baker_token");
+      if (token) {
+        headers["x-baker-token"] = token;
+      }
+      
+      const res = await fetch(`/api/leads/${leadId}`, { 
+        credentials: 'include',
+        headers 
+      });
       if (!res.ok) throw new Error('Failed to fetch lead');
       const data = await res.json();
       console.log('[DEBUG] Lead data received:', JSON.stringify(data, null, 2));
@@ -103,7 +113,16 @@ export default function LeadInbox() {
   const { data: thread, isLoading: threadLoading, isError: threadError, refetch: refetchThread } = useQuery<ThreadData>({
     queryKey: [`/api/leads/${leadId}/thread`],
     queryFn: async () => {
-      const res = await fetch(`/api/leads/${leadId}/thread`, { credentials: 'include' });
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem("baker_token");
+      if (token) {
+        headers["x-baker-token"] = token;
+      }
+      
+      const res = await fetch(`/api/leads/${leadId}/thread`, { 
+        credentials: 'include',
+        headers 
+      });
       if (!res.ok) throw new Error('Failed to fetch thread');
       return res.json();
     },
