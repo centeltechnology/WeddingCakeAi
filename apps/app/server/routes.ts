@@ -10226,8 +10226,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /c/:id - Redirect to contract approval page
-  app.get('/c/:id', async (req, res) => {
+  // GET /cs/:id - Redirect to contract approval page (contract shortlink)
+  // Note: /c/:slug is reserved for public calculator URLs
+  app.get('/cs/:id', async (req, res) => {
     try {
       const contractId = req.params.id;
       const contract = await storage.getContract(contractId);
