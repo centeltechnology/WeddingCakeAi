@@ -875,14 +875,16 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                       <h3 className="text-lg font-semibold mb-1">Your Calculator Link</h3>
                       <p className="text-orange-100 text-sm mb-3">Share this with customers to capture leads</p>
                       <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
-                        <code className="text-sm font-mono">{window.location.origin}/c/{bakerSlug}</code>
+                        <code className="text-sm font-mono">{typeof window !== 'undefined' ? window.location.origin : ''}/c/{bakerSlug}</code>
                         <Button
                           size="sm"
                           variant="ghost"
                           className="text-white hover:bg-white/20 h-7 px-2"
                           onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/c/${bakerSlug}`);
-                            toast({ title: 'Link copied!', description: 'Calculator link copied to clipboard' });
+                            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                              navigator.clipboard.writeText(`${window.location.origin}/c/${bakerSlug}`);
+                              toast({ title: 'Link copied!', description: 'Calculator link copied to clipboard' });
+                            }
                           }}
                           data-testid="button-copy-calculator-link"
                         >
@@ -893,7 +895,11 @@ export default function BakerDashboard({ bakerId, bakerSlug }: BakerDashboardPro
                     <Button
                       variant="secondary"
                       className="bg-white text-orange-600 hover:bg-orange-50"
-                      onClick={() => window.open(`/c/${bakerSlug}`, '_blank')}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          window.open(`/c/${bakerSlug}`, '_blank');
+                        }
+                      }}
                       data-testid="button-preview-calculator"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
