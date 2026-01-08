@@ -309,25 +309,70 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
   const submitQuoteRequest = useMutation({
     mutationFn: async (payload: any) => {
-      // Use new public calculator submit endpoint with tenant slug
-      const endpoint = tenantSlug 
-        ? `/api/public/calculator/submit?tenant=${encodeURIComponent(tenantSlug)}`
-        : `/api/bakers/public/calculator/quote-draft`;
+      // Resolve slug from prop or baker data
+      const slug = tenantSlug || (effectiveBaker as any)?.slug;
       
-      const response = await fetch(endpoint, {
+      if (slug) {
+        // Primary path: Use public lead-only endpoint with slug
+        const endpoint = `/api/public/calculator/submit?tenant=${encodeURIComponent(slug)}`;
+        
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to submit quote");
+        }
+
+        return response.json();
+      }
+      
+      // Fallback for authenticated baker context without slug
+      // Derive bakerId from prop or effectiveBaker
+      const effectiveBakerId = bakerId || (effectiveBaker as any)?.id;
+      
+      if (!effectiveBakerId) {
+        throw new Error("Unable to submit - baker context not available. Please try again or contact support.");
+      }
+      
+      // Map calculator payload to insertLeadSchema format
+      // Store payload.selections directly (NOT wrapped) to match public endpoint format
+      // Public endpoint stores: calculatorPayload = selections (the object directly)
+      const leadPayload = {
+        customerName: payload.name || 'Calculator Lead',
+        customerEmail: payload.email || '',
+        customerPhone: payload.phone || null,
+        weddingDate: payload.selections?.eventDate || null,
+        guestCount: payload.selections?.guestCount || null,
+        budget: payload.budget || null,
+        source: 'calculator',
+        status: 'new',
+        calculatorPayload: payload.selections || null,
+        notes: payload.notes || null,
+        bakerId: effectiveBakerId,
+      };
+      
+      const response = await fetch('/api/leads', {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         credentials: "include",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(leadPayload)
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit quote");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to submit quote");
       }
 
-      return response.json();
+      const lead = await response.json();
+      return { leadId: lead.id };
     },
     onSuccess: (data) => {
       // Handle new endpoint response format (leadId with optional quoteId) or legacy format
@@ -418,9 +463,6 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
       return;
     }
     
-    const hasDelivery = customerInfo.venue ? true : false;
-    const deliveryMiles = hasDelivery ? 10 : 0;
-
     const hasFondant = selectedDecorations.some(d => 
       d.includes('fondant') || d.includes('draping')
     );
@@ -433,9 +475,8 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                       hasFondant ? 'premium' : 
                       selectedDecorations.length > 2 ? 'standard' : 'basic';
 
-    // Format payload based on endpoint type
-    const payload = tenantSlug ? {
-      // New endpoint format
+    // Always use new lead-only payload format
+    const payload = {
       name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -445,37 +486,32 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
           size: tier.size,
           shape: tier.shape,
           flavor: tier.flavor,
-          servings: tier.servings
+          servings: tier.servings,
+          basePrice: tier.basePrice
         })),
-        decorations: selectedDecorations,
+        decorations: selectedDecorations.map(decorationId => {
+          const decoration = DECORATION_OPTIONS.find((d: any) => d.id === decorationId);
+          return {
+            id: decorationId,
+            name: decoration?.name || decorationId,
+            price: decoration?.price || 0
+          };
+        }),
         eventDate: customerInfo.eventDate,
         eventType: customerInfo.eventType,
         guestCount: customerInfo.guestCount,
         venue: customerInfo.venue,
-        pricing: pricing
+        timeline: customerInfo.timeline,
+        complexity,
+        pricing: {
+          baseCake: pricing.baseCake,
+          decorations: pricing.decorations,
+          delivery: pricing.delivery,
+          subtotal: pricing.subtotal,
+          tax: pricing.tax,
+          total: pricing.total
+        }
       },
-      notes: specialRequests
-    } : {
-      // Legacy endpoint format
-      cityOrZip: customerInfo.venue || '',
-      eventDate: customerInfo.eventDate,
-      guestCount: customerInfo.guestCount,
-      icing: hasFondant ? 'fondant' : 'buttercream',
-      complexity,
-      formFactor: tiers.length > 1 ? 'tiered' : 'sheet',
-      addOns: {
-        metallicLeaf: selectedDecorations.includes('gold-leaf'),
-        sugarFlorals: selectedDecorations.some(d => d.includes('rose') || d.includes('peonies') || d.includes('flower')),
-        ediblePrint: selectedDecorations.includes('hand-painted'),
-        topperCustom: selectedDecorations.some(d => d.includes('topper') || d.includes('monogram'))
-      },
-      delivery: {
-        method: hasDelivery ? 'delivery' : 'pickup',
-        miles: deliveryMiles
-      },
-      name: customerInfo.name,
-      email: customerInfo.email,
-      phone: customerInfo.phone,
       notes: specialRequests
     };
 

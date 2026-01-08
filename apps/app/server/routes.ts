@@ -10366,6 +10366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Helper: Ensure quote exists for a lead (create draft if needed)
+  // Also populates quote items from lead's calculatorPayload.selections
   async function ensureQuoteForLead(tenantId: string, leadId: string): Promise<string> {
     // Find lead
     const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
@@ -10404,18 +10405,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const quoteId = randomUUID();
     const [baker] = await db.select().from(bakers).where(eq(bakers.tenantId, tenantId)).limit(1);
     
+    // Extract calculator data for quote items - handle different formats
+    const payload = lead.calculatorPayload as any;
+    
+    // Guard: if no payload, create empty quote without items
+    if (!payload) {
+      await db.insert(quotes).values({
+        id: quoteId,
+        tenantId,
+        bakerId: baker?.id || null,
+        customerId: customer.id,
+        leadId: leadId,
+        quoteNumber: `Q-${Date.now()}`,
+        title: `Estimate for ${lead.customerName || lead.customerEmail}`,
+        status: 'draft',
+        total: '0',
+        eventDate: lead.weddingDate || null,
+        notes: lead.notes || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      return quoteId;
+    }
+    
+    // Normalize payload: handle current and legacy formats
+    // Current format: calculatorPayload = { tiers, decorations, pricing, ... } (selections object directly)
+    // Legacy wrapped format: calculatorPayload = { selections: { tiers, ... } }
+    // Legacy root format: calculatorPayload = { total, delivery: { miles }, ... }
+    let selections: any = {};
+    let pricingData: any = {};
+    
+    if (payload?.tiers || payload?.decorations || payload?.pricing) {
+      // Current format: selections stored directly in calculatorPayload
+      selections = payload;
+      pricingData = payload.pricing || {};
+    } else if (payload?.selections) {
+      // Wrapped format: { selections: { tiers, ... } }
+      selections = payload.selections;
+      pricingData = selections.pricing || {};
+    } else if (payload?.total !== undefined || payload?.delivery !== undefined) {
+      // Legacy root format: totals/delivery at root level without pricing object
+      selections = {
+        tiers: payload.tiers || [],
+        decorations: payload.decorations || [],
+        eventDate: payload.eventDate,
+        eventType: payload.eventType,
+        guestCount: payload.guestCount,
+        venue: payload.cityOrZip || payload.venue,
+        complexity: payload.complexity,
+      };
+      // Reconstruct pricing from legacy fields
+      pricingData = {
+        total: payload.total || 0,
+        delivery: typeof payload.delivery === 'object' && payload.delivery?.miles 
+          ? (50 + payload.delivery.miles * 2) 
+          : (typeof payload.delivery === 'number' ? payload.delivery : 0),
+      };
+    } else {
+      // Unrecognized format, use empty
+      selections = {};
+      pricingData = {};
+    }
+    
+    // Calculate total from calculator data or use 0
+    const calculatedTotal = pricingData.total || 0;
+    
     await db.insert(quotes).values({
       id: quoteId,
       tenantId,
       bakerId: baker?.id || null,
       customerId: customer.id,
+      leadId: leadId,
       quoteNumber: `Q-${Date.now()}`,
-      title: `Draft for ${lead.customerName || lead.customerEmail}`,
+      title: `Estimate for ${lead.customerName || lead.customerEmail}`,
       status: 'draft',
-      total: '0',
+      total: String(calculatedTotal),
+      eventDate: selections?.eventDate || lead.weddingDate || null,
+      notes: lead.notes || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    
+    // Create quote items from calculator tiers and decorations
+    const itemsToInsert: any[] = [];
+    let sortOrder = 0;
+    let itemsTotal = 0;
+    
+    // Helper to safely convert to number
+    const toNumber = (val: any): number => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') return parseFloat(val) || 0;
+      return 0;
+    };
+    
+    // Add cake tiers
+    if (Array.isArray(selections?.tiers)) {
+      for (const tier of selections.tiers) {
+        const tierPrice = toNumber(tier.basePrice);
+        itemsTotal += tierPrice;
+        itemsToInsert.push({
+          id: randomUUID(),
+          tenantId,
+          quoteId,
+          name: `${tier.size || 'Cake'} ${tier.flavor ? `(${tier.flavor})` : ''} ${tier.shape ? `- ${tier.shape}` : ''}`.trim(),
+          description: `Serves ${tier.servings || 0} guests`,
+          quantity: '1',
+          unitPrice: String(tierPrice),
+          totalPrice: String(tierPrice),
+          category: 'cake',
+          sortOrder: sortOrder++,
+        });
+      }
+    }
+    
+    // Add decorations
+    if (Array.isArray(selections?.decorations)) {
+      for (const deco of selections.decorations) {
+        const decoName = typeof deco === 'string' ? deco : (deco.name || deco.id || 'Decoration');
+        const decoPrice = toNumber(typeof deco === 'object' ? deco.price : 0);
+        itemsTotal += decoPrice;
+        itemsToInsert.push({
+          id: randomUUID(),
+          tenantId,
+          quoteId,
+          name: decoName.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+          description: 'Decoration',
+          quantity: '1',
+          unitPrice: String(decoPrice),
+          totalPrice: String(decoPrice),
+          category: 'decoration',
+          sortOrder: sortOrder++,
+        });
+      }
+    }
+    
+    // Add delivery if delivery fee > 0 (regardless of venue being set)
+    const deliveryFee = toNumber(pricingData.delivery);
+    if (deliveryFee > 0) {
+      itemsTotal += deliveryFee;
+      itemsToInsert.push({
+        id: randomUUID(),
+        tenantId,
+        quoteId,
+        name: 'Delivery',
+        description: selections?.venue ? `Delivery to ${selections.venue}` : 'Delivery fee',
+        quantity: '1',
+        unitPrice: String(deliveryFee),
+        totalPrice: String(deliveryFee),
+        category: 'delivery',
+        sortOrder: sortOrder++,
+      });
+    }
+    
+    // Add tax if present in pricing data
+    const taxAmount = toNumber(pricingData.tax);
+    if (taxAmount > 0) {
+      itemsTotal += taxAmount;
+      itemsToInsert.push({
+        id: randomUUID(),
+        tenantId,
+        quoteId,
+        name: 'Tax',
+        description: 'Estimated tax',
+        quantity: '1',
+        unitPrice: String(taxAmount),
+        totalPrice: String(taxAmount),
+        category: 'tax',
+        sortOrder: sortOrder++,
+      });
+    }
+    
+    // Insert all quote items
+    if (itemsToInsert.length > 0) {
+      await db.insert(quoteItems).values(itemsToInsert);
+      
+      // Update quote total to match inserted items (if items were created)
+      const finalTotal = itemsTotal > 0 ? itemsTotal : calculatedTotal;
+      if (finalTotal > 0) {
+        await db.update(quotes).set({ total: String(finalTotal) }).where(eq(quotes.id, quoteId));
+      }
+    } else if (calculatedTotal > 0) {
+      // No items created but we have a calculator total - use it directly
+      await db.update(quotes).set({ total: String(calculatedTotal) }).where(eq(quotes.id, quoteId));
+    }
     
     return quoteId;
   }
