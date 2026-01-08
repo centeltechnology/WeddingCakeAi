@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, DollarSign, Users, FileText } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, DollarSign, Users, FileText, Clock } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from "date-fns";
-import type { Consultation, Contract } from "@shared/schema";
+import type { Consultation, Contract, Booking } from "@shared/schema";
 
 interface MonthlyCommitmentsCalendarProps {
   bakerId: string;
@@ -14,6 +14,7 @@ interface MonthlyCommitmentsCalendarProps {
 interface DayCommitment {
   consultations: Consultation[];
   contracts: Contract[];
+  bookings: Booking[];
   revenue: number;
 }
 
@@ -34,6 +35,12 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
     queryKey: [`/api/contracts?bakerId=${bakerId}`],
   });
 
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ['/api/booking/list'],
+  });
+
+  const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'pending');
+
   const getCommitmentsForDate = (date: Date): DayCommitment => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
@@ -44,6 +51,10 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
     const dayContracts = contracts.filter(c => 
       c.eventDate && format(new Date(c.eventDate), 'yyyy-MM-dd') === dateStr
     );
+
+    const dayBookings = confirmedBookings.filter(b => 
+      b.startISO && format(new Date(b.startISO), 'yyyy-MM-dd') === dateStr
+    );
     
     const revenue = dayContracts.reduce((sum, contract) => {
       return sum + (parseFloat(contract.totalAmount as any) || 0);
@@ -52,6 +63,7 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
     return {
       consultations: dayConsultations,
       contracts: dayContracts,
+      bookings: dayBookings,
       revenue
     };
   };
@@ -81,7 +93,15 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  const isLoading = consultationsLoading || contractsLoading;
+  const isLoading = consultationsLoading || contractsLoading || bookingsLoading;
+
+  const getTotalMonthlyBookings = () => {
+    return confirmedBookings.filter(b => {
+      if (!b.startISO) return false;
+      const bookingDate = new Date(b.startISO);
+      return isSameMonth(bookingDate, currentDate);
+    }).length;
+  };
 
   return (
     <Card data-testid="monthly-commitments-calendar">
@@ -119,7 +139,21 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Monthly Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Bookings</p>
+                  <p className="text-2xl font-bold" data-testid="total-bookings">
+                    {getTotalMonthlyBookings()}
+                  </p>
+                </div>
+                <Clock className="w-8 h-8 text-purple-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -190,7 +224,7 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
             <div className="grid grid-cols-7">
               {calendarDays.map((day, index) => {
                 const commitments = getCommitmentsForDate(day);
-                const hasCommitments = commitments.consultations.length > 0 || commitments.contracts.length > 0;
+                const hasCommitments = commitments.consultations.length > 0 || commitments.contracts.length > 0 || commitments.bookings.length > 0;
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isTodayDate = isToday(day);
 
@@ -208,6 +242,16 @@ export function MonthlyCommitmentsCalendar({ bakerId }: MonthlyCommitmentsCalend
                     
                     {isCurrentMonth && hasCommitments && (
                       <div className="space-y-1">
+                        {commitments.bookings.length > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs w-full justify-center py-0.5 bg-purple-100 text-purple-800 hover:bg-purple-200"
+                            data-testid={`booking-badge-${format(day, 'yyyy-MM-dd')}`}
+                          >
+                            {commitments.bookings.length} booking{commitments.bookings.length !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
+
                         {commitments.consultations.length > 0 && (
                           <Badge
                             variant="secondary"

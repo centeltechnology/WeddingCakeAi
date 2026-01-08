@@ -2790,15 +2790,24 @@ export class DatabaseStorage implements IStorage {
     return consultation || undefined;
   }
 
-  // Missing customer search methods
+  // Customer search methods
   async searchCustomers(bakerId: string, search: string): Promise<any[]> {
-    // TODO: Implement customer search functionality
-    return [];
+    const searchLower = `%${search.toLowerCase()}%`;
+    return await db.select().from(customers)
+      .where(
+        and(
+          eq(customers.bakerId, bakerId),
+          or(
+            sql`LOWER(${customers.name}) LIKE ${searchLower}`,
+            sql`LOWER(${customers.email}) LIKE ${searchLower}`,
+            sql`${customers.phone} LIKE ${searchLower}`
+          )
+        )
+      );
   }
 
   async getCustomersByTenant(tenantId: string): Promise<any[]> {
-    // TODO: Implement customer retrieval by tenant
-    return [];
+    return await db.select().from(customers).where(eq(customers.tenantId, tenantId));
   }
 
   // Missing user deletion method
