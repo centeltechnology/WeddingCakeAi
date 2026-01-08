@@ -1351,6 +1351,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/leads/:id - Get single lead with full details including calculatorPayload
+  app.get("/api/leads/:id", ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.user!.tenantId!;
+
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      
+      if (!lead) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      
+      // Verify tenant ownership
+      if (lead.tenantId !== tenantId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      res.json(lead);
+    } catch (error) {
+      console.error('Error fetching lead:', error);
+      res.status(500).json({ error: 'Failed to fetch lead' });
+    }
+  });
+
   // GET /api/leads - List leads for current tenant (basic list without scoring)
   app.get("/api/leads", ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
     try {

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Mail, User, Phone, DollarSign, Calendar, MessageSquare, StickyNote, Send, TrendingUp, FileText } from 'lucide-react';
+import { ArrowLeft, Mail, User, Phone, DollarSign, Calendar, MessageSquare, StickyNote, Send, TrendingUp, FileText, Cake, Layers, Palette, MapPin, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Message = {
@@ -28,6 +28,28 @@ type Note = {
   createdAt: string;
 };
 
+type TierConfig = {
+  size: string;
+  shape: string;
+  flavor: string;
+  servings: number;
+};
+
+type CalculatorPayload = {
+  tiers?: TierConfig[];
+  decorations?: string[];
+  eventDate?: string;
+  eventType?: string;
+  guestCount?: number;
+  venue?: string;
+  pricing?: {
+    total: number;
+    basePrice?: number;
+    decorationsTotal?: number;
+    perServing?: number;
+  };
+};
+
 type Lead = {
   id: string;
   customerName: string;
@@ -39,6 +61,8 @@ type Lead = {
   source: string;
   message: string | null;
   createdAt: string;
+  calculatorPayload?: CalculatorPayload | null;
+  notes?: string | null;
 };
 
 type ThreadData = {
@@ -496,6 +520,117 @@ export default function LeadInbox() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Cake Configuration Details (from Calculator) */}
+          {lead.calculatorPayload && (
+            <Card data-testid="calculator-details-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Cake className="h-5 w-5" />
+                  Cake Request Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Event Info */}
+                {(lead.calculatorPayload.eventType || lead.calculatorPayload.eventDate || lead.calculatorPayload.guestCount) && (
+                  <div className="space-y-2">
+                    {lead.calculatorPayload.eventType && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium capitalize">{lead.calculatorPayload.eventType}</span>
+                      </div>
+                    )}
+                    {lead.calculatorPayload.eventDate && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{format(new Date(lead.calculatorPayload.eventDate), 'MMMM d, yyyy')}</span>
+                      </div>
+                    )}
+                    {lead.calculatorPayload.guestCount && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{lead.calculatorPayload.guestCount} guests</span>
+                      </div>
+                    )}
+                    {lead.calculatorPayload.venue && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{lead.calculatorPayload.venue}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Cake Tiers */}
+                {lead.calculatorPayload.tiers && lead.calculatorPayload.tiers.length > 0 && (
+                  <div className="border-t pt-4">
+                    <Label className="text-muted-foreground flex items-center gap-2 mb-2">
+                      <Layers className="h-4 w-4" />
+                      Cake Tiers ({lead.calculatorPayload.tiers.length})
+                    </Label>
+                    <div className="space-y-2">
+                      {lead.calculatorPayload.tiers.map((tier, index) => (
+                        <div key={index} className="p-2 bg-muted rounded text-sm">
+                          <div className="font-medium">Tier {index + 1}</div>
+                          <div className="grid grid-cols-2 gap-1 text-muted-foreground mt-1">
+                            <span>Size: {tier.size}"</span>
+                            <span>Shape: {tier.shape}</span>
+                            <span>Flavor: {tier.flavor}</span>
+                            <span>Servings: {tier.servings}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Decorations */}
+                {lead.calculatorPayload.decorations && lead.calculatorPayload.decorations.length > 0 && (
+                  <div className="border-t pt-4">
+                    <Label className="text-muted-foreground flex items-center gap-2 mb-2">
+                      <Palette className="h-4 w-4" />
+                      Decorations
+                    </Label>
+                    <div className="flex flex-wrap gap-1">
+                      {lead.calculatorPayload.decorations.map((decoration, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {decoration}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pricing */}
+                {lead.calculatorPayload.pricing && (
+                  <div className="border-t pt-4">
+                    <Label className="text-muted-foreground flex items-center gap-2 mb-2">
+                      <DollarSign className="h-4 w-4" />
+                      Estimated Pricing
+                    </Label>
+                    <div className="p-3 bg-primary/10 rounded">
+                      <div className="text-2xl font-bold text-primary">
+                        ${lead.calculatorPayload.pricing.total?.toFixed(2) || '0.00'}
+                      </div>
+                      {lead.calculatorPayload.pricing.perServing && (
+                        <div className="text-sm text-muted-foreground">
+                          ${lead.calculatorPayload.pricing.perServing.toFixed(2)} per serving
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Special Notes from calculator */}
+                {lead.notes && (
+                  <div className="border-t pt-4">
+                    <Label className="text-muted-foreground">Special Requests</Label>
+                    <p className="text-sm mt-1 p-2 bg-muted rounded">{lead.notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </AppLayout>
