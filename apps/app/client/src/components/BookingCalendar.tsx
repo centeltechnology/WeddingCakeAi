@@ -329,14 +329,17 @@ export function BookingCalendar({ baker, onBookingComplete }: BookingCalendarPro
   const handleNextStep = () => {
     if (currentStep === 1 && selectedDate && selectedTimeSlot) {
       setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (currentStep === 2 && formData.customerName && formData.customerEmail) {
       setCurrentStep(3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

@@ -14,7 +14,7 @@ import { z } from "zod";
 import { 
   insertProfileSchema, insertEstimateSchema, insertLeadSchema, insertReviewSchema, 
   insertTransactionSchema, insertAvailabilitySchema, insertConsultationSchema, insertAnalyticsSchema, insertBakerProfileSchema,
-  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker,
+  insertTenantSchema, insertTenantConfigurationSchema, insertBakerSchema, type Baker, type Lead,
   paymentLinksSchema, type Booking, type InsertBooking, bakerPricingSchema
 } from "@shared/schema";
 import { authorizeBakerWithData, authorizeLeadOwnership, requireFeature, type AuthenticatedRequest } from "./authMiddleware";
@@ -1307,8 +1307,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bakers/:bakerId/leads", ensureAuthUnified, authorizeBakerWithData, async (req, res) => {
     try {
-      const leads = await storage.getLeadsByBaker(req.params.bakerId);
-      res.json(leads);
+      const { bakerId } = req.params;
+      const baker = (req as any).bakerData;
+      
+      let allLeads: Lead[] = [];
+      
+      if (baker?.id) {
+        const bakerLeads = await storage.getLeadsByBaker(baker.id);
+        allLeads = [...bakerLeads];
+      }
+      
+      if (baker?.tenantId) {
+        const tenantLeads = await storage.getLeadsByTenant(baker.tenantId);
+        const existingIds = new Set(allLeads.map(l => l.id));
+        for (const lead of tenantLeads) {
+          if (!existingIds.has(lead.id)) {
+            allLeads.push(lead);
+          }
+        }
+      }
+      
+      allLeads.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      res.json(allLeads);
     } catch (error: any) {
       console.error("Error fetching leads:", error);
       res.status(500).json({ message: error.message });
@@ -2046,7 +2071,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bakers/:bakerId/consultations", async (req, res) => {
     try {
-      const consultations = await storage.getConsultationsByBaker(req.params.bakerId);
+      const { bakerId } = req.params;
+      let baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        baker = await storage.getBakerBySlug(bakerId);
+      }
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      const consultations = await storage.getConsultationsByBaker(baker.id);
       res.json(consultations);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -2055,7 +2088,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bakers/:bakerId/consultations/upcoming", async (req, res) => {
     try {
-      const consultations = await storage.getUpcomingConsultations(req.params.bakerId);
+      const { bakerId } = req.params;
+      let baker = await storage.getBaker(bakerId);
+      if (!baker) {
+        baker = await storage.getBakerBySlug(bakerId);
+      }
+      if (!baker) {
+        return res.status(404).json({ message: "Baker not found" });
+      }
+      const consultations = await storage.getUpcomingConsultations(baker.id);
       res.json(consultations);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

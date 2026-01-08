@@ -763,7 +763,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                   </Button>
                   
                   <Button 
-                    onClick={() => setStep(2)}
+                    onClick={() => { setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     size="lg"
                     className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-8 shadow-lg hover:shadow-xl transition-all duration-300"
                     data-testid="button-continue-to-decorations"
@@ -876,7 +876,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-between">
                   <Button 
-                    onClick={() => setStep(1)}
+                    onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     variant="outline"
                     className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     data-testid="button-back-to-design"
@@ -898,7 +898,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
                     </Button>
                     
                     <Button 
-                      onClick={() => setStep(3)}
+                      onClick={() => { setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       size="lg"
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 shadow-lg hover:shadow-xl transition-all duration-300"
                       data-testid="button-continue-to-details"
@@ -1121,7 +1121,7 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-between">
                   <Button 
-                    onClick={() => setStep(2)}
+                    onClick={() => { setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     variant="outline"
                     className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     data-testid="button-back-to-decorations"
