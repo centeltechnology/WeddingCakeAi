@@ -1355,16 +1355,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/leads/:id", ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.user!.tenantId!;
+      const tenantId = req.user?.tenantId || req.tenant?.id;
+      
+      console.log('[DEBUG] GET /api/leads/:id - leadId:', id, 'tenantId:', tenantId);
 
       const [lead] = await db.select().from(leads).where(eq(leads.id, id));
       
       if (!lead) {
+        console.log('[DEBUG] Lead not found:', id);
         return res.status(404).json({ error: 'Lead not found' });
       }
       
+      console.log('[DEBUG] Found lead:', lead.id, 'lead.tenantId:', lead.tenantId, 'has calculatorPayload:', !!lead.calculatorPayload);
+      
       // Verify tenant ownership
       if (lead.tenantId !== tenantId) {
+        console.log('[DEBUG] Access denied - lead.tenantId:', lead.tenantId, 'user tenantId:', tenantId);
         return res.status(403).json({ error: 'Access denied' });
       }
 

@@ -89,7 +89,11 @@ export default function LeadInbox() {
     queryFn: async () => {
       const res = await fetch(`/api/leads/${leadId}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch lead');
-      return res.json();
+      const data = await res.json();
+      console.log('[DEBUG] Lead data received:', JSON.stringify(data, null, 2));
+      console.log('[DEBUG] calculatorPayload:', data.calculatorPayload);
+      console.log('[DEBUG] calculator_payload:', data.calculator_payload);
+      return data;
     },
     enabled: !!leadId,
     retry: 2,
