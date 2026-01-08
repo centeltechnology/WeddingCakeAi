@@ -2989,6 +2989,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create quote directly from lead (uses calculator payload data)
+  app.post('/api/leads/:id/quote', ensureAuthUnified, requireTenantAuth, async (req: UnifiedRequest, res) => {
+    try {
+      const tenantId = req.user!.tenantId!;
+      const leadId = req.params.id;
+      
+      // Use transaction to ensure quote creation and status update are atomic
+      const result = await db.transaction(async (tx) => {
+        // Use the ensureQuoteForLead helper with tx client for atomic quote creation
+        const quoteId = await ensureQuoteForLead(tenantId, leadId, tx);
+        
+        // Update lead status to 'quoted' within same transaction
+        await tx.update(leads)
+          .set({ status: 'quoted', updatedAt: new Date() })
+          .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
+        
+        return { quoteId };
+      });
+      
+      res.json({ ok: true, quoteId: result.quoteId });
+    } catch (error: any) {
+      console.error('Error creating quote from lead:', error);
+      if (error.message === 'lead_not_found') {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      res.status(500).json({ error: 'Failed to create quote' });
+    }
+  });
+
   // =====================================
   // LEAD INBOX ROUTES (Messages & Notes)
   // =====================================
@@ -10367,31 +10396,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper: Ensure quote exists for a lead (create draft if needed)
   // Also populates quote items from lead's calculatorPayload.selections
-  async function ensureQuoteForLead(tenantId: string, leadId: string): Promise<string> {
+  // Accepts optional transaction client for atomic operations
+  async function ensureQuoteForLead(tenantId: string, leadId: string, txClient?: typeof db): Promise<string> {
+    const dbClient = txClient || db;
+    
     // Find lead
-    const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
+    const [lead] = await dbClient.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)));
     if (!lead) throw new Error('lead_not_found');
 
     // Find or create customer from lead
-    let [customer] = await db.select().from(customers).where(and(
+    let [customer] = await dbClient.select().from(customers).where(and(
       eq(customers.email, lead.customerEmail),
       eq(customers.tenantId, tenantId)
     ));
     
     if (!customer) {
       const customerId = randomUUID();
-      await db.insert(customers).values({
+      await dbClient.insert(customers).values({
         id: customerId,
         tenantId,
         name: lead.customerName || lead.customerEmail,
         email: lead.customerEmail,
         phone: lead.customerPhone || null,
       });
-      [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
+      [customer] = await dbClient.select().from(customers).where(eq(customers.id, customerId));
     }
 
     // Find existing draft quote for this customer or create new
-    const [existingQuote] = await db.select().from(quotes)
+    const [existingQuote] = await dbClient.select().from(quotes)
       .where(and(
         eq(quotes.tenantId, tenantId),
         eq(quotes.customerId, customer.id),
@@ -10403,14 +10435,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Create new draft quote
     const quoteId = randomUUID();
-    const [baker] = await db.select().from(bakers).where(eq(bakers.tenantId, tenantId)).limit(1);
+    const [baker] = await dbClient.select().from(bakers).where(eq(bakers.tenantId, tenantId)).limit(1);
     
     // Extract calculator data for quote items - handle different formats
     const payload = lead.calculatorPayload as any;
     
     // Guard: if no payload, create empty quote without items
     if (!payload) {
-      await db.insert(quotes).values({
+      await dbClient.insert(quotes).values({
         id: quoteId,
         tenantId,
         bakerId: baker?.id || null,
@@ -10470,7 +10502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Calculate total from calculator data or use 0
     const calculatedTotal = pricingData.total || 0;
     
-    await db.insert(quotes).values({
+    await dbClient.insert(quotes).values({
       id: quoteId,
       tenantId,
       bakerId: baker?.id || null,
@@ -10577,16 +10609,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Insert all quote items
     if (itemsToInsert.length > 0) {
-      await db.insert(quoteItems).values(itemsToInsert);
+      await dbClient.insert(quoteItems).values(itemsToInsert);
       
       // Update quote total to match inserted items (if items were created)
       const finalTotal = itemsTotal > 0 ? itemsTotal : calculatedTotal;
       if (finalTotal > 0) {
-        await db.update(quotes).set({ total: String(finalTotal) }).where(eq(quotes.id, quoteId));
+        await dbClient.update(quotes).set({ total: String(finalTotal) }).where(eq(quotes.id, quoteId));
       }
     } else if (calculatedTotal > 0) {
       // No items created but we have a calculator total - use it directly
-      await db.update(quotes).set({ total: String(calculatedTotal) }).where(eq(quotes.id, quoteId));
+      await dbClient.update(quotes).set({ total: String(calculatedTotal) }).where(eq(quotes.id, quoteId));
     }
     
     return quoteId;

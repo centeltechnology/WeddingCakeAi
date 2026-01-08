@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { DreamCakeDesigner } from './DreamCakeDesigner';
+import { useCalculatorSlug } from '@/hooks/useCalculatorSlug';
 import {
   Cake,
   Heart,
@@ -167,6 +168,12 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
     timeline: "flexible"
   });
 
+  // Resolve bakery slug from various sources (prop, query param, baker data, session)
+  const { slug: resolvedSlug, isLoading: slugResolving } = useCalculatorSlug({
+    tenantSlugProp: tenantSlug,
+    bakerId
+  });
+
   // Fetch baker information for branding - with retry and fallback
   const { data: baker } = useQuery({
     queryKey: [`/api/bakers/${bakerId}`],
@@ -187,13 +194,15 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
 
   // Fetch settings by slug for public calculator (MVP)
   const { data: slugSettings, isLoading: slugLoading, isError: slugError } = useQuery({
-    queryKey: [`/api/public/calculator/settings`, tenantSlug],
+    queryKey: [`/api/public/calculator/settings`, tenantSlug || resolvedSlug],
     queryFn: async () => {
-      const res = await fetch(`/api/public/calculator/settings?tenant=${encodeURIComponent(tenantSlug || '')}`);
+      const slugToUse = tenantSlug || resolvedSlug;
+      if (!slugToUse) return null;
+      const res = await fetch(`/api/public/calculator/settings?tenant=${encodeURIComponent(slugToUse)}`);
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!tenantSlug,
+    enabled: !!(tenantSlug || resolvedSlug),
     retry: 1,
     staleTime: 5 * 60 * 1000,
   });
@@ -307,18 +316,19 @@ export function CakeCalculator({ bakerId, tenantSlug, className }: CakeCalculato
     return { baseCake, decorations, delivery, subtotal, tax, total };
   };
 
+  const isSlugReady = resolvedSlug && !slugResolving;
+  
   const submitQuoteRequest = useMutation({
     mutationFn: async (payload: any) => {
-      // Resolve slug from prop or baker data - slug is REQUIRED for calculator submission
-      const slug = tenantSlug || (effectiveBaker as any)?.slug;
-      
-      if (!slug) {
-        // No fallback - slug is required to prevent data corruption
-        throw new Error("Calculator requires a bakery link. Please use the public calculator URL or configure your bakery slug in settings.");
+      if (slugResolving) {
+        throw new Error("Please wait, loading bakery configuration...");
+      }
+      if (!resolvedSlug) {
+        throw new Error("Unable to submit - bakery not configured. Please use a public calculator link (e.g., /c/your-bakery-name).");
       }
       
       // Use public lead-only endpoint with slug - this is the ONLY supported path
-      const endpoint = `/api/public/calculator/submit?tenant=${encodeURIComponent(slug)}`;
+      const endpoint = `/api/public/calculator/submit?tenant=${encodeURIComponent(resolvedSlug)}`;
       
       const response = await fetch(endpoint, {
         method: "POST",

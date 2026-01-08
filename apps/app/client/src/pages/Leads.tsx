@@ -20,8 +20,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { RefreshCw, TrendingUp, Mail, Phone, Calendar, DollarSign, Info, MessageSquare, FileText } from 'lucide-react';
+import { RefreshCw, Mail, Phone, Calendar, DollarSign, Info, MessageSquare, FileText, Cake, Palette } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
+import { parseCalculatorPayload } from '@/lib/calculatorPayload';
 
 type Lead = {
   id: string;
@@ -34,6 +35,9 @@ type Lead = {
   source: string;
   created_at: string;
   score: number | null;
+  calculator_payload: Record<string, any> | null;
+  estimated_total_low: number | null;
+  estimated_total_high: number | null;
   explanations: Array<{
     factor: string;
     weight: number;
@@ -139,12 +143,11 @@ export default function Leads() {
   const createQuoteFromLead = async (leadId: string) => {
     setCreatingQuote(leadId);
     try {
-      // Call AI suggest-items with only leadId - this will create a draft quote
-      const res = await fetch('/api/ai/suggest-items', {
+      // Use direct quote creation endpoint (parses calculator payload into quote items)
+      const res = await fetch(`/api/leads/${leadId}/quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ leadId })
       });
       
       if (!res.ok) throw new Error('Failed to create quote from lead');
@@ -152,9 +155,10 @@ export default function Leads() {
       const data = await res.json();
       
       if (data.ok && data.quoteId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/leads/scored'] });
         toast({
           title: 'Quote created!',
-          description: `Draft quote created with ${data.items?.length || 0} suggested items`,
+          description: 'Draft quote created from calculator data. Review and send to customer.',
         });
         
         // Navigate to the quote
@@ -203,8 +207,8 @@ export default function Leads() {
                     <TableHead>Score</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Budget</TableHead>
+                    <TableHead>Cake Details</TableHead>
+                    <TableHead>Estimate</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -263,21 +267,70 @@ export default function Leads() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {lead.source || 'unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {lead.budget ? (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <DollarSign className="h-3 w-3" />
-                            <span>{lead.budget}</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
+                      {(() => {
+                        const calcData = parseCalculatorPayload(lead.calculator_payload);
+                        const hasCalcData = calcData && calcData.tiers.length > 0;
+                        const total = calcData?.pricing?.total ?? lead.estimated_total_high ?? 0;
+                        
+                        return (
+                          <>
+                            <TableCell>
+                              {!hasCalcData ? (
+                                <span className="text-muted-foreground text-sm">No cake data</span>
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex flex-col gap-1 text-sm cursor-help">
+                                        <div className="flex items-center gap-1">
+                                          <Cake className="h-3 w-3 text-pink-500" />
+                                          <span>{calcData.tiers.length} tier{calcData.tiers.length !== 1 ? 's' : ''}</span>
+                                        </div>
+                                        {calcData.decorations.length > 0 && (
+                                          <div className="flex items-center gap-1 text-muted-foreground">
+                                            <Palette className="h-3 w-3" />
+                                            <span>{calcData.decorations.length} decoration{calcData.decorations.length !== 1 ? 's' : ''}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <div className="space-y-2">
+                                        <p className="font-semibold">Cake Details:</p>
+                                        {calcData.tiers.map((tier, idx) => (
+                                          <div key={idx} className="text-xs">
+                                            {tier.size || 'Cake'} {tier.shape || ''} - {tier.flavor || 'Standard'} (${tier.basePrice ?? 0})
+                                          </div>
+                                        ))}
+                                        {calcData.decorations.length > 0 && (
+                                          <>
+                                            <p className="font-semibold mt-2">Decorations:</p>
+                                            {calcData.decorations.map((deco, idx) => (
+                                              <div key={idx} className="text-xs">
+                                                {deco.name || 'Decoration'} (${deco.price ?? 0})
+                                              </div>
+                                            ))}
+                                          </>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {total > 0 ? (
+                                <div className="flex items-center gap-1 font-medium text-green-700">
+                                  <DollarSign className="h-3 w-3" />
+                                  <span>{Math.round(total).toLocaleString()}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                       <TableCell>
                         {getStatusBadge(lead.status)}
                       </TableCell>
