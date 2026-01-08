@@ -14,8 +14,9 @@ const JWT_SECRET = (() => {
 })();
 
 interface JWTPayload {
-  userId: string;
-  username: string;
+  id?: string;
+  userId?: string;
+  username?: string;
   role: string;
   iat?: number;
   exp?: number;
@@ -142,8 +143,11 @@ export function authorizeBakerAccess(req: AuthenticatedRequest, res: Response, n
       });
     }
 
+    // Get user ID - support both 'id' and 'userId' property names
+    const userId = user.id || user.userId;
+    
     // Check if user is accessing their own baker data
-    if (user.role === 'baker' && user.userId !== bakerId) {
+    if (user.role === 'baker' && userId !== bakerId) {
       return res.status(403).json({ 
         error: 'Access forbidden',
         message: 'You can only access your own data'
@@ -156,7 +160,7 @@ export function authorizeBakerAccess(req: AuthenticatedRequest, res: Response, n
     }
 
     // For baker role, ensure they're accessing their own data
-    if (user.role === 'baker' && user.userId === bakerId) {
+    if (user.role === 'baker' && userId === bakerId) {
       return next();
     }
 
@@ -212,8 +216,11 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
     // Update params to use the actual baker ID for downstream use
     req.params.bakerId = baker.id;
 
+    // Get user ID - support both 'id' and 'userId' property names
+    const userId = user.id || user.userId;
+    
     // Check if user is accessing their own baker data
-    if (user.role === 'baker' && user.userId !== baker.id) {
+    if (user.role === 'baker' && userId !== baker.id) {
       return res.status(403).json({ 
         error: 'Access forbidden',
         message: 'You can only access your own data'
@@ -227,7 +234,7 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
     }
 
     // For baker role, ensure they're accessing their own data
-    if (user.role === 'baker' && user.userId === baker.id) {
+    if (user.role === 'baker' && userId === baker.id) {
       req.baker = baker;
       return next();
     }
@@ -253,11 +260,14 @@ export async function authorizeBakerWithData(req: AuthenticatedRequest, res: Res
 export function canAccessBaker(user: JWTPayload, bakerId: string): boolean {
   if (!user) return false;
   
+  // Get user ID - support both 'id' and 'userId' property names
+  const userId = user.id || user.userId;
+  
   // Super admin can access any baker
   if (user.role === 'super_admin') return true;
   
   // Baker can only access their own data
-  if (user.role === 'baker' && user.userId === bakerId) return true;
+  if (user.role === 'baker' && userId === bakerId) return true;
   
   return false;
 }
@@ -282,7 +292,14 @@ export function requireFeature(featureName: string) {
       }
 
       // Get baker's subscription plan
-      const baker = await storage.getBaker(req.user.userId);
+      const bakerId = req.user.id || req.user.userId;
+      if (!bakerId) {
+        return res.status(400).json({ 
+          error: 'Baker ID required',
+          message: 'User ID not found in authentication'
+        });
+      }
+      const baker = await storage.getBaker(bakerId);
       if (!baker) {
         return res.status(404).json({ 
           error: 'Baker not found',
@@ -333,7 +350,14 @@ export async function requireEnterprisePlan(req: AuthenticatedRequest, res: Resp
     }
 
     // Get baker's subscription plan
-    const baker = await storage.getBaker(req.user.userId);
+    const bakerId = req.user.id || req.user.userId;
+    if (!bakerId) {
+      return res.status(400).json({ 
+        error: 'Baker ID required',
+        message: 'User ID not found in authentication'
+      });
+    }
+    const baker = await storage.getBaker(bakerId);
     if (!baker) {
       return res.status(404).json({ 
         error: 'Baker not found',
